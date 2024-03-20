@@ -13,6 +13,10 @@ template <> struct NonVoidHelper<void> {
     using Type = NonVoidHelper;
 
     explicit NonVoidHelper() = default;
+
+    template <class T> constexpr friend T operator,(T &&t, NonVoidHelper) {
+        return std::forward<T>(t);
+    }
 };
 
 template <class T> struct Uninitialized {
@@ -50,4 +54,4 @@ struct Uninitialized<T &> : Uninitialized<std::reference_wrapper<T>> {};
 
 template <class T> struct Uninitialized<T &&> : Uninitialized<T> {};
 
-}
+} // namespace co_async

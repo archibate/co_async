@@ -24,7 +24,7 @@ struct SleepUntilPromise : RbTree<SleepUntilPromise>::RbNode, Promise<void> {
 };
 
 struct TimerLoop {
-    RbTree<SleepUntilPromise> mRbTimer{};
+    RbTree<SleepUntilPromise> mRbTimer;
 
     void addTimer(SleepUntilPromise &promise) {
         mRbTimer.insert(promise);
@@ -67,18 +67,28 @@ struct SleepAwaiter {
 
     void await_resume() const noexcept {}
 
+    using ClockType = std::chrono::system_clock;
+
     TimerLoop &loop;
-    std::chrono::system_clock::time_point mExpireTime;
+    ClockType::time_point mExpireTime;
 };
 
+template <class Clock, class Dur>
 inline Task<void, SleepUntilPromise>
-sleep_until(TimerLoop &loop, std::chrono::system_clock::time_point expireTime) {
-    co_await SleepAwaiter(loop, expireTime);
+sleep_until(TimerLoop &loop, std::chrono::time_point<Clock, Dur> expireTime) {
+    co_await SleepAwaiter(
+        loop, std::chrono::time_point_cast<SleepAwaiter::ClockType::duration>(
+                  expireTime));
 }
 
+template <class Rep, class Period>
 inline Task<void, SleepUntilPromise>
-sleep_for(TimerLoop &loop, std::chrono::system_clock::duration duration) {
-    co_await SleepAwaiter(loop, std::chrono::system_clock::now() + duration);
+sleep_for(TimerLoop &loop, std::chrono::duration<Rep, Period> duration) {
+    auto d =
+        std::chrono::duration_cast<SleepAwaiter::ClockType::duration>(duration);
+    if (d.count() > 0) {
+        co_await SleepAwaiter(loop, SleepAwaiter::ClockType::now() + d);
+    }
 }
 
 } // namespace co_async

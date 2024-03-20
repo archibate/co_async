@@ -1,0 +1,56 @@
+BasedOnStyle: LLVM
+Standard: c++20
+IndentWidth: 4
+AccessModifierOffset: -4
+DeriveLineEnding: false
+UseCRLF: false
+UseTab: Never
+IndentCaseLabels: false
+IndentCaseBlocks: false
+IndentRequiresClause: true
+# BreakTemplateDeclarations: Yes
+BreakBeforeConceptDeclarations: Always
+IndentAccessModifiers: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortLambdasOnASingleLine: Inline
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AlignTrailingComments: true
+AlignEscapedNewlines: true
+AlignConsecutiveDeclarations: false
+AllowShortFunctionsOnASingleLine: Empty
+AlignOperands: true
+LambdaBodyIndentation: Signature
+NamespaceIndentation: None
+PackConstructorInitializers: CurrentLine
+EmptyLineBeforeAccessModifier: LogicalBlock
+FixNamespaceComments: true
+ColumnLimit: 80
+#RemoveBracesLLVM: false
+ReflowComments: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterEnum: false
+  AfterClass: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterFunction: false
+  AfterControlStatement: false
+  AfterCaseLabel: false
+  SplitEmptyFunction: false
+  BeforeCatch: false
+  BeforeElse: false
+DerivePointerAlignment: false
+PointerAlignment: Right
+ReferenceAlignment: Pointer
+SortIncludes: false
+SortUsingDeclarations: false
+SpaceAroundPointerQualifiers: After
+QualifierAlignment: Custom
+QualifierOrder: ['static', 'inline', 'constexpr', 'type', 'const', 'volatile']

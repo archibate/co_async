@@ -97,41 +97,4 @@ auto when_any(Ts &&...ts) {
                        std::forward<Ts>(ts)...);
 }
 
-template <Awaitable T, class Alloc = std::allocator<T>>
-    requires (!std::same_as<void, typename AwaitableTraits<T>::RetType>)
-Task<std::vector<typename AwaitableTraits<T>::RetType, Alloc>>
-when_all(std::vector<T, Alloc> const &tasks) {
-    WhenAnyCtlBlock control{tasks.size()};
-    Alloc alloc = tasks.get_allocator();
-    std::vector<Uninitialized<typename AwaitableTraits<T>::RetType>, Alloc> result(tasks.size(), alloc);
-    {
-        std::vector<ReturnPreviousTask, Alloc> taskArray(alloc);
-        taskArray.reserve(tasks.size());
-        for (std::size_t i = 0; i < tasks.size(); ++i) {
-            taskArray.push_back(whenAllHelper(tasks[i], control, result[i]));
-        }
-        co_await WhenAllAwaiter(control, taskArray);
-    }
-    std::vector<typename AwaitableTraits<T>::RetType, Alloc> res(alloc);
-    res.reserve(tasks.size());
-    for (auto &r: result) {
-        res.push_back(r.moveValue());
-    }
-    co_return res;
-}
-
-template <Awaitable T, class Alloc = std::allocator<T>>
-    requires (std::same_as<void, typename AwaitableTraits<T>::RetType>)
-Task<void> when_all(std::vector<T, Alloc> const &tasks) {
-    WhenAnyCtlBlock control{tasks.size()};
-    Alloc alloc = tasks.get_allocator();
-    Uninitialized<void> result;
-    std::vector<ReturnPreviousTask, Alloc> taskArray(alloc);
-    taskArray.reserve(tasks.size());
-    for (std::size_t i = 0; i < tasks.size(); ++i) {
-        taskArray.push_back(whenAllHelper(tasks[i], control, result));
-    }
-    co_await WhenAllAwaiter(control, taskArray);
-}
-
 } // namespace co_async

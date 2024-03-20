@@ -97,4 +97,21 @@ auto when_any(Ts &&...ts) {
                        std::forward<Ts>(ts)...);
 }
 
+template <Awaitable T, class Alloc = std::allocator<T>>
+Task<typename AwaitableTraits<T>::RetType>
+when_any(std::vector<T, Alloc> const &tasks) {
+    WhenAnyCtlBlock control{tasks.size()};
+    Alloc alloc = tasks.get_allocator();
+    Uninitialized<typename AwaitableTraits<T>::RetType> result;
+    {
+        std::vector<ReturnPreviousTask, Alloc> taskArray(alloc);
+        taskArray.reserve(tasks.size());
+        for (auto &task: tasks) {
+            taskArray.push_back(whenAllHelper(task, control, result));
+        }
+        co_await WhenAnyAwaiter(control, taskArray);
+    }
+    co_return result.moveValue();
+}
+
 } // namespace co_async

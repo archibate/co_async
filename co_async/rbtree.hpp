@@ -4,6 +4,8 @@
 #include <functional>
 #include <utility>
 
+namespace co_async {
+
 template <class Value, class Compare = std::less<Value>>
 struct RbTree {
     enum RbColor { RED, BLACK };
@@ -324,3 +326,5 @@ public:
         doTraversalInorder(root, std::forward<Visitor>(visitor));
     }
 };
+
+}

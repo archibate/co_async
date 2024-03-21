@@ -4,6 +4,7 @@
 #include <co_async/when_any.hpp>
 #include <co_async/when_all.hpp>
 #include <co_async/and_then.hpp>
+#include <thread>
 
 using namespace std::chrono_literals;
 
@@ -23,32 +24,20 @@ co_async::Task<int> hello2() {
     co_return 2;
 }
 
-co_async::Task<int> hello_any() {
-    debug(), "hello_any开始等1和2";
-    auto v = co_await when_any(hello1(), hello2());
-    debug(), "hello_any看到", (int)v.index() + 1, "睡醒了";
-    co_return std::get<0>(v);
-}
-
-co_async::Task<int> hello_all() {
-    debug(), "hello_all开始等1和2";
+co_async::Task<int> hello() {
+    debug(), "hello开始等1和2";
     auto [i, j] = co_await when_all(hello1(), hello2());
-    debug(), "hello_call看到", i, j;
+    debug(), "hello看到", i, j;
     co_return i + j;
 }
 
 int main() {
-    {
-        auto t = hello_any();
-        loop.run(t);
-        debug(), "主函数中得到hello_any结果:",
-            t.operator co_await().await_resume();
+    auto t = hello();
+    while (!t.mCoroutine.done()) {
+        t.mCoroutine.resume();
+        if (auto delay = loop.tryRun())
+            std::this_thread::sleep_for(*delay);
     }
-    {
-        auto t = hello_all();
-        loop.run(t);
-        debug(), "主函数中得到hello_all结果:",
-            t.operator co_await().await_resume();
-    }
+    debug(), "主函数中得到hello结果:", t.operator co_await().await_resume();
     return 0;
 }

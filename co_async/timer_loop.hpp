@@ -2,7 +2,7 @@
 
 #include <coroutine>
 #include <chrono>
-#include <thread>
+#include <optional>
 #include <co_async/task.hpp>
 #include <co_async/rbtree.hpp>
 
@@ -24,30 +24,26 @@ struct SleepUntilPromise : RbTree<SleepUntilPromise>::RbNode, Promise<void> {
 };
 
 struct TimerLoop {
-    RbTree<SleepUntilPromise> mRbTimer;
+    RbTree<SleepUntilPromise> mRbTimer; // 弱红黑树，只保留一个引用指向真正的Promise
 
     void addTimer(SleepUntilPromise &promise) {
         mRbTimer.insert(promise);
     }
 
-    void run(std::coroutine_handle<> coroutine) {
-        while (!coroutine.done()) {
-            coroutine.resume();
-            while (!mRbTimer.empty()) {
-                if (!mRbTimer.empty()) {
-                    auto nowTime = std::chrono::system_clock::now();
-                    auto &promise = mRbTimer.front();
-                    if (promise.mExpireTime < nowTime) {
-                        mRbTimer.erase(promise);
-                        std::coroutine_handle<SleepUntilPromise>::from_promise(
-                            promise)
-                            .resume();
-                    } else {
-                        std::this_thread::sleep_until(promise.mExpireTime);
-                    }
-                }
+    std::optional<std::chrono::system_clock::duration> tryRun() {
+        while (!mRbTimer.empty()) {
+            auto nowTime = std::chrono::system_clock::now();
+            auto &promise = mRbTimer.front();
+            if (promise.mExpireTime <= nowTime) {
+                mRbTimer.erase(promise);
+                std::coroutine_handle<SleepUntilPromise>::from_promise(
+                    promise)
+                    .resume();
+            } else {
+                return promise.mExpireTime - nowTime;
             }
         }
+        return std::nullopt;
     }
 
     TimerLoop &operator=(TimerLoop &&) = delete;

@@ -32,7 +32,7 @@ struct EpollFilePromise : Promise<EpollEventMask> {
 struct EpollLoop {
     inline void addListener(EpollFilePromise &promise);
     inline void removeListener(int fileNo);
-    inline void run(std::optional<std::chrono::system_clock::duration> timeout =
+    inline bool run(std::optional<std::chrono::system_clock::duration> timeout =
                         std::nullopt);
 
     bool hasEvent() const noexcept {
@@ -93,8 +93,11 @@ void EpollLoop::removeListener(int fileNo) {
     --mCount;
 }
 
-void EpollLoop::run(
+bool EpollLoop::run(
     std::optional<std::chrono::system_clock::duration> timeout) {
+    if (mCount == 0) {
+        return false;
+    }
     int timeoutInMs = -1;
     if (timeout) {
         timeoutInMs =
@@ -113,6 +116,7 @@ void EpollLoop::run(
         auto &promise = *(EpollFilePromise *)event.data.ptr;
         std::coroutine_handle<EpollFilePromise>::from_promise(promise).resume();
     }
+    return true;
 }
 
 struct AsyncFile {

@@ -6,7 +6,7 @@
 #include <vector>
 #include <tuple>
 #include <type_traits>
-#include <co_async/utils.hpp>
+#include <co_async/uninitialized.hpp>
 #include <co_async/task.hpp>
 #include <co_async/return_previous.hpp>
 #include <co_async/concepts.hpp>

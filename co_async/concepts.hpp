@@ -3,7 +3,8 @@
 #include <coroutine>
 #include <type_traits>
 #include <concepts>
-#include <co_async/utils.hpp>
+#include <co_async/uninitialized.hpp>
+#include <co_async/non_void_helper.hpp>
 
 namespace co_async {
 

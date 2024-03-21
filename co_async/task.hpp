@@ -2,7 +2,7 @@
 
 #include <exception>
 #include <coroutine>
-#include <co_async/utils.hpp>
+#include <co_async/uninitialized.hpp>
 #include <co_async/previous_awaiter.hpp>
 
 namespace co_async {

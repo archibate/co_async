@@ -20,14 +20,17 @@ struct GeneratorPromise {
 
     void unhandled_exception() noexcept {
         mException = std::current_exception();
+        mFinal = true;
     }
 
-    void yield_value(T &&ret) {
+    auto yield_value(T &&ret) {
         mResult.putValue(std::move(ret));
+        return PreviousAwaiter(mPrevious);
     }
 
-    void yield_value(T const &ret) {
+    auto yield_value(T const &ret) {
         mResult.putValue(ret);
+        return PreviousAwaiter(mPrevious);
     }
 
     void return_void() {
@@ -152,5 +155,93 @@ struct Generator {
 private:
     std::coroutine_handle<promise_type> mCoroutine;
 };
+
+#if 0
+template <class T, class A, class LoopRef>
+struct GeneratorIterator {
+    using iterator_category = std::input_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = T *;
+    using reference = T &;
+
+    explicit GeneratorIterator(A awaiter, LoopRef loop) noexcept
+        : mAwaiter(awaiter),
+          mLoop(loop) {
+        ++*this;
+    }
+
+    bool operator!=(std::default_sentinel_t) const noexcept {
+        return mResult.has_value();
+    }
+
+    bool operator==(std::default_sentinel_t) const noexcept {
+        return !(*this != std::default_sentinel);
+    }
+
+    friend bool operator==(std::default_sentinel_t,
+                           GeneratorIterator const &it) noexcept {
+        return it == std::default_sentinel;
+    }
+
+    friend bool operator!=(std::default_sentinel_t,
+                           GeneratorIterator const &it) noexcept {
+        return it == std::default_sentinel;
+    }
+
+    GeneratorIterator &operator++() {
+        mAwaiter.mCoroutine.resume();
+        mLoop.run();
+        mResult = mAwaiter.await_resume();
+        return *this;
+    }
+
+    GeneratorIterator operator++(int) {
+        auto tmp = *this;
+        ++*this;
+        return tmp;
+    }
+
+    T &operator*() noexcept {
+        return *mResult;
+    }
+
+    T *operator->() noexcept {
+        return mResult.operator->();
+    }
+
+private:
+    A mAwaiter;
+    LoopRef mLoop;
+    std::optional<T> mResult;
+};
+
+template <class Loop, class T, class P>
+auto run_generator(Loop &loop, Generator<T, P> const &g) {
+    using Awaiter = typename Generator<T, P>::Awaiter;
+
+    struct GeneratorRange {
+        explicit GeneratorRange(Awaiter awaiter, Loop &loop)
+            : mAwaiter(awaiter),
+              mLoop(loop) {
+            mAwaiter.await_suspend(std::noop_coroutine());
+        }
+
+        auto begin() const noexcept {
+            return GeneratorIterator<T, Awaiter, Loop &>(mAwaiter, mLoop);
+        }
+
+        std::default_sentinel_t end() const noexcept {
+            return {};
+        }
+
+    private:
+        Awaiter mAwaiter;
+        Loop &mLoop;
+    };
+
+    return GeneratorRange(g.operator co_await(), loop);
+};
+#endif
 
 } // namespace co_async

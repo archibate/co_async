@@ -1,8 +1,9 @@
 #include <co_async/debug.hpp>
 #include <co_async/task.hpp>
+#include <co_async/generator.hpp>
 #include <co_async/timer_loop.hpp>
 #include <co_async/epoll_loop.hpp>
-#include <co_async/generic_loop.hpp>
+#include <co_async/async_loop.hpp>
 #include <co_async/when_any.hpp>
 #include <co_async/when_all.hpp>
 #include <co_async/limit_timeout.hpp>
@@ -20,7 +21,7 @@
 
 using namespace std::chrono_literals;
 
-co_async::GenericLoop loop;
+co_async::AsyncLoop loop;
 
 char map[20][20];
 int x = 10;
@@ -79,7 +80,7 @@ void on_draw() {
     write(STDOUT_FILENO, s.data(), s.size());
 }
 
-co_async::Task<> async_main() {
+co_async::Task<> snake() {
     co_async::AsyncFile file(STDIN_FILENO);
     auto nextTp = std::chrono::system_clock::now();
     running = true;
@@ -99,8 +100,22 @@ co_async::Task<> async_main() {
     }
 }
 
+co_async::Generator<int> gen() {
+    for (int i = 0; i < 42; i++) {
+        co_yield i;
+    }
+    co_return;
+}
+
+co_async::Task<> amain() {
+    auto g = gen();
+    while (auto i = co_await g) {
+        debug(), *i;
+    }
+    co_return;
+}
+
 int main() {
-    auto t = async_main();
-    run_task(loop, t);
+    run_task(loop, amain());
     return 0;
 }

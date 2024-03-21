@@ -6,7 +6,7 @@
 
 namespace co_async {
 
-struct GenericLoop {
+struct AsyncLoop {
     void run() {
         while (true) {
             auto timeout = mTimerLoop.run();

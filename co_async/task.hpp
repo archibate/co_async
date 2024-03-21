@@ -124,11 +124,10 @@ private:
 
 template <class Loop, class T, class P>
 T run_task(Loop &loop, Task<T, P> const &t) {
-    std::coroutine_handle<P> coroutine = t;
-    coroutine.promise().mPrevious = std::noop_coroutine();
-    coroutine.resume();
+    auto a = t.operator co_await();
+    a.await_suspend(std::noop_coroutine()).resume();
     loop.run();
-    return t.operator co_await().await_resume();
+    return a.await_resume();
 };
 
 } // namespace co_async

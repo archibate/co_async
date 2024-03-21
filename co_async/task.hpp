@@ -21,6 +21,16 @@ struct Promise {
         mException = std::current_exception();
     }
 
+    auto yield_value(T &&ret) {
+        mResult.putValue(std::move(ret));
+        return final_suspend();
+    }
+
+    auto yield_value(T const &ret) {
+        mResult.putValue(ret);
+        return final_suspend();
+    }
+
     void return_value(T &&ret) {
         mResult.putValue(std::move(ret));
     }

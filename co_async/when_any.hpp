@@ -55,7 +55,7 @@ ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
         control.mException = std::current_exception();
         co_return control.mPrevious;
     }
-    --control.mIndex = index;
+    control.mIndex = index;
     co_return control.mPrevious;
 }
 
@@ -68,7 +68,7 @@ ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
         control.mException = std::current_exception();
         co_return control.mPrevious;
     }
-    --control.mIndex = index;
+    control.mIndex = index;
     co_return control.mPrevious;
 }
 

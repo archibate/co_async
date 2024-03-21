@@ -21,4 +21,4 @@ struct NonVoidHelper<void> {
     }
 };
 
-}
+} // namespace co_async

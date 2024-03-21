@@ -84,8 +84,9 @@ co_async::Task<> snake() {
     co_async::AsyncFile file(STDIN_FILENO);
     auto nextTp = std::chrono::system_clock::now();
     running = true;
+    auto reader = read_string(loop, file);
     while (true) {
-        auto res = co_await limit_timeout(loop, read_string(loop, file), nextTp);
+        auto res = co_await limit_timeout(loop, reader, nextTp);
         if (res) {
             for (char c: *res) {
                 on_key(c);
@@ -100,22 +101,7 @@ co_async::Task<> snake() {
     }
 }
 
-co_async::Generator<int> gen() {
-    for (int i = 0; i < 42; i++) {
-        co_yield i;
-    }
-    co_return;
-}
-
-co_async::Task<> amain() {
-    auto g = gen();
-    while (auto i = co_await g) {
-        debug(), *i;
-    }
-    co_return;
-}
-
 int main() {
-    run_task(loop, amain());
+    run_task(loop, snake());
     return 0;
 }

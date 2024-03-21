@@ -5,40 +5,54 @@
 #include <co_async/when_all.hpp>
 #include <co_async/and_then.hpp>
 #include <thread>
+#include <sys/epoll.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <cstring>
+#include <cerrno>
 
 using namespace std::chrono_literals;
 
-co_async::TimerLoop loop;
-
-co_async::Task<int> hello1() {
-    debug(), "hello1开始睡1秒";
-    co_await sleep_for(loop, 1s);
-    debug(), "hello1睡醒了";
-    co_return 1;
-}
-
-co_async::Task<int> hello2() {
-    debug(), "hello2开始睡2秒";
-    co_await sleep_for(loop, 2s);
-    debug(), "hello2睡醒了";
-    co_return 2;
-}
-
-co_async::Task<int> hello() {
-    debug(), "hello开始等1和2";
-    auto [i, j] = co_await when_all(hello1(), hello2());
-    debug(), "hello看到", i, j;
-    co_return i + j;
-}
-
 int main() {
-    auto t = hello();
-    t.mCoroutine.resume();
-    while (!t.mCoroutine.done()) {
-        if (auto delay = loop.tryRun()) {
-            std::this_thread::sleep_for(*delay);
+    // 把0号输入流设为非阻塞的，这样当你read时如果没有数据，会直接返回EWOULDBLOCK错误
+    int attr = 1;
+    ioctl(0, FIONBIO, &attr);
+
+    // 创建异步控制器
+    int epfd = epoll_create1(0);
+
+    // 创建异步监听器（目标：0号输入流，事件：有输入数据）
+    struct epoll_event event;
+    event.events = EPOLLIN;
+    event.data.fd = 0;
+    epoll_ctl(epfd, EPOLL_CTL_ADD, 0, &event);
+
+    // 开始异步读取输入流
+    while (true) {
+        struct epoll_event ebuf[10];
+        int res = epoll_wait(epfd, ebuf, 10, 1000);
+        if (res == -1) {
+            debug(), "epoll出错了：", strerror(errno);
+        }
+        if (res == 0) {
+            debug(), "epoll超时了，1秒内没有等到任何输入";
+        }
+        for (int i = 0; i < res; i++) {
+            debug(), "等到了输入事件！";
+            int fd = ebuf[i].data.fd;
+            char c;
+            while (true) {
+                int len = read(fd, &c, 1);
+                if (len <= 0) { // 表示需要阻塞了
+                    if (errno == EWOULDBLOCK) {
+                        debug(), "read: 前面的区域，以后再来探索8～";
+                        break;
+                    }
+                    debug(), "read出错了", strerror(errno);
+                }
+                debug(), c;
+            }
         }
     }
-    debug(), "主函数中得到hello结果:", t.operator co_await().await_resume();
     return 0;
 }

@@ -27,17 +27,22 @@ struct TimerLoop {
     // 弱红黑树，只保留一个引用指向真正的Promise
     RbTree<SleepUntilPromise> mRbTimer;
 
+    bool hasEvent() const noexcept {
+        return !mRbTimer.empty();
+    }
+
     void addTimer(SleepUntilPromise &promise) {
         mRbTimer.insert(promise);
     }
 
-    std::optional<std::chrono::system_clock::duration> tryRun() {
+    std::optional<std::chrono::system_clock::duration> run() {
         while (!mRbTimer.empty()) {
             auto nowTime = std::chrono::system_clock::now();
             auto &promise = mRbTimer.front();
             if (promise.mExpireTime < nowTime) {
                 mRbTimer.erase(promise);
-                std::coroutine_handle<SleepUntilPromise>::from_promise(promise).resume();
+                std::coroutine_handle<SleepUntilPromise>::from_promise(promise)
+                    .resume();
             } else {
                 return promise.mExpireTime - nowTime;
             }

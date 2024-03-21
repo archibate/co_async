@@ -3,8 +3,11 @@
 #include <coroutine>
 #include <chrono>
 #include <cstdint>
+#include <utility>
 #include <optional>
 #include <span>
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <co_async/task.hpp>
@@ -29,8 +32,12 @@ struct EpollFilePromise : Promise<EpollEventMask> {
 struct EpollLoop {
     inline void addListener(EpollFilePromise &promise);
     inline void removeListener(int fileNo);
-    inline void
-    runFor(std::optional<std::chrono::system_clock::duration> timeout);
+    inline void run(std::optional<std::chrono::system_clock::duration> timeout =
+                        std::nullopt);
+
+    bool hasEvent() const noexcept {
+        return mCount != 0;
+    }
 
     EpollLoop &operator=(EpollLoop &&) = delete;
 
@@ -39,6 +46,7 @@ struct EpollLoop {
     }
 
     int mEpoll = checkError(epoll_create1(0));
+    std::size_t mCount = 0;
     struct epoll_event mEventBuf[64];
 };
 
@@ -77,13 +85,15 @@ void EpollLoop::addListener(EpollFilePromise &promise) {
     event.data.ptr = &promise;
     checkError(
         epoll_ctl(mEpoll, EPOLL_CTL_ADD, promise.mAwaiter->mFileNo, &event));
+    ++mCount;
 }
 
 void EpollLoop::removeListener(int fileNo) {
     checkError(epoll_ctl(mEpoll, EPOLL_CTL_DEL, fileNo, NULL));
+    --mCount;
 }
 
-void EpollLoop::runFor(
+void EpollLoop::run(
     std::optional<std::chrono::system_clock::duration> timeout) {
     int timeoutInMs = -1;
     if (timeout) {
@@ -106,28 +116,60 @@ void EpollLoop::runFor(
 }
 
 struct AsyncFile {
-    explicit AsyncFile(int mFileNo) {
+    AsyncFile() : mFileNo(-1) {}
+
+    explicit AsyncFile(std::in_place_t, int fileNo) noexcept
+        : mFileNo(fileNo) {}
+
+    explicit AsyncFile(int fileNo) : mFileNo(dup(fileNo)) {
+        checkError(mFileNo);
+        ensureNonblock();
+    }
+
+    AsyncFile &ensureNonblock() {
         int attr = 1;
         checkError(ioctl(mFileNo, FIONBIO, &attr));
+        return *this;
     }
 
-    AsyncFile(AsyncFile &&) = delete;
+    explicit AsyncFile(char const *path, int oflags)
+        : mFileNo(checkError(open(path, oflags | O_NONBLOCK))) {}
+
+    explicit AsyncFile(char const *path, int oflags, mode_t mode)
+        : mFileNo(checkError(open(path, oflags | O_NONBLOCK, mode))) {}
+
+    AsyncFile(AsyncFile &&that) noexcept : mFileNo(that.mFileNo) {
+        that.mFileNo = -1;
+    }
+
+    AsyncFile &operator=(AsyncFile &&that) noexcept {
+        std::swap(mFileNo, that.mFileNo);
+        return *this;
+    }
 
     ~AsyncFile() {
-        close(mFileNo);
+        if (mFileNo != -1)
+            close(mFileNo);
     }
 
-    int fileNo() const {
+    int fileNo() const noexcept {
         return mFileNo;
+    }
+
+    int releaseOwnership() noexcept {
+        int ret = mFileNo;
+        mFileNo = -1;
+        return ret;
     }
 
 private:
     int mFileNo;
 };
 
-inline Task<EpollEvent, EpollFilePromise>
+inline Task<EpollEventMask, EpollFilePromise>
 wait_file(EpollLoop &loop, AsyncFile &file, EpollEventMask events) {
-    co_return co_await EpollFileAwaiter(loop, file.fileNo(), events | EPOLLONESHOT);
+    co_return co_await EpollFileAwaiter(loop, file.fileNo(),
+                                        events | EPOLLONESHOT);
 }
 
 inline std::size_t read_file(AsyncFile &file, std::span<char> buffer) {
@@ -138,6 +180,26 @@ inline std::size_t read_file(AsyncFile &file, std::span<char> buffer) {
         }
     }
     return len;
+}
+
+inline Task<std::string> read_string(EpollLoop &loop, AsyncFile &file) {
+    co_await wait_file(loop, file, EPOLLIN);
+    std::string s;
+    size_t chunk = 8;
+    while (true) {
+        char c;
+        std::size_t exist = s.size();
+        s.append(chunk, 0);
+        std::span<char> buffer(s.data() + exist, chunk);
+        auto len = read_file(file, buffer);
+        if (len != chunk) {
+            s.resize(exist + len);
+            break;
+        }
+        if (chunk < 65536)
+            chunk *= 4;
+    }
+    co_return s;
 }
 
 } // namespace co_async

@@ -150,9 +150,6 @@ private:
             oss << '}';
         } else if constexpr (std::is_enum_v<T>) {
             uni_format(oss, static_cast<std::underlying_type_t<T>>(t));
-        } else if constexpr (requires(T0 const &t) { (*t); }) {
-            oss << '[' << uni_demangle(typeid(t).name()) << " to "
-                << reinterpret_cast<void const *>(std::addressof(*t)) << ']';
         } else if constexpr (std::is_same_v<T, std::type_info>) {
             oss << uni_demangle(t.name());
         } else if constexpr (requires(T0 &&t) { std::forward<T0>(t).repr(); }) {
@@ -167,6 +164,15 @@ private:
                                  repr(oss, std::forward<T0>(t));
                              }) {
             repr(oss, std::forward<T0>(t));
+        } else if constexpr (requires(T0 const &t) {
+                                 (*t);
+                                 (bool)t;
+                             }) {
+            if ((bool)t) {
+                uni_format(oss, *t);
+            } else {
+                oss << "nil";
+            }
         } else {
             oss << '[' << uni_demangle(typeid(t).name()) << " at "
                 << reinterpret_cast<void const *>(std::addressof(t)) << ']';

@@ -28,7 +28,7 @@ struct ReturnPreviousPromise {
             *this);
     }
 
-    std::coroutine_handle<> mPrevious{};
+    std::coroutine_handle<> mPrevious;
 
     ReturnPreviousPromise &operator=(ReturnPreviousPromise &&) = delete;
 };

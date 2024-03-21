@@ -2,11 +2,11 @@
 #include <co_async/task.hpp>
 #include <co_async/timer_loop.hpp>
 #include <co_async/epoll_loop.hpp>
-#include <co_async/generic_loop.hpp>
 #include <co_async/when_any.hpp>
 #include <co_async/when_all.hpp>
 #include <co_async/limit_timeout.hpp>
 #include <co_async/and_then.hpp>
+#include <thread>
 #include <cstring>
 #include <termios.h>
 
@@ -20,7 +20,8 @@
 
 using namespace std::chrono_literals;
 
-co_async::GenericLoop loop;
+co_async::EpollLoop epollLoop;
+co_async::TimerLoop timerLoop;
 
 char map[20][20];
 int x = 10;
@@ -84,7 +85,7 @@ co_async::Task<> async_main() {
     auto nextTp = std::chrono::system_clock::now();
     running = true;
     while (true) {
-        auto res = co_await limit_timeout(loop, read_string(loop, file), nextTp);
+        auto res = co_await limit_timeout(timerLoop, read_string(epollLoop, file), nextTp);
         if (res) {
             for (char c: *res) {
                 on_key(c);
@@ -101,6 +102,11 @@ co_async::Task<> async_main() {
 
 int main() {
     auto t = async_main();
-    run_task(loop, t);
+    t.mCoroutine.resume();
+    while (true) {
+        auto timeout = timerLoop.tryRun();
+        auto hasEvent = epollLoop.runFor(timeout);
+        if (!timeout && !hasEvent) break;
+    }
     return 0;
 }

@@ -2,13 +2,14 @@
 
 #include <exception>
 #include <coroutine>
+#include <optional>
 #include <co_async/utils.hpp>
 #include <co_async/previous_awaiter.hpp>
 
 namespace co_async {
 
 template <class T>
-struct Promise {
+struct GeneratorPromise {
     auto initial_suspend() noexcept {
         return std::suspend_always();
     }
@@ -21,34 +22,45 @@ struct Promise {
         mException = std::current_exception();
     }
 
-    void return_value(T &&ret) {
+    void yield_value(T &&ret) {
         mResult.putValue(std::move(ret));
     }
 
-    void return_value(T const &ret) {
+    void yield_value(T const &ret) {
         mResult.putValue(ret);
     }
 
-    T result() {
-        if (mException) [[unlikely]] {
-            std::rethrow_exception(mException);
+    void return_void() {
+        mFinal = true;
+    }
+
+    bool final() {
+        if (mFinal) {
+            if (mException) [[unlikely]] {
+                std::rethrow_exception(mException);
+            }
         }
+        return mFinal;
+    }
+
+    T result() {
         return mResult.moveValue();
     }
 
     auto get_return_object() {
-        return std::coroutine_handle<Promise>::from_promise(*this);
+        return std::coroutine_handle<GeneratorPromise>::from_promise(*this);
     }
 
     std::coroutine_handle<> mPrevious;
-    std::exception_ptr mException{};
+    bool mFinal = false;
     Uninitialized<T> mResult;
+    std::exception_ptr mException{};
 
-    Promise &operator=(Promise &&) = delete;
+    GeneratorPromise &operator=(GeneratorPromise &&) = delete;
 };
 
-template <>
-struct Promise<void> {
+template <class T>
+struct GeneratorPromise<T &> {
     auto initial_suspend() noexcept {
         return std::suspend_always();
     }
@@ -59,36 +71,53 @@ struct Promise<void> {
 
     void unhandled_exception() noexcept {
         mException = std::current_exception();
+        mResult = nullptr;
     }
 
-    void return_void() noexcept {}
+    auto yield_value(T &ret) {
+        mResult = std::addressof(ret);
+        return PreviousAwaiter(mPrevious);
+    }
 
-    void result() {
-        if (mException) [[unlikely]] {
-            std::rethrow_exception(mException);
+    void return_void() {
+        mResult = nullptr;
+    }
+
+    bool final() {
+        if (!mResult) {
+            if (mException) [[unlikely]] {
+                std::rethrow_exception(mException);
+            }
+            return true;
         }
+        return false;
+    }
+
+    T &result() {
+        return *mResult;
     }
 
     auto get_return_object() {
-        return std::coroutine_handle<Promise>::from_promise(*this);
+        return std::coroutine_handle<GeneratorPromise>::from_promise(*this);
     }
 
-    std::coroutine_handle<> mPrevious;
+    std::coroutine_handle<> mPrevious{};
+    T *mResult;
     std::exception_ptr mException{};
 
-    Promise &operator=(Promise &&) = delete;
+    GeneratorPromise &operator=(GeneratorPromise &&) = delete;
 };
 
-template <class T = void, class P = Promise<T>>
-struct Task {
+template <class T, class P = GeneratorPromise<T>>
+struct Generator {
     using promise_type = P;
 
-    Task(std::coroutine_handle<promise_type> coroutine) noexcept
+    Generator(std::coroutine_handle<promise_type> coroutine) noexcept
         : mCoroutine(coroutine) {}
 
-    Task(Task &&) = delete;
+    Generator(Generator &&) = delete;
 
-    ~Task() {
+    ~Generator() {
         mCoroutine.destroy();
     }
 
@@ -103,7 +132,9 @@ struct Task {
             return mCoroutine;
         }
 
-        T await_resume() const {
+        std::optional<T> await_resume() const {
+            if (mCoroutine.promise().final())
+                return std::nullopt;
             return mCoroutine.promise().result();
         }
 
@@ -120,15 +151,6 @@ struct Task {
 
 private:
     std::coroutine_handle<promise_type> mCoroutine;
-};
-
-template <class Loop, class T, class P>
-T run_task(Loop &loop, Task<T, P> const &t) {
-    std::coroutine_handle<P> coroutine = t;
-    coroutine.promise().mPrevious = std::noop_coroutine();
-    coroutine.resume();
-    loop.run();
-    return t.operator co_await().await_resume();
 };
 
 } // namespace co_async

@@ -2,13 +2,16 @@ BasedOnStyle: LLVM
 Standard: c++20
 IndentWidth: 4
 AccessModifierOffset: -4
+ColumnLimit: 80
 DeriveLineEnding: false
 UseCRLF: false
+# LineEnding: LF
+# InsertNewlineAtEOF: true
 UseTab: Never
+TabWidth: 4
 IndentCaseLabels: false
 IndentCaseBlocks: false
 IndentRequiresClause: true
-# BreakTemplateDeclarations: Yes
 BreakBeforeConceptDeclarations: Always
 IndentAccessModifiers: false
 AllowShortIfStatementsOnASingleLine: false
@@ -31,11 +34,16 @@ NamespaceIndentation: None
 PackConstructorInitializers: CurrentLine
 EmptyLineBeforeAccessModifier: LogicalBlock
 FixNamespaceComments: true
-ColumnLimit: 80
-#RemoveBracesLLVM: false
 ReflowComments: false
+SpaceAfterTemplateKeyword: true
 SpaceBeforeRangeBasedForLoopColon: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyBlock: false
 AlwaysBreakTemplateDeclarations: true
+# BreakTemplateDeclarations: Yes
+LambdaBodyIndentation: Signature
+SeparateDefinitionBlocks: Always
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterEnum: false

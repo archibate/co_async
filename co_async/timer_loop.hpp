@@ -24,8 +24,8 @@ struct SleepUntilPromise : RbTree<SleepUntilPromise>::RbNode, Promise<void> {
 };
 
 struct TimerLoop {
-    RbTree<SleepUntilPromise>
-        mRbTimer; // 弱红黑树，只保留一个引用指向真正的Promise
+    // 弱红黑树，只保留一个引用指向真正的Promise
+    RbTree<SleepUntilPromise> mRbTimer;
 
     void addTimer(SleepUntilPromise &promise) {
         mRbTimer.insert(promise);

@@ -17,12 +17,14 @@
 struct debug {
 private:
     std::ostringstream oss;
+
     enum {
         silent = 0,
         print = 1,
         panic = 2,
         supress = 3,
     } state;
+
     char const *line;
     std::source_location const &loc;
 
@@ -236,22 +238,27 @@ private:
         debug &operator<(U const &u) {
             return check(t < u, u, "<");
         }
+
         template <class U>
         debug &operator>(U const &u) {
             return check(t > u, u, ">");
         }
+
         template <class U>
         debug &operator<=(U const &u) {
             return check(t <= u, u, "<=");
         }
+
         template <class U>
         debug &operator>=(U const &u) {
             return check(t >= u, u, ">=");
         }
+
         template <class U>
         debug &operator==(U const &u) {
             return check(t == u, u, "==");
         }
+
         template <class U>
         debug &operator!=(U const &u) {
             return check(t != u, u, "!=");
@@ -343,6 +350,7 @@ public:
 #else
 struct debug {
     debug(bool = true, char const * = nullptr) noexcept {}
+
     debug(debug &&) = delete;
     debug(debug const &) = delete;
 
@@ -369,28 +377,34 @@ struct debug {
 private:
     struct debug_condition {
         debug &d;
+
         explicit debug_condition(debug &d) : d(d) {}
 
         template <class U>
         debug &operator<(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator>(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator<=(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator>=(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator==(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator!=(U const &) {
             return d;

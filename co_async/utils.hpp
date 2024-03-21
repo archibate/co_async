@@ -29,7 +29,9 @@ struct Uninitialized {
     };
 
     Uninitialized() noexcept {}
+
     Uninitialized(Uninitialized &&) = delete;
+
     ~Uninitialized() noexcept {}
 
     T moveValue() {

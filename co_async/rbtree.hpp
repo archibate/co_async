@@ -20,7 +20,9 @@ struct RbTree {
               parent(nullptr),
               tree(nullptr),
               color(RED) {}
+
         RbNode(RbNode &&) = delete;
+
         ~RbNode() noexcept {
             if (tree) {
                 tree->doErase(this);
@@ -306,10 +308,13 @@ private:
 
 public:
     RbTree() noexcept : root(nullptr) {}
+
     explicit RbTree(Compare comp) noexcept(noexcept(Compare(comp)))
         : root(nullptr),
           comp(comp) {}
+
     RbTree(RbTree &&) = delete;
+
     ~RbTree() noexcept {}
 
     void insert(Value &value) noexcept {

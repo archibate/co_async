@@ -33,10 +33,11 @@ co_async::Task<int> hello() {
 
 int main() {
     auto t = hello();
+    t.mCoroutine.resume();
     while (!t.mCoroutine.done()) {
-        t.mCoroutine.resume();
-        if (auto delay = loop.tryRun())
+        if (auto delay = loop.tryRun()) {
             std::this_thread::sleep_for(*delay);
+        }
     }
     debug(), "主函数中得到hello结果:", t.operator co_await().await_resume();
     return 0;

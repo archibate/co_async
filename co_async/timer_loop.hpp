@@ -35,7 +35,7 @@ struct TimerLoop {
         while (!mRbTimer.empty()) {
             auto nowTime = std::chrono::system_clock::now();
             auto &promise = mRbTimer.front();
-            if (promise.mExpireTime <= nowTime) {
+            if (promise.mExpireTime < nowTime) {
                 mRbTimer.erase(promise);
                 std::coroutine_handle<SleepUntilPromise>::from_promise(promise)
                     .resume();

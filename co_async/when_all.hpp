@@ -57,7 +57,7 @@ ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
     if (control.mCount == 0) {
         co_return control.mPrevious;
     }
-    co_return nullptr;
+    co_return std::noop_coroutine();
 }
 
 template <class = void>
@@ -73,7 +73,7 @@ ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
     if (control.mCount == 0) {
         co_return control.mPrevious;
     }
-    co_return nullptr;
+    co_return std::noop_coroutine();
 }
 
 template <std::size_t... Is, class... Ts>

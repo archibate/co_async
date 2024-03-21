@@ -77,7 +77,7 @@ void on_draw() {
         s += '#';
     }
     s += '\n';
-    write(STDOUT_FILENO, s.data(), s.size());
+    /* write(STDOUT_FILENO, s.data(), s.size()); */
 }
 
 co_async::Task<> snake() {
@@ -96,7 +96,7 @@ co_async::Task<> snake() {
             on_time();
             if (!running) break;
             on_draw();
-            nextTp = std::chrono::system_clock::now() + 500ms;
+            nextTp = std::chrono::system_clock::now() + 9500ms;
         }
     }
 }

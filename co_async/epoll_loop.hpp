@@ -1,7 +1,6 @@
 #pragma once
 
 #include <coroutine>
-#include <chrono>
 #include <cstdint>
 #include <utility>
 #include <optional>
@@ -65,8 +64,6 @@ struct EpollFileAwaiter {
     EpollEventMask await_resume() const noexcept {
         return mResumeEvents;
     }
-
-    using ClockType = std::chrono::system_clock;
 
     EpollLoop &mLoop;
     int mFileNo;
@@ -190,14 +187,14 @@ inline std::size_t read_file(AsyncFile &file, std::span<char> buffer) {
         if (errno != EWOULDBLOCK) [[unlikely]] {
             throw std::system_error(errno, std::system_category());
         }
+        len = 0;
     }
     return len;
 }
 
 inline Task<std::string> read_string(EpollLoop &loop, AsyncFile &file) {
-    auto wait = wait_file(loop, file, EPOLLIN);
     while (true) {
-        co_await wait;
+        co_await wait_file_once(loop, file, EPOLLIN);
         std::string s;
         std::size_t chunk = 8;
         while (true) {

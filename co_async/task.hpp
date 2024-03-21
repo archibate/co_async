@@ -23,12 +23,12 @@ struct Promise {
 
     auto yield_value(T &&ret) {
         mResult.putValue(std::move(ret));
-        return final_suspend();
+        return PreviousAwaiter(mPrevious);
     }
 
     auto yield_value(T const &ret) {
         mResult.putValue(ret);
-        return final_suspend();
+        return PreviousAwaiter(mPrevious);
     }
 
     void return_value(T &&ret) {

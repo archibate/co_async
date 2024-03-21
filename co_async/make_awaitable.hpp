@@ -6,7 +6,8 @@
 
 namespace co_async {
 
-template <Awaitable A> A &&make_awaitable(A &&a) {
+template <Awaitable A>
+A &&make_awaitable(A &&a) {
     return std::forward<A>(a);
 }
 

@@ -28,7 +28,7 @@ private:
 
     static void uni_quotes(std::ostream &oss, std::string_view sv, char quote) {
         oss << quote;
-        for (char c : sv) {
+        for (char c: sv) {
             switch (c) {
             case '\n': oss << "\\n"; break;
             case '\r': oss << "\\r"; break;
@@ -65,7 +65,8 @@ private:
         return s;
     }
 
-    template <class T0> static void uni_format(std::ostream &oss, T0 &&t) {
+    template <class T0>
+    static void uni_format(std::ostream &oss, T0 &&t) {
         using T = std::decay_t<T0>;
         if constexpr (std::is_convertible_v<T, std::string_view> &&
                       !std::is_same_v<T, char const *>) {
@@ -115,7 +116,7 @@ private:
                              }) {
             oss << '{';
             bool add_comma = false;
-            for (auto &&i : t) {
+            for (auto &&i: t) {
                 if (add_comma)
                     oss << ", ";
                 add_comma = true;
@@ -214,7 +215,8 @@ private:
         return *this;
     }
 
-    template <class T> struct debug_condition {
+    template <class T>
+    struct debug_condition {
     private:
         debug &d;
         T const &t;
@@ -230,22 +232,28 @@ private:
     public:
         explicit debug_condition(debug &d, T const &t) noexcept : d(d), t(t) {}
 
-        template <class U> debug &operator<(U const &u) {
+        template <class U>
+        debug &operator<(U const &u) {
             return check(t < u, u, "<");
         }
-        template <class U> debug &operator>(U const &u) {
+        template <class U>
+        debug &operator>(U const &u) {
             return check(t > u, u, ">");
         }
-        template <class U> debug &operator<=(U const &u) {
+        template <class U>
+        debug &operator<=(U const &u) {
             return check(t <= u, u, "<=");
         }
-        template <class U> debug &operator>=(U const &u) {
+        template <class U>
+        debug &operator>=(U const &u) {
             return check(t >= u, u, ">=");
         }
-        template <class U> debug &operator==(U const &u) {
+        template <class U>
+        debug &operator==(U const &u) {
             return check(t == u, u, "==");
         }
-        template <class U> debug &operator!=(U const &u) {
+        template <class U>
+        debug &operator!=(U const &u) {
             return check(t != u, u, "!=");
         }
     };
@@ -261,7 +269,8 @@ private:
         return *this;
     }
 
-    template <class T> debug &on_print(T &&t) {
+    template <class T>
+    debug &on_print(T &&t) {
         if (state == supress)
             return *this;
         if (state == silent) {
@@ -285,11 +294,13 @@ public:
     debug(debug &&) = delete;
     debug(debug const &) = delete;
 
-    template <class T> debug_condition<T> check(T const &t) noexcept {
+    template <class T>
+    debug_condition<T> check(T const &t) noexcept {
         return debug_condition<T>{*this, t};
     }
 
-    template <class T> debug_condition<T> operator>>(T const &t) noexcept {
+    template <class T>
+    debug_condition<T> operator>>(T const &t) noexcept {
         return debug_condition<T>{*this, t};
     }
 
@@ -309,11 +320,13 @@ public:
         return *this;
     }
 
-    template <class T> debug &operator<<(T &&t) {
+    template <class T>
+    debug &operator<<(T &&t) {
         return on_print(std::forward<T>(t));
     }
 
-    template <class T> debug &operator,(T &&t) {
+    template <class T>
+    debug &operator,(T &&t) {
         return on_print(std::forward<T>(t));
     }
 
@@ -333,11 +346,13 @@ struct debug {
     debug(debug &&) = delete;
     debug(debug const &) = delete;
 
-    template <class T> debug &operator,(T &&) {
+    template <class T>
+    debug &operator,(T &&) {
         return *this;
     }
 
-    template <class T> debug &operator<<(T &&) {
+    template <class T>
+    debug &operator<<(T &&) {
         return *this;
     }
 
@@ -356,32 +371,40 @@ private:
         debug &d;
         explicit debug_condition(debug &d) : d(d) {}
 
-        template <class U> debug &operator<(U const &) {
+        template <class U>
+        debug &operator<(U const &) {
             return d;
         }
-        template <class U> debug &operator>(U const &) {
+        template <class U>
+        debug &operator>(U const &) {
             return d;
         }
-        template <class U> debug &operator<=(U const &) {
+        template <class U>
+        debug &operator<=(U const &) {
             return d;
         }
-        template <class U> debug &operator>=(U const &) {
+        template <class U>
+        debug &operator>=(U const &) {
             return d;
         }
-        template <class U> debug &operator==(U const &) {
+        template <class U>
+        debug &operator==(U const &) {
             return d;
         }
-        template <class U> debug &operator!=(U const &) {
+        template <class U>
+        debug &operator!=(U const &) {
             return d;
         }
     };
 
 public:
-    template <class T> debug_condition check(T const &) noexcept {
+    template <class T>
+    debug_condition check(T const &) noexcept {
         return debug_condition{*this};
     }
 
-    template <class T> debug_condition operator>>(T const &) noexcept {
+    template <class T>
+    debug_condition operator>>(T const &) noexcept {
         return debug_condition{*this};
     }
 };

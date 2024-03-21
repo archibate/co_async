@@ -25,7 +25,8 @@ Task<typename AwaitableTraits<std::invoke_result_t<F>>::Type> and_then(A &&a,
 }
 
 template <Awaitable A, Awaitable F>
-    requires (!std::invocable<F> && !std::invocable<F, typename AwaitableTraits<A>::RetType>)
+    requires(!std::invocable<F> &&
+             !std::invocable<F, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<F>::RetType> and_then(A &&a, F &&f) {
     co_await std::forward<A>(a);
     co_return co_await std::forward<F>(f);

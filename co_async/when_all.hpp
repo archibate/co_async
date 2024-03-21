@@ -29,7 +29,7 @@ struct WhenAllAwaiter {
         if (mTasks.empty())
             return coroutine;
         mControl.mPrevious = coroutine;
-        for (auto const &t : mTasks.subspan(0, mTasks.size() - 1))
+        for (auto const &t: mTasks.subspan(0, mTasks.size() - 1))
             t.mCoroutine.resume();
         return mTasks.back().mCoroutine;
     }
@@ -115,7 +115,7 @@ when_all(std::vector<T, Alloc> const &tasks) {
     if constexpr (!std::same_as<void, typename AwaitableTraits<T>::RetType>) {
         std::vector<typename AwaitableTraits<T>::RetType, Alloc> res(alloc);
         res.reserve(tasks.size());
-        for (auto &r : result) {
+        for (auto &r: result) {
             res.push_back(r.moveValue());
         }
         co_return res;

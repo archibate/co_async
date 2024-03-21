@@ -31,7 +31,7 @@ struct WhenAnyAwaiter {
         if (mTasks.empty())
             return coroutine;
         mControl.mPrevious = coroutine;
-        for (auto const &t : mTasks.subspan(0, mTasks.size() - 1))
+        for (auto const &t: mTasks.subspan(0, mTasks.size() - 1))
             t.mCoroutine.resume();
         return mTasks.back().mCoroutine;
     }
@@ -106,7 +106,7 @@ when_any(std::vector<T, Alloc> const &tasks) {
     {
         std::vector<ReturnPreviousTask, Alloc> taskArray(alloc);
         taskArray.reserve(tasks.size());
-        for (auto &task : tasks) {
+        for (auto &task: tasks) {
             taskArray.push_back(whenAllHelper(task, control, result));
         }
         co_await WhenAnyAwaiter(control, taskArray);

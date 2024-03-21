@@ -7,7 +7,8 @@
 
 namespace co_async {
 
-template <class T> struct Promise {
+template <class T>
+struct Promise {
     auto initial_suspend() noexcept {
         return std::suspend_always();
     }
@@ -46,7 +47,8 @@ template <class T> struct Promise {
     Promise &operator=(Promise &&) = delete;
 };
 
-template <> struct Promise<void> {
+template <>
+struct Promise<void> {
     auto initial_suspend() noexcept {
         return std::suspend_always();
     }
@@ -77,7 +79,8 @@ template <> struct Promise<void> {
     Promise &operator=(Promise &&) = delete;
 };
 
-template <class T = void, class P = Promise<T>> struct Task {
+template <class T = void, class P = Promise<T>>
+struct Task {
     using promise_type = P;
 
     Task(std::coroutine_handle<promise_type> coroutine) noexcept

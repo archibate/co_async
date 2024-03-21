@@ -24,7 +24,8 @@ struct SleepUntilPromise : RbTree<SleepUntilPromise>::RbNode, Promise<void> {
 };
 
 struct TimerLoop {
-    RbTree<SleepUntilPromise> mRbTimer; // 弱红黑树，只保留一个引用指向真正的Promise
+    RbTree<SleepUntilPromise>
+        mRbTimer; // 弱红黑树，只保留一个引用指向真正的Promise
 
     void addTimer(SleepUntilPromise &promise) {
         mRbTimer.insert(promise);
@@ -36,8 +37,7 @@ struct TimerLoop {
             auto &promise = mRbTimer.front();
             if (promise.mExpireTime <= nowTime) {
                 mRbTimer.erase(promise);
-                std::coroutine_handle<SleepUntilPromise>::from_promise(
-                    promise)
+                std::coroutine_handle<SleepUntilPromise>::from_promise(promise)
                     .resume();
             } else {
                 return promise.mExpireTime - nowTime;

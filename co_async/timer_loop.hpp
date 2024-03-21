@@ -37,8 +37,7 @@ struct TimerLoop {
             auto &promise = mRbTimer.front();
             if (promise.mExpireTime < nowTime) {
                 mRbTimer.erase(promise);
-                std::coroutine_handle<SleepUntilPromise>::from_promise(promise)
-                    .resume();
+                std::coroutine_handle<SleepUntilPromise>::from_promise(promise).resume();
             } else {
                 return promise.mExpireTime - nowTime;
             }
@@ -58,14 +57,14 @@ struct SleepAwaiter {
     await_suspend(std::coroutine_handle<SleepUntilPromise> coroutine) const {
         auto &promise = coroutine.promise();
         promise.mExpireTime = mExpireTime;
-        loop.addTimer(promise);
+        mLoop.addTimer(promise);
     }
 
     void await_resume() const noexcept {}
 
     using ClockType = std::chrono::system_clock;
 
-    TimerLoop &loop;
+    TimerLoop &mLoop;
     ClockType::time_point mExpireTime;
 };
 

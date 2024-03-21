@@ -23,8 +23,4 @@ struct CurrentCoroutineAwaiter {
     std::coroutine_handle<> mCurrent;
 };
 
-inline Task<std::coroutine_handle<>> current_coroutine() {
-    co_return co_await CurrentCoroutineAwaiter();
-}
-
 } // namespace co_async

@@ -126,13 +126,15 @@ private:
             }
             oss << '}';
         } else if constexpr (requires(T0 &&t) {
-                                 []<std::size_t... Is>(
-                                     T &&t, std::index_sequence<Is...>) {
-                                     void (*f)(...) = nullptr;
-                                     f(std::get<Is>(t)...);
-                                 }(std::forward<T0>(t),
-                                   std::make_index_sequence<
-                                       std::tuple_size<T>::value>{});
+                                 /* []<std::size_t... Is>( */
+                                 /*     T &&t, std::index_sequence<Is...>) { */
+                                 /*     void (*f)(...) = nullptr; */
+                                 /*     f(std::get<Is>(t)...); */
+                                 /* }(std::forward<T0>(t), */
+                                 /*   std::make_index_sequence< */
+                                       std::tuple_size<T>::value
+                                 /* >{}) */
+                                     ;
                              }) {
             oss << '{';
             bool add_comma = false;
@@ -153,7 +155,7 @@ private:
         } else if constexpr (std::is_same_v<T, std::type_info>) {
             oss << uni_demangle(t.name());
         } else if constexpr (requires(T0 &&t) { std::forward<T0>(t).repr(); }) {
-            std::forward<T0>(t).repr();
+            uni_format(oss, std::forward<T0>(t).repr());
         } else if constexpr (requires(T0 &&t) {
                                  std::forward<T0>(t).repr(oss);
                              }) {
@@ -173,6 +175,12 @@ private:
             } else {
                 oss << "nil";
             }
+        } else if constexpr (requires(T0 const &t) {
+                                 visit([] (auto const &) {}, t);
+                             }) {
+            visit([&oss] (auto const &t) {
+                uni_format(oss, t);
+            }, t);
         } else {
             oss << '[' << uni_demangle(typeid(t).name()) << " at "
                 << reinterpret_cast<void const *>(std::addressof(t)) << ']';

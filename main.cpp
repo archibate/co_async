@@ -23,81 +23,11 @@ using namespace std::chrono_literals;
 
 co_async::AsyncLoop loop;
 
-char map[20][20];
-int x = 10;
-int y = 10;
-int dx = 0;
-int dy = 0;
-bool running;
-
-void on_key(char c) {
-    if (c == 'q') {
-        running = false;
-    } else if (c == 'a') {
-        dx = -1;
-        dy = 0;
-    } else if (c == 'd') {
-        dx = 1;
-        dy = 0;
-    } else if (c == 'w') {
-        dx = 0;
-        dy = -1;
-    } else if (c == 's') {
-        dx = 0;
-        dy = 1;
-    }
-}
-
-void on_time() {
-    if (x + dx >= 20 || x + dx < 0 ||
-        y + dy >= 20 || y + dy < 0) {
-        running = false;
-        return;
-    }
-    x += dx;
-    y += dy;
-}
-
-void on_draw() {
-    std::memset(map, ' ', sizeof(map));
-    map[y][x] = '@';
-    std::string s = "\x1b[H\x1b[2J\x1b[3J";
-    for (int i = 0; i < 20; ++i) {
-        s += '#';
-    }
-    s += '\n';
-    for (int i = 0; i < 20; ++i) {
-        s += '#';
-        for (int j = 0; j < 20; ++j) {
-            s += map[i][j];
-        }
-        s += "#\n";
-    }
-    for (int i = 0; i < 20; ++i) {
-        s += '#';
-    }
-    s += '\n';
-    /* write(STDOUT_FILENO, s.data(), s.size()); */
-}
-
 co_async::Task<> snake() {
     co_async::AsyncFile file(STDIN_FILENO);
-    auto nextTp = std::chrono::system_clock::now();
-    running = true;
-    auto reader = read_string(loop, file);
     while (true) {
-        auto res = co_await limit_timeout(loop, reader, nextTp);
-        if (res) {
-            for (char c: *res) {
-                on_key(c);
-            }
-            on_draw();
-        } else {
-            on_time();
-            if (!running) break;
-            on_draw();
-            nextTp = std::chrono::system_clock::now() + 9500ms;
-        }
+        auto res = co_await co_async::when_any(co_async::sleep_for(loop, 0.1s), co_async::read_string(loop, file));
+        debug(), res;
     }
 }
 

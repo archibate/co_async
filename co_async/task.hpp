@@ -1,7 +1,9 @@
 #pragma once
 
+#include "co_async/debug.hpp"
 #include <exception>
 #include <coroutine>
+#include <utility>
 #include <co_async/uninitialized.hpp>
 #include <co_async/previous_awaiter.hpp>
 
@@ -19,16 +21,6 @@ struct Promise {
 
     void unhandled_exception() noexcept {
         mException = std::current_exception();
-    }
-
-    auto yield_value(T &&ret) {
-        mResult.putValue(std::move(ret));
-        return PreviousAwaiter(mPrevious);
-    }
-
-    auto yield_value(T const &ret) {
-        mResult.putValue(ret);
-        return PreviousAwaiter(mPrevious);
     }
 
     void return_value(T &&ret) {
@@ -52,7 +44,7 @@ struct Promise {
 
     std::coroutine_handle<> mPrevious;
     std::exception_ptr mException{};
-    Uninitialized<T> mResult;
+    Uninitialized<T> mResult; // destructed??
 
     Promise &operator=(Promise &&) = delete;
 };
@@ -93,13 +85,20 @@ template <class T = void, class P = Promise<T>>
 struct Task {
     using promise_type = P;
 
-    Task(std::coroutine_handle<promise_type> coroutine) noexcept
+    Task(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
         : mCoroutine(coroutine) {}
 
-    Task(Task &&) = delete;
+    Task(Task &&that) noexcept : mCoroutine(that.mCoroutine) {
+        that.mCoroutine = nullptr;
+    }
+
+    Task &operator=(Task &&that) noexcept {
+        std::swap(mCoroutine, that.mCoroutine);
+    }
 
     ~Task() {
-        mCoroutine.destroy();
+        if (mCoroutine)
+            mCoroutine.destroy();
     }
 
     struct Awaiter {
@@ -109,7 +108,8 @@ struct Task {
 
         std::coroutine_handle<promise_type>
         await_suspend(std::coroutine_handle<> coroutine) const noexcept {
-            mCoroutine.promise().mPrevious = coroutine;
+            promise_type &promise = mCoroutine.promise();
+            promise.mPrevious = coroutine;
             return mCoroutine;
         }
 

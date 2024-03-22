@@ -1,6 +1,7 @@
 #pragma once
 
 #include <coroutine>
+#include <chrono>
 #include <cstdint>
 #include <utility>
 #include <optional>
@@ -25,7 +26,7 @@ struct EpollFilePromise : Promise<EpollEventMask> {
 
     inline ~EpollFilePromise();
 
-    struct EpollFileAwaiter *mAwaiter;
+    struct EpollFileAwaiter *mAwaiter{};
 };
 
 struct EpollLoop {
@@ -58,7 +59,6 @@ struct EpollFileAwaiter {
         auto &promise = coroutine.promise();
         promise.mAwaiter = this;
         mLoop.addListener(promise, mCtlCode);
-        mCtlCode = EPOLL_CTL_MOD;
     }
 
     EpollEventMask await_resume() const noexcept {
@@ -83,7 +83,8 @@ void EpollLoop::addListener(EpollFilePromise &promise, int ctl) {
     event.events = promise.mAwaiter->mEvents;
     event.data.ptr = &promise;
     checkError(epoll_ctl(mEpoll, ctl, promise.mAwaiter->mFileNo, &event));
-    ++mCount;
+    if (ctl == EPOLL_CTL_ADD)
+        ++mCount;
 }
 
 void EpollLoop::removeListener(int fileNo) {
@@ -170,14 +171,6 @@ private:
 
 inline Task<EpollEventMask, EpollFilePromise>
 wait_file(EpollLoop &loop, AsyncFile &file, EpollEventMask events) {
-    EpollFileAwaiter awaiter(loop, file.fileNo(), events);
-    while (true) {
-        co_yield co_await awaiter;
-    }
-}
-
-inline Task<EpollEventMask, EpollFilePromise>
-wait_file_once(EpollLoop &loop, AsyncFile &file, EpollEventMask events) {
     co_return co_await EpollFileAwaiter(loop, file.fileNo(), events | EPOLLONESHOT);
 }
 
@@ -193,25 +186,23 @@ inline std::size_t read_file(AsyncFile &file, std::span<char> buffer) {
 }
 
 inline Task<std::string> read_string(EpollLoop &loop, AsyncFile &file) {
+    co_await wait_file(loop, file, EPOLLIN);
+    std::string s;
+    std::size_t chunk = 8;
     while (true) {
-        co_await wait_file_once(loop, file, EPOLLIN);
-        std::string s;
-        std::size_t chunk = 8;
-        while (true) {
-            char c;
-            std::size_t exist = s.size();
-            s.append(chunk, 0);
-            std::span<char> buffer(s.data() + exist, chunk);
-            auto len = read_file(file, buffer);
-            if (len != chunk) {
-                s.resize(exist + len);
-                break;
-            }
-            if (chunk < 65536)
-                chunk *= 4;
+        char c;
+        std::size_t exist = s.size();
+        s.append(chunk, 0);
+        std::span<char> buffer(s.data() + exist, chunk);
+        auto len = read_file(file, buffer);
+        if (len != chunk) {
+            s.resize(exist + len);
+            break;
         }
-        co_yield std::move(s);
+        if (chunk < 65536)
+            chunk *= 4;
     }
+    co_return s;
 }
 
 } // namespace co_async

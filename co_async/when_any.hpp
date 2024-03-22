@@ -1,5 +1,6 @@
 #pragma once
 
+#include "co_async/debug.hpp"
 #include <coroutine>
 #include <span>
 #include <exception>
@@ -50,20 +51,8 @@ template <class T>
 ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
                                  Uninitialized<T> &result, std::size_t index) {
     try {
-        result.putValue(co_await std::forward<decltype(t)>(t));
-    } catch (...) {
-        control.mException = std::current_exception();
-        co_return control.mPrevious;
-    }
-    control.mIndex = index;
-    co_return control.mPrevious;
-}
-
-template <class = void>
-ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
-                                 Uninitialized<void> &, std::size_t index) {
-    try {
-        co_await std::forward<decltype(t)>(t);
+        result.putValue(
+            (co_await std::forward<decltype(t)>(t), NonVoidHelper<>()));
     } catch (...) {
         control.mException = std::current_exception();
         co_return control.mPrevious;

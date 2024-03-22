@@ -30,6 +30,7 @@ struct AwaitableTraits<A> {
     using RetType = decltype(std::declval<A>().await_resume());
     using NonVoidRetType = NonVoidHelper<RetType>::Type;
     using Type = RetType;
+    using AwaiterType = A;
 };
 
 template <class A>

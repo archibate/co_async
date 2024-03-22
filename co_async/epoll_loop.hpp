@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <utility>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <span>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <co_async/task.hpp>
@@ -121,25 +121,7 @@ bool EpollLoop::run(
 struct AsyncFile {
     AsyncFile() : mFileNo(-1) {}
 
-    explicit AsyncFile(std::in_place_t, int fileNo) noexcept
-        : mFileNo(fileNo) {}
-
-    explicit AsyncFile(int fileNo) : mFileNo(dup(fileNo)) {
-        checkError(mFileNo);
-        ensureNonblock();
-    }
-
-    AsyncFile &ensureNonblock() {
-        int attr = 1;
-        checkError(ioctl(mFileNo, FIONBIO, &attr));
-        return *this;
-    }
-
-    explicit AsyncFile(char const *path, int oflags)
-        : mFileNo(checkError(open(path, oflags | O_NONBLOCK))) {}
-
-    explicit AsyncFile(char const *path, int oflags, mode_t mode)
-        : mFileNo(checkError(open(path, oflags | O_NONBLOCK, mode))) {}
+    explicit AsyncFile(int fileNo) noexcept : mFileNo(fileNo) {}
 
     AsyncFile(AsyncFile &&that) noexcept : mFileNo(that.mFileNo) {
         that.mFileNo = -1;
@@ -165,42 +147,58 @@ struct AsyncFile {
         return ret;
     }
 
+    void setNonblock() const {
+        int attr = 1;
+        checkError(ioctl(fileNo(), FIONBIO, &attr));
+    }
+
 private:
     int mFileNo;
 };
+
+inline AsyncFile dup_async_file(int fileNo) {
+    AsyncFile file(checkError(dup(fileNo)));
+    file.setNonblock();
+    return file;
+}
 
 inline Task<EpollEventMask, EpollFilePromise>
 wait_file_event(EpollLoop &loop, AsyncFile &file, EpollEventMask events) {
     co_return co_await EpollFileAwaiter(loop, file.fileNo(), events);
 }
 
-inline std::size_t read_file_sync(AsyncFile &file, std::span<char> buffer) {
-    ssize_t len = read(file.fileNo(), buffer.data(), buffer.size());
-    if (len == -1) {
-        if (errno != EWOULDBLOCK) [[unlikely]] {
-            throw std::system_error(errno, std::system_category());
-        }
-        len = 0;
-    }
-    return len;
+inline std::size_t readFileSync(AsyncFile &file, std::span<char> buffer) {
+    return checkErrorNonBlock(
+        read(file.fileNo(), buffer.data(), buffer.size()));
 }
 
-inline Task<std::string> read_string(EpollLoop &loop, AsyncFile &file) {
+inline Task<std::string> read_string(EpollLoop &loop, AsyncFile &file,
+                                     std::size_t maxSize = -1,
+                                     std::size_t initialChunk = 15,
+                                     std::size_t maxChunk = 65536,
+                                     std::size_t chunkGrowth = 3) {
     co_await wait_file_event(loop, file, EPOLLIN | EPOLLET);
     std::string s;
-    std::size_t chunk = 15;
+    std::size_t chunk = initialChunk;
     while (true) {
-        char c;
         std::size_t exist = s.size();
+        if (chunk + exist > maxSize) {
+            chunk = maxSize - exist;
+        }
         s.append(chunk, 0);
         std::span<char> buffer(s.data() + exist, chunk);
-        auto len = read_file_sync(file, buffer);
+        auto len = readFileSync(file, buffer);
         if (len != chunk) {
             s.resize(exist + len);
             break;
         }
-        if (chunk < 65536)
-            chunk *= 3;
+        if (exist + len == maxSize) {
+            break;
+        }
+        chunk *= chunkGrowth;
+        if (chunk > maxChunk) {
+            chunk = maxChunk;
+        }
     }
     co_return s;
 }

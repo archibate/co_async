@@ -171,7 +171,8 @@ private:
 
 inline Task<EpollEventMask, EpollFilePromise>
 wait_file(EpollLoop &loop, AsyncFile &file, EpollEventMask events) {
-    co_return co_await EpollFileAwaiter(loop, file.fileNo(), events | EPOLLONESHOT);
+    co_return co_await EpollFileAwaiter(loop, file.fileNo(),
+                                        events | EPOLLONESHOT);
 }
 
 inline std::size_t read_file(AsyncFile &file, std::span<char> buffer) {

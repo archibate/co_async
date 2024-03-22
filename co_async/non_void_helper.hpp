@@ -20,7 +20,7 @@ struct NonVoidHelper<void> {
         return std::forward<T>(t);
     }
 
-    const char *repr() const noexcept {
+    char const *repr() const noexcept {
         return "NonVoidHelper";
     }
 };

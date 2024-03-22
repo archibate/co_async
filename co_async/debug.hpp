@@ -132,8 +132,8 @@ private:
                                  /*     f(std::get<Is>(t)...); */
                                  /* }(std::forward<T0>(t), */
                                  /*   std::make_index_sequence< */
-                                       std::tuple_size<T>::value
-                                 /* >{}) */
+                                 std::tuple_size<T>::value
+                                     /* >{}) */
                                      ;
                              }) {
             oss << '{';
@@ -176,11 +176,9 @@ private:
                 oss << "nil";
             }
         } else if constexpr (requires(T0 const &t) {
-                                 visit([] (auto const &) {}, t);
+                                 visit([](auto const &) {}, t);
                              }) {
-            visit([&oss] (auto const &t) {
-                uni_format(oss, t);
-            }, t);
+            visit([&oss](auto const &t) { uni_format(oss, t); }, t);
         } else {
             oss << '[' << uni_demangle(typeid(t).name()) << " at "
                 << reinterpret_cast<void const *>(std::addressof(t)) << ']';

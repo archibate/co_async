@@ -3,6 +3,7 @@
 #include <exception>
 #include <coroutine>
 #include <optional>
+#include <utility>
 #include <co_async/uninitialized.hpp>
 #include <co_async/previous_awaiter.hpp>
 
@@ -115,13 +116,20 @@ template <class T, class P = GeneratorPromise<T>>
 struct Generator {
     using promise_type = P;
 
-    Generator(std::coroutine_handle<promise_type> coroutine) noexcept
+    Generator(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
         : mCoroutine(coroutine) {}
 
-    Generator(Generator &&) = delete;
+    Generator(Generator &&that) noexcept : mCoroutine(that.mCoroutine) {
+        that.mCoroutine = nullptr;
+    }
+
+    Generator &operator=(Generator &&that) noexcept {
+        std::swap(mCoroutine, that.mCoroutine);
+    }
 
     ~Generator() {
-        mCoroutine.destroy();
+        if (mCoroutine)
+            mCoroutine.destroy();
     }
 
     struct Awaiter {

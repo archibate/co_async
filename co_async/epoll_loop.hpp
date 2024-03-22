@@ -170,12 +170,11 @@ private:
 };
 
 inline Task<EpollEventMask, EpollFilePromise>
-wait_file(EpollLoop &loop, AsyncFile &file, EpollEventMask events) {
-    co_return co_await EpollFileAwaiter(loop, file.fileNo(),
-                                        events | EPOLLONESHOT);
+wait_file_event(EpollLoop &loop, AsyncFile &file, EpollEventMask events) {
+    co_return co_await EpollFileAwaiter(loop, file.fileNo(), events);
 }
 
-inline std::size_t read_file(AsyncFile &file, std::span<char> buffer) {
+inline std::size_t read_file_sync(AsyncFile &file, std::span<char> buffer) {
     ssize_t len = read(file.fileNo(), buffer.data(), buffer.size());
     if (len == -1) {
         if (errno != EWOULDBLOCK) [[unlikely]] {
@@ -187,21 +186,21 @@ inline std::size_t read_file(AsyncFile &file, std::span<char> buffer) {
 }
 
 inline Task<std::string> read_string(EpollLoop &loop, AsyncFile &file) {
-    co_await wait_file(loop, file, EPOLLIN);
+    co_await wait_file_event(loop, file, EPOLLIN | EPOLLET);
     std::string s;
-    std::size_t chunk = 8;
+    std::size_t chunk = 15;
     while (true) {
         char c;
         std::size_t exist = s.size();
         s.append(chunk, 0);
         std::span<char> buffer(s.data() + exist, chunk);
-        auto len = read_file(file, buffer);
+        auto len = read_file_sync(file, buffer);
         if (len != chunk) {
             s.resize(exist + len);
             break;
         }
         if (chunk < 65536)
-            chunk *= 4;
+            chunk *= 3;
     }
     co_return s;
 }

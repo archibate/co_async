@@ -23,15 +23,16 @@ using namespace std::chrono_literals;
 
 co_async::AsyncLoop loop;
 
-co_async::Task<> snake() {
+co_async::Task<> amain() {
     co_async::AsyncFile file(STDIN_FILENO);
     while (true) {
-        auto res = co_await co_async::when_any(co_async::sleep_for(loop, 0.1s), co_async::read_string(loop, file));
+        auto res = co_await co_async::when_any(
+            co_async::sleep_for(loop, 1s), co_async::read_string(loop, file));
         debug(), res;
     }
 }
 
 int main() {
-    run_task(loop, snake());
+    run_task(loop, amain());
     return 0;
 }

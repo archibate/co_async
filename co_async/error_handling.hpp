@@ -39,7 +39,7 @@ auto checkError(auto res) {
     return res;
 }
 
-auto checkErrorExceptBlock(auto res, int blockres = 0, int blockerr = EWOULDBLOCK) {
+auto checkErrorNonBlock(auto res, int blockres = 0, int blockerr = EWOULDBLOCK) {
     if (res == -1) {
         if (errno != blockerr) [[unlikely]] {
             throw std::system_error(errno, std::system_category());

@@ -156,12 +156,6 @@ private:
     int mFileNo;
 };
 
-inline AsyncFile dup_async_file(int fileNo) {
-    AsyncFile file(checkError(dup(fileNo)));
-    file.setNonblock();
-    return file;
-}
-
 inline Task<EpollEventMask, EpollFilePromise>
 wait_file_event(EpollLoop &loop, AsyncFile &file, EpollEventMask events) {
     co_return co_await EpollFileAwaiter(loop, file.fileNo(), events);

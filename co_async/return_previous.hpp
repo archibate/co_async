@@ -33,7 +33,7 @@ struct ReturnPreviousPromise {
     ReturnPreviousPromise &operator=(ReturnPreviousPromise &&) = delete;
 };
 
-struct ReturnPreviousTask {
+struct [[nodiscard]] ReturnPreviousTask {
     using promise_type = ReturnPreviousPromise;
 
     ReturnPreviousTask(std::coroutine_handle<promise_type> coroutine) noexcept

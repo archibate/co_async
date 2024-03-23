@@ -113,7 +113,7 @@ struct GeneratorPromise<T &> {
 };
 
 template <class T, class P = GeneratorPromise<T>>
-struct Generator {
+struct [[nodiscard]] Generator {
     using promise_type = P;
 
     Generator(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept

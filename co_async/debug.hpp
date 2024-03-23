@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <typeinfo>
 #include <sstream>
+#include <memory>
 #include <unordered_map>
 #if defined(__unix__) && __has_include(<cxxabi.h>)
 #include <cxxabi.h>

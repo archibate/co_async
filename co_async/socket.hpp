@@ -20,117 +20,92 @@
 
 namespace co_async {
 
-struct UnixAddress {
-    struct sockaddr_un mSockAddr;
+struct IpAddress {
+    IpAddress(in_addr addr) noexcept : mAddr(addr) {}
 
-    static constexpr sa_family_t family = AF_UNIX;
+    IpAddress(in6_addr addr6) noexcept : mAddr(addr6) {}
 
-    explicit UnixAddress(char const *path) {
-        mSockAddr.sun_family = AF_UNIX;
-        if (strlen(path) >= sizeof(mSockAddr.sun_path)) [[unlikely]] {
-            throw std::invalid_argument("unix path too long");
-        }
-        strncpy(mSockAddr.sun_path, path, sizeof(mSockAddr.sun_path) - 1);
-    }
+    std::variant<in_addr, in6_addr> mAddr;
 };
 
-struct Ipv4Address {
-    struct sockaddr_in mSockAddr;
-
-    static constexpr sa_family_t family = AF_INET;
-
-    explicit Ipv4Address(char const *ip, int port) {
-        mSockAddr.sin_family = AF_INET;
-        mSockAddr.sin_port = htons(port);
-        int res = checkError(inet_pton(AF_INET, ip, &mSockAddr.sin_addr));
-        if (res == 0) {
-            struct hostent *hent = gethostbyname2(ip, AF_INET);
-            if (hent->h_addrtype != AF_INET || hent->h_length != sizeof(mSockAddr.sin_addr)) [[unlikely]] {
-                throw std::invalid_argument("no ipv4 address");
-            }
-            std::memcpy(&mSockAddr.sin_addr, hent->h_addr_list[0], sizeof(mSockAddr.sin_addr));
+inline IpAddress ip_address(char const *ip) {
+    in_addr addr = {};
+    in6_addr addr6 = {};
+    if (checkError(inet_pton(AF_INET, ip, &addr))) {
+        return addr;
+    }
+    if (checkError(inet_pton(AF_INET6, ip, &addr6))) {
+        return addr6;
+    }
+    hostent *hent = gethostbyname(ip);
+    for (int i = 0; hent->h_addr_list[i]; i++) {
+        if (hent->h_addrtype == AF_INET) {
+            std::memcpy(&addr, hent->h_addr_list[i], sizeof(in_addr));
+            return addr;
+        } else if (hent->h_addrtype == AF_INET6) {
+            std::memcpy(&addr6, hent->h_addr_list[i], sizeof(in6_addr));
+            return addr6;
         }
     }
-
-    std::string host() const {
-        char buf[INET_ADDRSTRLEN + 1] = {};
-        inet_ntop(AF_INET, &mSockAddr.sin_addr, buf, sizeof(buf));
-        return buf;
-    }
-
-    int port() const noexcept {
-        return ntohs(mSockAddr.sin_port);
-    }
-
-    std::string repr() const {
-        return host() + ":" + std::to_string(port());
-    }
-};
-
-struct Ipv6Address {
-    struct sockaddr_in6 mSockAddr;
-
-    static constexpr sa_family_t family = AF_INET6;
-
-    explicit Ipv6Address(char const *ip, int port) {
-        mSockAddr.sin6_family = AF_INET6;
-        mSockAddr.sin6_port = htons(port);
-        int res = checkError(inet_pton(AF_INET6, ip, &mSockAddr.sin6_addr));
-        if (res == 0) {
-            struct hostent *hent = gethostbyname2(ip, AF_INET6);
-            if (hent->h_addrtype != AF_INET6 || hent->h_length != sizeof(mSockAddr.sin6_addr)) [[unlikely]] {
-                throw std::invalid_argument("no ipv6 address");
-            }
-            std::memcpy(&mSockAddr.sin6_addr, hent->h_addr_list[0], sizeof(mSockAddr.sin6_addr));
-        }
-    }
-
-    std::string host() const {
-        char buf[INET6_ADDRSTRLEN + 1] = {};
-        inet_ntop(AF_INET6, &mSockAddr.sin6_addr, buf, sizeof(buf));
-        return buf;
-    }
-
-    int port() const noexcept {
-        return ntohs(mSockAddr.sin6_port);
-    }
-
-    std::string repr() const {
-        return host() + ":" + std::to_string(port());
-    }
-};
-
-template <class AddrType, int sockType>
-struct AsyncSocket : AsyncFile {
-    AsyncSocket()
-        : AsyncFile(checkError(socket(AddrType::family, sockType, 0))) {}
-};
-
-template <class AddrType>
-inline auto tcp_socket() {
-    return AsyncSocket<AddrType, SOCK_STREAM>();
+    throw std::invalid_argument("invalid domain name or ip address");
 }
 
-template <class AddrType>
-inline auto udp_socket() {
-    return AsyncSocket<AddrType, SOCK_DGRAM>();
+struct SocketAddress {
+    SocketAddress() = default;
+
+    SocketAddress(char const *path) {
+        sockaddr_un saddr = {};
+        saddr.sun_family = AF_UNIX;
+        std::strncpy(saddr.sun_path, path, sizeof(saddr.sun_path) - 1);
+        std::memcpy(&mAddr, &saddr, sizeof(saddr));
+        mAddrLen = sizeof(saddr);
+    }
+
+    SocketAddress(in_addr host, int port) {
+        sockaddr_in saddr = {};
+        saddr.sin_family = AF_INET;
+        std::memcpy(&saddr.sin_addr, &host, sizeof(saddr.sin_addr));
+        saddr.sin_port = htons(port);
+        std::memcpy(&mAddr, &saddr, sizeof(saddr));
+        mAddrLen = sizeof(saddr);
+    }
+
+    SocketAddress(in6_addr host, int port) {
+        sockaddr_in6 saddr = {};
+        saddr.sin6_family = AF_INET6;
+        std::memcpy(&saddr.sin6_addr, &host, sizeof(saddr.sin6_addr));
+        saddr.sin6_port = htons(port);
+        std::memcpy(&mAddr, &saddr, sizeof(saddr));
+        mAddrLen = sizeof(saddr);
+    }
+
+    sockaddr_storage mAddr;
+    socklen_t mAddrLen;
+};
+
+inline AsyncFile create_udp_socket(SocketAddress const &addr) {
+    AsyncFile sock(socket(addr.mAddr.ss_family, SOCK_DGRAM, 0));
+    return sock;
 }
 
-template <class AddrType>
-inline AddrType socketGetAddress(AsyncFile &sock) {
-    AddrType addr;
-    socklen_t addrLen = sizeof(addr.mSockAddr);
-    checkError(getsockname(sock.fileNo(), (struct sockaddr *)&addr.mSockAddr,
-                           &addrLen));
-    return addr;
+inline SocketAddress socket_address(IpAddress ip, int port) {
+    return std::visit(
+        [&](auto const &addr) { return SocketAddress(addr, port); }, ip.mAddr);
+}
+
+inline SocketAddress socketGetAddress(AsyncFile &sock) {
+    SocketAddress sa;
+    sa.mAddrLen = sizeof(sa.mAddr);
+    checkError(getsockname(sock.fileNo(), (sockaddr *)&sa.mAddr, &sa.mAddrLen));
+    return sa;
 }
 
 template <class T>
 inline T socketGetOption(AsyncFile &sock, int level, int optId) {
     T optVal;
     socklen_t optLen = sizeof(optVal);
-    checkError(getsockopt(sock.fileNo(), level, optId,
-                          (struct sockaddr *)&optVal, &optLen));
+    checkError(
+        getsockopt(sock.fileNo(), level, optId, (sockaddr *)&optVal, &optLen));
     return optVal;
 }
 
@@ -140,76 +115,45 @@ inline void socketSetOption(AsyncFile &sock, int level, int opt,
     checkError(setsockopt(sock.fileNo(), level, opt, &optVal, sizeof(optVal)));
 }
 
-inline Task<void> socket_connect(EpollLoop &loop, AsyncFile &sock,
-                                 auto const &addr) {
+inline Task<void> socketConnect(EpollLoop &loop, AsyncFile &sock,
+                                SocketAddress const &addr) {
     sock.setNonblock();
-    checkErrorNonBlock(connect(sock.fileNo(),
-                               (struct sockaddr const *)&addr.mSockAddr,
-                               sizeof(addr.mSockAddr)),
-                       0, EINPROGRESS);
-    co_await wait_file_event(loop, sock, EPOLLOUT);
-    int err = socketGetOption<int>(sock, SOL_SOCKET, SO_ERROR);
-    if (err != 0) [[unlikely]] {
-        throw std::system_error(err, std::system_category(), "connect");
-    }
-}
-
-inline std::size_t socketSendSync(AsyncFile &sock,
-                                  std::span<char const> buffer) {
-    return checkErrorNonBlock(
-        send(sock.fileNo(), buffer.data(), buffer.size(), MSG_DONTWAIT));
-}
-
-inline std::size_t socketRecvSync(AsyncFile &sock, std::span<char> buffer) {
-    return checkErrorNonBlock(
-        recv(sock.fileNo(), buffer.data(), buffer.size(), MSG_DONTWAIT));
-}
-
-inline Generator<std::size_t> socket_send(EpollLoop &loop, AsyncFile &sock,
-                                          std::span<char const> buffer) {
-    std::size_t sent = 0;
-    while (true) {
+    int res = checkErrorNonBlock(
+        connect(sock.fileNo(), (sockaddr const *)&addr.mAddr, addr.mAddrLen),
+        -1, EINPROGRESS);
+    if (res == -1) [[likely]] {
         co_await wait_file_event(loop, sock, EPOLLOUT);
-        while (true) {
-            auto chunk = buffer.size() - sent;
-            auto len = socketSendSync(sock, {buffer.data() + sent, chunk});
-            sent += len;
-            if (len != chunk) {
-                break;
-            }
-            if (sent == buffer.size())
-                co_return;
-            co_yield sent;
+        int err = socketGetOption<int>(sock, SOL_SOCKET, SO_ERROR);
+        if (err != 0) [[unlikely]] {
+            throw std::system_error(err, std::system_category(), "connect");
         }
-        co_yield sent;
     }
 }
 
-inline Task<std::size_t> socket_recv(EpollLoop &loop, AsyncFile &sock,
-                                     std::span<char> buffer) {
-    std::size_t received = 0;
-    co_await wait_file_event(loop, sock, EPOLLIN);
-    while (received != buffer.size()) {
-        auto chunk = buffer.size() - received;
-        auto len = socketRecvSync(sock, {buffer.data() + received, chunk});
-        received += len;
-        if (len != chunk) {
-            break;
-        }
-    }
-    co_return received;
+inline Task<AsyncFile> create_tcp_client(EpollLoop &loop,
+                                         SocketAddress const &addr) {
+    AsyncFile sock(socket(addr.mAddr.ss_family, SOCK_STREAM, 0));
+    co_await socketConnect(loop, sock, addr);
+    co_return sock;
 }
 
-inline Task<void> socket_bind(EpollLoop &loop, AsyncFile &sock,
-                              auto const &addr, int backlog = SOMAXCONN) {
+inline Task<void> socketBind(EpollLoop &loop, AsyncFile &sock, auto const &addr,
+                             int backlog = SOMAXCONN) {
     sock.setNonblock();
-    checkError(bind(sock.fileNo(), (struct sockaddr const *)&addr.mSockAddr,
-                    sizeof(addr.mSockAddr)));
+    checkError(
+        bind(sock.fileNo(), (sockaddr const *)&addr.mAddr, addr.mAddrLen));
     co_await wait_file_event(loop, sock, EPOLLOUT);
     int err = socketGetOption<int>(sock, SOL_SOCKET, SO_ERROR);
     if (err != 0) [[unlikely]] {
         throw std::system_error(err, std::system_category(), "bind");
     }
+}
+
+inline Task<AsyncFile> create_tcp_server(EpollLoop &loop,
+                                         SocketAddress const &addr) {
+    AsyncFile sock(socket(addr.mAddr.ss_family, SOCK_STREAM, 0));
+    co_await socketBind(loop, sock, addr);
+    co_return sock;
 }
 
 inline void socket_listen(AsyncFile &sock, int backlog = SOMAXCONN) {
@@ -226,9 +170,8 @@ inline Task<std::tuple<AsyncFile, AddrType>> socket_accept(EpollLoop &loop,
     AddrType addr;
     socklen_t addrLen = sizeof(addr.mSockAddr);
     co_await wait_file_event(loop, sock, EPOLLIN);
-    int res =
-        checkError(accept4(sock.fileNo(), (struct sockaddr *)&addr.mSockAddr,
-                           &addrLen, SOCK_NONBLOCK));
+    int res = checkError(accept4(sock.fileNo(), (sockaddr *)&addr.mSockAddr,
+                                 &addrLen, SOCK_NONBLOCK));
     co_return {AsyncFile(res), addr};
 }
 

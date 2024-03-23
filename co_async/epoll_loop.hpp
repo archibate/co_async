@@ -118,7 +118,7 @@ bool EpollLoop::run(
     return true;
 }
 
-struct AsyncFile {
+struct [[nodiscard]] AsyncFile {
     AsyncFile() : mFileNo(-1) {}
 
     explicit AsyncFile(int fileNo) noexcept : mFileNo(fileNo) {}
@@ -166,35 +166,24 @@ inline std::size_t readFileSync(AsyncFile &file, std::span<char> buffer) {
         read(file.fileNo(), buffer.data(), buffer.size()));
 }
 
-inline Task<std::string> read_string(EpollLoop &loop, AsyncFile &file,
-                                     std::size_t maxSize = -1,
-                                     std::size_t initialChunk = 15,
-                                     std::size_t maxChunk = 65536,
-                                     std::size_t chunkGrowth = 3) {
-    co_await wait_file_event(loop, file, EPOLLIN | EPOLLET);
-    std::string s;
-    std::size_t chunk = initialChunk;
-    while (true) {
-        std::size_t exist = s.size();
-        if (chunk + exist > maxSize) {
-            chunk = maxSize - exist;
-        }
-        s.append(chunk, 0);
-        std::span<char> buffer(s.data() + exist, chunk);
-        auto len = readFileSync(file, buffer);
-        if (len != chunk) {
-            s.resize(exist + len);
-            break;
-        }
-        if (exist + len == maxSize) {
-            break;
-        }
-        chunk *= chunkGrowth;
-        if (chunk > maxChunk) {
-            chunk = maxChunk;
-        }
-    }
-    co_return s;
+inline std::size_t writeFileSync(AsyncFile &file,
+                                 std::span<char const> buffer) {
+    return checkErrorNonBlock(
+        write(file.fileNo(), buffer.data(), buffer.size()));
+}
+
+inline Task<std::size_t> read_file(EpollLoop &loop, AsyncFile &file,
+                                   std::span<char> buffer) {
+    co_await wait_file_event(loop, file, EPOLLIN | EPOLLRDHUP);
+    auto len = readFileSync(file, buffer);
+    co_return len;
+}
+
+inline Task<std::size_t> write_file(EpollLoop &loop, AsyncFile &file,
+                                    std::span<char const> buffer) {
+    co_await wait_file_event(loop, file, EPOLLOUT | EPOLLHUP);
+    auto len = writeFileSync(file, buffer);
+    co_return len;
 }
 
 } // namespace co_async

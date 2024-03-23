@@ -82,7 +82,7 @@ struct Promise<void> {
 };
 
 template <class T = void, class P = Promise<T>>
-struct Task {
+struct [[nodiscard]] Task {
     using promise_type = P;
 
     Task(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept

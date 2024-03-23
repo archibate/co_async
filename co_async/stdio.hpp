@@ -7,24 +7,20 @@
 
 namespace co_async {
 
-inline void termiosDisableCanon(int fileNo) {
-    struct termios tc;
-    tcgetattr(fileNo, &tc);
-    tc.c_lflag &= ~ICANON;
-    tc.c_lflag &= ~ECHO;
-    tcsetattr(fileNo, TCSANOW, &tc);
-}
-
 inline AsyncFile asyncStdFile(int fileNo) {
     AsyncFile file(checkError(dup(fileNo)));
     file.setNonblock();
     return file;
 }
 
-inline AsyncFile async_stdin() {
+inline AsyncFile async_stdin(bool noCanon = false, bool noEcho = false) {
     AsyncFile file = asyncStdFile(STDIN_FILENO);
-    if (isatty(file.fileNo())) {
-        termiosDisableCanon(file.fileNo());
+    if ((noCanon || noEcho) && isatty(file.fileNo())) {
+        struct termios tc;
+        tcgetattr(file.fileNo(), &tc);
+        if (noCanon) tc.c_lflag &= ~ICANON;
+        if (noEcho) tc.c_lflag &= ~ECHO;
+        tcsetattr(file.fileNo(), TCSANOW, &tc);
     }
     return file;
 }

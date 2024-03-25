@@ -1,6 +1,5 @@
 #pragma once
 
-#include "co_async/debug.hpp"
 #include <exception>
 #include <coroutine>
 #include <utility>
@@ -128,6 +127,12 @@ struct [[nodiscard]] Task {
         return mCoroutine;
     }
 
+    std::coroutine_handle<promise_type> release() noexcept {
+        auto coroutine = mCoroutine;
+        mCoroutine = nullptr;
+        return coroutine;
+    }
+
 private:
     std::coroutine_handle<promise_type> mCoroutine;
 };
@@ -135,8 +140,11 @@ private:
 template <class Loop, class T, class P>
 T run_task(Loop &loop, Task<T, P> const &t) {
     auto a = t.operator co_await();
-    a.await_suspend(std::noop_coroutine()).resume();
-    loop.run();
+    auto c = a.await_suspend(std::noop_coroutine());
+    c.resume();
+    while (!c.done()) {
+        loop.run();
+    }
     return a.await_resume();
 };
 

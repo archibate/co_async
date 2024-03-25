@@ -121,6 +121,14 @@ struct OStreamBase {
         }
     }
 
+    Task<> putline(std::string_view s) {
+        for (char c: s) {
+            co_await putchar(c);
+        }
+        co_await putchar('\n');
+        co_await flush();
+    }
+
     Task<> flush() {
         if (mIndex) [[likely]] {
             auto *that = static_cast<Writer *>(this);

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "co_async/debug.hpp"
 #include <coroutine>
 #include <span>
 #include <exception>

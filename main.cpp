@@ -337,13 +337,18 @@ Task<T> operator*(Task<T> &&task) {
 UringLoop loop;
 
 Task<> amain() {
-    int fd = co_await *async_open(loop, "/tmp/a.cpp", O_WRONLY | O_CREAT);
-    char buf[] = "#include <cstdio>\nint main() {\n\tputs(\"This is co_async!\");\n}\n";
-    co_await *async_write(loop, fd, buf);
-    enqueue(loop, *async_close(loop, fd));
-    fd = co_await *async_open(loop, "/tmp/a.cpp", O_RDONLY);
-    /* co_await *async_read(loop, fd, buf); */
-    /* co_await *async_write(loop, STDOUT_FILENO, buf); */
+    {
+        int fd = co_await *async_open(loop, "/tmp/a.cpp", O_WRONLY | O_CREAT);
+        char buf[] = "#include <cstdio>\nint main() {\n\tputs(\"This is co_async!\");\n}\n";
+        co_await *async_write(loop, fd, buf);
+        co_await *async_close(loop, fd);
+    }
+    {
+        char buf[100];
+        int fd = co_await *async_open(loop, "main.cpp", O_RDONLY);
+        co_await *async_read(loop, fd, buf);
+        co_await *async_write(loop, STDOUT_FILENO, buf);
+    }
 }
 
 int main() {

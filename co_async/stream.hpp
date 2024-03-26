@@ -3,62 +3,26 @@
 #include <span>
 #include <utility>
 #include <string>
-#include <co_async/epoll_loop.hpp>
+#include <co_async/filesystem.hpp>
 #include <co_async/stream_base.hpp>
-#include <co_async/stdio.hpp>
 
 namespace co_async {
 
 struct FileBuf {
-    EpollLoop *mLoop;
-    AsyncFile mFile;
-
-    FileBuf(EpollLoop &loop, AsyncFile &&file)
-        : mLoop(&loop),
-          mFile(std::move(file)) {}
-
-    FileBuf() noexcept : mLoop(nullptr) {}
+    FileHandle mFile;
 
     Task<std::size_t> read(std::span<char> buffer) {
-        return read_file(*mLoop, mFile, buffer);
+        return fs_read(mFile, buffer);
     }
 
     Task<std::size_t> write(std::span<char const> buffer) {
-        return write_file(*mLoop, mFile, buffer);
+        return fs_write(mFile, buffer);
     }
 };
 
 using FileIStream = IStream<FileBuf>;
 using FileOStream = OStream<FileBuf>;
 using FileStream = IOStream<FileBuf>;
-
-struct StdioBuf {
-    EpollLoop *mLoop;
-    AsyncFile mFileIn;
-    AsyncFile mFileOut;
-
-    StdioBuf(EpollLoop &loop)
-        : mLoop(&loop),
-          mFileIn(async_stdin(true)),
-          mFileOut(async_stdout()) {}
-
-    StdioBuf(EpollLoop &loop, AsyncFile &&fileIn, AsyncFile &&fileOut)
-        : mLoop(&loop),
-          mFileIn(std::move(fileIn)),
-          mFileOut(std::move(fileOut)) {}
-
-    StdioBuf() noexcept : mLoop(nullptr) {}
-
-    Task<std::size_t> read(std::span<char> buffer) {
-        return read_file(*mLoop, mFileIn, buffer);
-    }
-
-    Task<std::size_t> write(std::span<char const> buffer) {
-        return write_file(*mLoop, mFileOut, buffer);
-    }
-};
-
-using StdioStream = IOStream<StdioBuf>;
 
 struct StringReadBuf {
     std::string_view mStringView;

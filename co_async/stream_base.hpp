@@ -12,8 +12,6 @@
 
 namespace co_async {
 
-struct EOFException {};
-
 template <class Reader>
 struct IStreamBase {
     explicit IStreamBase(std::size_t bufferSize = 8192)
@@ -23,58 +21,87 @@ struct IStreamBase {
     IStreamBase(IStreamBase &&) = default;
     IStreamBase &operator=(IStreamBase &&) = default;
 
-    Task<char> getchar() {
+    Task<std::optional<char>> getchar() {
         if (bufferEmpty()) {
-            co_await fillBuffer();
+            if (!co_await fillBuffer()) [[unlikely]] {
+                co_return std::nullopt;
+            }
         }
         char c = mBuffer[mIndex];
         ++mIndex;
         co_return c;
     }
 
-    Task<std::string> getline(char eol = '\n') {
-        std::string s;
+    Task<> getline(std::string &s, char eol) {
+        std::size_t start = mIndex;
         while (true) {
-            char c = co_await getchar();
-            if (c == eol) {
-                break;
+            for (std::size_t i = start; i < mEnd; ++i) {
+                if (mBuffer[i] == eol) {
+                    s.append(mBuffer.get() + start, i - start);
+                    mIndex = i + 1;
+                    co_return;
+                }
             }
-            s.push_back(c);
+            start = 0;
+            if (!co_await fillBuffer()) [[unlikely]] {
+                co_return;
+            }
         }
+    }
+
+    Task<> getline(std::string &s, std::string_view eol) {
+        while (true) {
+        again:
+            co_await getline(s, eol.front());
+            for (std::size_t i = 1; i < eol.size(); ++i) {
+                if (bufferEmpty()) {
+                    if (!co_await fillBuffer()) [[unlikely]] {
+                        co_return;
+                    }
+                }
+                char c = mBuffer[mIndex];
+                if (eol[i] == c) [[likely]] {
+                    ++mIndex;
+                } else {
+                    s.append(eol.data(), i);
+                    goto again;
+                }
+            }
+            co_return;
+        }
+    }
+
+    Task<std::string> getline(char eol) {
+        std::string s;
+        co_await getline(s, eol);
         co_return s;
     }
 
     Task<std::string> getline(std::string_view eol) {
         std::string s;
-        while (true) {
-            char c = co_await getchar();
-            if (c == eol[0]) {
-                std::size_t i;
-                for (i = 1; i < eol.size(); ++i) {
-                    char c = co_await getchar();
-                    if (c != eol[i]) {
-                        break;
-                    }
-                }
-                if (i == eol.size()) {
-                    break;
-                }
-                for (std::size_t j = 0; j < i; ++j) {
-                    s.push_back(eol[j]);
-                }
-                continue;
-            }
-            s.push_back(c);
-        }
+        co_await getline(s, eol);
         co_return s;
+    }
+
+    Task<> getn(std::string &s, std::size_t n) {
+        std::size_t start = mIndex;
+        while (true) {
+            auto end = start + n;
+            if (end <= mEnd) {
+                s.append(mBuffer.get() + start, end - start);
+                mIndex = end;
+                co_return;
+            }
+            start = 0;
+            if (!co_await fillBuffer()) [[unlikely]] {
+                co_return;
+            }
+        }
     }
 
     Task<std::string> getn(std::size_t n) {
         std::string s;
-        for (std::size_t i = 0; i < n; i++) {
-            char c = co_await getchar();
-            s.push_back(c);
-        }
+        co_await getn(s, n);
         co_return s;
     }
 
@@ -83,13 +110,14 @@ private:
         return mIndex == mEnd;
     }
 
-    Task<> fillBuffer() {
+    Task<bool> fillBuffer() {
         auto *that = static_cast<Reader *>(this);
         mEnd = co_await that->read(std::span(mBuffer.get(), mBufSize));
         mIndex = 0;
         if (mEnd == 0) [[unlikely]] {
-            throw EOFException();
+            co_return false;
         }
+        co_return true;
     }
 
     std::unique_ptr<char[]> mBuffer;
@@ -97,6 +125,8 @@ private:
     std::size_t mEnd = 0;
     std::size_t mBufSize = 0;
 };
+
+struct PipeShutdownException {};
 
 template <class Writer>
 struct OStreamBase {
@@ -116,15 +146,30 @@ struct OStreamBase {
     }
 
     Task<> puts(std::string_view s) {
-        for (char c: s) {
-            co_await putchar(c);
+        auto p = s.data();
+        auto const pe = s.data() + s.size();
+    again:
+        if (pe - p <= mBufSize - mIndex) {
+            auto b = mBuffer.get() + mIndex;
+            mIndex += pe - p;
+            while (p < pe) {
+                *b++ = *p++;
+            }
+        } else {
+            auto b = mBuffer.get() + mIndex;
+            auto const be = mBuffer.get() + mBufSize;
+            mIndex = mBufSize;
+            while (b < be) {
+                *b++ = *p++;
+            }
+            co_await flush();
+            mIndex = 0;
+            goto again;
         }
     }
 
     Task<> putline(std::string_view s) {
-        for (char c: s) {
-            co_await putchar(c);
-        }
+        co_await puts(s);
         co_await putchar('\n');
         co_await flush();
     }
@@ -139,7 +184,7 @@ struct OStreamBase {
                 len = co_await that->write(buf);
             }
             if (len == 0) [[unlikely]] {
-                throw EOFException();
+                throw PipeShutdownException();
             }
             mIndex = 0;
         }

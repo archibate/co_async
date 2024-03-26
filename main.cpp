@@ -11,6 +11,7 @@
 #include <liburing.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <type_traits>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -37,7 +38,9 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
 
 struct UringLoop {
     inline void run();
-    inline bool runBatched(std::size_t numBatch = 128, std::chrono::microseconds timeout = std::chrono::milliseconds(10));
+    inline bool runBatched(
+        std::size_t numBatch = 128,
+        std::chrono::microseconds timeout = std::chrono::milliseconds(10));
 
     io_uring_sqe *getSqe() {
         io_uring_sqe *sqe = io_uring_get_sqe(&mRing);
@@ -96,7 +99,7 @@ struct UringAwaiter {
 
 void UringLoop::run() {
     while (!mQueue.empty()) {
-        auto coroutine = mQueue.front();
+        auto coroutine = std::move(mQueue.front());
         mQueue.pop_front();
         coroutine.resume();
     }
@@ -109,9 +112,10 @@ void UringLoop::run() {
     awaiter->mPrevious.resume();
 }
 
-bool UringLoop::runBatched(std::size_t numBatch, std::chrono::microseconds timeout) {
+bool UringLoop::runBatched(std::size_t numBatch,
+                           std::chrono::microseconds timeout) {
     while (!mQueue.empty()) {
-        auto coroutine = mQueue.front();
+        auto coroutine = std::move(mQueue.front());
         mQueue.pop_front();
         coroutine.resume();
     }
@@ -173,6 +177,54 @@ Task<int> async_connect(UringLoop &loop, int fd, SockAddr &addr) {
         co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
             io_uring_prep_connect(sqe, fd, (struct sockaddr *)&addr.addr,
                                   addr.addrlen);
+        }));
+}
+
+Task<int> async_mkdirat(UringLoop &loop, int dirfd, char const *path,
+                        mode_t mode = 0755) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_mkdirat(sqe, dirfd, path, mode);
+        }));
+}
+
+Task<int> async_mkdir(UringLoop &loop, char const *path, mode_t mode = 0755) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_mkdir(sqe, path, mode);
+        }));
+}
+
+Task<int> async_linkat(UringLoop &loop, int olddirfd, char const *oldpath,
+                       int newdirfd, char const *newpath, mode_t mode = 0755) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_linkat(sqe, olddirfd, oldpath, newdirfd, newpath,
+                                 mode);
+        }));
+}
+
+Task<int> async_link(UringLoop &loop, char const *oldpath, char const *newpath,
+                     mode_t mode = 0755) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_link(sqe, oldpath, newpath, mode);
+        }));
+}
+
+Task<int> async_symlinkat(UringLoop &loop, char const *target, int newdirfd,
+                          char const *linkpath) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_symlinkat(sqe, target, newdirfd, linkpath);
+        }));
+}
+
+Task<int> async_symlink(UringLoop &loop, char const *target,
+                        char const *linkpath) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_symlink(sqe, target, linkpath);
         }));
 }
 
@@ -311,23 +363,39 @@ Task<int> async_timeout(UringLoop &loop, std::chrono::time_point<Clk, Dur> tp,
                              IORING_TIMEOUT_REALTIME);
 }
 
-Task<> enqueueHelper(Awaitable auto task) {
-    debug(), 0;
-    co_await std::move(task);
-    debug(), 1;
+struct AutoDestroyPromise : Promise<void> {
+    auto final_suspend() noexcept {
+        auto ret = Promise<void>::final_suspend();
+        std::coroutine_handle<AutoDestroyPromise>::from_promise(*this).destroy();
+        return ret;
+    }
+
+    auto get_return_object() {
+        return std::coroutine_handle<AutoDestroyPromise>::from_promise(*this);
+    }
+};
+
+template <Awaitable A>
+Task<void, AutoDestroyPromise> enqueueHelper(A a) {
+    co_return co_await std::move(a);
 }
 
-void enqueue(UringLoop &loop, Awaitable auto task) {
+template <class A> requires (!Awaitable<A> && std::invocable<A> && Awaitable<std::invoke_result_t<A>>)
+Task<void, AutoDestroyPromise> enqueueHelper(A a) {
+    return enqueueHelper(std::move(a)());
+}
+
+void enqueue(UringLoop &loop, auto task) {
     auto t = enqueueHelper(std::move(task));
-    auto awaiter = t.operator co_await();
-    awaiter.await_suspend(std::noop_coroutine());
-    loop.mQueue.push_back(t.release());
+    auto coroutine = t.operator co_await().await_suspend(std::noop_coroutine());
+    loop.mQueue.push_back(coroutine);
+    t.release();
 }
 
 template <class T>
-Task<T> operator*(Task<T> &&task) {
+Task<T> operator*(Task<T> task) {
     auto t0 = std::chrono::high_resolution_clock::now();
-    T ret = co_await std::move(task);
+    T ret = co_await task;
     auto t1 = std::chrono::high_resolution_clock::now();
     auto dt = t1 - t0;
     std::cout << dt << '\n';
@@ -338,10 +406,14 @@ UringLoop loop;
 
 Task<> amain() {
     {
-        int fd = co_await *async_open(loop, "/tmp/a.cpp", O_WRONLY | O_CREAT);
-        char buf[] = "#include <cstdio>\nint main() {\n\tputs(\"This is co_async!\");\n}\n";
+        int fd = co_await *async_open(loop, "/tmp/a.cpp", O_WRONLY | O_CREAT | O_TRUNC);
+        char buf[] = "#include <cstdio>\nint main() {\n\tputs(\"This is "
+                     "co_async!\");\n}\n";
         co_await *async_write(loop, fd, buf);
         co_await *async_close(loop, fd);
+        enqueue(loop, []() -> Task<> {
+            co_await *async_write(loop, STDOUT_FILENO, "good!\n");
+        });
     }
     {
         char buf[100];
@@ -352,7 +424,6 @@ Task<> amain() {
 }
 
 int main() {
-    std::ios::sync_with_stdio(false);
     run_task(loop, amain());
     return 0;
 }

@@ -12,7 +12,7 @@ template <Awaitable A, std::invocable<typename AwaitableTraits<A>::RetType> F>
 Task<typename AwaitableTraits<
     std::invoke_result_t<F, typename AwaitableTraits<A>::RetType>>::Type>
 and_then(A &&a, F &&f) {
-    co_return co_await make_awaitable(
+    co_return co_await ensureAwaitable(
         std::forward<F>(f)(co_await std::forward<A>(a)));
 }
 
@@ -21,7 +21,7 @@ template <Awaitable A, std::invocable<> F>
 Task<typename AwaitableTraits<std::invoke_result_t<F>>::Type> and_then(A &&a,
                                                                        F &&f) {
     co_await std::forward<A>(a);
-    co_return co_await make_awaitable(std::forward<F>(f)());
+    co_return co_await ensureAwaitable(std::forward<F>(f)());
 }
 
 template <Awaitable A, Awaitable F>

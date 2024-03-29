@@ -1,5 +1,6 @@
 #pragma once
 
+#if CO_ASYNC_DEBUG
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
@@ -14,7 +15,6 @@
 #include <cxxabi.h>
 #endif
 
-#if !defined(NDEBUG)
 struct debug {
 private:
     std::ostringstream oss;
@@ -197,7 +197,7 @@ private:
         if (line) {
             oss << '[' << line << ']' << '\t';
         } else {
-#if 0
+#if CO_ASYNC_DEBUG >= 2
             static thread_local std::unordered_map<std::string, std::string> fileCache;
             auto key = std::to_string(loc.line()) + loc.file_name();
             if (auto it = fileCache.find(key); it != fileCache.end() && !it->second.empty()) [[likely]] {

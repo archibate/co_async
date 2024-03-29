@@ -190,6 +190,16 @@ inline Task<int> uring_linkat(UringLoop &loop, int olddirfd,
         }));
 }
 
+inline Task<int> uring_renameat(UringLoop &loop, int olddirfd,
+                              char const *oldpath, int newdirfd,
+                              char const *newpath, int flags) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_renameat(sqe, olddirfd, oldpath, newdirfd, newpath,
+                                   flags);
+        }));
+}
+
 inline Task<int> uring_unlinkat(UringLoop &loop, int dirfd, char const *path,
                                 int flags = 0) {
     co_return checkErrorReturn(
@@ -260,10 +270,10 @@ inline Task<std::size_t> uring_recv(UringLoop &loop, int fd,
 }
 
 inline Task<std::size_t> uring_send(UringLoop &loop, int fd,
-                                    std::span<char const> buf, int flags) {
+                                    std::span<char const> buf, int flags, int zc_flags) {
     co_return checkErrorReturn(
         co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
-            io_uring_prep_send(sqe, fd, buf.data(), buf.size(), flags);
+            io_uring_prep_send_zc(sqe, fd, buf.data(), buf.size(), flags, zc_flags);
         }));
 }
 
@@ -279,7 +289,7 @@ inline Task<std::size_t> uring_sendmsg(UringLoop &loop, int fd,
                                        struct msghdr *msg, unsigned int flags) {
     co_return checkErrorReturn(
         co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
-            io_uring_prep_sendmsg(sqe, fd, msg, flags);
+            io_uring_prep_sendmsg_zc(sqe, fd, msg, flags);
         }));
 }
 

@@ -4,6 +4,7 @@
 #include <co_async/filesystem.hpp>
 #include <co_async/socket.hpp>
 #include <co_async/stream.hpp>
+#include <co_async/benchmark.hpp>
 
 using namespace co_async;
 using namespace std::literals;
@@ -16,12 +17,8 @@ Task<> amain() {
 
     debug(), "发来的消息头如下：";
     FileStream s(std::move(conn));
-    std::string l;
     while (true) {
-        l.clear();
-        co_await s.getline(l, "\r\n");
-        if (l.starts_with("Cookie:"))
-            l = "Cookie: *******";
+        auto l = co_await s.getline("\r\n");
         debug(), l;
         if (l.empty()) {
             break;
@@ -33,11 +30,11 @@ Task<> amain() {
     co_await s.puts("\r\n");
     co_await s.puts("Hello, world");
     co_await s.flush();
+    co_await fs_close(s.mFile);
     co_return;
 }
 
 int main() {
-    std::ios::sync_with_stdio(false);
     run_task(loop, amain());
     return 0;
 }

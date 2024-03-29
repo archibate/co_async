@@ -18,6 +18,10 @@ struct FileBuf {
     Task<std::size_t> write(std::span<char const> buffer) {
         return fs_write(mFile, buffer);
     }
+
+    FileHandle release() noexcept {
+        return std::move(mFile);
+    }
 };
 
 using FileIStream = IStream<FileBuf>;
@@ -40,6 +44,14 @@ struct StringReadBuf {
         mPosition += size;
         co_return size;
     }
+
+    std::string_view str() const noexcept {
+        return mStringView;
+    }
+
+    std::string_view unread_str() const noexcept {
+        return mStringView.substr(mPosition);
+    }
 };
 
 struct StringWriteBuf {
@@ -47,11 +59,20 @@ struct StringWriteBuf {
 
     StringWriteBuf() noexcept {}
 
-    StringWriteBuf(std::string &&str) : mString(std::move(str)) {}
+    StringWriteBuf(std::string &&str) noexcept : mString(std::move(str)) {}
+    StringWriteBuf(std::string_view str) : mString(str) {}
 
     Task<std::size_t> write(std::span<char const> buffer) {
         mString.append(buffer.data(), buffer.size());
         co_return buffer.size();
+    }
+
+    std::string_view str() const noexcept {
+        return mString;
+    }
+
+    std::string release() noexcept {
+        return std::move(mString);
     }
 };
 

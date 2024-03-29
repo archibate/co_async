@@ -5,6 +5,7 @@
 #include <utility>
 #include <co_async/uninitialized.hpp>
 #include <co_async/previous_awaiter.hpp>
+#include <co_async/benchmark.hpp>
 
 namespace co_async {
 
@@ -45,6 +46,12 @@ struct Promise {
     std::exception_ptr mException{};
     Uninitialized<T> mResult; // destructed??
 
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    Promise(std::source_location loc = std::source_location::current()) : mPerf(loc) {}
+#endif
+
     Promise &operator=(Promise &&) = delete;
 };
 
@@ -76,6 +83,12 @@ struct Promise<void> {
 
     std::coroutine_handle<> mPrevious;
     std::exception_ptr mException{};
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    Promise(std::source_location loc = std::source_location::current()) : mPerf(loc) {}
+#endif
 
     Promise &operator=(Promise &&) = delete;
 };

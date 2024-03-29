@@ -5,6 +5,9 @@
 #include <string_view>
 #include <cstring>
 #include <variant>
+#include <co_async/platform.hpp>
+
+#if CO_ASYNC_PLAT_LINUX
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -15,6 +18,7 @@
 #include <sys/un.h>
 #include <co_async/error_handling.hpp>
 #include <co_async/filesystem.hpp>
+#include <co_async/string_utils.hpp>
 
 namespace co_async {
 
@@ -109,7 +113,7 @@ struct SocketAddress {
     }
 
     auto repr() const {
-        return std::tuple(host(), port());
+        return host().toString() + ":" + to_string(port());
     }
 
 private:
@@ -201,3 +205,16 @@ inline Task<SocketHandle> server_accept(SocketServer &serv) {
 }
 
 } // namespace co_async
+#endif
+
+#if CO_ASYNC_PLAT_WIN32
+#error "Not Implemented"
+#endif
+
+#if CO_ASYNC_PLAT_APPLE
+#error "Not Implemented"
+#endif
+
+#if CO_ASYNC_PLAT_UNKNOWN
+#error "Not Implemented"
+#endif

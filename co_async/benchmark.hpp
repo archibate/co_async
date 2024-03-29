@@ -105,7 +105,7 @@ struct Perf {
     inline static thread_local PerfStatic stat;
 
 public:
-    Perf(std::source_location loc = std::source_location::current())
+    Perf(std::source_location const &loc)
         : file(loc.file_name()),
           line(loc.line()),
           t0(std::chrono::high_resolution_clock::now()) {}

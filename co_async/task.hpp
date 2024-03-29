@@ -49,7 +49,7 @@ struct Promise {
 #if CO_ASYNC_PERF
     Perf mPerf;
 
-    Promise(std::source_location loc = std::source_location::current()) : mPerf(loc) {}
+    Promise(std::source_location const &loc = std::source_location::current()) : mPerf(loc) {}
 #endif
 
     Promise &operator=(Promise &&) = delete;
@@ -87,7 +87,7 @@ struct Promise<void> {
 #if CO_ASYNC_PERF
     Perf mPerf;
 
-    Promise(std::source_location loc = std::source_location::current()) : mPerf(loc) {}
+    Promise(std::source_location const &loc = std::source_location::current()) : mPerf(loc) {}
 #endif
 
     Promise &operator=(Promise &&) = delete;
@@ -151,7 +151,7 @@ private:
 };
 
 template <class Loop, class T, class P>
-T run_task(Loop &loop, Task<T, P> const &t) {
+T run_task_on(Loop &loop, Task<T, P> const &t) {
     auto a = t.operator co_await();
     auto c = a.await_suspend(std::noop_coroutine());
     c.resume();

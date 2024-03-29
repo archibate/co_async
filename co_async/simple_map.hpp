@@ -1,8 +1,11 @@
 #pragma once
 
+#include <concepts>
 #include <initializer_list>
 #include <functional>
 #include <map>
+#include <optional>
+#include <type_traits>
 
 namespace co_async {
 
@@ -39,6 +42,20 @@ struct SimpleMap {
         return std::addressof(it->second);
     }
 
+    template <class Key, std::invocable<V const &> F = std::identity>
+        requires(requires(K k, Key key) {
+            k < key;
+            key < k;
+        })
+    decltype(std::optional(std::declval<std::invoke_result_t<F, V const &>>()))
+    get(Key const &key, F &&func = {}) const noexcept {
+        auto it = mData.find(key);
+        if (it == mData.end()) {
+            return std::nullopt;
+        }
+        return std::invoke(func, it->second);
+    }
+
     V &insert_or_assign(K key, V value) {
         return mData.insert_or_assign(std::move(key), std::move(value))
             .first->second;
@@ -55,6 +72,15 @@ struct SimpleMap {
         })
     bool contains(Key &&key) const noexcept {
         return mData.find(std::forward<Key>(key)) != mData.end();
+    }
+
+    template <class Key>
+        requires(requires(K k, Key key) {
+            k < key;
+            key < k;
+        })
+    bool erase(Key &&key) {
+        return mData.erase(std::forward<Key>(key)) != 0;
     }
 
     auto begin() const noexcept {

@@ -225,7 +225,7 @@ private:
 };
 
 template <class Loop, class T, class P>
-auto run_generator(Loop &loop, Generator<T, P> const &g) {
+auto run_generator_on(Loop &loop, Generator<T, P> const &g) {
     using Awaiter = typename Generator<T, P>::Awaiter;
 
     struct GeneratorRange {

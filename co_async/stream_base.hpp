@@ -92,6 +92,7 @@ struct IStreamBase {
                 mIndex = end;
                 co_return;
             }
+            s.append(mBuffer.get() + start, mEnd - start);
             start = 0;
             if (!co_await fillBuffer()) [[unlikely]] {
                 co_return;
@@ -105,6 +106,14 @@ struct IStreamBase {
         co_return s;
     }
 
+    Task<> getall(std::string &s) {
+        std::size_t start = mIndex;
+        do {
+            s.append(mBuffer.get() + start, mEnd - start);
+            start = 0;
+        } while (co_await fillBuffer());
+    }
+
 private:
     bool bufferEmpty() const noexcept {
         return mIndex == mEnd;
@@ -114,10 +123,7 @@ private:
         auto *that = static_cast<Reader *>(this);
         mEnd = co_await that->read(std::span(mBuffer.get(), mBufSize));
         mIndex = 0;
-        if (mEnd == 0) [[unlikely]] {
-            co_return false;
-        }
-        co_return true;
+        co_return mEnd != 0;
     }
 
     std::unique_ptr<char[]> mBuffer;
@@ -126,7 +132,7 @@ private:
     std::size_t mBufSize = 0;
 };
 
-struct PipeShutdownException {};
+struct StreamShutdownException {};
 
 template <class Writer>
 struct OStreamBase {
@@ -184,7 +190,7 @@ struct OStreamBase {
                 len = co_await that->write(buf);
             }
             if (len == 0) [[unlikely]] {
-                throw PipeShutdownException();
+                throw StreamShutdownException();
             }
             mIndex = 0;
         }

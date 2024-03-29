@@ -1,19 +1,16 @@
 #pragma once
 
-#include <co_async/error_handling.hpp>
-#include <co_async/auto_destroy_promise.hpp>
-#include <co_async/concepts.hpp>
-#include <co_async/task.hpp>
-#include <chrono>
 #include <span>
-#include <deque>
-#include <cerrno>
-#include <type_traits>
+#include <chrono>
 #include <liburing.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <co_async/basic_loop.hpp>
+#include <co_async/error_handling.hpp>
+#include <co_async/auto_destroy_promise.hpp>
+#include <co_async/task.hpp>
 
 namespace co_async {
 
@@ -59,8 +56,17 @@ struct UringLoop {
         io_uring_queue_exit(&mRing);
     }
 
+    void doSubmit() {
+        checkErrorReturn(io_uring_submit(&mRing));
+    }
+
+    operator BasicLoop &() {
+        return mBasicLoop;
+    }
+
+private:
     io_uring mRing;
-    std::deque<std::coroutine_handle<>> mQueue;
+    BasicLoop mBasicLoop;
 };
 
 struct UringAwaiter {
@@ -87,7 +93,7 @@ struct UringAwaiter {
 
     void await_suspend(std::coroutine_handle<> coroutine) {
         mPrevious = coroutine;
-        checkErrorReturn(io_uring_submit(&mLoop.mRing));
+        mLoop.doSubmit();
     }
 
     int await_resume() const noexcept {
@@ -100,12 +106,7 @@ struct UringAwaiter {
 };
 
 void UringLoop::run() {
-    while (!mQueue.empty()) {
-        auto coroutine = std::move(mQueue.front());
-        mQueue.pop_front();
-        coroutine.resume();
-    }
-
+    mBasicLoop.run();
     io_uring_cqe *cqe;
     checkErrorReturn(io_uring_wait_cqe(&mRing, &cqe));
     auto *awaiter = reinterpret_cast<UringAwaiter *>(cqe->user_data);
@@ -116,12 +117,7 @@ void UringLoop::run() {
 
 bool UringLoop::runBatched(std::size_t numBatch,
                            std::chrono::microseconds timeout) {
-    while (!mQueue.empty()) {
-        auto coroutine = std::move(mQueue.front());
-        mQueue.pop_front();
-        coroutine.resume();
-    }
-
+    mBasicLoop.run();
     io_uring_cqe *cqe;
     auto ts = durationToKernelTimespec(timeout);
     int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, &ts, nullptr);
@@ -133,7 +129,7 @@ bool UringLoop::runBatched(std::size_t numBatch,
     io_uring_for_each_cqe(&mRing, head, cqe) {
         auto *awaiter = reinterpret_cast<UringAwaiter *>(cqe->user_data);
         awaiter->mRes = cqe->res;
-        mQueue.push_back(awaiter->mPrevious);
+        mBasicLoop.push(awaiter->mPrevious);
         ++numGot;
     }
     io_uring_cq_advance(&mRing, numGot);
@@ -342,25 +338,6 @@ inline Task<int> uring_timeout(UringLoop &loop,
     return uring_timeout(loop, timePointToKernelTimespec(tp), count,
                          IORING_TIMEOUT_ETIME_SUCCESS | IORING_TIMEOUT_ABS |
                              IORING_TIMEOUT_REALTIME);
-}
-
-template <Awaitable A>
-inline Task<void, AutoDestroyPromise> uringEnqueueHelper(A a) {
-    co_return co_await std::move(a);
-}
-
-template <class A>
-    requires(!Awaitable<A> && std::invocable<A> &&
-             Awaitable<std::invoke_result_t<A>>)
-inline Task<void, AutoDestroyPromise> uringEnqueueHelper(A a) {
-    return uringEnqueueHelper(std::move(a)());
-}
-
-inline void uring_enqueue(UringLoop &loop, auto task) {
-    auto t = uringEnqueueHelper(std::move(task));
-    auto coroutine = t.operator co_await().await_suspend(std::noop_coroutine());
-    loop.mQueue.push_back(coroutine);
-    t.release();
 }
 
 } // namespace co_async

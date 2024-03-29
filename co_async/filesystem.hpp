@@ -8,13 +8,15 @@
 #include <string>
 #include <string_view>
 #include <span>
-#include <cerrno>
 #include <filesystem>
+#include <co_async/task.hpp>
+#include <co_async/platform.hpp>
+#include <co_async/system_loop.hpp>
+
+#if CO_ASYNC_PLAT_LINUX
+#include <co_async/error_handling.hpp>
 #include <unistd.h>
 #include <fcntl.h>
-#include <co_async/task.hpp>
-#include <co_async/uring_loop.hpp>
-#include <co_async/error_handling.hpp>
 
 namespace co_async {
 
@@ -68,11 +70,17 @@ struct [[nodiscard]] FilePath {
         return mDirFd;
     }
 
+private:
     std::filesystem::path mPath;
     int mDirFd;
 };
 
 struct FileStat {
+    struct statx *getNativeStatx() {
+        return &mStatx;
+    }
+
+private:
     struct statx mStatx;
 };
 
@@ -83,8 +91,6 @@ enum class OpenMode : int {
     Append = O_WRONLY | O_APPEND | O_CREAT,
 };
 
-inline UringLoop loop;
-
 inline Task<FileHandle> fs_open(FileHandle const &dir, FilePath path,
                                 OpenMode mode, mode_t access = 0644) {
     int oflags = (int)mode;
@@ -94,7 +100,7 @@ inline Task<FileHandle> fs_open(FileHandle const &dir, FilePath path,
     co_return file;
 }
 
-inline Task<> fs_close(FileHandle &file) {
+inline Task<> fs_close(FileHandle &&file) {
     co_await uring_close(loop, file.fileNo());
     file.releaseFile();
 }
@@ -123,8 +129,9 @@ inline Task<> fs_rmdir(FilePath path) {
 
 inline Task<std::optional<FileStat>> fs_stat(FilePath path) {
     FileStat ret;
-    int res = co_await uring_statx(loop, path.dir_file(), path.c_str(), 0, STATX_ALL, &ret.mStatx);
-    const int allowed[] = {ENOENT, ENOTDIR, ENAMETOOLONG, ELOOP, EACCES};
+    int res = co_await uring_statx(loop, path.dir_file(), path.c_str(), 0,
+                                   STATX_ALL, ret.getNativeStatx());
+    int const allowed[] = {ENOENT, ENOTDIR, ENAMETOOLONG, ELOOP, EACCES};
     if (res < 0) {
         res = -res;
         for (auto e: allowed) {
@@ -136,12 +143,28 @@ inline Task<std::optional<FileStat>> fs_stat(FilePath path) {
     co_return ret;
 }
 
-inline Task<std::size_t> fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = -1) {
+inline Task<std::size_t> fs_read(FileHandle &file, std::span<char> buffer,
+                                 std::uint64_t offset = -1) {
     return uring_read(loop, file.fileNo(), buffer, offset);
 }
 
-inline Task<std::size_t> fs_write(FileHandle &file, std::span<char const> buffer, std::uint64_t offset = -1) {
+inline Task<std::size_t> fs_write(FileHandle &file,
+                                  std::span<char const> buffer,
+                                  std::uint64_t offset = -1) {
     return uring_write(loop, file.fileNo(), buffer, offset);
 }
 
 } // namespace co_async
+#endif
+
+#if CO_ASYNC_PLAT_WIN32
+#error "Not Implemented"
+#endif
+
+#if CO_ASYNC_PLAT_APPLE
+#error "Not Implemented"
+#endif
+
+#if CO_ASYNC_PLAT_UNKNOWN
+#error "Not Implemented"
+#endif

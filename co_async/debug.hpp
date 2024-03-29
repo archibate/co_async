@@ -15,6 +15,8 @@
 #include <cxxabi.h>
 #endif
 
+namespace co_async {
+
 struct debug {
 private:
     std::ostringstream oss;
@@ -198,11 +200,14 @@ private:
             oss << '[' << line << ']' << '\t';
         } else {
 #if CO_ASYNC_DEBUG >= 2
-            static thread_local std::unordered_map<std::string, std::string> fileCache;
+            static thread_local std::unordered_map<std::string, std::string>
+                fileCache;
             auto key = std::to_string(loc.line()) + loc.file_name();
-            if (auto it = fileCache.find(key); it != fileCache.end() && !it->second.empty()) [[likely]] {
+            if (auto it = fileCache.find(key);
+                it != fileCache.end() && !it->second.empty()) [[likely]] {
                 oss << '[' << it->second << ']';
-            } else if (auto file = std::ifstream(loc.file_name()); file.is_open()) [[likely]] {
+            } else if (auto file = std::ifstream(loc.file_name());
+                       file.is_open()) [[likely]] {
                 std::string line;
                 for (int i = 0; i < loc.line(); ++i) {
                     if (!std::getline(file, line)) [[unlikely]] {
@@ -210,7 +215,8 @@ private:
                         break;
                     }
                 }
-                if (auto pos = line.find_first_not_of(" \t\r\n"); pos != line.npos) [[likely]] {
+                if (auto pos = line.find_first_not_of(" \t\r\n");
+                    pos != line.npos) [[likely]] {
                     line = line.substr(pos);
                 }
                 if (!line.empty()) [[likely]] {
@@ -360,7 +366,11 @@ public:
         }
     }
 };
+
+} // namespace co_async
 #else
+namespace co_async {
+
 struct debug {
     debug(bool = true, char const * = nullptr) noexcept {}
 
@@ -435,4 +445,6 @@ public:
         return debug_condition{*this};
     }
 };
+
+} // namespace co_async
 #endif

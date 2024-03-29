@@ -36,7 +36,8 @@ struct HTTPServer {
                     {"content-type", "text/html;charset=utf-8"},
                 },
             .body = "<html><head><title>" + error +
-                    "</title></head><body><h1>" + error + "</h1></body></html>",
+                    "</title></head><body><center><h1>" + error +
+                    "</h1></center><hr><center>co_async</center></body></html>",
         };
     }
 

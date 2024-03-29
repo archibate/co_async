@@ -2,13 +2,13 @@
 
 #include <cerrno>
 #include <system_error>
-#if !defined(NDEBUG)
+#if CO_ASYNC_DEBUG
 #include <source_location>
 #endif
 
 namespace co_async {
 
-#if !defined(NDEBUG)
+#if CO_ASYNC_DEBUG
 auto checkError(auto res, std::source_location const &loc =
                               std::source_location::current()) {
     if (res == -1) [[unlikely]] {

@@ -1,13 +1,12 @@
-#pragma once
+export module co_async:awaiter.and_then;
 
-#include <utility>
-#include <co_async/task.hpp>
-#include <co_async/concepts.hpp>
-#include <co_async/make_awaitable.hpp>
+import std;
+import :awaiter.concepts;
+import :awaiter.task;
 
 namespace co_async {
 
-template <Awaitable A, std::invocable<typename AwaitableTraits<A>::RetType> F>
+export template <Awaitable A, std::invocable<typename AwaitableTraits<A>::RetType> F>
     requires(!std::same_as<void, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<
     std::invoke_result_t<F, typename AwaitableTraits<A>::RetType>>::Type>
@@ -16,7 +15,7 @@ and_then(A &&a, F &&f) {
         std::forward<F>(f)(co_await std::forward<A>(a)));
 }
 
-template <Awaitable A, std::invocable<> F>
+export template <Awaitable A, std::invocable<> F>
     requires(std::same_as<void, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<std::invoke_result_t<F>>::Type> and_then(A &&a,
                                                                        F &&f) {
@@ -24,7 +23,7 @@ Task<typename AwaitableTraits<std::invoke_result_t<F>>::Type> and_then(A &&a,
     co_return co_await ensureAwaitable(std::forward<F>(f)());
 }
 
-template <Awaitable A, Awaitable F>
+export template <Awaitable A, Awaitable F>
     requires(!std::invocable<F> &&
              !std::invocable<F, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<F>::RetType> and_then(A &&a, F &&f) {

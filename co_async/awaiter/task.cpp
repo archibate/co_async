@@ -1,11 +1,8 @@
-#pragma once
+export module co_async:awaiter.task;
 
-#include <exception>
-#include <coroutine>
-#include <utility>
-#include <co_async/uninitialized.hpp>
-#include <co_async/previous_awaiter.hpp>
-#include <co_async/benchmark.hpp>
+import std;
+import :utils.uninitialized;
+import :awaiter.details.previous_awaiter;
 
 namespace co_async {
 
@@ -46,12 +43,6 @@ struct Promise {
     std::exception_ptr mException{};
     Uninitialized<T> mResult; // destructed??
 
-#if CO_ASYNC_PERF
-    Perf mPerf;
-
-    Promise(std::source_location const &loc = std::source_location::current()) : mPerf(loc) {}
-#endif
-
     Promise &operator=(Promise &&) = delete;
 };
 
@@ -84,16 +75,10 @@ struct Promise<void> {
     std::coroutine_handle<> mPrevious;
     std::exception_ptr mException{};
 
-#if CO_ASYNC_PERF
-    Perf mPerf;
-
-    Promise(std::source_location const &loc = std::source_location::current()) : mPerf(loc) {}
-#endif
-
     Promise &operator=(Promise &&) = delete;
 };
 
-template <class T = void, class P = Promise<T>>
+export template <class T = void, class P = Promise<T>>
 struct [[nodiscard]] Task {
     using promise_type = P;
 
@@ -150,7 +135,7 @@ private:
     std::coroutine_handle<promise_type> mCoroutine;
 };
 
-template <class Loop, class T, class P>
+export template <class Loop, class T, class P>
 T run_task_on(Loop &loop, Task<T, P> const &t) {
     auto a = t.operator co_await();
     auto c = a.await_suspend(std::noop_coroutine());

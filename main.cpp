@@ -1,10 +1,7 @@
-#include <co_async/debug.hpp>
-#include <co_async/task.hpp>
-#include <co_async/uring_loop.hpp>
-#include <co_async/filesystem.hpp>
-#include <co_async/socket.hpp>
-#include <co_async/stream.hpp>
-#include <co_async/http_server.hpp>
+#include "co_async/inc/debug.hpp"
+
+import std;
+import co_async;
 
 using namespace co_async;
 using namespace std::literals;

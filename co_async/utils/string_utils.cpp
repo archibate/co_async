@@ -1,13 +1,6 @@
-#pragma once
+export module co_async:utils.string_utils;
 
-#include <limits>
-#include <concepts>
-#include <optional>
-#include <string>
-#include <charconv>
-#include <string_view>
-#include <system_error>
-#include <type_traits>
+import std;
 
 namespace co_async {
 
@@ -58,7 +51,7 @@ struct from_string_t<T> {
     }
 };
 
-template <class T>
+export template <class T>
 inline constexpr from_string_t<T> from_string;
 
 template <class T = void>
@@ -117,6 +110,6 @@ struct to_string_t<T> {
     }
 };
 
-inline constexpr to_string_t<> to_string;
+export inline constexpr to_string_t<> to_string;
 
 }

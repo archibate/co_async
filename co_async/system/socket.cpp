@@ -1,13 +1,6 @@
-#pragma once
+module;
 
-#include <span>
-#include <string>
-#include <string_view>
-#include <cstring>
-#include <variant>
-#include <co_async/platform.hpp>
-
-#if CO_ASYNC_PLAT_LINUX
+#ifdef __linux__
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -16,13 +9,22 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/un.h>
-#include <co_async/error_handling.hpp>
-#include <co_async/filesystem.hpp>
-#include <co_async/string_utils.hpp>
+#endif
+
+export module co_async:system.socket;
+
+import std;
+
+#ifdef __linux__
+import :system.error_handling;
+import :system.fs;
+import :system.system_loop;
+import :utils.string_utils;
+import :awaiter.task;
 
 namespace co_async {
 
-struct IpAddress {
+export struct IpAddress {
     explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
 
     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
@@ -72,7 +74,7 @@ struct IpAddress {
     std::variant<in_addr, in6_addr> mAddr;
 };
 
-struct SocketAddress {
+export struct SocketAddress {
     SocketAddress() = default;
 
     SocketAddress(IpAddress ip, int port) {
@@ -136,11 +138,11 @@ private:
     }
 };
 
-struct [[nodiscard]] SocketHandle : FileHandle {
+export struct [[nodiscard]] SocketHandle : FileHandle {
     using FileHandle::FileHandle;
 };
 
-struct [[nodiscard]] SocketServer : SocketHandle {
+export struct [[nodiscard]] SocketServer : SocketHandle {
     using SocketHandle::SocketHandle;
 
     SocketAddress mAddr;
@@ -150,7 +152,7 @@ struct [[nodiscard]] SocketServer : SocketHandle {
     }
 };
 
-inline SocketAddress get_socket_address(SocketHandle &sock) {
+export inline SocketAddress get_socket_address(SocketHandle &sock) {
     SocketAddress sa;
     sa.mAddrLen = sizeof(sa.mAddrIpv6);
     checkError(getsockname(sock.fileNo(), (sockaddr *)&sa.mAddr, &sa.mAddrLen));
@@ -177,14 +179,14 @@ inline Task<SocketHandle> createSocket(int family, int type) {
     co_return sock;
 }
 
-inline Task<SocketHandle> socket_connect(SocketAddress const &addr) {
+export inline Task<SocketHandle> socket_connect(SocketAddress const &addr) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     co_await uring_connect(loop, sock.fileNo(),
                            (const struct sockaddr *)&addr.mAddr, addr.mAddrLen);
     co_return sock;
 }
 
-inline Task<SocketServer> server_bind(SocketAddress const &addr,
+export inline Task<SocketServer> server_bind(SocketAddress const &addr,
                                       int backlog = SOMAXCONN) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
@@ -196,7 +198,7 @@ inline Task<SocketServer> server_bind(SocketAddress const &addr,
     co_return serv;
 }
 
-inline Task<SocketHandle> server_accept(SocketServer &serv) {
+export inline Task<SocketHandle> server_accept(SocketServer &serv) {
     int fd = co_await uring_accept(loop, serv.fileNo(),
                                    (struct sockaddr *)&serv.mAddr.mAddr,
                                    &serv.mAddr.mAddrLen, 0);
@@ -205,16 +207,4 @@ inline Task<SocketHandle> server_accept(SocketServer &serv) {
 }
 
 } // namespace co_async
-#endif
-
-#if CO_ASYNC_PLAT_WIN32
-#error "Not Implemented"
-#endif
-
-#if CO_ASYNC_PLAT_APPLE
-#error "Not Implemented"
-#endif
-
-#if CO_ASYNC_PLAT_UNKNOWN
-#error "Not Implemented"
 #endif

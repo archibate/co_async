@@ -1,7 +1,7 @@
-#pragma once
+export module co_async:awaiter.details.auto_destroy_promise;
 
-#include <coroutine>
-#include <co_async/task.hpp>
+import std;
+import :awaiter.task;
 
 namespace co_async {
 

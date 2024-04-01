@@ -1,10 +1,10 @@
-#pragma once
+export module co_async:utils.non_void_helper;
 
-#include <utility>
+import std;
 
 namespace co_async {
 
-template <class T = void>
+export template <class T = void>
 struct NonVoidHelper {
     using Type = T;
 };

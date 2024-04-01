@@ -1,6 +1,6 @@
-#pragma once
+export module co_async:awaiter.details.previous_awaiter;
 
-#include <coroutine>
+import std;
 
 namespace co_async {
 

@@ -1,9 +1,8 @@
-#pragma once
+export module co_async:http.http_status_code;
 
-#include <string_view>
-#include <algorithm>
-#include <iterator>
-#include <co_async/http_status_code.hpp>
+import std;
+import :awaiter.task;
+import :iostream.file_stream;
 
 namespace co_async {
 

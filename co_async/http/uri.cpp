@@ -1,10 +1,14 @@
-#pragma once
+module;
 
 #include <cstdint>
 #include <string>
 #include <ranges>
-#include <co_async/simple_map.hpp>
-#include <co_async/string_utils.hpp>
+
+export module co_async:http.uri;
+
+import std;
+import :utils.simple_map;
+import :utils.string_utils;
 
 namespace co_async {
 

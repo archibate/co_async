@@ -1,26 +1,23 @@
-#pragma once
+export module co_async:awaiter.concepts;
 
-#include <coroutine>
-#include <type_traits>
-#include <concepts>
-#include <co_async/uninitialized.hpp>
-#include <co_async/non_void_helper.hpp>
+import std;
+import :utils.non_void_helper;
 
 namespace co_async {
 
-template <class A>
+export template <class A>
 concept Awaiter = requires(A a, std::coroutine_handle<> h) {
     { a.await_ready() };
     { a.await_suspend(h) };
     { a.await_resume() };
 };
 
-template <class A>
+export template <class A>
 concept Awaitable = Awaiter<A> || requires(A a) {
     { a.operator co_await() } -> Awaiter;
 };
 
-template <class A>
+export template <class A>
 struct AwaitableTraits {
     using Type = A;
 };

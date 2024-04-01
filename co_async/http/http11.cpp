@@ -1,13 +1,11 @@
-#pragma once
+export module co_async:http.http11;
 
-#include <string>
-#include <string_view>
-#include <tuple>
-#include <co_async/task.hpp>
-#include <co_async/simple_map.hpp>
-#include <co_async/http_status_code.hpp>
-#include <co_async/string_utils.hpp>
-#include <co_async/uri.hpp>
+import std;
+import :awaiter.task;
+import :utils.simple_map;
+import :http.http_status_code;
+import :utils.string_utils;
+import :http.uri;
 
 namespace co_async {
 

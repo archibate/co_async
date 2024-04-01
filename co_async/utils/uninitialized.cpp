@@ -1,8 +1,7 @@
-#pragma once
+export module co_async:utils.uninitialized;
 
-#include <utility>
-#include <memory>
-#include <co_async/non_void_helper.hpp>
+import std;
+import :utils.non_void_helper;
 
 namespace co_async {
 

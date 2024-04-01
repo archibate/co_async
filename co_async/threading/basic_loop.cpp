@@ -1,12 +1,9 @@
-#pragma once
+export module co_async:threading.basic_loop;
 
-#include <deque>
-#include <functional>
-#include <type_traits>
-#include <co_async/concepts.hpp>
-#include <co_async/error_handling.hpp>
-#include <co_async/auto_destroy_promise.hpp>
-#include <co_async/task.hpp>
+import std;
+import :awaiter.concepts;
+import :awaiter.details.auto_destroy_promise;
+import :awaiter.task;
 
 namespace co_async {
 

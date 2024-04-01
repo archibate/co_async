@@ -1,16 +1,22 @@
-#pragma once
+module;
 
-#include <span>
-#include <chrono>
+#ifdef __linux__
 #include <liburing.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <co_async/basic_loop.hpp>
-#include <co_async/error_handling.hpp>
-#include <co_async/auto_destroy_promise.hpp>
-#include <co_async/task.hpp>
+#endif
+
+export module co_async:system.uring_loop;
+
+import std;
+
+#ifdef __linux__
+import :threading.basic_loop;
+import :system.error_handling;
+import :awaiter.details.auto_destroy_promise;
+import :awaiter.task;
 
 namespace co_async {
 
@@ -341,3 +347,4 @@ inline Task<int> uring_timeout(UringLoop &loop,
 }
 
 } // namespace co_async
+#endif

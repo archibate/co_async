@@ -1,11 +1,8 @@
-#pragma once
+export module co_async:awaiter.details.make_awaitable;
 
-#include <functional>
-#include <utility>
-#include <type_traits>
-#include <concepts>
-#include <co_async/task.hpp>
-#include <co_async/concepts.hpp>
+import std;
+import :awaiter.task;
+import :awaiter.concepts;
 
 namespace co_async {
 

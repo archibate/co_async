@@ -1,15 +1,10 @@
-#pragma once
+export module co_async:utils.simple_map;
 
-#include <concepts>
-#include <initializer_list>
-#include <functional>
-#include <map>
-#include <optional>
-#include <type_traits>
+import std;
 
 namespace co_async {
 
-template <class K, class V>
+export template <class K, class V>
 struct SimpleMap {
     SimpleMap() = default;
 

@@ -1,8 +1,6 @@
-#pragma once
+export module co_async:utils.rbtree;
 
-#include <cstddef>
-#include <functional>
-#include <utility>
+import std;
 
 namespace co_async {
 

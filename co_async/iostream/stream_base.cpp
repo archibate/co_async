@@ -1,14 +1,7 @@
-#pragma once
+export module co_async:iostream.stream_base;
 
-#include <concepts>
-#include <cstdint>
-#include <span>
-#include <vector>
-#include <string>
-#include <utility>
-#include <optional>
-#include <memory>
-#include <co_async/task.hpp>
+import std;
+import :awaiter.task;
 
 namespace co_async {
 
@@ -132,7 +125,7 @@ private:
     std::size_t mBufSize = 0;
 };
 
-struct StreamShutdownException {};
+export struct StreamShutdownException {};
 
 template <class Writer>
 struct OStreamBase {
@@ -213,7 +206,7 @@ struct IOStreamBase : IStreamBase<StreamBuf>, OStreamBase<StreamBuf> {
           OStreamBase<StreamBuf>(bufferSize) {}
 };
 
-template <class StreamBuf>
+export template <class StreamBuf>
 struct [[nodiscard]] IOStream : IOStreamBase<IOStream<StreamBuf>>, StreamBuf {
     template <class... Args>
         requires std::constructible_from<StreamBuf, Args...>
@@ -224,7 +217,7 @@ struct [[nodiscard]] IOStream : IOStreamBase<IOStream<StreamBuf>>, StreamBuf {
     IOStream() = default;
 };
 
-template <class StreamBuf>
+export template <class StreamBuf>
 struct [[nodiscard]] OStream : OStreamBase<OStream<StreamBuf>>, StreamBuf {
     template <class... Args>
         requires std::constructible_from<StreamBuf, Args...>
@@ -235,7 +228,7 @@ struct [[nodiscard]] OStream : OStreamBase<OStream<StreamBuf>>, StreamBuf {
     OStream() = default;
 };
 
-template <class StreamBuf>
+export template <class StreamBuf>
 struct [[nodiscard]] IStream : IStreamBase<OStream<StreamBuf>>, StreamBuf {
     template <class... Args>
         requires std::constructible_from<StreamBuf, Args...>

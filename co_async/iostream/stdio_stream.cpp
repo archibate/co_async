@@ -1,10 +1,16 @@
-#pragma once
+module;
 
+#ifdef __linux__
 #include <unistd.h>
 #include <termios.h>
-#include <co_async/task.hpp>
-#include <co_async/filesystem.hpp>
-#include <co_async/stream.hpp>
+#endif
+
+export module co_async:iostream.stdio_stream;
+
+import std;
+import :system.fs;
+import :awaiter.task;
+import :iostream.stream_base;
 
 namespace co_async {
 
@@ -18,7 +24,7 @@ inline void disableCanon(FileHandle &file) {
     }
 }
 
-struct StdioBuf {
+export struct StdioBuf {
     FileHandle &mFileIn;
     FileHandle &mFileOut;
 
@@ -31,7 +37,7 @@ struct StdioBuf {
     }
 };
 
-using StdioStream = IOStream<StdioBuf>;
+export using StdioStream = IOStream<StdioBuf>;
 
 template <int fileNo>
 inline FileHandle &stdHandle() {
@@ -39,7 +45,7 @@ inline FileHandle &stdHandle() {
     return h;
 }
 
-inline StdioStream &ios() {
+export inline StdioStream &ios() {
     static thread_local StdioStream s(stdHandle<STDIN_FILENO>(), stdHandle<STDOUT_FILENO>());
     return s;
 }

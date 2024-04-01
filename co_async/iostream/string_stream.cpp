@@ -1,13 +1,13 @@
-#pragma once
+export module co_async:iostream.string_stream;
 
-#include <span>
-#include <utility>
-#include <string>
-#include <co_async/stream_base.hpp>
+import std;
+import :system.fs;
+import :awaiter.task;
+import :iostream.stream_base;
 
 namespace co_async {
 
-struct StringReadBuf {
+export struct StringReadBuf {
     std::string_view mStringView;
     std::size_t mPosition;
 
@@ -33,7 +33,7 @@ struct StringReadBuf {
     }
 };
 
-struct StringWriteBuf {
+export struct StringWriteBuf {
     std::string mString;
 
     StringWriteBuf() noexcept {}
@@ -55,7 +55,7 @@ struct StringWriteBuf {
     }
 };
 
-using StringIStream = IStream<StringReadBuf>;
-using StringOStream = OStream<StringWriteBuf>;
+export using StringIStream = IStream<StringReadBuf>;
+export using StringOStream = OStream<StringWriteBuf>;
 
 } // namespace co_async

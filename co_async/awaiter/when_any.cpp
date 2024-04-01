@@ -1,15 +1,11 @@
-#pragma once
+export module co_async:awaiter.when_any;
 
-#include <coroutine>
-#include <span>
-#include <exception>
-#include <vector>
-#include <variant>
-#include <type_traits>
-#include <co_async/uninitialized.hpp>
-#include <co_async/task.hpp>
-#include <co_async/return_previous.hpp>
-#include <co_async/concepts.hpp>
+import std;
+import :utils.uninitialized;
+import :utils.non_void_helper;
+import :awaiter.task;
+import :awaiter.details.return_previous;
+import :awaiter.concepts;
 
 namespace co_async {
 
@@ -78,14 +74,14 @@ whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
     co_return varResult.moveValue();
 }
 
-template <Awaitable... Ts>
+export template <Awaitable... Ts>
     requires(sizeof...(Ts) != 0)
 auto when_any(Ts &&...ts) {
     return whenAnyImpl(std::make_index_sequence<sizeof...(Ts)>{},
                        std::forward<Ts>(ts)...);
 }
 
-template <Awaitable T, class Alloc = std::allocator<T>>
+export template <Awaitable T, class Alloc = std::allocator<T>>
 Task<typename AwaitableTraits<T>::RetType>
 when_any(std::vector<T, Alloc> const &tasks) {
     WhenAnyCtlBlock control{tasks.size()};

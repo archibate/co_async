@@ -1,10 +1,10 @@
-#pragma once
+module;
 
-#include <cerrno>
-#include <system_error>
-#if CO_ASYNC_DEBUG
-#include <source_location>
-#endif
+#include <errno.h>
+
+export module co_async:system.error_handling;
+
+import std;
 
 namespace co_async {
 

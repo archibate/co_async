@@ -1,7 +1,6 @@
-#pragma once
+export module co_async:awaiter.details.current_coroutine;
 
-#include <coroutine>
-#include <co_async/task.hpp>
+import std;
 
 namespace co_async {
 

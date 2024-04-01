@@ -25,7 +25,8 @@ template <std::integral T>
 struct from_string_t<T> {
     std::optional<T> operator()(std::string_view s, int base = 10) const {
         T result;
-        auto [p, ec] = std::from_chars(s.data(), s.data() + s.size(), result, base);
+        auto [p, ec] =
+            std::from_chars(s.data(), s.data() + s.size(), result, base);
         if (ec != std::errc()) [[unlikely]] {
             return std::nullopt;
         }
@@ -38,9 +39,12 @@ struct from_string_t<T> {
 
 template <std::floating_point T>
 struct from_string_t<T> {
-    std::optional<T> operator()(std::string_view s, std::chars_format fmt = std::chars_format::general) const {
+    std::optional<T>
+    operator()(std::string_view s,
+               std::chars_format fmt = std::chars_format::general) const {
         T result;
-        auto [p, ec] = std::from_chars(s.data(), s.data() + s.size(), result, fmt);
+        auto [p, ec] =
+            std::from_chars(s.data(), s.data() + s.size(), result, fmt);
         if (ec != std::errc()) [[unlikely]] {
             return std::nullopt;
         }
@@ -90,7 +94,8 @@ template <std::integral T>
 struct to_string_t<T> {
     void operator()(std::string &result, T value) const {
         result.resize(std::numeric_limits<T>::digits10 + 1, '\0');
-        auto [p, ec] = std::to_chars(result.data(), result.data() + result.size(), value);
+        auto [p, ec] =
+            std::to_chars(result.data(), result.data() + result.size(), value);
         if (ec != std::errc()) [[unlikely]] {
             throw std::system_error(std::make_error_code(ec), "to_chars");
         }
@@ -102,7 +107,8 @@ template <std::floating_point T>
 struct to_string_t<T> {
     void operator()(std::string &result, T value) const {
         result.resize(std::numeric_limits<T>::max_digits10 + 1, '\0');
-        auto [p, ec] = std::to_chars(result.data(), result.data() + result.size(), value);
+        auto [p, ec] =
+            std::to_chars(result.data(), result.data() + result.size(), value);
         if (ec != std::errc()) [[unlikely]] {
             throw std::system_error(std::make_error_code(ec), "to_chars");
         }
@@ -112,4 +118,4 @@ struct to_string_t<T> {
 
 export inline constexpr to_string_t<> to_string;
 
-}
+} // namespace co_async

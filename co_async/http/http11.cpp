@@ -46,14 +46,12 @@ struct HTTPRequest {
         using namespace std::string_view_literals;
         auto line = co_await sock.getline("\r\n"sv);
         auto pos = line.find(' ');
-        if (pos == line.npos || pos == line.size() - 1)
-            [[unlikely]] {
+        if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
             throw std::invalid_argument("invalid http request");
         }
         method = line.substr(0, pos);
         auto pos2 = line.find(' ', pos + 1);
-        if (pos2 == line.npos || pos2 == line.size() - 1)
-            [[unlikely]] {
+        if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
             throw std::invalid_argument("invalid http request");
         }
         uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
@@ -63,8 +61,8 @@ struct HTTPRequest {
                 break;
             }
             auto pos = line.find(':');
-            if (pos == line.npos || pos == line.size() - 1 || line[pos + 1] != ' ')
-                [[unlikely]] {
+            if (pos == line.npos || pos == line.size() - 1 ||
+                line[pos + 1] != ' ') [[unlikely]] {
                 throw std::invalid_argument("invalid http request");
             }
             auto key = line.substr(0, pos);
@@ -75,7 +73,8 @@ struct HTTPRequest {
             }
             headers.insert_or_assign(std::move(key), line.substr(pos + 2));
         }
-        if (auto p = headers.get("content-length"sv, from_string<std::size_t>)) {
+        if (auto p =
+                headers.get("content-length"sv, from_string<std::size_t>)) {
             body = co_await sock.getn(*p);
         }
     }
@@ -128,8 +127,8 @@ struct HTTPResponse {
                 break;
             }
             auto pos = line.find(':');
-            if (pos == line.npos || pos == line.size() - 1 || line[pos + 1] != ' ')
-                [[unlikely]] {
+            if (pos == line.npos || pos == line.size() - 1 ||
+                line[pos + 1] != ' ') [[unlikely]] {
                 throw std::invalid_argument("invalid http response");
             }
             auto key = line.substr(0, pos);
@@ -140,7 +139,8 @@ struct HTTPResponse {
             }
             headers.insert_or_assign(std::move(key), line.substr(pos + 2));
         }
-        if (auto p = headers.get("content-length"sv, from_string<std::size_t>)) {
+        if (auto p =
+                headers.get("content-length"sv, from_string<std::size_t>)) {
             body = co_await sock.getn(*p);
         }
     }
@@ -150,4 +150,4 @@ struct HTTPResponse {
     }
 };
 
-}
+} // namespace co_async

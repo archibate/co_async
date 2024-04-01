@@ -11,4 +11,4 @@ export inline void enqueue(auto task) {
     loop_enqueue(loop, std::move(task));
 }
 
-}
+} // namespace co_async

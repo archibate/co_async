@@ -18,7 +18,8 @@ export struct StringReadBuf {
           mPosition(0) {}
 
     Task<std::size_t> read(std::span<char> buffer) {
-        std::size_t size = std::min(buffer.size(), mStringView.size() - mPosition);
+        std::size_t size =
+            std::min(buffer.size(), mStringView.size() - mPosition);
         std::copy_n(mStringView.begin() + mPosition, size, buffer.begin());
         mPosition += size;
         co_return size;
@@ -39,6 +40,7 @@ export struct StringWriteBuf {
     StringWriteBuf() noexcept {}
 
     StringWriteBuf(std::string &&str) noexcept : mString(std::move(str)) {}
+
     StringWriteBuf(std::string_view str) : mString(str) {}
 
     Task<std::size_t> write(std::span<char const> buffer) {

@@ -27,7 +27,7 @@ auto bypassSpecificError(auto res, int bypassval = -ETIME) {
 }
 
 auto checkErrorReturn(auto res, std::source_location const &loc =
-                              std::source_location::current()) {
+                                    std::source_location::current()) {
     if (res < 0) [[unlikely]] {
         throw std::system_error(-res, std::system_category(),
                                 (std::string)loc.file_name() + ":" +
@@ -36,8 +36,9 @@ auto checkErrorReturn(auto res, std::source_location const &loc =
     return res;
 }
 
-auto checkErrorNonBlock(auto res, int blockres = 0, int blockerr = EWOULDBLOCK, std::source_location const &loc =
-                                         std::source_location::current()) {
+auto checkErrorNonBlock(
+    auto res, int blockres = 0, int blockerr = EWOULDBLOCK,
+    std::source_location const &loc = std::source_location::current()) {
     if (res == -1) {
         if (errno != blockerr) [[unlikely]] {
             throw std::system_error(errno, std::system_category(),
@@ -63,7 +64,8 @@ auto checkErrorReturn(auto res) {
     return res;
 }
 
-auto checkErrorNonBlock(auto res, int blockres = 0, int blockerr = EWOULDBLOCK) {
+auto checkErrorNonBlock(auto res, int blockres = 0,
+                        int blockerr = EWOULDBLOCK) {
     if (res == -1) {
         if (errno != blockerr) [[unlikely]] {
             throw std::system_error(errno, std::system_category());

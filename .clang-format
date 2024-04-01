@@ -15,15 +15,12 @@ IndentRequiresClause: true
 BreakBeforeConceptDeclarations: Always
 IndentAccessModifiers: false
 AllowShortIfStatementsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
-AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortLambdasOnASingleLine: Inline
 AllowAllArgumentsOnNextLine: true
-AllowAllParametersOfDeclarationOnNextLine: true
 AlignTrailingComments: true
 AlignEscapedNewlines: true
 AlignConsecutiveDeclarations: false
@@ -42,7 +39,6 @@ SpaceBeforeParens: ControlStatements
 SpaceInEmptyBlock: false
 AlwaysBreakTemplateDeclarations: true
 # BreakTemplateDeclarations: Yes
-LambdaBodyIndentation: Signature
 SeparateDefinitionBlocks: Always
 BreakBeforeBraces: Custom
 BraceWrapping:

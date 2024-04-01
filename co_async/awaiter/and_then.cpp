@@ -6,7 +6,8 @@ import :awaiter.task;
 
 namespace co_async {
 
-export template <Awaitable A, std::invocable<typename AwaitableTraits<A>::RetType> F>
+export template <Awaitable A,
+                 std::invocable<typename AwaitableTraits<A>::RetType> F>
     requires(!std::same_as<void, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<
     std::invoke_result_t<F, typename AwaitableTraits<A>::RetType>>::Type>

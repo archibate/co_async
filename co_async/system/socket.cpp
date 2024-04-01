@@ -187,7 +187,7 @@ export inline Task<SocketHandle> socket_connect(SocketAddress const &addr) {
 }
 
 export inline Task<SocketServer> server_bind(SocketAddress const &addr,
-                                      int backlog = SOMAXCONN) {
+                                             int backlog = SOMAXCONN) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
     SocketServer serv(sock.releaseFile());

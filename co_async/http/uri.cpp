@@ -130,4 +130,4 @@ public:
     }
 };
 
-}
+} // namespace co_async

@@ -91,7 +91,7 @@ export enum class OpenMode : int {
 };
 
 export inline Task<FileHandle> fs_open(FileHandle const &dir, FilePath path,
-                                OpenMode mode, mode_t access = 0644) {
+                                       OpenMode mode, mode_t access = 0644) {
     int oflags = (int)mode;
     int fd = co_await uring_openat(loop, path.dir_file(), path.c_str(), oflags,
                                    access);
@@ -142,14 +142,14 @@ export inline Task<std::optional<FileStat>> fs_stat(FilePath path) {
     co_return ret;
 }
 
-export inline Task<std::size_t> fs_read(FileHandle &file, std::span<char> buffer,
-                                 std::uint64_t offset = -1) {
+export inline Task<std::size_t>
+fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = -1) {
     return uring_read(loop, file.fileNo(), buffer, offset);
 }
 
 export inline Task<std::size_t> fs_write(FileHandle &file,
-                                  std::span<char const> buffer,
-                                  std::uint64_t offset = -1) {
+                                         std::span<char const> buffer,
+                                         std::uint64_t offset = -1) {
     return uring_write(loop, file.fileNo(), buffer, offset);
 }
 

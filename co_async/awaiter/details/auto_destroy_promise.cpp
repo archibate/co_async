@@ -8,7 +8,8 @@ namespace co_async {
 struct AutoDestroyPromise : Promise<void> {
     auto final_suspend() noexcept {
         auto ret = Promise<void>::final_suspend();
-        std::coroutine_handle<AutoDestroyPromise>::from_promise(*this).destroy();
+        std::coroutine_handle<AutoDestroyPromise>::from_promise(*this)
+            .destroy();
         return ret;
     }
 

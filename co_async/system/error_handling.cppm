@@ -1,9 +1,7 @@
 module;
 
 #ifdef __linux__
-#include <linux/errno.h>
-extern "C" [[gnu::const]] int *__errno_location(void) noexcept;
-# define errno (*__errno_location())
+#include <errno.h>
 #endif
 
 export module co_async:system.error_handling;
@@ -12,7 +10,7 @@ import std;
 
 namespace co_async {
 
-#if CO_ASYNC_DEBUG
+#ifndef NDEBUG
 auto checkError(auto res, std::source_location const &loc =
                               std::source_location::current()) {
     if (res == -1) [[unlikely]] {

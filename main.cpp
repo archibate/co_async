@@ -1,14 +1,15 @@
+#define DEBUG_SHOW 1
 #include "co_async/inc/debug.hpp"
 
-import std;
 import co_async;
+import std;
 
 using namespace co_async;
 using namespace std::literals;
 
 Task<> amain() {
-    HTTPServer http;
     auto serv = co_await server_bind({"127.0.0.1", 8080});
+    HTTPServer http;
 
     debug(), "正在监听", serv.address();
     while (1) {

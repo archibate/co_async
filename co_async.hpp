@@ -98,7 +98,7 @@
 #if __cplusplus >= 201703L
 #include <any>
 #include <charconv>
-// #include <execution>
+#include <execution>
 #include <filesystem>
 #include <optional>
 #include <memory_resource>
@@ -144,7 +144,7 @@
 #endif
 #endif
 
-// #line 1 "./co_async/utils/non_void_helper.cpp"
+// #line 1 "./co_async/utils/non_void_helper.cppm"
 
 
 
@@ -174,7 +174,7 @@ struct NonVoidHelper<void> {
 
 } // namespace co_async
 
-// #line 1 "./co_async/utils/uninitialized.cpp"
+// #line 1 "./co_async/utils/uninitialized.cppm"
 
 
 
@@ -225,7 +225,7 @@ struct Uninitialized<T &&> : Uninitialized<T> {};
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/details/previous_awaiter.cpp"
+// #line 1 "./co_async/awaiter/details/previous_awaiter.cppm"
 
 
 
@@ -249,7 +249,7 @@ struct PreviousAwaiter {
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/task.cpp"
+// #line 1 "./co_async/awaiter/task.cppm"
 
 
 
@@ -406,7 +406,7 @@ T run_task_on(Loop &loop, Task<T, P> const &t) {
 
 } // namespace co_async
 
-// #line 1 "./co_async/utils/simple_map.cpp"
+// #line 1 "./co_async/utils/simple_map.cppm"
 
 
 
@@ -509,7 +509,7 @@ private:
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/concepts.cpp"
+// #line 1 "./co_async/awaiter/concepts.cppm"
 
 
 
@@ -563,7 +563,7 @@ struct TypeList<First, Ts...> {
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/details/auto_destroy_promise.cpp"
+// #line 1 "./co_async/awaiter/details/auto_destroy_promise.cppm"
 
 
 
@@ -576,8 +576,7 @@ struct AutoDestroyPromise {
     }
 
     auto final_suspend() noexcept {
-        std::coroutine_handle<AutoDestroyPromise>::from_promise(*this)
-            .destroy();
+        /* std::coroutine_handle<AutoDestroyPromise>::from_promise(*this).destroy(); */
         return std::suspend_always();
     }
 
@@ -596,7 +595,7 @@ struct AutoDestroyPromise {
 
 } // namespace co_async
 
-// #line 1 "./co_async/threading/basic_loop.cpp"
+// #line 1 "./co_async/threading/basic_loop.cppm"
 
 
 
@@ -644,13 +643,11 @@ inline void loop_enqueue(BasicLoop &loop, auto task) {
 
 } // namespace co_async
 
-// #line 1 "./co_async/system/error_handling.cpp"
+// #line 1 "./co_async/system/error_handling.cppm"
 
 
 #ifdef __linux__
-#include <linux/errno.h>
-extern "C" [[gnu::const]] int *__errno_location(void) noexcept;
-# define errno (*__errno_location())
+#include <errno.h>
 #endif
 
 
@@ -659,7 +656,7 @@ extern "C" [[gnu::const]] int *__errno_location(void) noexcept;
 
 namespace co_async {
 
-#if CO_ASYNC_DEBUG
+#ifndef NDEBUG
 auto checkError(auto res, std::source_location const &loc =
                               std::source_location::current()) {
     if (res == -1) [[unlikely]] {
@@ -729,7 +726,7 @@ auto checkErrorNonBlock(auto res, int blockres = 0,
 
 } // namespace co_async
 
-// #line 1 "./co_async/system/uring_loop.cpp"
+// #line 1 "./co_async/system/uring_loop.cppm"
 
 
 #ifdef __linux__
@@ -1079,7 +1076,7 @@ inline Task<int> uring_timeout(UringLoop &loop,
 } // namespace co_async
 #endif
 
-// #line 1 "./co_async/system/system_loop.cpp"
+// #line 1 "./co_async/system/system_loop.cppm"
 
 
 
@@ -1094,11 +1091,11 @@ namespace co_async {
 
 } // namespace co_async
 
-// #line 1 "./co_async/system/fs.cpp"
+// #line 1 "./co_async/system/fs.cppm"
 
 
 #ifdef __linux__
-#include <linux/errno.h>
+#include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -1250,7 +1247,7 @@ fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = -1) {
 } // namespace co_async
 #endif
 
-// #line 1 "./co_async/iostream/stream_base.cpp"
+// #line 1 "./co_async/iostream/stream_base.cppm"
 
 
 
@@ -1493,7 +1490,7 @@ struct [[nodiscard]] IStream : IStreamBase<OStream<StreamBuf>>, StreamBuf {
 
 } // namespace co_async
 
-// #line 1 "./co_async/iostream/file_stream.cpp"
+// #line 1 "./co_async/iostream/file_stream.cppm"
 
 
 
@@ -1525,7 +1522,7 @@ private:
 
 } // namespace co_async
 
-// #line 1 "./co_async/http/http_status_code.cpp"
+// #line 1 "./co_async/http/http_status_code.cppm"
 
 
 
@@ -1616,7 +1613,7 @@ inline std::string_view getHTTPStatusName(int status) {
 
 } // namespace co_async
 
-// #line 1 "./co_async/utils/string_utils.cpp"
+// #line 1 "./co_async/utils/string_utils.cppm"
 
 
 
@@ -1739,7 +1736,7 @@ struct to_string_t<T> {
 
 } // namespace co_async
 
-// #line 1 "./co_async/http/uri.cpp"
+// #line 1 "./co_async/http/uri.cppm"
 
 
 
@@ -1866,7 +1863,7 @@ public:
 
 } // namespace co_async
 
-// #line 1 "./co_async/http/http11.cpp"
+// #line 1 "./co_async/http/http11.cppm"
 
 
 
@@ -2016,7 +2013,7 @@ struct HTTPResponse {
 
 } // namespace co_async
 
-// #line 1 "./co_async/system/socket.cpp"
+// #line 1 "./co_async/system/socket.cppm"
 
 
 #ifdef __linux__
@@ -2223,7 +2220,7 @@ inline Task<SocketHandle> createSocket(int family, int type) {
 } // namespace co_async
 #endif
 
-// #line 1 "./co_async/http/http_server.cpp"
+// #line 1 "./co_async/http/http_server.cppm"
 
 
 
@@ -2280,7 +2277,7 @@ private:
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/details/return_previous.cpp"
+// #line 1 "./co_async/awaiter/details/return_previous.cppm"
 
 
 
@@ -2331,7 +2328,7 @@ struct [[nodiscard]] ReturnPreviousTask {
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/when_all.cpp"
+// #line 1 "./co_async/awaiter/when_all.cppm"
 
 
 
@@ -2449,7 +2446,7 @@ when_all(std::vector<T, Alloc> const &tasks) {
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/when_any.cpp"
+// #line 1 "./co_async/awaiter/when_any.cppm"
 
 
 
@@ -2547,7 +2544,7 @@ when_any(std::vector<T, Alloc> const &tasks) {
 
 } // namespace co_async
 
-// #line 1 "./co_async/iostream/stdio_stream.cpp"
+// #line 1 "./co_async/iostream/stdio_stream.cppm"
 
 
 #ifdef __linux__
@@ -2600,7 +2597,7 @@ inline FileHandle &stdHandle() {
 
 } // namespace co_async
 
-// #line 1 "./co_async/iostream/string_stream.cpp"
+// #line 1 "./co_async/iostream/string_stream.cppm"
 
 
 
@@ -2662,11 +2659,11 @@ namespace co_async {
 
 } // namespace co_async
 
-// #line 1 "./co_async/co_async.cpp"
+// #line 1 "./co_async/co_async.cppm"
 
 
 
-// #line 1 "./co_async/awaiter/generator.cpp"
+// #line 1 "./co_async/awaiter/generator.cppm"
 
 
 
@@ -2918,7 +2915,7 @@ auto run_generator_on(Loop &loop, Generator<T, P> const &g) {
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/and_then.cpp"
+// #line 1 "./co_async/awaiter/and_then.cppm"
 
 
 
@@ -2953,7 +2950,7 @@ Task<typename AwaitableTraits<F>::RetType> and_then(A &&a, F &&f) {
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/details/make_awaitable.cpp"
+// #line 1 "./co_async/awaiter/details/make_awaitable.cppm"
 
 
 
@@ -2991,7 +2988,7 @@ ensureTask(A a) {
 
 } // namespace co_async
 
-// #line 1 "./co_async/awaiter/details/current_coroutine.cpp"
+// #line 1 "./co_async/awaiter/details/current_coroutine.cppm"
 
 
 
@@ -3018,7 +3015,7 @@ struct CurrentCoroutineAwaiter {
 
 } // namespace co_async
 
-// #line 1 "./co_async/utils/rbtree.cpp"
+// #line 1 "./co_async/utils/rbtree.cppm"
 
 
 

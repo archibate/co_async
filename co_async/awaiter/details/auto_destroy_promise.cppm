@@ -10,8 +10,7 @@ struct AutoDestroyPromise {
     }
 
     auto final_suspend() noexcept {
-        std::coroutine_handle<AutoDestroyPromise>::from_promise(*this)
-            .destroy();
+        /* std::coroutine_handle<AutoDestroyPromise>::from_promise(*this).destroy(); */
         return std::suspend_always();
     }
 

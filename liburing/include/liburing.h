@@ -13,10 +13,10 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/uio.h>
-#include <linux/errno.h>
-/* #include <signal.h> */
+#include <errno.h>
+#include <signal.h>
 #include <stdbool.h>
-/* #include <inttypes.h> */
+#include <inttypes.h>
 #include <time.h>
 #include <fcntl.h>
 #include <sched.h>

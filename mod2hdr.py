@@ -20,7 +20,7 @@ EXPORT = re.compile(r'^(\s*export\s+)')
 for dirpath, dirnames, filenames in os.walk(dir):
     for filename in filenames:
         filepath = os.path.join(dirpath, filename)
-        if filepath.endswith('.cpp'):
+        if filepath.endswith('.cppm'):
             with open(filepath, 'r') as f:
                 current = None
                 parent = None
@@ -54,6 +54,7 @@ for dirpath, dirnames, filenames in os.walk(dir):
                         export = m.group(0)
                         line = (' ' * len(export)) + line[len(export):]
                     this_module['source'] += line + '\n'
+                print(current)
                 if current:
                     modules[current] = this_module
 

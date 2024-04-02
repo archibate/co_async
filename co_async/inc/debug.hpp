@@ -1,10 +1,12 @@
 #pragma once
 
-#if CO_ASYNC_DEBUG
+#if DEBUG_SHOW
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
+#if DEBUG_SHOW_SOURCE
 #include <fstream>
+#endif
 #include <source_location>
 #include <type_traits>
 #include <typeinfo>
@@ -14,8 +16,6 @@
 #if defined(__unix__) && __has_include(<cxxabi.h>)
 #include <cxxabi.h>
 #endif
-
-namespace co_async {
 
 struct debug {
 private:
@@ -199,7 +199,7 @@ private:
         if (line) {
             oss << '[' << line << ']' << '\t';
         } else {
-#if CO_ASYNC_DEBUG >= 2
+#if DEBUG_SHOW_SOURCE
             static thread_local std::unordered_map<std::string, std::string>
                 fileCache;
             auto key = std::to_string(loc.line()) + loc.file_name();
@@ -367,9 +367,7 @@ public:
     }
 };
 
-} // namespace co_async
 #else
-namespace co_async {
 
 struct debug {
     debug(bool = true, char const * = nullptr) noexcept {}
@@ -446,5 +444,4 @@ public:
     }
 };
 
-} // namespace co_async
 #endif

@@ -1,7 +1,7 @@
 module;
 
 #ifdef __linux__
-#include <errno.h>
+#include <linux/errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>

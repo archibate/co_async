@@ -1,6 +1,10 @@
 module;
 
-#include <errno.h>
+#ifdef __linux__
+#include <linux/errno.h>
+extern "C" [[gnu::const]] int *__errno_location(void) noexcept;
+# define errno (*__errno_location())
+#endif
 
 export module co_async:system.error_handling;
 

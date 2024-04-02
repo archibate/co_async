@@ -1,0 +1,5 @@
+module std_mod {
+    requires cplusplus20
+    header "std.hpp"
+    export *
+}

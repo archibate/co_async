@@ -1,8 +1,7 @@
 #include "co_async/inc/debug.hpp"
-#include "co_async.hpp"
 
-/* import std; */
-/* import co_async; */
+import std;
+import co_async;
 
 using namespace co_async;
 using namespace std::literals;

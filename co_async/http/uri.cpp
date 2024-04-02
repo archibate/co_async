@@ -1,9 +1,3 @@
-module;
-
-#include <cstdint>
-#include <string>
-#include <ranges>
-
 export module co_async:http.uri;
 
 import std;

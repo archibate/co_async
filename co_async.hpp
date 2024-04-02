@@ -144,12 +144,14 @@
 #endif
 #endif
 
-/// ./co_async/utils/non_void_helper.cpp
+// #line 1 "./co_async/utils/non_void_helper.cpp"
+
+
 
 
 namespace co_async {
 
-template <class T = void>
+       template <class T = void>
 struct NonVoidHelper {
     using Type = T;
 };
@@ -172,7 +174,9 @@ struct NonVoidHelper<void> {
 
 } // namespace co_async
 
-/// ./co_async/utils/uninitialized.cpp
+// #line 1 "./co_async/utils/uninitialized.cpp"
+
+
 
 
 namespace co_async {
@@ -221,7 +225,9 @@ struct Uninitialized<T &&> : Uninitialized<T> {};
 
 } // namespace co_async
 
-/// ./co_async/awaiter/details/previous_awaiter.cpp
+// #line 1 "./co_async/awaiter/details/previous_awaiter.cpp"
+
+
 
 
 namespace co_async {
@@ -243,7 +249,9 @@ struct PreviousAwaiter {
 
 } // namespace co_async
 
-/// ./co_async/awaiter/task.cpp
+// #line 1 "./co_async/awaiter/task.cpp"
+
+
 
 
 namespace co_async {
@@ -328,7 +336,7 @@ struct Promise<void> {
     Promise &operator=(Promise &&) = delete;
 };
 
-template <class T = void, class P = Promise<T>>
+       template <class T = void, class P = Promise<T>>
 struct [[nodiscard]] Task {
     using promise_type = P;
 
@@ -385,7 +393,7 @@ private:
     std::coroutine_handle<promise_type> mCoroutine;
 };
 
-template <class Loop, class T, class P>
+       template <class Loop, class T, class P>
 T run_task_on(Loop &loop, Task<T, P> const &t) {
     auto a = t.operator co_await();
     auto c = a.await_suspend(std::noop_coroutine());
@@ -398,12 +406,14 @@ T run_task_on(Loop &loop, Task<T, P> const &t) {
 
 } // namespace co_async
 
-/// ./co_async/utils/simple_map.cpp
+// #line 1 "./co_async/utils/simple_map.cpp"
+
+
 
 
 namespace co_async {
 
-template <class K, class V>
+       template <class K, class V>
 struct SimpleMap {
     SimpleMap() = default;
 
@@ -499,24 +509,26 @@ private:
 
 } // namespace co_async
 
-/// ./co_async/awaiter/concepts.cpp
+// #line 1 "./co_async/awaiter/concepts.cpp"
+
+
 
 
 namespace co_async {
 
-template <class A>
+       template <class A>
 concept Awaiter = requires(A a, std::coroutine_handle<> h) {
     { a.await_ready() };
     { a.await_suspend(h) };
     { a.await_resume() };
 };
 
-template <class A>
+       template <class A>
 concept Awaitable = Awaiter<A> || requires(A a) {
     { a.operator co_await() } -> Awaiter;
 };
 
-template <class A>
+       template <class A>
 struct AwaitableTraits {
     using Type = A;
 };
@@ -551,7 +563,9 @@ struct TypeList<First, Ts...> {
 
 } // namespace co_async
 
-/// ./co_async/awaiter/details/auto_destroy_promise.cpp
+// #line 1 "./co_async/awaiter/details/auto_destroy_promise.cpp"
+
+
 
 
 namespace co_async {
@@ -582,7 +596,9 @@ struct AutoDestroyPromise {
 
 } // namespace co_async
 
-/// ./co_async/threading/basic_loop.cpp
+// #line 1 "./co_async/threading/basic_loop.cpp"
+
+
 
 
 namespace co_async {
@@ -628,9 +644,12 @@ inline void loop_enqueue(BasicLoop &loop, auto task) {
 
 } // namespace co_async
 
-/// ./co_async/system/error_handling.cpp
+// #line 1 "./co_async/system/error_handling.cpp"
+
 
 #include <errno.h>
+
+
 
 
 
@@ -706,7 +725,8 @@ auto checkErrorNonBlock(auto res, int blockres = 0,
 
 } // namespace co_async
 
-/// ./co_async/system/uring_loop.cpp
+// #line 1 "./co_async/system/uring_loop.cpp"
+
 
 #ifdef __linux__
 #include <liburing.h>
@@ -715,6 +735,8 @@ auto checkErrorNonBlock(auto res, int blockres = 0,
 #include <unistd.h>
 #include <fcntl.h>
 #endif
+
+
 
 
 
@@ -1053,20 +1075,23 @@ inline Task<int> uring_timeout(UringLoop &loop,
 } // namespace co_async
 #endif
 
-/// ./co_async/system/system_loop.cpp
+// #line 1 "./co_async/system/system_loop.cpp"
+
+
 
 
 namespace co_async {
 
-inline UringLoop loop;
+       inline UringLoop loop;
 
-inline void enqueue(auto task) {
+       inline void enqueue(auto task) {
     loop_enqueue(loop, std::move(task));
 }
 
 } // namespace co_async
 
-/// ./co_async/system/fs.cpp
+// #line 1 "./co_async/system/fs.cpp"
+
 
 #ifdef __linux__
 #include <errno.h>
@@ -1077,12 +1102,14 @@ inline void enqueue(auto task) {
 
 
 
+
+
 #ifdef __linux__
 
 
 namespace co_async {
 
-struct [[nodiscard]] FileHandle {
+       struct [[nodiscard]] FileHandle {
     FileHandle() : mFileNo(-1) {}
 
     explicit FileHandle(int fileNo) noexcept : mFileNo(fileNo) {}
@@ -1115,7 +1142,7 @@ private:
     int mFileNo;
 };
 
-struct [[nodiscard]] FilePath {
+       struct [[nodiscard]] FilePath {
     explicit FilePath(std::filesystem::path path, int dirfd = AT_FDCWD)
         : mPath(path),
           mDirFd(dirfd) {}
@@ -1137,7 +1164,7 @@ private:
     int mDirFd;
 };
 
-struct FileStat {
+       struct FileStat {
     struct statx *getNativeStatx() {
         return &mStatx;
     }
@@ -1146,14 +1173,14 @@ private:
     struct statx mStatx;
 };
 
-enum class OpenMode : int {
+       enum class OpenMode : int {
     Read = O_RDONLY,
     Write = O_WRONLY | O_TRUNC | O_CREAT,
     ReadWrite = O_RDWR | O_CREAT,
     Append = O_WRONLY | O_APPEND | O_CREAT,
 };
 
-inline Task<FileHandle> fs_open(FileHandle const &dir, FilePath path,
+       inline Task<FileHandle> fs_open(FileHandle const &dir, FilePath path,
                                        OpenMode mode, mode_t access = 0644) {
     int oflags = (int)mode;
     int fd = co_await uring_openat(loop, path.dir_file(), path.c_str(), oflags,
@@ -1162,34 +1189,34 @@ inline Task<FileHandle> fs_open(FileHandle const &dir, FilePath path,
     co_return file;
 }
 
-inline Task<> fs_close(FileHandle &&file) {
+       inline Task<> fs_close(FileHandle &&file) {
     co_await uring_close(loop, file.fileNo());
     file.releaseFile();
 }
 
-inline Task<> fs_mkdir(FilePath path, mode_t access = 0755) {
+       inline Task<> fs_mkdir(FilePath path, mode_t access = 0755) {
     co_await uring_mkdirat(loop, path.dir_file(), path.c_str(), access);
 }
 
-inline Task<> fs_link(FilePath oldpath, FilePath newpath) {
+       inline Task<> fs_link(FilePath oldpath, FilePath newpath) {
     co_await uring_linkat(loop, oldpath.dir_file(), oldpath.c_str(),
                           newpath.dir_file(), newpath.c_str(), 0);
 }
 
-inline Task<> fs_symlink(FilePath target, FilePath linkpath) {
+       inline Task<> fs_symlink(FilePath target, FilePath linkpath) {
     co_await uring_symlinkat(loop, target.c_str(), linkpath.dir_file(),
                              linkpath.c_str());
 }
 
-inline Task<> fs_unlink(FilePath path) {
+       inline Task<> fs_unlink(FilePath path) {
     co_await uring_unlinkat(loop, path.dir_file(), path.c_str(), 0);
 }
 
-inline Task<> fs_rmdir(FilePath path) {
+       inline Task<> fs_rmdir(FilePath path) {
     co_await uring_unlinkat(loop, path.dir_file(), path.c_str(), AT_REMOVEDIR);
 }
 
-inline Task<std::optional<FileStat>> fs_stat(FilePath path) {
+       inline Task<std::optional<FileStat>> fs_stat(FilePath path) {
     FileStat ret;
     int res = co_await uring_statx(loop, path.dir_file(), path.c_str(), 0,
                                    STATX_ALL, ret.getNativeStatx());
@@ -1205,12 +1232,12 @@ inline Task<std::optional<FileStat>> fs_stat(FilePath path) {
     co_return ret;
 }
 
-inline Task<std::size_t>
+       inline Task<std::size_t>
 fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = -1) {
     return uring_read(loop, file.fileNo(), buffer, offset);
 }
 
-inline Task<std::size_t> fs_write(FileHandle &file,
+       inline Task<std::size_t> fs_write(FileHandle &file,
                                          std::span<char const> buffer,
                                          std::uint64_t offset = -1) {
     return uring_write(loop, file.fileNo(), buffer, offset);
@@ -1219,7 +1246,9 @@ inline Task<std::size_t> fs_write(FileHandle &file,
 } // namespace co_async
 #endif
 
-/// ./co_async/iostream/stream_base.cpp
+// #line 1 "./co_async/iostream/stream_base.cpp"
+
+
 
 
 namespace co_async {
@@ -1344,7 +1373,7 @@ private:
     std::size_t mBufSize = 0;
 };
 
-struct StreamShutdownException {};
+       struct StreamShutdownException {};
 
 template <class Writer>
 struct OStreamBase {
@@ -1425,7 +1454,7 @@ struct IOStreamBase : IStreamBase<StreamBuf>, OStreamBase<StreamBuf> {
           OStreamBase<StreamBuf>(bufferSize) {}
 };
 
-template <class StreamBuf>
+       template <class StreamBuf>
 struct [[nodiscard]] IOStream : IOStreamBase<IOStream<StreamBuf>>, StreamBuf {
     template <class... Args>
         requires std::constructible_from<StreamBuf, Args...>
@@ -1436,7 +1465,7 @@ struct [[nodiscard]] IOStream : IOStreamBase<IOStream<StreamBuf>>, StreamBuf {
     IOStream() = default;
 };
 
-template <class StreamBuf>
+       template <class StreamBuf>
 struct [[nodiscard]] OStream : OStreamBase<OStream<StreamBuf>>, StreamBuf {
     template <class... Args>
         requires std::constructible_from<StreamBuf, Args...>
@@ -1447,7 +1476,7 @@ struct [[nodiscard]] OStream : OStreamBase<OStream<StreamBuf>>, StreamBuf {
     OStream() = default;
 };
 
-template <class StreamBuf>
+       template <class StreamBuf>
 struct [[nodiscard]] IStream : IStreamBase<OStream<StreamBuf>>, StreamBuf {
     template <class... Args>
         requires std::constructible_from<StreamBuf, Args...>
@@ -1460,12 +1489,14 @@ struct [[nodiscard]] IStream : IStreamBase<OStream<StreamBuf>>, StreamBuf {
 
 } // namespace co_async
 
-/// ./co_async/iostream/file_stream.cpp
+// #line 1 "./co_async/iostream/file_stream.cpp"
+
+
 
 
 namespace co_async {
 
-struct FileBuf {
+       struct FileBuf {
     Task<std::size_t> read(std::span<char> buffer) {
         return fs_read(mFile, buffer);
     }
@@ -1484,13 +1515,15 @@ private:
     FileHandle mFile;
 };
 
-using FileIStream = IStream<FileBuf>;
-using FileOStream = OStream<FileBuf>;
-using FileStream = IOStream<FileBuf>;
+       using FileIStream = IStream<FileBuf>;
+       using FileOStream = OStream<FileBuf>;
+       using FileStream = IOStream<FileBuf>;
 
 } // namespace co_async
 
-/// ./co_async/http/http_status_code.cpp
+// #line 1 "./co_async/http/http_status_code.cpp"
+
+
 
 
 namespace co_async {
@@ -1579,7 +1612,9 @@ inline std::string_view getHTTPStatusName(int status) {
 
 } // namespace co_async
 
-/// ./co_async/utils/string_utils.cpp
+// #line 1 "./co_async/utils/string_utils.cpp"
+
+
 
 
 namespace co_async {
@@ -1635,7 +1670,7 @@ struct from_string_t<T> {
     }
 };
 
-template <class T>
+       template <class T>
 inline constexpr from_string_t<T> from_string;
 
 template <class T = void>
@@ -1696,15 +1731,18 @@ struct to_string_t<T> {
     }
 };
 
-inline constexpr to_string_t<> to_string;
+       inline constexpr to_string_t<> to_string;
 
 } // namespace co_async
 
-/// ./co_async/http/uri.cpp
+// #line 1 "./co_async/http/uri.cpp"
+
 
 #include <cstdint>
 #include <string>
 #include <ranges>
+
+
 
 
 
@@ -1830,7 +1868,9 @@ public:
 
 } // namespace co_async
 
-/// ./co_async/http/http11.cpp
+// #line 1 "./co_async/http/http11.cpp"
+
+
 
 
 namespace co_async {
@@ -1978,7 +2018,8 @@ struct HTTPResponse {
 
 } // namespace co_async
 
-/// ./co_async/system/socket.cpp
+// #line 1 "./co_async/system/socket.cpp"
+
 
 #ifdef __linux__
 #include <sys/types.h>
@@ -1993,11 +2034,13 @@ struct HTTPResponse {
 
 
 
+
+
 #ifdef __linux__
 
 namespace co_async {
 
-struct IpAddress {
+       struct IpAddress {
     explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
 
     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
@@ -2047,7 +2090,7 @@ struct IpAddress {
     std::variant<in_addr, in6_addr> mAddr;
 };
 
-struct SocketAddress {
+       struct SocketAddress {
     SocketAddress() = default;
 
     SocketAddress(IpAddress ip, int port) {
@@ -2111,11 +2154,11 @@ private:
     }
 };
 
-struct [[nodiscard]] SocketHandle : FileHandle {
+       struct [[nodiscard]] SocketHandle : FileHandle {
     using FileHandle::FileHandle;
 };
 
-struct [[nodiscard]] SocketServer : SocketHandle {
+       struct [[nodiscard]] SocketServer : SocketHandle {
     using SocketHandle::SocketHandle;
 
     SocketAddress mAddr;
@@ -2125,7 +2168,7 @@ struct [[nodiscard]] SocketServer : SocketHandle {
     }
 };
 
-inline SocketAddress get_socket_address(SocketHandle &sock) {
+       inline SocketAddress get_socket_address(SocketHandle &sock) {
     SocketAddress sa;
     sa.mAddrLen = sizeof(sa.mAddrIpv6);
     checkError(getsockname(sock.fileNo(), (sockaddr *)&sa.mAddr, &sa.mAddrLen));
@@ -2152,14 +2195,14 @@ inline Task<SocketHandle> createSocket(int family, int type) {
     co_return sock;
 }
 
-inline Task<SocketHandle> socket_connect(SocketAddress const &addr) {
+       inline Task<SocketHandle> socket_connect(SocketAddress const &addr) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     co_await uring_connect(loop, sock.fileNo(),
                            (const struct sockaddr *)&addr.mAddr, addr.mAddrLen);
     co_return sock;
 }
 
-inline Task<SocketServer> server_bind(SocketAddress const &addr,
+       inline Task<SocketServer> server_bind(SocketAddress const &addr,
                                              int backlog = SOMAXCONN) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
@@ -2171,7 +2214,7 @@ inline Task<SocketServer> server_bind(SocketAddress const &addr,
     co_return serv;
 }
 
-inline Task<SocketHandle> server_accept(SocketServer &serv) {
+       inline Task<SocketHandle> server_accept(SocketServer &serv) {
     int fd = co_await uring_accept(loop, serv.fileNo(),
                                    (struct sockaddr *)&serv.mAddr.mAddr,
                                    &serv.mAddr.mAddrLen, 0);
@@ -2182,12 +2225,14 @@ inline Task<SocketHandle> server_accept(SocketServer &serv) {
 } // namespace co_async
 #endif
 
-/// ./co_async/http/http_server.cpp
+// #line 1 "./co_async/http/http_server.cpp"
+
+
 
 
 namespace co_async {
 
-struct HTTPServer {
+       struct HTTPServer {
     using HTTPHandler = Task<HTTPResponse> (*)(HTTPRequest const &);
 
     void addRoute(std::string_view path, HTTPHandler handler) {
@@ -2237,7 +2282,9 @@ private:
 
 } // namespace co_async
 
-/// ./co_async/awaiter/details/return_previous.cpp
+// #line 1 "./co_async/awaiter/details/return_previous.cpp"
+
+
 
 
 namespace co_async {
@@ -2286,7 +2333,9 @@ struct [[nodiscard]] ReturnPreviousTask {
 
 } // namespace co_async
 
-/// ./co_async/awaiter/when_all.cpp
+// #line 1 "./co_async/awaiter/when_all.cpp"
+
+
 
 
 namespace co_async {
@@ -2366,14 +2415,14 @@ whenAllImpl(std::index_sequence<Is...>, Ts &&...ts) {
         std::get<Is>(result).moveValue()...);
 }
 
-template <Awaitable... Ts>
+       template <Awaitable... Ts>
     requires(sizeof...(Ts) != 0)
 auto when_all(Ts &&...ts) {
     return whenAllImpl(std::make_index_sequence<sizeof...(Ts)>{},
                        std::forward<Ts>(ts)...);
 }
 
-template <Awaitable T, class Alloc = std::allocator<T>>
+       template <Awaitable T, class Alloc = std::allocator<T>>
 Task<std::conditional_t<
     std::same_as<void, typename AwaitableTraits<T>::RetType>,
     std::vector<typename AwaitableTraits<T>::RetType, Alloc>, void>>
@@ -2402,7 +2451,9 @@ when_all(std::vector<T, Alloc> const &tasks) {
 
 } // namespace co_async
 
-/// ./co_async/awaiter/when_any.cpp
+// #line 1 "./co_async/awaiter/when_any.cpp"
+
+
 
 
 namespace co_async {
@@ -2472,14 +2523,14 @@ whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
     co_return varResult.moveValue();
 }
 
-template <Awaitable... Ts>
+       template <Awaitable... Ts>
     requires(sizeof...(Ts) != 0)
 auto when_any(Ts &&...ts) {
     return whenAnyImpl(std::make_index_sequence<sizeof...(Ts)>{},
                        std::forward<Ts>(ts)...);
 }
 
-template <Awaitable T, class Alloc = std::allocator<T>>
+       template <Awaitable T, class Alloc = std::allocator<T>>
 Task<typename AwaitableTraits<T>::RetType>
 when_any(std::vector<T, Alloc> const &tasks) {
     WhenAnyCtlBlock control{tasks.size()};
@@ -2498,12 +2549,15 @@ when_any(std::vector<T, Alloc> const &tasks) {
 
 } // namespace co_async
 
-/// ./co_async/iostream/stdio_stream.cpp
+// #line 1 "./co_async/iostream/stdio_stream.cpp"
+
 
 #ifdef __linux__
 #include <unistd.h>
 #include <termios.h>
 #endif
+
+
 
 
 
@@ -2519,7 +2573,7 @@ inline void disableCanon(FileHandle &file) {
     }
 }
 
-struct StdioBuf {
+       struct StdioBuf {
     FileHandle &mFileIn;
     FileHandle &mFileOut;
 
@@ -2532,7 +2586,7 @@ struct StdioBuf {
     }
 };
 
-using StdioStream = IOStream<StdioBuf>;
+       using StdioStream = IOStream<StdioBuf>;
 
 template <int fileNo>
 inline FileHandle &stdHandle() {
@@ -2540,7 +2594,7 @@ inline FileHandle &stdHandle() {
     return h;
 }
 
-inline StdioStream &ios() {
+       inline StdioStream &ios() {
     static thread_local StdioStream s(stdHandle<STDIN_FILENO>(),
                                       stdHandle<STDOUT_FILENO>());
     return s;
@@ -2548,12 +2602,14 @@ inline StdioStream &ios() {
 
 } // namespace co_async
 
-/// ./co_async/iostream/string_stream.cpp
+// #line 1 "./co_async/iostream/string_stream.cpp"
+
+
 
 
 namespace co_async {
 
-struct StringReadBuf {
+       struct StringReadBuf {
     std::string_view mStringView;
     std::size_t mPosition;
 
@@ -2580,7 +2636,7 @@ struct StringReadBuf {
     }
 };
 
-struct StringWriteBuf {
+       struct StringWriteBuf {
     std::string mString;
 
     StringWriteBuf() noexcept {}
@@ -2603,15 +2659,18 @@ struct StringWriteBuf {
     }
 };
 
-using StringIStream = IStream<StringReadBuf>;
-using StringOStream = OStream<StringWriteBuf>;
+       using StringIStream = IStream<StringReadBuf>;
+       using StringOStream = OStream<StringWriteBuf>;
 
 } // namespace co_async
 
-/// ./co_async/co_async.cpp
+// #line 1 "./co_async/co_async.cpp"
 
 
-/// ./co_async/awaiter/generator.cpp
+
+// #line 1 "./co_async/awaiter/generator.cpp"
+
+
 
 
 namespace co_async {
@@ -2861,12 +2920,14 @@ auto run_generator_on(Loop &loop, Generator<T, P> const &g) {
 
 } // namespace co_async
 
-/// ./co_async/awaiter/and_then.cpp
+// #line 1 "./co_async/awaiter/and_then.cpp"
+
+
 
 
 namespace co_async {
 
-template <Awaitable A,
+       template <Awaitable A,
                  std::invocable<typename AwaitableTraits<A>::RetType> F>
     requires(!std::same_as<void, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<
@@ -2876,7 +2937,7 @@ and_then(A &&a, F &&f) {
         std::forward<F>(f)(co_await std::forward<A>(a)));
 }
 
-template <Awaitable A, std::invocable<> F>
+       template <Awaitable A, std::invocable<> F>
     requires(std::same_as<void, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<std::invoke_result_t<F>>::Type> and_then(A &&a,
                                                                        F &&f) {
@@ -2884,7 +2945,7 @@ Task<typename AwaitableTraits<std::invoke_result_t<F>>::Type> and_then(A &&a,
     co_return co_await ensureAwaitable(std::forward<F>(f)());
 }
 
-template <Awaitable A, Awaitable F>
+       template <Awaitable A, Awaitable F>
     requires(!std::invocable<F> &&
              !std::invocable<F, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<F>::RetType> and_then(A &&a, F &&f) {
@@ -2894,7 +2955,9 @@ Task<typename AwaitableTraits<F>::RetType> and_then(A &&a, F &&f) {
 
 } // namespace co_async
 
-/// ./co_async/awaiter/details/make_awaitable.cpp
+// #line 1 "./co_async/awaiter/details/make_awaitable.cpp"
+
+
 
 
 namespace co_async {
@@ -2930,7 +2993,9 @@ ensureTask(A a) {
 
 } // namespace co_async
 
-/// ./co_async/awaiter/details/current_coroutine.cpp
+// #line 1 "./co_async/awaiter/details/current_coroutine.cpp"
+
+
 
 
 namespace co_async {
@@ -2955,7 +3020,9 @@ struct CurrentCoroutineAwaiter {
 
 } // namespace co_async
 
-/// ./co_async/utils/rbtree.cpp
+// #line 1 "./co_async/utils/rbtree.cpp"
+
+
 
 
 namespace co_async {

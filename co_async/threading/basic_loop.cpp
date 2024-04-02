@@ -41,7 +41,7 @@ inline Task<void, AutoDestroyPromise> taskEnqueueHelper(A a) {
 
 inline void loop_enqueue(BasicLoop &loop, auto task) {
     auto t = taskEnqueueHelper(std::move(task));
-    auto coroutine = t.operator co_await().await_suspend(std::noop_coroutine());
+    std::coroutine_handle<AutoDestroyPromise> coroutine = t;
     loop.push(coroutine);
     t.release();
 }

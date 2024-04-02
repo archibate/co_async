@@ -39,6 +39,10 @@ struct Promise {
         return std::coroutine_handle<Promise>::from_promise(*this);
     }
 
+    void setPrevious(std::coroutine_handle<> previous) noexcept {
+        mPrevious = previous;
+    }
+
     std::coroutine_handle<> mPrevious;
     std::exception_ptr mException{};
     Uninitialized<T> mResult; // destructed??
@@ -70,6 +74,10 @@ struct Promise<void> {
 
     auto get_return_object() {
         return std::coroutine_handle<Promise>::from_promise(*this);
+    }
+
+    void setPrevious(std::coroutine_handle<> previous) noexcept {
+        mPrevious = previous;
     }
 
     std::coroutine_handle<> mPrevious;
@@ -106,7 +114,7 @@ struct [[nodiscard]] Task {
         std::coroutine_handle<promise_type>
         await_suspend(std::coroutine_handle<> coroutine) const noexcept {
             promise_type &promise = mCoroutine.promise();
-            promise.mPrevious = coroutine;
+            promise.setPrevious(coroutine);
             return mCoroutine;
         }
 

@@ -10,8 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 project(co_async LANGUAGES CXX)
 
 add_compile_options($<$<COMPILE_LANG_AND_ID:CXX,MSVC>:-utf-8>)
-add_compile_options($<$<COMPILE_LANG_AND_ID:CXX,Clang>:-fimplicit-modules$<SEMICOLON>-fimplicit-module-maps$<SEMICOLON>-stdlib=libc++>)
-add_link_options($<$<COMPILE_LANG_AND_ID:CXX,Clang>:-fimplicit-modules$<SEMICOLON>-fimplicit-module-maps$<SEMICOLON>-stdlib=libc++>)
+add_compile_options($<$<COMPILE_LANG_AND_ID:CXX,Clang>:-fmodules$<SEMICOLON>-fimplicit-modules$<SEMICOLON>-fimplicit-module-maps$<SEMICOLON>-stdlib=libc++>)
+add_link_options($<$<COMPILE_LANG_AND_ID:CXX,Clang>:-fmodules$<SEMICOLON>-fimplicit-modules$<SEMICOLON>-fimplicit-module-maps$<SEMICOLON>-stdlib=libc++>)
 
 add_library(co_async OBJECT)
 file(GLOB_RECURSE co_async_sources CONFIGURE_DEPENDS co_async/*.cpp)

@@ -10,12 +10,12 @@ struct AutoDestroyPromise {
     }
 
     auto final_suspend() noexcept {
-        std::coroutine_handle<AutoDestroyPromise>::from_promise(*this).destroy();
+        std::coroutine_handle<AutoDestroyPromise>::from_promise(*this)
+            .destroy();
         return std::suspend_always();
     }
 
-    void unhandled_exception() noexcept {
-    }
+    void unhandled_exception() noexcept {}
 
     void return_void() noexcept {}
 
@@ -23,8 +23,7 @@ struct AutoDestroyPromise {
         return std::coroutine_handle<AutoDestroyPromise>::from_promise(*this);
     }
 
-    void setPrevious(std::coroutine_handle<>) noexcept {
-    }
+    void setPrevious(std::coroutine_handle<>) noexcept {}
 
     AutoDestroyPromise &operator=(AutoDestroyPromise &&) = delete;
 };

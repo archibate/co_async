@@ -922,6 +922,9 @@ static inline void io_uring_smp_mb()
 #ifndef IOURINGINLINE
 #define IOURINGINLINE static inline
 #endif
+#ifndef IOURINGEXTERN
+#define IOURINGEXTERN
+#endif
 
 #ifdef __alpha__
 /*
@@ -982,7 +985,7 @@ struct io_uring_sq {
 	unsigned sqe_tail;
 
 	size_t ring_sz;
-	void *ring_ptr;
+	unsigned char *ring_ptr;
 
 	unsigned ring_mask;
 	unsigned ring_entries;
@@ -1002,7 +1005,7 @@ struct io_uring_cq {
 	struct io_uring_cqe *cqes;
 
 	size_t ring_sz;
-	void *ring_ptr;
+	unsigned char *ring_ptr;
 
 	unsigned ring_mask;
 	unsigned ring_entries;
@@ -1049,116 +1052,116 @@ IOURINGINLINE int io_uring_opcode_supported(const struct io_uring_probe *p,
 	return (p->ops[op].flags & IO_URING_OP_SUPPORTED) != 0;
 }
 
-int io_uring_queue_init_mem(unsigned entries, struct io_uring *ring,
+IOURINGEXTERN int io_uring_queue_init_mem(unsigned entries, struct io_uring *ring,
 				struct io_uring_params *p,
 				void *buf, size_t buf_size);
-int io_uring_queue_init_params(unsigned entries, struct io_uring *ring,
+IOURINGEXTERN int io_uring_queue_init_params(unsigned entries, struct io_uring *ring,
 				struct io_uring_params *p);
-int io_uring_queue_init(unsigned entries, struct io_uring *ring,
+IOURINGEXTERN int io_uring_queue_init(unsigned entries, struct io_uring *ring,
 			unsigned flags);
-int io_uring_queue_mmap(int fd, struct io_uring_params *p,
+IOURINGEXTERN int io_uring_queue_mmap(int fd, struct io_uring_params *p,
 			struct io_uring *ring);
-int io_uring_ring_dontfork(struct io_uring *ring);
-void io_uring_queue_exit(struct io_uring *ring);
-unsigned io_uring_peek_batch_cqe(struct io_uring *ring,
+IOURINGEXTERN int io_uring_ring_dontfork(struct io_uring *ring);
+IOURINGEXTERN void io_uring_queue_exit(struct io_uring *ring);
+IOURINGEXTERN unsigned io_uring_peek_batch_cqe(struct io_uring *ring,
 	struct io_uring_cqe **cqes, unsigned count);
-int io_uring_wait_cqes(struct io_uring *ring, struct io_uring_cqe **cqe_ptr,
+IOURINGEXTERN int io_uring_wait_cqes(struct io_uring *ring, struct io_uring_cqe **cqe_ptr,
 		       unsigned wait_nr, struct __kernel_timespec *ts,
 		       sigset_t *sigmask);
-int io_uring_wait_cqe_timeout(struct io_uring *ring,
+IOURINGEXTERN int io_uring_wait_cqe_timeout(struct io_uring *ring,
 			      struct io_uring_cqe **cqe_ptr,
 			      struct __kernel_timespec *ts);
-int io_uring_submit(struct io_uring *ring);
-int io_uring_submit_and_wait(struct io_uring *ring, unsigned wait_nr);
-int io_uring_submit_and_wait_timeout(struct io_uring *ring,
+IOURINGEXTERN int io_uring_submit(struct io_uring *ring);
+IOURINGEXTERN int io_uring_submit_and_wait(struct io_uring *ring, unsigned wait_nr);
+IOURINGEXTERN int io_uring_submit_and_wait_timeout(struct io_uring *ring,
 				     struct io_uring_cqe **cqe_ptr,
 				     unsigned wait_nr,
 				     struct __kernel_timespec *ts,
 				     sigset_t *sigmask);
 
-int io_uring_register_buffers(struct io_uring *ring, const struct iovec *iovecs,
+IOURINGEXTERN int io_uring_register_buffers(struct io_uring *ring, const struct iovec *iovecs,
 			      unsigned nr_iovecs);
-int io_uring_register_buffers_tags(struct io_uring *ring,
+IOURINGEXTERN int io_uring_register_buffers_tags(struct io_uring *ring,
 				   const struct iovec *iovecs,
 				   const __u64 *tags, unsigned nr);
-int io_uring_register_buffers_sparse(struct io_uring *ring, unsigned nr);
-int io_uring_register_buffers_update_tag(struct io_uring *ring,
+IOURINGEXTERN int io_uring_register_buffers_sparse(struct io_uring *ring, unsigned nr);
+IOURINGEXTERN int io_uring_register_buffers_update_tag(struct io_uring *ring,
 					 unsigned off,
 					 const struct iovec *iovecs,
 					 const __u64 *tags, unsigned nr);
-int io_uring_unregister_buffers(struct io_uring *ring);
+IOURINGEXTERN int io_uring_unregister_buffers(struct io_uring *ring);
 
-int io_uring_register_files(struct io_uring *ring, const int *files,
+IOURINGEXTERN int io_uring_register_files(struct io_uring *ring, const int *files,
 			    unsigned nr_files);
-int io_uring_register_files_tags(struct io_uring *ring, const int *files,
+IOURINGEXTERN int io_uring_register_files_tags(struct io_uring *ring, const int *files,
 				 const __u64 *tags, unsigned nr);
-int io_uring_register_files_sparse(struct io_uring *ring, unsigned nr);
-int io_uring_register_files_update_tag(struct io_uring *ring, unsigned off,
+IOURINGEXTERN int io_uring_register_files_sparse(struct io_uring *ring, unsigned nr);
+IOURINGEXTERN int io_uring_register_files_update_tag(struct io_uring *ring, unsigned off,
 				       const int *files, const __u64 *tags,
 				       unsigned nr_files);
 
-int io_uring_unregister_files(struct io_uring *ring);
-int io_uring_register_files_update(struct io_uring *ring, unsigned off,
+IOURINGEXTERN int io_uring_unregister_files(struct io_uring *ring);
+IOURINGEXTERN int io_uring_register_files_update(struct io_uring *ring, unsigned off,
 				   const int *files, unsigned nr_files);
-int io_uring_register_eventfd(struct io_uring *ring, int fd);
-int io_uring_register_eventfd_async(struct io_uring *ring, int fd);
-int io_uring_unregister_eventfd(struct io_uring *ring);
-int io_uring_register_probe(struct io_uring *ring, struct io_uring_probe *p,
+IOURINGEXTERN int io_uring_register_eventfd(struct io_uring *ring, int fd);
+IOURINGEXTERN int io_uring_register_eventfd_async(struct io_uring *ring, int fd);
+IOURINGEXTERN int io_uring_unregister_eventfd(struct io_uring *ring);
+IOURINGEXTERN int io_uring_register_probe(struct io_uring *ring, struct io_uring_probe *p,
 			    unsigned nr);
-int io_uring_register_personality(struct io_uring *ring);
-int io_uring_unregister_personality(struct io_uring *ring, int id);
-int io_uring_register_restrictions(struct io_uring *ring,
+IOURINGEXTERN int io_uring_register_personality(struct io_uring *ring);
+IOURINGEXTERN int io_uring_unregister_personality(struct io_uring *ring, int id);
+IOURINGEXTERN int io_uring_register_restrictions(struct io_uring *ring,
 				   struct io_uring_restriction *res,
 				   unsigned int nr_res);
-int io_uring_enable_rings(struct io_uring *ring);
-int __io_uring_sqring_wait(struct io_uring *ring);
-int io_uring_register_iowq_aff(struct io_uring *ring, size_t cpusz,
+IOURINGEXTERN int io_uring_enable_rings(struct io_uring *ring);
+IOURINGEXTERN int __io_uring_sqring_wait(struct io_uring *ring);
+IOURINGEXTERN int io_uring_register_iowq_aff(struct io_uring *ring, size_t cpusz,
 				const cpu_set_t *mask);
-int io_uring_unregister_iowq_aff(struct io_uring *ring);
-int io_uring_register_iowq_max_workers(struct io_uring *ring,
+IOURINGEXTERN int io_uring_unregister_iowq_aff(struct io_uring *ring);
+IOURINGEXTERN int io_uring_register_iowq_max_workers(struct io_uring *ring,
 				       unsigned int *values);
-int io_uring_register_ring_fd(struct io_uring *ring);
-int io_uring_unregister_ring_fd(struct io_uring *ring);
-int io_uring_close_ring_fd(struct io_uring *ring);
-int io_uring_register_buf_ring(struct io_uring *ring,
+IOURINGEXTERN int io_uring_register_ring_fd(struct io_uring *ring);
+IOURINGEXTERN int io_uring_unregister_ring_fd(struct io_uring *ring);
+IOURINGEXTERN int io_uring_close_ring_fd(struct io_uring *ring);
+IOURINGEXTERN int io_uring_register_buf_ring(struct io_uring *ring,
 			       struct io_uring_buf_reg *reg, unsigned int flags);
-int io_uring_unregister_buf_ring(struct io_uring *ring, int bgid);
-int io_uring_register_sync_cancel(struct io_uring *ring,
+IOURINGEXTERN int io_uring_unregister_buf_ring(struct io_uring *ring, int bgid);
+IOURINGEXTERN int io_uring_register_sync_cancel(struct io_uring *ring,
 				 struct io_uring_sync_cancel_reg *reg);
 
-int io_uring_register_file_alloc_range(struct io_uring *ring,
+IOURINGEXTERN int io_uring_register_file_alloc_range(struct io_uring *ring,
 					unsigned off, unsigned len);
 
-int io_uring_get_events(struct io_uring *ring);
-int io_uring_submit_and_get_events(struct io_uring *ring);
+IOURINGEXTERN int io_uring_get_events(struct io_uring *ring);
+IOURINGEXTERN int io_uring_submit_and_get_events(struct io_uring *ring);
 
 /*
  * io_uring syscalls.
  */
-int io_uring_enter(unsigned int fd, unsigned int to_submit,
+IOURINGEXTERN int io_uring_enter(unsigned int fd, unsigned int to_submit,
 		   unsigned int min_complete, unsigned int flags, sigset_t *sig);
-int io_uring_enter2(unsigned int fd, unsigned int to_submit,
+IOURINGEXTERN int io_uring_enter2(unsigned int fd, unsigned int to_submit,
 		    unsigned int min_complete, unsigned int flags,
 		    sigset_t *sig, size_t sz);
-int io_uring_setup(unsigned int entries, struct io_uring_params *p);
-int io_uring_register(unsigned int fd, unsigned int opcode, const void *arg,
+IOURINGEXTERN int io_uring_setup(unsigned int entries, struct io_uring_params *p);
+IOURINGEXTERN int io_uring_register(unsigned int fd, unsigned int opcode, const void *arg,
 		      unsigned int nr_args);
 
 /*
  * Mapped buffer ring alloc/register + unregister/free helpers
  */
-struct io_uring_buf_ring *io_uring_setup_buf_ring(struct io_uring *ring,
+IOURINGEXTERN struct io_uring_buf_ring *io_uring_setup_buf_ring(struct io_uring *ring,
 						  unsigned int nentries,
 						  int bgid, unsigned int flags,
 						  int *ret);
-int io_uring_free_buf_ring(struct io_uring *ring, struct io_uring_buf_ring *br,
+IOURINGEXTERN int io_uring_free_buf_ring(struct io_uring *ring, struct io_uring_buf_ring *br,
 			   unsigned int nentries, int bgid);
 
 /*
  * Helper for the peek/wait single cqe functions. Exported because of that,
  * but probably shouldn't be used directly in an application.
  */
-int __io_uring_get_cqe(struct io_uring *ring,
+IOURINGEXTERN int __io_uring_get_cqe(struct io_uring *ring,
 			struct io_uring_cqe **cqe_ptr, unsigned submit,
 			unsigned wait_nr, sigset_t *sigmask);
 
@@ -2324,8 +2327,8 @@ IOURINGINLINE struct io_uring_sqe *io_uring_get_sqe(struct io_uring *ring)
 struct io_uring_sqe *io_uring_get_sqe(struct io_uring *ring);
 #endif
 
-ssize_t io_uring_mlock_size(unsigned entries, unsigned flags);
-ssize_t io_uring_mlock_size_params(unsigned entries, struct io_uring_params *p);
+IOURINGEXTERN ssize_t io_uring_mlock_size(unsigned entries, unsigned flags);
+IOURINGEXTERN ssize_t io_uring_mlock_size_params(unsigned entries, struct io_uring_params *p);
 
 /*
  * Versioning information for liburing.
@@ -2336,9 +2339,9 @@ ssize_t io_uring_mlock_size_params(unsigned entries, struct io_uring_params *p);
  * Use io_uring_check_version() for runtime checks of the version of
  * liburing that was loaded by the dynamic linker.
  */
-int io_uring_major_version(void);
-int io_uring_minor_version(void);
-bool io_uring_check_version(int major, int minor);
+IOURINGEXTERN int io_uring_major_version(void);
+IOURINGEXTERN int io_uring_minor_version(void);
+IOURINGEXTERN bool io_uring_check_version(int major, int minor);
 
 #define IO_URING_CHECK_VERSION(major,minor) \
   (major > IO_URING_VERSION_MAJOR ||        \
@@ -2352,5 +2355,8 @@ bool io_uring_check_version(int major, int minor);
 #ifdef IOURINGINLINE
 #undef IOURINGINLINE
 #endif
+/* #ifdef IOURINGEXTERN */
+/* #undef IOURINGEXTERN */
+/* #endif */
 
 #endif

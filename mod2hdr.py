@@ -7,7 +7,7 @@ dir = './co_async/'
 out = 'co_async.hpp'
 
 modules = {}
-with open('std/std.hpp', 'r') as f:
+with open('cmake/clang_std_modules_source/std.hpp', 'r') as f:
     modules['std'] = {'dependencies': [], 'source': f.read().removeprefix('#pragma once\n')}
 
 GLOBAL_MODULE_FRAGMENT = re.compile(r'^\s*module;$')

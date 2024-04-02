@@ -8,6 +8,7 @@ function(enable_std_modules target)
         COMMAND ${CMAKE_CXX_COMPILER} -x c++ -Xclang -emit-module -std=c++20 -stdlib=libc++ -O3 -DNDEBUG ${CMAKE_CXX_FLAGS} -c std.modulemap -o ${CMAKE_BINARY_DIR}/clang_std_modules/std.pcm -fmodules -fmodule-name=std
         BYPRODUCTS ${CMAKE_BINARY_DIR}/clang_std_modules/std.pcm
         WORKING_DIRECTORY ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/clang_std_modules_source
+        COMMENT "Building Clang std modules"
             )
         endif()
         add_dependencies(${target} clang_std_modules)

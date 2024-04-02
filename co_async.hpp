@@ -647,7 +647,11 @@ inline void loop_enqueue(BasicLoop &loop, auto task) {
 // #line 1 "./co_async/system/error_handling.cpp"
 
 
-#include <errno.h>
+#ifdef __linux__
+#include <linux/errno.h>
+extern "C" [[gnu::const]] int *__errno_location(void) noexcept;
+# define errno (*__errno_location())
+#endif
 
 
 
@@ -1094,7 +1098,7 @@ namespace co_async {
 
 
 #ifdef __linux__
-#include <errno.h>
+#include <linux/errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -1736,12 +1740,6 @@ struct to_string_t<T> {
 } // namespace co_async
 
 // #line 1 "./co_async/http/uri.cpp"
-
-
-#include <cstdint>
-#include <string>
-#include <ranges>
-
 
 
 

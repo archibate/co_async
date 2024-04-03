@@ -3,9 +3,6 @@
 import re
 import os
 
-forward = False
-dir = './co_async/'
-
 GLOBAL_MODULE_FRAGMENT = re.compile(r'^\s*module;$')
 IMPORT_STD = re.compile(r'^\s*import\s+std;$')
 EXPORT_MODULE = re.compile(r'^\s*export\s+module\s+([a-zA-Z0-9_.]+)(:[a-zA-Z0-9_.]+)?;$')
@@ -14,49 +11,66 @@ EXPORT = re.compile(r'^(\s*)export(\s+.*)$')
 COMMENT_ALL = re.compile(r'^.*/\*\{(.*)\}\*/.*$')
 COMMENT_PART = re.compile(r'^(.*)/\*\[(.*)\]\*/(.*)$')
 
-# walk dir
-for dirpath, dirnames, filenames in os.walk(dir):
-    for filename in filenames:
-        filepath = os.path.join(dirpath, filename)
-        if filepath.endswith('.cppm') or filepath.endswith('.cpp'):
-            res = ''
-            with open(filepath, 'r') as f:
-                current = None
-                parent = None
-                for line in f:
-                    line = line.removesuffix('\n')
-                    if 0: pass
-                    elif m := re.match(COMMENT_ALL, line):
-                        line = m.group(1)
-                    elif m := re.match(COMMENT_PART, line):
-                        l, m, r = m.groups()
-                        line = l + m + r
-                    elif m := re.match(GLOBAL_MODULE_FRAGMENT, line):
-                        line = '/*{' + line + '}*/'
-                    elif m := re.match(EXPORT_MODULE, line):
-                        parent, partition = m.groups()
-                        if partition:
-                            current = parent + partition
-                        else:
-                            current = parent
-                        line = '#pragma once/*{' + line + '}*/'
-                    elif m := re.match(IMPORT_STD, line):
-                        line = '#include <bits/stdc++.h>/*{' + line + '}*/'
-                    elif m := re.match(IMPORT, line):
-                        export, colon, partition = m.groups()
-                        if colon:
-                            assert parent
-                            dependency = parent + ':' + partition
-                        else:
-                            dependency = partition
-                        dependency = dependency.replace(':', '/').replace('.', '/')
-                        line = '#include <' + dependency + '.cppm>/*{' + line + '}*/'
-                    elif m := re.match(EXPORT, line):
-                        before, after = m.groups()
-                        line = before + '/*[export]*/' + after
-                    res += line + '\n'
-            if 1:
-                with open(filepath, 'w') as f:
-                    f.write(res)
-            else:
-                print(res)
+def process(dir):
+    for dirpath, dirnames, filenames in os.walk(dir):
+        for filename in filenames:
+            filepath = os.path.join(dirpath, filename)
+            if filepath.endswith('.cppm') or filepath.endswith('.cpp'):
+                res = ''
+                with open(filepath, 'r') as f:
+                    current = None
+                    parent = None
+                    for line in f:
+                        line = line.removesuffix('\n')
+                        if 0: pass
+                        elif m := re.match(COMMENT_ALL, line):
+                            line = m.group(1)
+                        elif m := re.match(COMMENT_PART, line):
+                            l, m, r = m.groups()
+                            line = l + m + r
+                        elif m := re.match(GLOBAL_MODULE_FRAGMENT, line):
+                            line = '/*{' + line + '}*/'
+                        elif m := re.match(EXPORT_MODULE, line):
+                            parent, partition = m.groups()
+                            if partition:
+                                current = parent + partition
+                            else:
+                                current = parent
+                            line = '#pragma once/*{' + line + '}*/'
+                        elif m := re.match(IMPORT_STD, line):
+                            line = '#include <bits/stdc++.h>/*{' + line + '}*/'
+                        elif m := re.match(IMPORT, line):
+                            export, colon, partition = m.groups()
+                            if colon:
+                                assert parent
+                                dependency = parent + ':' + partition
+                            else:
+                                dependency = partition
+                            dependency = dependency.replace(':', '/').replace('.', '/')
+                            line = '#include <' + dependency + '.cppm>/*{' + line + '}*/'
+                        elif m := re.match(EXPORT, line):
+                            before, after = m.groups()
+                            line = before + '/*[export]*/' + after
+                        res += line + '\n'
+                if 1:
+                    with open(filepath, 'w') as f:
+                        f.write(res)
+                else:
+                    print(res)
+
+process('co_async')
+process('demo')
+
+res = ''
+with open('CMakeLists.txt', 'r') as f:
+    for line in f:
+        if line == 'set(ENABLE_MODULES ON)\n':
+            line = 'set(ENABLE_MODULES OFF)\n'
+        elif line == 'set(ENABLE_MODULES OFF)\n':
+            line = 'set(ENABLE_MODULES ON)\n'
+        res += line
+if 1:
+    with open('CMakeLists.txt', 'w') as f:
+        f.write(res)
+else:
+    print(res)

@@ -1,5 +1,5 @@
 #define DEBUG_SHOW 1
-#include "co_async/inc/debug.hpp"
+#include "debug.hpp"
 
 import co_async;
 import std;

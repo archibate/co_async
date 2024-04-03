@@ -1,18 +1,19 @@
 #pragma once
 
 #if DEBUG_SHOW
+
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
 #if DEBUG_SHOW_SOURCE
 #include <fstream>
+#include <unordered_map>
 #endif
 #include <source_location>
 #include <type_traits>
 #include <typeinfo>
 #include <sstream>
 #include <memory>
-#include <unordered_map>
 #if defined(__unix__) && __has_include(<cxxabi.h>)
 #include <cxxabi.h>
 #endif

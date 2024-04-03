@@ -38,15 +38,15 @@ def process(dir):
                                 current = parent
                             line = '#pragma once/*{' + line + '}*/'
                         elif m := re.match(IMPORT_STD, line):
-                            line = '#include <bits/stdc++.h>/*{' + line + '}*/'
+                            line = '#include <cmake/clang_std_modules_source/std.hpp>/*{' + line + '}*/'
                         elif m := re.match(IMPORT, line):
                             export, colon, partition = m.groups()
                             if colon:
                                 assert parent
-                                dependency = parent + ':' + partition
+                                dependency = parent + '/' + partition
                             else:
-                                dependency = partition
-                            dependency = dependency.replace(':', '/').replace('.', '/')
+                                dependency = partition + '/' + partition
+                            dependency = dependency.replace('.', '/')
                             line = '#include <' + dependency + '.cppm>/*{' + line + '}*/'
                         elif m := re.match(EXPORT, line):
                             before, after = m.groups()
@@ -59,7 +59,7 @@ def process(dir):
                     print(res)
 
 process('co_async')
-process('demo')
+process('examples')
 
 res = ''
 with open('CMakeLists.txt', 'r') as f:

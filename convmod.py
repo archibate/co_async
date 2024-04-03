@@ -4,11 +4,6 @@ import re
 import os
 
 dir = './co_async/'
-out = 'co_async.hpp'
-
-modules = {}
-with open('cmake/clang_std_modules_source/std.hpp', 'r') as f:
-    modules['std'] = {'dependencies': [], 'source': f.read().removeprefix('#pragma once\n')}
 
 GLOBAL_MODULE_FRAGMENT = re.compile(r'^\s*module;$')
 IMPORT_STD = re.compile(r'^\s*import\s+std;$')
@@ -20,27 +15,25 @@ EXPORT = re.compile(r'^(\s*export\s+)')
 for dirpath, dirnames, filenames in os.walk(dir):
     for filename in filenames:
         filepath = os.path.join(dirpath, filename)
-        if filepath.endswith('.cppm'):
+        if filepath.endswith('.cppm') or filepath.endswith('.cpp'):
+            res = ''
             with open(filepath, 'r') as f:
                 current = None
                 parent = None
-                this_module = {'dependencies': [], 'source': ''}
-                this_module['source'] += '// #line 1 "' + filepath + '"\n'
                 for line in f:
                     line = line.removesuffix('\n')
                     if 0: pass
                     elif m := re.match(GLOBAL_MODULE_FRAGMENT, line):
-                        line = ''
+                        line = '/*{' + line + '}*/'
                     elif m := re.match(EXPORT_MODULE, line):
                         parent, partition = m.groups()
                         if partition:
                             current = parent + partition
                         else:
                             current = parent
-                        line = ''
+                        line = '/*{' + line + '}*/'
                     elif m := re.match(IMPORT_STD, line):
-                        this_module['dependencies'].append('std')
-                        line = ''
+                        line = '#include <bits/stdc++.h>/*{' + line + '}*/'
                     elif m := re.match(IMPORT, line):
                         export, colon, partition = m.groups()
                         if colon:
@@ -48,15 +41,16 @@ for dirpath, dirnames, filenames in os.walk(dir):
                             dependency = parent + ':' + partition
                         else:
                             dependency = partition
-                        this_module['dependencies'].append(dependency)
-                        line = ''
+                        line = '#include <' + dependency + '.hpp>/*{' + line + '}*/'
                     elif m := re.match(EXPORT, line):
                         export = m.group(0)
-                        line = (' ' * len(export)) + line[len(export):]
-                    this_module['source'] += line + '\n'
-                print(current)
-                if current:
-                    modules[current] = this_module
+                        line = '/*[' + line + ']*/' + line[len(export):]
+                    res += line + '\n'
+            if 0:
+                with open(filepath, 'w') as f:
+                    f.write(res)
+            else:
+                print(res)
 
 
 visited = set()

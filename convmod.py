@@ -3,13 +3,16 @@
 import re
 import os
 
+forward = False
 dir = './co_async/'
 
 GLOBAL_MODULE_FRAGMENT = re.compile(r'^\s*module;$')
 IMPORT_STD = re.compile(r'^\s*import\s+std;$')
 EXPORT_MODULE = re.compile(r'^\s*export\s+module\s+([a-zA-Z0-9_.]+)(:[a-zA-Z0-9_.]+)?;$')
 IMPORT = re.compile(r'^\s*(export\s+)?import\s+(:)?([a-zA-Z0-9_.]+);$')
-EXPORT = re.compile(r'^(\s*export\s+)')
+EXPORT = re.compile(r'^(\s*)export(\s+.*)$')
+COMMENT_ALL = re.compile(r'^.*/\*\{(.*)\}\*/.*$')
+COMMENT_PART = re.compile(r'^(.*)/\*\[(.*)\]\*/(.*)$')
 
 # walk dir
 for dirpath, dirnames, filenames in os.walk(dir):
@@ -23,6 +26,11 @@ for dirpath, dirnames, filenames in os.walk(dir):
                 for line in f:
                     line = line.removesuffix('\n')
                     if 0: pass
+                    elif m := re.match(COMMENT_ALL, line):
+                        line = m.group(1)
+                    elif m := re.match(COMMENT_PART, line):
+                        l, m, r = m.groups()
+                        line = l + m + r
                     elif m := re.match(GLOBAL_MODULE_FRAGMENT, line):
                         line = '/*{' + line + '}*/'
                     elif m := re.match(EXPORT_MODULE, line):
@@ -44,8 +52,8 @@ for dirpath, dirnames, filenames in os.walk(dir):
                         dependency = dependency.replace(':', '/').replace('.', '/')
                         line = '#include <' + dependency + '.cppm>/*{' + line + '}*/'
                     elif m := re.match(EXPORT, line):
-                        export = m.group(0)
-                        line = '/*[' + export + ']*/' + line[len(export):]
+                        before, after = m.groups()
+                        line = before + '/*[export]*/' + after
                     res += line + '\n'
             if 1:
                 with open(filepath, 'w') as f:

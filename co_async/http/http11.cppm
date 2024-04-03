@@ -9,11 +9,11 @@ import :http.uri;
 
 namespace co_async {
 
-struct HTTPHeaders : SimpleMap<std::string, std::string> {
+export struct HTTPHeaders : SimpleMap<std::string, std::string> {
     using SimpleMap<std::string, std::string>::SimpleMap;
 };
 
-struct HTTPRequest {
+export struct HTTPRequest {
     std::string method;
     URI uri;
     HTTPHeaders headers;
@@ -84,7 +84,7 @@ struct HTTPRequest {
     }
 };
 
-struct HTTPResponse {
+export struct HTTPResponse {
     int status;
     HTTPHeaders headers;
     std::string body;

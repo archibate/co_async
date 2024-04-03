@@ -144,7 +144,7 @@ private:
 };
 
 export template <class Loop, class T, class P>
-T run_task_on(Loop &loop, Task<T, P> const &t) {
+T loop_run(Loop &loop, Task<T, P> const &t) {
     auto a = t.operator co_await();
     auto c = a.await_suspend(std::noop_coroutine());
     c.resume();

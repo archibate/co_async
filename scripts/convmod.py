@@ -3,6 +3,8 @@
 import re
 import os
 
+os.chdir(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
+
 GLOBAL_MODULE_FRAGMENT = re.compile(r'^\s*module;$')
 IMPORT_STD = re.compile(r'^\s*import\s+std;$')
 EXPORT_MODULE = re.compile(r'^\s*export\s+module\s+([a-zA-Z0-9_.]+)(:[a-zA-Z0-9_.]+)?;$')
@@ -58,19 +60,21 @@ def process(dir):
                 else:
                     print(res)
 
+def process_cmake(path):
+    res = ''
+    with open(path, 'r') as f:
+        for line in f:
+            if line == 'set(ENABLE_MODULES ON)\n':
+                line = 'set(ENABLE_MODULES OFF)\n'
+            elif line == 'set(ENABLE_MODULES OFF)\n':
+                line = 'set(ENABLE_MODULES ON)\n'
+            res += line
+    if 1:
+        with open(path, 'w') as f:
+            f.write(res)
+    else:
+        print(res)
+
 process('co_async')
 process('examples')
-
-res = ''
-with open('CMakeLists.txt', 'r') as f:
-    for line in f:
-        if line == 'set(ENABLE_MODULES ON)\n':
-            line = 'set(ENABLE_MODULES OFF)\n'
-        elif line == 'set(ENABLE_MODULES OFF)\n':
-            line = 'set(ENABLE_MODULES ON)\n'
-        res += line
-if 1:
-    with open('CMakeLists.txt', 'w') as f:
-        f.write(res)
-else:
-    print(res)
+process_cmake('CMakeLists.txt')

@@ -114,8 +114,12 @@ export struct SocketAddress {
         }
     }
 
-    auto repr() const {
+    auto toString() const {
         return host().toString() + ":" + to_string(port());
+    }
+
+    auto repr() const {
+        return toString();
     }
 
 private:

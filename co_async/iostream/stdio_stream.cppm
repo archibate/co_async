@@ -45,7 +45,7 @@ inline FileHandle &stdHandle() {
     return h;
 }
 
-export inline StdioStream &ios() {
+export inline StdioStream &stdio() {
     static thread_local StdioStream s(stdHandle<STDIN_FILENO>(),
                                       stdHandle<STDOUT_FILENO>());
     return s;

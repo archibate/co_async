@@ -11,8 +11,8 @@ export inline void co_spawn(auto task) {
     loop_enqueue(loop, std::move(task));
 }
 
-export inline T co_execute(auto task) {
-    loop_run(loop, std::move(task));
+export inline auto co_spawn_and_wait(auto task) {
+    return loop_run(loop, std::move(task));
 }
 
 } // namespace co_async

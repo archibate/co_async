@@ -32,10 +32,10 @@ export struct HTTPServer {
         co_await fs_close(stream.release());
     }
 
-    static Task<HTTPResponse> make_error_response(int status) {
+    static HTTPResponse make_error_response(int status) {
         auto error =
             to_string(status) + " " + std::string(getHTTPStatusName(status));
-        co_return {
+        return {
             .status = status,
             .headers =
                 {
@@ -60,8 +60,8 @@ export struct HTTPServer {
 
 private:
     SimpleMap<std::string, HTTPHandler> mRoutes;
-    HTTPHandler mDefaultRoute = +[](HTTPRequest const &) {
-        return make_error_response(404);
+    HTTPHandler mDefaultRoute = +[](HTTPRequest const &) -> Task<HTTPResponse> {
+        co_return make_error_response(404);
     };
 
     Task<HTTPResponse> handleRequest(HTTPRequest const &req) {

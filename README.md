@@ -6,7 +6,7 @@
 
 - [第一集：C++20 协程概念初上手](https://www.bilibili.com/video/BV1Yz421Z7rZ)
 - [第二集：封装 epoll 实现 HTTP 客户端](https://www.bilibili.com/video/BV18t421G7fD)
-- [第三集：io_uring 实现 HTTP 服务器](https://space.bilibili.com/263032155)（施工中，稍后上传）
+- [第三集：io_uring 实现 HTTP 服务器](https://www.bilibili.com/video/BV1yD421H7KY)
 
 > [steps 目录](steps) 是本库代码逐渐成形的过程，可以配合教学视频自己动手尝试。
 

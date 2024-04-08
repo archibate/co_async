@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <sched.h>
 #include <linux/swab.h>
+#include <sys/wait.h>
 /* SPDX-License-Identifier: MIT */
 #ifndef LIBURING_COMPAT_H
 #define LIBURING_COMPAT_H
@@ -2037,6 +2038,63 @@ IOURINGINLINE void io_uring_prep_cmd_sock(struct io_uring_sqe *sqe,
 	UNUSED(optname);
 	io_uring_prep_rw(IORING_OP_URING_CMD, sqe, fd, NULL, 0, 0);
 	sqe->cmd_op = cmd_op;
+}
+
+IOURINGINLINE void io_uring_prep_waitid(struct io_uring_sqe *sqe,
+					idtype_t idtype,
+					id_t id,
+					siginfo_t *infop,
+					int options, unsigned int flags)
+{
+	io_uring_prep_rw(IORING_OP_WAITID, sqe, id, NULL, (unsigned) idtype, 0);
+	sqe->waitid_flags = flags;
+	sqe->file_index = options;
+	sqe->addr2 = (unsigned long) infop;
+}
+
+IOURINGINLINE void io_uring_prep_futex_wake(struct io_uring_sqe *sqe,
+					    uint32_t *futex, uint64_t val,
+					    uint64_t mask, uint32_t futex_flags,
+					    unsigned int flags)
+{
+	io_uring_prep_rw(IORING_OP_FUTEX_WAKE, sqe, futex_flags, futex, 0, val);
+	sqe->futex_flags = flags;
+	sqe->addr3 = mask;
+}
+
+IOURINGINLINE void io_uring_prep_futex_wait(struct io_uring_sqe *sqe,
+					    uint32_t *futex, uint64_t val,
+					    uint64_t mask, uint32_t futex_flags,
+					    unsigned int flags)
+{
+	io_uring_prep_rw(IORING_OP_FUTEX_WAIT, sqe, futex_flags, futex, 0, val);
+	sqe->futex_flags = flags;
+	sqe->addr3 = mask;
+}
+
+struct futex_waitv;
+IOURINGINLINE void io_uring_prep_futex_waitv(struct io_uring_sqe *sqe,
+					     struct futex_waitv *futex,
+					     uint32_t nr_futex,
+					     unsigned int flags)
+{
+	io_uring_prep_rw(IORING_OP_FUTEX_WAITV, sqe, 0, futex, nr_futex, 0);
+	sqe->futex_flags = flags;
+}
+
+IOURINGINLINE void io_uring_prep_fixed_fd_install(struct io_uring_sqe *sqe,
+						  int fd,
+						  unsigned int flags)
+{
+	io_uring_prep_rw(IORING_OP_FIXED_FD_INSTALL, sqe, fd, NULL, 0, 0);
+	sqe->flags = IOSQE_FIXED_FILE;
+	sqe->install_fd_flags = flags;
+}
+
+IOURINGINLINE void io_uring_prep_ftruncate(struct io_uring_sqe *sqe,
+				       int fd, loff_t len)
+{
+	io_uring_prep_rw(IORING_OP_FTRUNCATE, sqe, fd, 0, 0, len);
 }
 
 /*

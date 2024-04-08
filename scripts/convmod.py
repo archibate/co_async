@@ -17,7 +17,7 @@ def process(dir):
     for dirpath, dirnames, filenames in os.walk(dir):
         for filename in filenames:
             filepath = os.path.join(dirpath, filename)
-            if filepath.endswith('.cppm') or filepath.endswith('.cpp'):
+            if filepath.endswith('.hpp') or filepath.endswith('.cpp'):
                 res = ''
                 with open(filepath, 'r') as f:
                     current = None
@@ -49,7 +49,7 @@ def process(dir):
                             else:
                                 dependency = partition + '/' + partition
                             dependency = dependency.replace('.', '/')
-                            line = '#include <' + dependency + '.cppm>/*{' + line + '}*/'
+                            line = '#include <' + dependency + '.hpp>/*{' + line + '}*/'
                         elif m := re.match(EXPORT, line):
                             before, after = m.groups()
                             line = before + '/*[export]*/' + after

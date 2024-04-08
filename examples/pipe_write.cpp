@@ -8,15 +8,11 @@ Task<> amain() {
     co_await stdio().putline("starting process");
 
     auto [r, w] = co_await make_pipe();
-    auto pid = co_await ProcessBuilder().path("cat").arg("CMakeLists.txt").open(1, w).close_above().spawn();
-    co_await fs_close(std::move(w));
-    FileIStream rs(std::move(r));
-    std::string line;
-    while (co_await rs.getline(line, '\n')) {
-        co_await stdio().putline("process output: " + line);
-        line.clear();
-    }
-    co_await fs_close(rs.release());
+    auto pid = co_await ProcessBuilder().path("cat").open(0, r).close_above().spawn();
+    co_await fs_close(std::move(r));
+    FileOStream ws(std::move(w));
+    co_await ws.putline("Hello, world!");
+    co_await fs_close(ws.release());
 
     co_await stdio().putline("waiting process");
     auto res = co_await wait_process(pid);

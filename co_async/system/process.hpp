@@ -1,0 +1,193 @@
+/*{module;}*/
+
+#ifdef __linux__
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <spawn.h>
+#include <signal.h>
+#endif
+
+#pragma once /*{export module co_async:system.socket;}*/
+
+#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+
+#ifdef __linux__
+#include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
+#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
+#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
+#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
+#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+
+namespace co_async {
+
+using Pid = pid_t;
+
+struct WaitResult {
+    Pid pid;
+    int status;
+
+    enum ExitType : int {
+        Continued = CLD_CONTINUED,
+        Stopped = CLD_STOPPED,
+        Trapped = CLD_TRAPPED,
+        Dumped = CLD_DUMPED,
+        Killed = CLD_KILLED,
+        Exited = CLD_EXITED,
+    } exitType;
+};
+
+/*[export]*/ inline Task<std::pair<FileHandle, FileHandle>> make_pipe() {
+    int p[2];
+    checkError(pipe2(p, 0));
+    co_return {FileHandle(p[0]), FileHandle(p[1])};
+}
+
+/*[export]*/ inline Task<> kill_process(Pid pid, int sig = SIGILL) {
+    checkError(kill(pid, sig));
+    co_return;
+}
+
+/*[export]*/ inline Task<WaitResult> wait_process(Pid pid) {
+    siginfo_t info{};
+    co_await uring_waitid(loop, P_PID, pid, &info, WEXITED, 0);
+    co_return {
+        .pid = info.si_pid,
+        .status = info.si_status,
+        .exitType = (WaitResult::ExitType)info.si_code,
+    };
+}
+
+/*[export]*/ struct ProcessBuilder {
+    ProcessBuilder() {
+        mAbsolutePath = false;
+        mEnvInherited = false;
+        mTopFd = 0;
+        checkError(posix_spawnattr_init(&mAttr));
+        checkError(posix_spawn_file_actions_init(&mFileActions));
+    }
+
+    ProcessBuilder(ProcessBuilder &&) = delete;
+
+    ~ProcessBuilder() {
+        posix_spawnattr_destroy(&mAttr);
+        posix_spawn_file_actions_destroy(&mFileActions);
+    }
+
+    ProcessBuilder &chdir(std::string_view path) {
+        mWorkingDir = path;
+        checkError(posix_spawn_file_actions_addchdir_np(&mFileActions, mWorkingDir.c_str()));
+        return *this;
+    }
+
+    ProcessBuilder &open(int fd, FileHandle const &file) {
+        checkError(posix_spawn_file_actions_adddup2(&mFileActions, file.fileNo(), fd));
+        return *this;
+    }
+
+    ProcessBuilder &open(int fd, int ourFd) {
+        checkError(posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd));
+        return *this;
+    }
+
+    ProcessBuilder &close(int fd) {
+        checkError(posix_spawn_file_actions_addclose(&mFileActions, fd));
+        return *this;
+    }
+
+    ProcessBuilder &close_above(int topFd = 3) {
+        if (mTopFd > topFd) {
+            topFd = mTopFd;
+        }
+        checkError(posix_spawn_file_actions_addclosefrom_np(&mFileActions, topFd));
+        return *this;
+    }
+
+    /* ProcessBuilder &files(std::map<int, FileHandle> const &files, int topFd = 3) { */
+    /*     for (auto const &[fd, file]: files) { */
+    /*         if (auto ourFd = file.fileNo(); ourFd != -1) { */
+    /*             checkError(posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd)); */
+    /*         } else { */
+    /*             checkError(posix_spawn_file_actions_addclose(&mFileActions, fd)); */
+    /*         } */
+    /*     } */
+    /*     if (!files.empty()) { */
+    /*         topFd = std::max(files.end()->first + 1, topFd); */
+    /*     } */
+    /*     checkError(posix_spawn_file_actions_addclosefrom_np(&mFileActions, topFd)); */
+    /*     return *this; */
+    /* } */
+
+    ProcessBuilder &path(std::string_view path, bool isAbsolute = false) {
+        mPath = path;
+        mAbsolutePath = isAbsolute;
+        return *this;
+    }
+
+    ProcessBuilder &arg(std::string_view arg) {
+        mArgvStore.emplace_back(arg);
+        return *this;
+    }
+
+    ProcessBuilder &inherit_env(bool inherit = true) {
+        if (inherit) {
+            for (char *const *e = environ; *e; ++e) {
+                mEnvpStore.emplace_back(*e);
+            }
+        }
+        mEnvInherited = true;
+        return *this;
+    }
+
+    ProcessBuilder &env(std::string_view key, std::string_view val) {
+        if (!mEnvInherited) {
+            inherit_env();
+        }
+        std::string env(key);
+        env.push_back('=');
+        env.append(val);
+        mEnvpStore.emplace_back(std::move(env));
+        return *this;
+    }
+
+    Task<Pid> spawn() {
+        Pid pid;
+        std::vector<char *> argv;
+        std::vector<char *> envp;
+        if (!mArgvStore.empty()) {
+            argv.reserve(mArgvStore.size() + 2);
+            argv.push_back(mPath.data());
+            for (auto &s: mArgvStore) {
+                argv.push_back(s.data());
+            }
+            argv.push_back(nullptr);
+        } else {
+            argv = {mPath.data(), nullptr};
+        }
+        if (!mEnvpStore.empty()) {
+            envp.reserve(mEnvpStore.size() + 1);
+            for (auto &s: mEnvpStore) {
+                envp.push_back(s.data());
+            }
+            envp.push_back(nullptr);
+        }
+        checkErrorReturn((mAbsolutePath ? posix_spawn : posix_spawnp)(
+            &pid, mPath.c_str(), &mFileActions, &mAttr, argv.data(),
+            mEnvpStore.empty() ? environ : envp.data()));
+        co_return pid;
+    }
+
+private:
+    posix_spawn_file_actions_t mFileActions;
+    posix_spawnattr_t mAttr;
+    bool mAbsolutePath;
+    bool mEnvInherited;
+    int mTopFd;
+    std::string mPath;
+    std::vector<std::string> mArgvStore;
+    std::vector<std::string> mEnvpStore;
+    std::string mWorkingDir;
+};
+
+} // namespace co_async
+#endif

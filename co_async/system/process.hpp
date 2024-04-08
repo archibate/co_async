@@ -21,9 +21,9 @@
 
 namespace co_async {
 
-using Pid = pid_t;
+/*[export]*/ using Pid = pid_t;
 
-struct WaitResult {
+/*[export]*/ struct WaitResult {
     Pid pid;
     int status;
 
@@ -37,13 +37,36 @@ struct WaitResult {
     } exitType;
 };
 
-/*[export]*/ inline Task<std::pair<FileHandle, FileHandle>> make_pipe() {
+/*[export]*/ struct PipeHandlePair {
+    FileHandle mReader;
+    FileHandle mWriter;
+
+    FileHandle reader() {
+#ifndef NDEBUG
+        if (!mReader) [[unlikely]] {
+            throw std::invalid_argument("PipeHandlePair::reader() can only be called once");
+        }
+#endif
+        return std::move(mReader);
+    }
+
+    FileHandle writer() {
+#ifndef NDEBUG
+        if (!mWriter) [[unlikely]] {
+            throw std::invalid_argument("PipeHandlePair::writer() can only be called once");
+        }
+#endif
+        return std::move(mWriter);
+    }
+};
+
+/*[export]*/ inline Task<PipeHandlePair> make_pipe() {
     int p[2];
     checkError(pipe2(p, 0));
     co_return {FileHandle(p[0]), FileHandle(p[1])};
 }
 
-/*[export]*/ inline Task<> kill_process(Pid pid, int sig = SIGILL) {
+/*[export]*/ inline Task<> kill_process(Pid pid, int sig = SIGKILL) {
     checkError(kill(pid, sig));
     co_return;
 }
@@ -81,12 +104,14 @@ struct WaitResult {
     }
 
     ProcessBuilder &open(int fd, FileHandle const &file) {
-        checkError(posix_spawn_file_actions_adddup2(&mFileActions, file.fileNo(), fd));
-        return *this;
+        return open(fd, file.fileNo());
     }
 
     ProcessBuilder &open(int fd, int ourFd) {
         checkError(posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd));
+        if (fd + 1 > mTopFd) {
+            mTopFd = fd + 1;
+        }
         return *this;
     }
 
@@ -102,21 +127,6 @@ struct WaitResult {
         checkError(posix_spawn_file_actions_addclosefrom_np(&mFileActions, topFd));
         return *this;
     }
-
-    /* ProcessBuilder &files(std::map<int, FileHandle> const &files, int topFd = 3) { */
-    /*     for (auto const &[fd, file]: files) { */
-    /*         if (auto ourFd = file.fileNo(); ourFd != -1) { */
-    /*             checkError(posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd)); */
-    /*         } else { */
-    /*             checkError(posix_spawn_file_actions_addclose(&mFileActions, fd)); */
-    /*         } */
-    /*     } */
-    /*     if (!files.empty()) { */
-    /*         topFd = std::max(files.end()->first + 1, topFd); */
-    /*     } */
-    /*     checkError(posix_spawn_file_actions_addclosefrom_np(&mFileActions, topFd)); */
-    /*     return *this; */
-    /* } */
 
     ProcessBuilder &path(std::string_view path, bool isAbsolute = false) {
         mPath = path;

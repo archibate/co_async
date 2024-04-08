@@ -7,10 +7,9 @@ using namespace std::literals;
 Task<> amain() {
     co_await stdio().putline("starting process");
 
-    auto [r, w] = co_await make_pipe();
-    auto pid = co_await ProcessBuilder().path("cat").open(0, r).close_above().spawn();
-    co_await fs_close(std::move(r));
-    FileOStream ws(std::move(w));
+    auto p = co_await make_pipe();
+    auto pid = co_await ProcessBuilder().path("cat").open(0, p.reader()).close_above().spawn();
+    FileOStream ws(p.writer());
     co_await ws.putline("Hello, world!");
     co_await fs_close(ws.release());
 

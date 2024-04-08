@@ -48,6 +48,10 @@ namespace co_async {
         return ret;
     }
 
+    explicit operator bool() noexcept {
+        return mFileNo != -1;
+    }
+
 private:
     int mFileNo;
 };

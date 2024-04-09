@@ -2,27 +2,26 @@
 
 #ifdef __linux__
 #include <unistd.h>
-#include <sys/stat.h>
 #include <sys/inotify.h>
 #include <fcntl.h>
 #endif
 
-#pragma once/*{export module co_async:system.fs;}*/
+#pragma once /*{export module co_async:system.fs;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
-#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
-#include <co_async/system/process.hpp>/*{import :system.process;}*/
-#include <co_async/iostream/file_stream.hpp>/*{import :iostream.file_stream;}*/
+#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
+#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
+#include <co_async/system/process.hpp>       /*{import :system.process;}*/
+#include <co_async/iostream/file_stream.hpp> /*{import :iostream.file_stream;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 
 namespace co_async {
 
-/*[export]*/ struct BasicFileNotifier : FileIStream {
+struct BasicFileWatch : FileIStream {
     enum FileEvent : std::uint32_t {
         OnAccessed = IN_ACCESS,
         OnOpened = IN_OPEN,
@@ -38,12 +37,12 @@ namespace co_async {
         OnReadFinished = IN_CLOSE_NOWRITE,
     };
 
-
-    BasicFileNotifier() : FileIStream(FileHandle(checkError(inotify_init1(0)))) {
-    }
+    BasicFileWatch()
+        : FileIStream(FileHandle(checkError(inotify_init1(0)))) {}
 
     int watch(std::filesystem::path path, FileEvent event) {
-        return checkError(inotify_add_watch(get().fileNo(), path.c_str(), event));
+        return checkError(
+            inotify_add_watch(get().fileNo(), path.c_str(), event));
     }
 
     void unwatch(int watch) {
@@ -71,18 +70,21 @@ namespace co_async {
     }
 
 private:
-    std::unique_ptr<struct inotify_event> mEventBuffer = std::make_unique<struct inotify_event>();
+    std::unique_ptr<struct inotify_event> mEventBuffer =
+        std::make_unique<struct inotify_event>();
 };
 
-/*[export]*/ struct FileNotifier : private BasicFileNotifier {
-    using BasicFileNotifier::BasicFileNotifier;
-    using enum BasicFileNotifier::FileEvent;
+/*[export]*/ struct FileWatch : private BasicFileWatch {
+    using BasicFileWatch::BasicFileWatch;
+    using enum BasicFileWatch::FileEvent;
 
-    FileNotifier &watch(std::filesystem::path path, FileEvent event, bool recursive = false) {
-        int wd = BasicFileNotifier::watch(path, event);
+    FileWatch &watch(std::filesystem::path path, FileEvent event,
+                        bool recursive = false) {
+        int wd = BasicFileWatch::watch(path, event);
         mWatches.emplace(wd, path);
         if (recursive && std::filesystem::is_directory(path)) {
-            for (auto const &entry: std::filesystem::recursive_directory_iterator(path)) {
+            for (auto const &entry:
+                 std::filesystem::recursive_directory_iterator(path)) {
                 watch(entry.path(), event, false);
             }
         }
@@ -95,7 +97,7 @@ private:
     };
 
     Task<WaitFileResult> wait() {
-        auto basicRes = co_await BasicFileNotifier::wait();
+        auto basicRes = co_await BasicFileWatch::wait();
         auto path = mWatches.at(basicRes.watch);
         if (!basicRes.name.empty()) {
             path /= make_path(basicRes.name);

@@ -20,6 +20,10 @@ namespace co_async {
         return std::move(mFile);
     }
 
+    FileHandle const &get() const noexcept {
+        return mFile;
+    }
+
     explicit FileBuf(FileHandle file) : mFile(std::move(file)) {}
 
 private:

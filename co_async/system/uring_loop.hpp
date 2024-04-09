@@ -57,7 +57,6 @@ struct UringLoop {
 
     explicit UringLoop(std::size_t entries = 512) {
         checkErrorReturn(io_uring_queue_init(entries, &mRing, 0));
-        reserveFixedFiles(64);
     }
 
     ~UringLoop() {

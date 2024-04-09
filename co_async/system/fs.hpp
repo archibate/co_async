@@ -99,6 +99,10 @@ private:
         return statTimestampToTimePoint(mStatx.stx_atime);
     }
 
+    std::chrono::system_clock::time_point attribute_changed_time() const {
+        return statTimestampToTimePoint(mStatx.stx_ctime);
+    }
+
     std::chrono::system_clock::time_point created_time() const {
         return statTimestampToTimePoint(mStatx.stx_btime);
     }

@@ -23,7 +23,7 @@ namespace co_async {
 
 /*[export]*/ using Pid = pid_t;
 
-/*[export]*/ struct WaitResult {
+/*[export]*/ struct WaitProcessResult {
     Pid pid;
     int status;
 
@@ -71,13 +71,13 @@ namespace co_async {
     co_return;
 }
 
-/*[export]*/ inline Task<WaitResult> wait_process(Pid pid) {
+/*[export]*/ inline Task<WaitProcessResult> wait_process(Pid pid) {
     siginfo_t info{};
     co_await uring_waitid(loop, P_PID, pid, &info, WEXITED, 0);
     co_return {
         .pid = info.si_pid,
         .status = info.si_status,
-        .exitType = (WaitResult::ExitType)info.si_code,
+        .exitType = (WaitProcessResult::ExitType)info.si_code,
     };
 }
 

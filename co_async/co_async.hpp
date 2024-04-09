@@ -3,6 +3,7 @@
 #include <co_async/http/http11.hpp>/*{export import :http.http11;}*/
 #include <co_async/http/http_server.hpp>/*{export import :http.http_server;}*/
 #include <co_async/system/fs.hpp>/*{export import :system.fs;}*/
+#include <co_async/system/fs_notify.hpp>/*{export import :system.fs_notify;}*/
 #include <co_async/system/socket.hpp>/*{export import :system.socket;}*/
 #include <co_async/system/process.hpp>/*{export import :system.process;}*/
 #include <co_async/awaiter/when_all.hpp>/*{export import :awaiter.when_all;}*/

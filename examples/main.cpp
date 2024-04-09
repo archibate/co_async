@@ -5,11 +5,9 @@ using namespace co_async;
 using namespace std::literals;
 
 Task<> amain() {
-    auto path = make_path("/home/bate/Downloads/Screenshot_2024-04-04_19-24-13.png");
-    auto file = co_await fs_open(path, OpenMode::Read);
-    auto size = co_await fs_stat_size(path);
-    std::vector<char> buffer(size);
-    co_await fs_read(file, buffer);
+    auto path = make_path("examples/main.cpp");
+    auto w = co_await FileNotifier().add(path, FileNotifier::OnWriteFinished).wait();
+    co_await stdio().putline(w.metadata);
 }
 
 int main() {

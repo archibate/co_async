@@ -29,7 +29,7 @@ struct Uninitialized {
     T moveValue() {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
-            throw std::bad_optional_access("Uninitialized::moveValue called in an unvalued slot");
+            throw std::invalid_argument("Uninitialized::moveValue called in an unvalued slot");
         }
 #endif
         T ret(std::move(mValue));

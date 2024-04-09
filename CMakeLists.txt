@@ -1,5 +1,6 @@
 set(ENABLE_MODULES OFF)
 set(ENABLE_CUDA OFF)
+set(CO_ASYNC_DEBUG ON)
 
 if (ENABLE_MODULES)
     cmake_minimum_required(VERSION 3.28)

@@ -36,7 +36,23 @@ struct IStreamBase {
                 }
             }
             if (!co_await fillBuffer()) {
-                co_return mEnd != start;
+                co_return false;
+            }
+            start = 0;
+        }
+    }
+
+    Task<bool> dropline(char eol) {
+        std::size_t start = mIndex;
+        while (true) {
+            for (std::size_t i = start; i < mEnd; ++i) {
+                if (mBuffer[i] == eol) {
+                    mIndex = i + 1;
+                    co_return true;
+                }
+            }
+            if (!co_await fillBuffer()) {
+                co_return false;
             }
             start = 0;
         }
@@ -51,7 +67,7 @@ struct IStreamBase {
             for (std::size_t i = 1; i < eol.size(); ++i) {
                 if (bufferEmpty()) {
                     if (!co_await fillBuffer()) {
-                        co_return true;
+                        co_return false;
                     }
                 }
                 char c = mBuffer[mIndex];
@@ -62,7 +78,30 @@ struct IStreamBase {
                     goto again;
                 }
             }
-            co_return false;
+            co_return true;
+        }
+    }
+
+    Task<bool> dropline(std::string_view eol) {
+        while (true) {
+        again:
+            if (!co_await dropline(eol.front())) {
+                co_return false;
+            }
+            for (std::size_t i = 1; i < eol.size(); ++i) {
+                if (bufferEmpty()) {
+                    if (!co_await fillBuffer()) {
+                        co_return false;
+                    }
+                }
+                char c = mBuffer[mIndex];
+                if (eol[i] == c) [[likely]] {
+                    ++mIndex;
+                } else {
+                    goto again;
+                }
+            }
+            co_return true;
         }
     }
 
@@ -78,6 +117,41 @@ struct IStreamBase {
         co_return s;
     }
 
+    Task<bool> getn(std::span<char> s) {
+        auto p = s.data();
+        auto n = s.size();
+        std::size_t start = mIndex;
+        while (true) {
+            auto end = start + n;
+            if (end <= mEnd) {
+                p = std::copy(mBuffer.get() + start, mBuffer.get() + end, p);
+                mIndex = end;
+                co_return true;
+            }
+            p = std::copy(mBuffer.get() + start, mBuffer.get() + mEnd, p);
+            if (!co_await fillBuffer()) {
+                co_return false;
+            }
+            start = 0;
+        }
+    }
+
+    Task<bool> dropn(std::size_t n) {
+        if (!n) co_return true;
+        std::size_t start = mIndex;
+        while (true) {
+            auto end = start + n;
+            if (end <= mEnd) {
+                mIndex = end;
+                co_return true;
+            }
+            if (!co_await fillBuffer()) {
+                co_return false;
+            }
+            start = 0;
+        }
+    }
+
     Task<bool> getn(std::string &s, std::size_t n) {
         std::size_t start = mIndex;
         while (true) {
@@ -89,7 +163,7 @@ struct IStreamBase {
             }
             s.append(mBuffer.get() + start, mEnd - start);
             if (!co_await fillBuffer()) {
-                co_return mEnd != start;
+                co_return false;
             }
             start = 0;
         }
@@ -97,6 +171,7 @@ struct IStreamBase {
 
     Task<std::string> getn(std::size_t n) {
         std::string s;
+        s.reserve(n);
         co_await getn(s, n);
         co_return s;
     }
@@ -107,6 +182,26 @@ struct IStreamBase {
             s.append(mBuffer.get() + start, mEnd - start);
             start = 0;
         } while (co_await fillBuffer());
+    }
+
+    Task<std::string> getall() {
+        std::string s;
+        co_await getall(s);
+        co_return s;
+    }
+
+    template <class T> requires std::is_trivial_v<T>
+    Task<bool> getstruct(T &ret) {
+        return getn(std::span<char>((char *)&ret, sizeof(T)));
+    }
+
+    template <class T> requires std::is_trivial_v<T>
+    Task<T> getstruct() {
+        T ret;
+        if (!co_await getstruct(ret)) [[unlikely]] {
+            throw std::runtime_error("EOF while reading struct");
+        }
+        co_return ret;
     }
 
 private:
@@ -127,8 +222,6 @@ private:
     std::size_t mBufSize = 0;
 };
 
-/*[export]*/ struct StreamShutdownException {};
-
 template <class Writer>
 struct OStreamBase {
     explicit OStreamBase(std::size_t bufferSize = 8192)
@@ -146,7 +239,7 @@ struct OStreamBase {
         ++mIndex;
     }
 
-    Task<> puts(std::string_view s) {
+    Task<> putspan(std::span<char const> s) {
         auto p = s.data();
         auto const pe = s.data() + s.size();
     again:
@@ -169,6 +262,15 @@ struct OStreamBase {
         }
     }
 
+    Task<> puts(std::string_view s) {
+        return putspan(std::span<char const>(s.data(), s.size()));
+    }
+
+    template <class T>
+    Task<> putstruct(T const &s) {
+        return puts(std::span<char const>((char const *)std::addressof(s), sizeof(T)));
+    }
+
     Task<> putline(std::string_view s) {
         co_await puts(s);
         co_await putchar('\n');
@@ -185,7 +287,7 @@ struct OStreamBase {
                 len = co_await that->write(buf);
             }
             if (len == 0) [[unlikely]] {
-                throw StreamShutdownException();
+                throw std::runtime_error("ostream shutdown while writing");
             }
             mIndex = 0;
         }

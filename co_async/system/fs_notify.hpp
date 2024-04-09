@@ -3,7 +3,7 @@
 #ifdef __linux__
 #include <unistd.h>
 #include <sys/stat.h>
-#include <sys/fanotify.h>
+#include <sys/inotify.h>
 #include <fcntl.h>
 #endif
 
@@ -22,71 +22,92 @@
 
 namespace co_async {
 
-/*[export]*/ struct FileNotifier : FileIStream {
-    using FileIStream::FileIStream;
-
-    enum FileAccessType : std::uint32_t {
-        OnAccessed = FAN_ACCESS,
-        OnOpened = FAN_OPEN,
-        OnExecuted = FAN_OPEN_EXEC,
-        OnAttributeChanged = FAN_ATTRIB,
-        OnModified = FAN_MODIFY,
-        OnDeleted = FAN_DELETE_SELF,
-        OnMoved = FAN_MOVE_SELF,
-        OnChildCreated = FAN_CREATE,
-        OnChildDeleted = FAN_DELETE,
-        OnChildRenamed = FAN_RENAME,
-        OnChildMovedAway = FAN_MOVED_FROM,
-        OnChildMovedInto = FAN_MOVED_TO,
-        OnChildMovedIntoOrAway = FAN_MOVE,
-        OnFilesystemError = FAN_FS_ERROR,
-        OnWriteFinished = FAN_CLOSE_WRITE,
-        OnReadFinished = FAN_CLOSE_NOWRITE,
-        OnReadOrWriteFinished = FAN_CLOSE,
-        OnDirectoryOnly = FAN_ONDIR,
-        OnDirectoryChildrenOnly = FAN_EVENT_ON_CHILD,
+/*[export]*/ struct BasicFileNotifier : FileIStream {
+    enum FileEvent : std::uint32_t {
+        OnAccessed = IN_ACCESS,
+        OnOpened = IN_OPEN,
+        OnAttributeChanged = IN_ATTRIB,
+        OnModified = IN_MODIFY,
+        OnDeleted = IN_DELETE_SELF,
+        OnMoved = IN_MOVE_SELF,
+        OnChildCreated = IN_CREATE,
+        OnChildDeleted = IN_DELETE,
+        OnChildMovedAway = IN_MOVED_FROM,
+        OnChildMovedInto = IN_MOVED_TO,
+        OnWriteFinished = IN_CLOSE_WRITE,
+        OnReadFinished = IN_CLOSE_NOWRITE,
     };
 
 
-    FileNotifier() : FileIStream(FileHandle(checkError(fanotify_init(FAN_CLASS_NOTIF, O_RDONLY)))) {
+    BasicFileNotifier() : FileIStream(FileHandle(checkError(inotify_init1(0)))) {
     }
 
-    FileNotifier &add(DirFilePath path, FileAccessType mask) {
-        checkError(fanotify_mark(get().fileNo(), FAN_MARK_ADD, mask, path.dir_file(), path.c_str()));
-        return *this;
+    int watch(std::filesystem::path path, FileEvent event) {
+        return checkError(inotify_add_watch(get().fileNo(), path.c_str(), event));
     }
 
-    FileNotifier &remove(DirFilePath path, FileAccessType mask) {
-        checkError(fanotify_mark(get().fileNo(), FAN_MARK_REMOVE, mask, path.dir_file(), path.c_str()));
+    void unwatch(int watch) {
+        checkError(inotify_rm_watch(get().fileNo(), watch));
+    }
+
+    struct WaitFileResult {
+        int watch;
+        FileEvent event;
+        std::string name;
+    };
+
+    Task<WaitFileResult> wait() {
+        if (!co_await getstruct(*mEventBuffer)) [[unlikely]] {
+            throw std::runtime_error("EOF while reading struct");
+        }
+        std::string name;
+        name.reserve(mEventBuffer->len);
+        co_await getn(name, mEventBuffer->len);
+        co_return {
+            .watch = mEventBuffer->wd,
+            .event = (FileEvent)mEventBuffer->mask,
+            .name = name.c_str(),
+        };
+    }
+
+private:
+    std::unique_ptr<struct inotify_event> mEventBuffer = std::make_unique<struct inotify_event>();
+};
+
+/*[export]*/ struct FileNotifier : private BasicFileNotifier {
+    using BasicFileNotifier::BasicFileNotifier;
+    using enum BasicFileNotifier::FileEvent;
+
+    FileNotifier &watch(std::filesystem::path path, FileEvent event, bool recursive = false) {
+        int wd = BasicFileNotifier::watch(path, event);
+        mWatches.emplace(wd, path);
+        if (recursive && std::filesystem::is_directory(path)) {
+            for (auto const &entry: std::filesystem::recursive_directory_iterator(path)) {
+                watch(entry.path(), event, false);
+            }
+        }
         return *this;
     }
 
     struct WaitFileResult {
-        Pid pid;
-        FileAccessType mask;
-        std::string metadata;
+        std::filesystem::path path;
+        FileEvent event;
     };
 
     Task<WaitFileResult> wait() {
-        struct fanotify_event_metadata meta;
-        if (!co_await getstruct(meta)) [[unlikely]] {
-            throw std::runtime_error("EOF while reading struct");
-        }
-        if (meta.vers != FANOTIFY_METADATA_VERSION) [[unlikely]] {
-            throw std::runtime_error("fanotify version mismatch");
-        }
-        std::string metadata;
-        if (meta.event_len >= meta.metadata_len + sizeof(meta)) [[likely]] {
-            metadata.reserve(meta.metadata_len);
-            co_await getn(metadata, meta.metadata_len);
-            co_await dropn(meta.event_len - meta.metadata_len - sizeof(meta));
+        auto basicRes = co_await BasicFileNotifier::wait();
+        auto path = mWatches.at(basicRes.watch);
+        if (!basicRes.name.empty()) {
+            path /= make_path(basicRes.name);
         }
         co_return {
-            .pid = meta.pid,
-            .mask = (FileAccessType)meta.mask,
-            .metadata = std::move(metadata),
+            .path = std::move(path),
+            .event = (FileEvent)basicRes.event,
         };
     }
+
+private:
+    std::map<int, std::filesystem::path> mWatches;
 };
 
 } // namespace co_async

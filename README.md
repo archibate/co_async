@@ -67,7 +67,7 @@ int main() {
 
 ### 作为单个头文件导入
 
-[点击此处](co_async.hpp) 下载 `co_async.hpp`，然后在你的项目中引入即可：
+[点击此处](scripts/co_async.hpp) 下载 `co_async.hpp`，然后在你的项目中引入即可：
 
 ```cpp
 #include "co_async.hpp"

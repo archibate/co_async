@@ -9,12 +9,12 @@
 #include <fcntl.h>
 #endif
 
-#pragma once /*{export module co_async:system.uring_loop;}*/
+#pragma once/*{export module co_async:system.uring_loop;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
-#include <co_async/threading/basic_loop.hpp> /*{import :threading.basic_loop;}*/
+#include <co_async/threading/basic_loop.hpp>/*{import :threading.basic_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 #include <co_async/awaiter/details/auto_destroy_promise.hpp>/*{import :awaiter.details.auto_destroy_promise;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/

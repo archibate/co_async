@@ -1,7 +1,7 @@
 /steps
 /cmake/clang_std_modules_source
-/co_async.hpp
 /examples/*.hpp
 /examples/*.h
 /arch
 /build
+/scripts

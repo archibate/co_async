@@ -6,7 +6,7 @@
 
 - [第一集：C++20 协程概念初上手](https://www.bilibili.com/video/BV1Yz421Z7rZ)
 - [第二集：封装 epoll 实现 HTTP 客户端](https://www.bilibili.com/video/BV18t421G7fD)
-- [第三集：io_uring 实现 HTTP 服务器](https://www.bilibili.com/video/BV1yD421H7KY)
+- [第三集：io uring 实现 HTTP 服务器](https://www.bilibili.com/video/BV1yD421H7KY)
 - [第四集：进一步完善 HTTP 路由，实现线程池](https://space.bilibili.com/263032155)（施工中，稍后上传）
 
 > [steps 目录](steps) 是本库代码逐渐成形的过程，可以配合教学视频自己动手尝试。
@@ -67,7 +67,7 @@ int main() {
 
 ### 作为单个头文件导入
 
-[点击此处](co_async.hpp) 下载 co_async.hpp，然后在你的项目中引入即可：
+[点击此处](co_async.hpp) 下载 `co_async.hpp`，然后在你的项目中引入即可：
 
 ```cpp
 #include "co_async.hpp"
@@ -89,6 +89,14 @@ import co_async;
 ```
 
 > 需要 GCC >= 11、Clang >= 17、MSVC >= 19 以支持 C++20 模块
+
+### CMake Options
+
+```cmake
+cmake -B build -DCO_ASYNC_DEBUG=ON  # enable debug
+cmake -B build -DCO_ASYNC_EXCEPT=ON  # enable exceptions
+cmake -B build -DCO_ASYNC_PERF=ON  # enable benchmarking
+```
 
 ## Benchmark
 

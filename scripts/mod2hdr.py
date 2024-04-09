@@ -83,4 +83,4 @@ def generate(out):
         f.write(source)
 
 process('co_async')
-generate('co_async.hpp')
+generate('scripts/co_async.hpp')

@@ -1,14 +1,10 @@
-#pragma once
+#pragma once/*{export module co_async:utils.rbtree;}*/
 
-#include <chrono>
-#include <cstddef>
-#include <format>
-#include <cstdio>
-#include <algorithm>
-#include <map>
-#include <tuple>
-#include <source_location>
-#include <deque>
+#if CO_ASYNC_PERF
+
+#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+
+namespace co_async {
 
 struct Perf {
     char const *file;
@@ -120,3 +116,17 @@ public:
         stat.table.emplace_back(duration, file, line);
     }
 };
+
+} // namespace co_async
+
+#else
+
+#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+
+namespace co_async {
+
+struct Perf {};
+
+} // namespace co_async
+
+#endif

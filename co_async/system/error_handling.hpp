@@ -10,7 +10,7 @@
 
 namespace co_async {
 
-#ifndef NDEBUG
+#if CO_ASYNC_DEBUG
 auto checkError(auto res, std::source_location const &loc =
                               std::source_location::current()) {
     if (res == -1) [[unlikely]] {

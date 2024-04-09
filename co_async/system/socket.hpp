@@ -146,7 +146,7 @@ private:
     using FileHandle::FileHandle;
 };
 
-/*[export]*/ struct [[nodiscard]] SocketServer : SocketHandle {
+/*[export]*/ struct [[nodiscard]] SocketListener : SocketHandle {
     using SocketHandle::SocketHandle;
 
     SocketAddress mAddr;
@@ -190,11 +190,11 @@ inline Task<SocketHandle> createSocket(int family, int type) {
     co_return sock;
 }
 
-/*[export]*/ inline Task<SocketServer> server_bind(SocketAddress const &addr,
+/*[export]*/ inline Task<SocketListener> listener_bind(SocketAddress const &addr,
                                              int backlog = SOMAXCONN) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
-    SocketServer serv(sock.releaseFile());
+    SocketListener serv(sock.releaseFile());
     checkError(bind(serv.fileNo(), (struct sockaddr const *)&addr.mAddr,
                     addr.mAddrLen));
     checkError(listen(serv.fileNo(), backlog));
@@ -202,10 +202,10 @@ inline Task<SocketHandle> createSocket(int family, int type) {
     co_return serv;
 }
 
-/*[export]*/ inline Task<SocketHandle> server_accept(SocketServer &serv) {
-    int fd = co_await uring_accept(loop, serv.fileNo(),
-                                   (struct sockaddr *)&serv.mAddr.mAddr,
-                                   &serv.mAddr.mAddrLen, 0);
+/*[export]*/ inline Task<SocketHandle> listener_accept(SocketListener &listener) {
+    int fd = co_await uring_accept(loop, listener.fileNo(),
+                                   (struct sockaddr *)&listener.mAddr.mAddr,
+                                   &listener.mAddr.mAddrLen, 0);
     SocketHandle sock(fd);
     co_return sock;
 }

@@ -1,4 +1,6 @@
 set(ENABLE_MODULES OFF)
+set(ENABLE_CUDA OFF)
+
 if (ENABLE_MODULES)
     cmake_minimum_required(VERSION 3.28)
 else()
@@ -14,8 +16,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(co_async LANGUAGES CXX)
 
+if (ENABLE_CUDA)
+    enable_language(CUDA)
+endif()
+
+if (MSVC)
+    add_compile_options($<$<COMPILE_LANG_AND_ID:CXX,MSVC>:-utf-8>)
+endif()
 include(cmake/clang_std_modules.cmake)
-# add_compile_options($<$<COMPILE_LANG_AND_ID:CXX,MSVC>:-utf-8>)
 
 add_library(co_async OBJECT)
 if (ENABLE_MODULES)
@@ -27,8 +35,12 @@ if (ENABLE_MODULES)
     target_sources(co_async PUBLIC FILE_SET CXX_MODULES FILES ${interface_sources})
 else()
     target_sources(co_async PUBLIC FILE_SET HEADERS FILES ${interface_sources})
+    target_sources(co_async PUBLIC FILE_SET HEADERS FILES cmake/clang_std_modules_source/std.hpp)
 endif()
 target_sources(co_async PRIVATE ${implementation_sources})
+# target_compile_definitions(co_async PUBLIC CO_ASYNC_DEBUG)
+target_compile_definitions(co_async PUBLIC CO_ASYNC_PERF)
+# target_compile_definitions(co_async PUBLIC CO_ASYNC_EXCEPT)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     target_sources(co_async PRIVATE arch/linux/liburing/liburing.cpp)
@@ -46,4 +58,3 @@ if (PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         target_link_libraries(${name} PRIVATE co_async)
     endforeach()
 endif()
-

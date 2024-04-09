@@ -3,6 +3,7 @@
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #include <co_async/awaiter/concepts.hpp>/*{import :awaiter.concepts;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/awaiter/details/make_awaitable.hpp>/*{import :awaiter.details.make_awaitable;}*/
 
 namespace co_async {
 

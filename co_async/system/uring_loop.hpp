@@ -9,12 +9,12 @@
 #include <fcntl.h>
 #endif
 
-#pragma once/*{export module co_async:system.uring_loop;}*/
+#pragma once /*{export module co_async:system.uring_loop;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
-#include <co_async/threading/basic_loop.hpp>/*{import :threading.basic_loop;}*/
+#include <co_async/threading/basic_loop.hpp> /*{import :threading.basic_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 #include <co_async/awaiter/details/auto_destroy_promise.hpp>/*{import :awaiter.details.auto_destroy_promise;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
@@ -57,6 +57,7 @@ struct UringLoop {
 
     explicit UringLoop(std::size_t entries = 512) {
         checkErrorReturn(io_uring_queue_init(entries, &mRing, 0));
+        reserveFixedFiles(64);
     }
 
     ~UringLoop() {
@@ -67,13 +68,73 @@ struct UringLoop {
         checkErrorReturn(io_uring_submit(&mRing));
     }
 
+    void reserveFixedBuffers(std::size_t numBufs, std::size_t bufSize = 8192) {
+        if (mFixedBuffers.size() > numBufs) return;
+        mFixedBuffers.resize(numBufs);
+        std::vector<struct iovec> iovecs(numBufs);
+        for (std::size_t i = mFixedBuffers.size(); i < numBufs; ++i) {
+            FixedBuffer &buffer = mFixedBuffers[i];
+            buffer.mBuffer = std::make_unique<char[]>(bufSize);
+            buffer.mBufferSize = bufSize;
+            iovecs[i] = {
+                .iov_base = buffer.mBuffer.get(),
+                .iov_len = buffer.mBufferSize,
+            };
+        }
+        io_uring_register_buffers(&mRing, iovecs.data(), iovecs.size());
+    }
+
+    void reserveFixedFiles(std::size_t numFiles) {
+        if (mFixedFiles.size() >= numFiles) return;
+        mFixedFiles.resize(numFiles);
+        int null_fd = checkError(open("/dev/null", O_RDONLY));
+        struct Closer {
+            int fd;
+
+            ~Closer() {
+                close(fd);
+            }
+        } closer{null_fd};
+        for (std::size_t i = mFixedFiles.size(); i < numFiles; ++i) {
+            mFixedFiles[i] = null_fd;
+            null_fd = checkError(dup(null_fd));
+        }
+        io_uring_register_files(&mRing, mFixedFiles.data(), mFixedFiles.size());
+    }
+
+    std::span<char> lookupFixedBuffer(int buf_index) {
+#if CO_ASYNC_DEBUG
+        if (buf_index < 0 || buf_index >= mFixedFiles.size()) [[unlikely]] {
+            throw std::out_of_range("UringLoop::lookupFixedFile");
+        }
+#endif
+        FixedBuffer &buffer = mFixedBuffers[buf_index];
+        return {buffer.mBuffer.get(), buffer.mBufferSize};
+    }
+
+    int lookupFixedFile(int file_index) {
+#if CO_ASYNC_DEBUG
+        if (file_index < 0 || file_index >= mFixedFiles.size()) [[unlikely]] {
+            throw std::out_of_range("UringLoop::lookupFixedFile");
+        }
+#endif
+        return mFixedFiles[file_index];
+    }
+
     operator BasicLoop &() {
         return mBasicLoop;
     }
 
+    struct FixedBuffer {
+        std::unique_ptr<char[]> mBuffer;
+        std::size_t mBufferSize;
+    };
+
 private:
     io_uring mRing;
     BasicLoop mBasicLoop;
+    std::vector<int> mFixedFiles;
+    std::vector<FixedBuffer> mFixedBuffers;
 };
 
 struct UringAwaiter {
@@ -143,12 +204,26 @@ bool UringLoop::runBatched(std::size_t numBatch,
     return true;
 }
 
+inline Task<int> uring_nop(UringLoop &loop) {
+    co_return co_await UringAwaiter(
+        loop, [&](io_uring_sqe *sqe) { io_uring_prep_nop(sqe); });
+}
+
 inline Task<int> uring_openat(UringLoop &loop, int dirfd, char const *path,
                               int flags, mode_t mode) {
     co_return checkErrorReturn(
         co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
             io_uring_prep_openat(sqe, dirfd, path, flags, mode);
         }));
+}
+
+inline Task<int> uring_openat_direct(UringLoop &loop, int dirfd, char const *path,
+                              int flags, mode_t mode, int file_index) {
+    int ret = checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_openat_direct(sqe, dirfd, path, flags, mode, file_index);
+        }));
+    co_return ret;
 }
 
 inline Task<int> uring_socket(UringLoop &loop, int domain, int type,
@@ -244,8 +319,29 @@ inline Task<std::size_t> uring_write(UringLoop &loop, int fd,
         }));
 }
 
+inline Task<std::size_t> uring_read_fixed(UringLoop &loop, int fd,
+                                          std::span<char> buf,
+                                          std::uint64_t offset, int buf_index) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_read_fixed(sqe, fd, buf.data(), buf.size(), offset,
+                                     buf_index);
+        }));
+}
+
+inline Task<std::size_t> uring_write_fixed(UringLoop &loop, int fd,
+                                           std::span<char const> buf,
+                                           std::uint64_t offset,
+                                           int buf_index) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_write_fixed(sqe, fd, buf.data(), buf.size(), offset,
+                                      buf_index);
+        }));
+}
+
 inline Task<std::size_t> uring_readv(UringLoop &loop, int fd,
-                                     std::span<iovec const> buf,
+                                     std::span<struct iovec const> buf,
                                      std::uint64_t offset, int flags) {
     co_return checkErrorReturn(
         co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
@@ -255,7 +351,7 @@ inline Task<std::size_t> uring_readv(UringLoop &loop, int fd,
 }
 
 inline Task<std::size_t> uring_writev(UringLoop &loop, int fd,
-                                      std::span<iovec const> buf,
+                                      std::span<struct iovec const> buf,
                                       std::uint64_t offset, int flags) {
     co_return checkErrorReturn(
         co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
@@ -316,8 +412,10 @@ inline Task<int> uring_fsync(UringLoop &loop, int fd, unsigned int flags) {
 }
 
 inline Task<int> uring_ftruncate(UringLoop &loop, int fd, loff_t len) {
-    co_return checkErrorReturn(co_await UringAwaiter(
-        loop, [&](io_uring_sqe *sqe) { io_uring_prep_ftruncate(sqe, fd, len); }));
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_ftruncate(sqe, fd, len);
+        }));
 }
 
 inline Task<int> uring_cancel_fd(UringLoop &loop, int fd, unsigned int flags) {
@@ -326,9 +424,13 @@ inline Task<int> uring_cancel_fd(UringLoop &loop, int fd, unsigned int flags) {
     });
 }
 
-inline Task<int> uring_waitid(UringLoop &loop, idtype_t idtype, id_t id, siginfo_t *infop, int options, unsigned int flags) {
-    co_return checkErrorReturn(co_await UringAwaiter(
-        loop, [&](io_uring_sqe *sqe) { io_uring_prep_waitid(sqe, idtype, id, infop, options, flags); }));
+inline Task<int> uring_waitid(UringLoop &loop, idtype_t idtype, id_t id,
+                              siginfo_t *infop, int options,
+                              unsigned int flags) {
+    co_return checkErrorReturn(
+        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_waitid(sqe, idtype, id, infop, options, flags);
+        }));
 }
 
 inline Task<int> uring_timeout(UringLoop &loop, struct __kernel_timespec ts,

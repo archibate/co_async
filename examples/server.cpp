@@ -5,7 +5,7 @@ using namespace co_async;
 using namespace std::literals;
 
 Task<> amain() {
-    auto serv = co_await server_bind({"127.0.0.1", 8080});
+    auto listener = co_await listener_bind({"127.0.0.1", 8080});
     HTTPServer http;
     http.route("/", [] (HTTPRequest const &request) -> Task<HTTPResponse> {
         if (request.method != "GET")
@@ -19,10 +19,10 @@ Task<> amain() {
         };
     });
 
-    co_await stdio().putline("正在监听: " + serv.address().toString());
+    co_await stdio().putline("正在监听: " + listener.address().toString());
     while (1) {
-        auto conn = co_await server_accept(serv);
-        co_await stdio().putline("收到请求: " + serv.address().toString());
+        auto conn = co_await listener_accept(listener);
+        co_await stdio().putline("收到请求: " + listener.address().toString());
         co_spawn(http.process_connection(FileStream(std::move(conn))));
     }
 }

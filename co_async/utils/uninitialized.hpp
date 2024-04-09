@@ -10,22 +10,42 @@ struct Uninitialized {
     union {
         T mValue;
     };
+#if CO_ASYNC_DEBUG
+    bool mHasValue = false;
+#endif
 
     Uninitialized() noexcept {}
 
     Uninitialized(Uninitialized &&) = delete;
 
-    ~Uninitialized() noexcept {}
+    ~Uninitialized() noexcept {
+#if CO_ASYNC_DEBUG
+        if (!mHasValue) [[unlikely]] {
+            mValue.~T();
+        }
+#endif
+    }
 
     T moveValue() {
+#if CO_ASYNC_DEBUG
+        if (!mHasValue) [[unlikely]] {
+            throw std::bad_optional_access("Uninitialized::moveValue called in an unvalued slot");
+        }
+#endif
         T ret(std::move(mValue));
         mValue.~T();
+#if CO_ASYNC_DEBUG
+        mHasValue = false;
+#endif
         return ret;
     }
 
     template <class... Ts>
     void putValue(Ts &&...args) {
         new (std::addressof(mValue)) T(std::forward<Ts>(args)...);
+#if CO_ASYNC_DEBUG
+        mHasValue = true;
+#endif
     }
 };
 

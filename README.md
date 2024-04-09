@@ -20,7 +20,7 @@ import std;
 using namespace co_async;
 
 Task<> amain() {
-    auto serv = co_await server_bind({"127.0.0.1", 8080});
+    auto listener = co_await listener_bind({"127.0.0.1", 8080});
     HTTPServer http;
     http.route("/", [] (HTTPRequest const &request) -> Task<HTTPResponse> {
         if (request.method != "GET")
@@ -28,16 +28,16 @@ Task<> amain() {
         co_return {
             .status = 200,
             .headers = {
-                {"content-type", "text/html;charset=utf-8"},
+                {"content-type", "text/plain;charset=utf-8"},
             },
             .body = "<h1>It works!</h1>",
         };
     });
 
-    co_await stdio().putline("正在监听: " + serv.address().toString());
+    co_await stdio().putline("正在监听: " + listener.address().toString());
     while (1) {
-        auto conn = co_await server_accept(serv);
-        co_await stdio().putline("收到请求: " + serv.address().toString());
+        auto conn = co_await listener_accept(listener);
+        co_await stdio().putline("收到请求: " + listener.address().toString());
         co_spawn(http.process_connection(FileStream(std::move(conn))));
     }
 }
@@ -89,3 +89,13 @@ import co_async;
 ```
 
 > 需要 GCC >= 11、Clang >= 17、MSVC >= 19 以支持 C++20 模块
+
+## Benchmark
+
+- regular function call 25ns
+- coroutine function call 80ns
+- coroutine function call (with exception) 150ns
+- io uring nop 800ns
+- io uring open 7us
+- io uring statx 11us
+- io uring read/write 80us

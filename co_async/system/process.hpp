@@ -42,7 +42,7 @@ namespace co_async {
     FileHandle mWriter;
 
     FileHandle reader() {
-#ifndef NDEBUG
+#if CO_ASYNC_DEBUG
         if (!mReader) [[unlikely]] {
             throw std::invalid_argument("PipeHandlePair::reader() can only be called once");
         }
@@ -51,7 +51,7 @@ namespace co_async {
     }
 
     FileHandle writer() {
-#ifndef NDEBUG
+#if CO_ASYNC_DEBUG
         if (!mWriter) [[unlikely]] {
             throw std::invalid_argument("PipeHandlePair::writer() can only be called once");
         }
@@ -97,9 +97,8 @@ namespace co_async {
         posix_spawn_file_actions_destroy(&mFileActions);
     }
 
-    ProcessBuilder &chdir(std::string_view path) {
-        mWorkingDir = path;
-        checkError(posix_spawn_file_actions_addchdir_np(&mFileActions, mWorkingDir.c_str()));
+    ProcessBuilder &chdir(std::filesystem::path path) {
+        checkError(posix_spawn_file_actions_addchdir_np(&mFileActions, path.c_str()));
         return *this;
     }
 
@@ -196,7 +195,6 @@ private:
     std::string mPath;
     std::vector<std::string> mArgvStore;
     std::vector<std::string> mEnvpStore;
-    std::string mWorkingDir;
 };
 
 } // namespace co_async

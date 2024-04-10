@@ -52,16 +52,35 @@ int main() {
 
 ## 平台要求
 
+### Linux
+
 - Linux 内核 >= 5.1
 - GCC >= 10
 - Clang >= 16
 
 > 小彭老师推荐使用 Arch Linux 系统作为开发平台
 
-或者：
+### Windows
 
 - Windows >= 10（施工中，稍后支持）
 - Visual Studio >= 2022（施工中，稍后支持）
+
+### Docker 环境构建
+
+如果你的 Ubuntu 标准库版本太老，无法编译，可以试试看小彭老师提供的 [Docker 环境](Dockerfile)：
+
+```bash
+docker build -t my_archlinux_image .  # 构建 Docker 镜像
+docker run -it -p 8080:8080 my_archlinux_image   # 运行并进入 Docker 镜像，映射端口 8080 到本机
+```
+
+在 Docker 容器中，构建本项目：
+
+```bash
+cmake -B build
+cmake --build build --parallel 8
+build/server  # 对应于 examples/server.cpp
+```
 
 ## 安装与导入
 
@@ -73,11 +92,26 @@ int main() {
 #include "co_async.hpp"
 ```
 
-Linux 
+> 若为 Linux 系统则需要编译时加上 `-luring` 选项。
+
+### 作为普通库导入
+
+将本项目下载到你的项目中作为子文件夹，引入并链接：
+
+```cmake
+add_subdirectory(co_async)
+target_link_libraries(你的名字 PRIVATE co_async)
+```
+
+在你的代码中导入即可：
+
+```cpp
+#include <co_async/co_async.hpp>
+```
 
 ### 作为 C++20 模块导入
 
-将本项目下载到你的项目中作为子文件夹，引入并链接：
+将本项目下载到你的项目中作为子文件夹，开启 CO_ASYNC_MODULE 选项后引入并链接：
 
 ```cmake
 set(CO_ASYNC_MODULE ON)
@@ -91,9 +125,9 @@ target_link_libraries(你的名字 PRIVATE co_async)
 import co_async;
 ```
 
-> 需要 GCC >= 11、Clang >= 17、MSVC >= 19，以及 CMake >= 3.28 且使用 `cmake -G Ninja` 选项
+> 需要 GCC >= 11 或 Clang >= 17 或 MSVC >= 19，以及 CMake >= 3.28 且使用 `cmake -G Ninja` 选项
 
-### CMake 选项
+### 额外 CMake 选项
 
 ```bash
 cmake -B build -DCO_ASYNC_DEBUG=ON  # 启用调试与安全性检测
@@ -107,7 +141,7 @@ cmake -B build -DCO_ASYNC_PERF=ON  # 启用性能测试（程序结束时自动�
 
 - 普通函数调用 25ns
 - 协程函数调用 80ns
-- 协程函数调用（开启异常） 150ns
+- 协程函数调用（启用异常）150ns
 - I/O 基础延迟 0.8µs
 - I/O 打开文件 7µs
 - I/O 查询文件信息 11µs

@@ -378,12 +378,10 @@ inline Task<std::size_t> uring_recv(UringLoop &loop, int fd,
 }
 
 inline Task<std::size_t> uring_send(UringLoop &loop, int fd,
-                                    std::span<char const> buf, int flags,
-                                    int zc_flags) {
+                                    std::span<char const> buf, int flags) {
     co_return checkErrorReturn(
         co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
-            io_uring_prep_send_zc(sqe, fd, buf.data(), buf.size(), flags,
-                                  zc_flags);
+            io_uring_prep_send(sqe, fd, buf.data(), buf.size(), flags);
         }));
 }
 
@@ -399,7 +397,7 @@ inline Task<std::size_t> uring_sendmsg(UringLoop &loop, int fd,
                                        struct msghdr *msg, unsigned int flags) {
     co_return checkErrorReturn(
         co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
-            io_uring_prep_sendmsg_zc(sqe, fd, msg, flags);
+            io_uring_prep_sendmsg(sqe, fd, msg, flags);
         }));
 }
 

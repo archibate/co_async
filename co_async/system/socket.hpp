@@ -218,5 +218,20 @@ listener_accept(SocketListener &listener) {
     co_return sock;
 }
 
+/*[export]*/ inline Task<std::size_t>
+socket_write(SocketHandle &sock, std::span<char const> buf) {
+    return uring_send(loop, sock.fileNo(), buf, 0);
+}
+
+/*[export]*/ inline Task<std::size_t>
+socket_read(SocketHandle &sock, std::span<char> buf) {
+    return uring_recv(loop, sock.fileNo(), buf, 0);
+}
+
+/*[export]*/ inline Task<>
+socket_shutdown(SocketHandle &sock, int how = SHUT_RDWR) {
+    co_await uring_shutdown(loop, sock.fileNo(), how);
+}
+
 } // namespace co_async
 #endif

@@ -24,7 +24,7 @@ Task<> amain() {
     while (1) {
         auto conn = co_await listener_accept(listener);
         co_await stdio().putline("收到请求: " + listener.address().toString());
-        fg.add(co_future(and_then(sleep_for(2s), http.process_connection(FileStream(std::move(conn))))));
+        fg.add(co_future(and_then(sleep_for(2s), http.process_connection(SocketStream(std::move(conn))))));
     }
     co_await fg.wait();
 }

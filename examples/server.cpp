@@ -23,7 +23,7 @@ Task<> amain() {
     while (1) {
         auto conn = co_await listener_accept(listener);
         co_await stdio().putline("收到请求: " + listener.address().toString());
-        co_spawn(http.process_connection(FileStream(std::move(conn))));
+        co_spawn(http.process_connection(SocketStream(std::move(conn))));
     }
 }
 

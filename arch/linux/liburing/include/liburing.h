@@ -30,7 +30,7 @@
 /* <linux/time_types.h> is included above and not needed again */
 #define UAPI_LINUX_IO_URING_H_SKIP_LINUX_TIME_TYPES_H 1
 
-#include <linux/openat2.h>
+/* #include <linux/openat2.h> */
 
 #endif
 /* SPDX-License-Identifier: (GPL-2.0 WITH Linux-syscall-note) OR MIT */

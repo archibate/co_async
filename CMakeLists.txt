@@ -4,7 +4,7 @@ set(CO_ASYNC_DEBUG ON)
 if (CO_ASYNC_MODULE)
     cmake_minimum_required(VERSION 3.28)
 else()
-    cmake_minimum_required(VERSION 3.18)
+    cmake_minimum_required(VERSION 3.16)
 endif()
 
 if (NOT CMAKE_BUILD_TYPE)

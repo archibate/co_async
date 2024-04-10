@@ -29,11 +29,11 @@ inline void disableCanon(FileHandle &file) {
         : mFileIn(fileIn),
           mFileOut(fileOut) {}
 
-    Task<std::size_t> read(std::span<char> buffer) {
+    Task<std::size_t> raw_read(std::span<char> buffer) {
         return fs_read(mFileIn, buffer);
     }
 
-    Task<std::size_t> write(std::span<char const> buffer) {
+    Task<std::size_t> raw_write(std::span<char const> buffer) {
         return fs_write(mFileOut, buffer);
     }
 

@@ -11,7 +11,9 @@ namespace co_async {
 struct WhenAllCtlBlock {
     std::size_t mCount;
     std::coroutine_handle<> mPrevious{};
+#if CO_ASYNC_EXCEPT
     std::exception_ptr mException{};
+#endif
 };
 
 struct WhenAllAwaiter {
@@ -30,9 +32,11 @@ struct WhenAllAwaiter {
     }
 
     void await_resume() const {
+#if CO_ASYNC_EXCEPT
         if (mControl.mException) [[unlikely]] {
             std::rethrow_exception(mControl.mException);
         }
+#endif
     }
 
     WhenAllCtlBlock &mControl;
@@ -42,12 +46,16 @@ struct WhenAllAwaiter {
 template <class T>
 ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
                                  Uninitialized<T> &result) {
+#if CO_ASYNC_EXCEPT
     try {
+#endif
         result.putValue(co_await std::forward<decltype(t)>(t));
+#if CO_ASYNC_EXCEPT
     } catch (...) {
         control.mException = std::current_exception();
         co_return control.mPrevious;
     }
+#endif
     --control.mCount;
     if (control.mCount == 0) {
         co_return control.mPrevious;
@@ -58,12 +66,16 @@ ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
 template <class = void>
 ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
                                  Uninitialized<void> &) {
+#if CO_ASYNC_EXCEPT
     try {
+#endif
         co_await std::forward<decltype(t)>(t);
+#if CO_ASYNC_EXCEPT
     } catch (...) {
         control.mException = std::current_exception();
         co_return control.mPrevious;
     }
+#endif
     --control.mCount;
     if (control.mCount == 0) {
         co_return control.mPrevious;

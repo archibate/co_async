@@ -120,3 +120,4 @@ public:
         stat.table.emplace_back(duration, file, line);
     }
 };
+

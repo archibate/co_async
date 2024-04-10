@@ -9,6 +9,7 @@
 #include <co_async/utils/simple_map.hpp>     /*{import :utils.simple_map;}*/
 #include <co_async/system/socket.hpp>        /*{import :system.socket;}*/
 #include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
+#include <co_async/system/timer.hpp>         /*{import :system.timer;}*/
 #include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
 
 namespace co_async {

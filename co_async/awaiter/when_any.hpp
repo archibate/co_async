@@ -14,7 +14,9 @@ struct WhenAnyCtlBlock {
 
     std::size_t mIndex{kNullIndex};
     std::coroutine_handle<> mPrevious{};
+#if CO_ASYNC_EXCEPT
     std::exception_ptr mException{};
+#endif
 };
 
 struct WhenAnyAwaiter {
@@ -33,9 +35,11 @@ struct WhenAnyAwaiter {
     }
 
     void await_resume() const {
+#if CO_ASYNC_EXCEPT
         if (mControl.mException) [[unlikely]] {
             std::rethrow_exception(mControl.mException);
         }
+#endif
     }
 
     WhenAnyCtlBlock &mControl;
@@ -45,13 +49,17 @@ struct WhenAnyAwaiter {
 template <class T>
 ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
                                  Uninitialized<T> &result, std::size_t index) {
+#if CO_ASYNC_EXCEPT
     try {
+#endif
         result.putValue(
             (co_await std::forward<decltype(t)>(t), NonVoidHelper<>()));
+#if CO_ASYNC_EXCEPT
     } catch (...) {
         control.mException = std::current_exception();
         co_return control.mPrevious;
     }
+#endif
     control.mIndex = index;
     co_return control.mPrevious;
 }

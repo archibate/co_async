@@ -11,7 +11,7 @@
 namespace co_async {
 
 #if CO_ASYNC_DEBUG
-auto checkError(auto res, std::source_location const &loc =
+auto checkError(auto res, std::source_location loc =
                               std::source_location::current()) {
     if (res == -1) [[unlikely]] {
         throw std::system_error(errno, std::system_category(),
@@ -28,7 +28,7 @@ auto bypassSpecificError(auto res, int bypassval = -ETIME) {
     return res;
 }
 
-auto checkErrorReturn(auto res, std::source_location const &loc =
+auto checkErrorReturn(auto res, std::source_location loc =
                                     std::source_location::current()) {
     if (res < 0) [[unlikely]] {
         throw std::system_error(-res, std::system_category(),
@@ -40,7 +40,7 @@ auto checkErrorReturn(auto res, std::source_location const &loc =
 
 auto checkErrorNonBlock(
     auto res, int blockres = 0, int blockerr = EWOULDBLOCK,
-    std::source_location const &loc = std::source_location::current()) {
+    std::source_location loc = std::source_location::current()) {
     if (res == -1) {
         if (errno != blockerr) [[unlikely]] {
             throw std::system_error(errno, std::system_category(),

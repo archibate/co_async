@@ -28,6 +28,6 @@ Task<> amain() {
 }
 
 int main() {
-    co_spawn_and_wait(amain());
+    co_synchronize(amain());
     return 0;
 }

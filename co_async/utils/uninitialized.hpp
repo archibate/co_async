@@ -20,7 +20,8 @@ struct Uninitialized {
 
     ~Uninitialized() noexcept {
 #if CO_ASYNC_DEBUG
-        if (!mHasValue) [[unlikely]] {
+        if (mHasValue) [[unlikely]] {
+            std::cerr << "WARNING: Uninitialized destroyed with value\n";
             mValue.~T();
         }
 #endif
@@ -43,6 +44,12 @@ struct Uninitialized {
 
     template <class... Ts>
     void putValue(Ts &&...args) {
+#if CO_ASYNC_DEBUG
+        if (mHasValue) [[unlikely]] {
+            std::cerr << "WARNING: Uninitialized::putValue with value already exist\n";
+            mValue.~T();
+        }
+#endif
         new (std::addressof(mValue)) T(std::forward<Ts>(args)...);
 #if CO_ASYNC_DEBUG
         mHasValue = true;

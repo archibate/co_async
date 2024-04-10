@@ -14,7 +14,7 @@ namespace co_async {
         : mStringView(strView),
           mPosition(0) {}
 
-    Task<std::size_t> read(std::span<char> buffer) {
+    Task<std::size_t> raw_read(std::span<char> buffer) {
         std::size_t size =
             std::min(buffer.size(), mStringView.size() - mPosition);
         std::copy_n(mStringView.begin() + mPosition, size, buffer.begin());
@@ -42,7 +42,7 @@ private:
 
     StringWriteBuf(std::string_view str) : mString(str) {}
 
-    Task<std::size_t> write(std::span<char const> buffer) {
+    Task<std::size_t> raw_write(std::span<char const> buffer) {
         mString.append(buffer.data(), buffer.size());
         co_return buffer.size();
     }

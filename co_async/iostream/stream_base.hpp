@@ -214,7 +214,7 @@ private:
 
     Task<bool> fillBuffer() {
         auto *that = static_cast<Reader *>(this);
-        mEnd = co_await that->read(std::span(mBuffer.get(), mBufSize));
+        mEnd = co_await that->raw_read(std::span(mBuffer.get(), mBufSize));
         mIndex = 0;
         co_return mEnd != 0;
     }
@@ -285,10 +285,10 @@ struct OStreamBase {
         if (mIndex) [[likely]] {
             auto *that = static_cast<Writer *>(this);
             auto buf = std::span(mBuffer.get(), mIndex);
-            auto len = co_await that->write(buf);
+            auto len = co_await that->raw_write(buf);
             while (len != buf.size()) [[unlikely]] {
                 buf = buf.subspan(len);
-                len = co_await that->write(buf);
+                len = co_await that->raw_write(buf);
             }
             if (len == 0) [[unlikely]] {
                 throw std::runtime_error("ostream shutdown while writing");

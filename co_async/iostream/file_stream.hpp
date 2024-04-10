@@ -8,11 +8,11 @@
 namespace co_async {
 
 /*[export]*/ struct FileBuf {
-    Task<std::size_t> read(std::span<char> buffer) {
+    Task<std::size_t> raw_read(std::span<char> buffer) {
         return fs_read(mFile, buffer);
     }
 
-    Task<std::size_t> write(std::span<char const> buffer) {
+    Task<std::size_t> raw_write(std::span<char const> buffer) {
         return fs_write(mFile, buffer);
     }
 

@@ -16,7 +16,6 @@
 #ifdef __linux__
 #include <co_async/threading/basic_loop.hpp> /*{import :threading.basic_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/awaiter/details/auto_destroy_promise.hpp>/*{import :awaiter.details.auto_destroy_promise;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 
 namespace co_async {
@@ -136,6 +135,7 @@ struct UringLoop {
 private:
     io_uring mRing;
     BasicLoop mBasicLoop;
+    std::vector<std::coroutine_handle<>> mCoroutinesBatched;
     std::vector<int> mFixedFiles;
     std::vector<FixedBuffer> mFixedBuffers;
 };
@@ -197,13 +197,18 @@ bool UringLoop::runBatched(std::size_t numBatch,
     }
     checkErrorReturn(res);
     unsigned head, numGot = 0;
+    mCoroutinesBatched.clear();
     io_uring_for_each_cqe(&mRing, head, cqe) {
         auto *awaiter = reinterpret_cast<UringAwaiter *>(cqe->user_data);
         awaiter->mRes = cqe->res;
-        mBasicLoop.push(awaiter->mPrevious);
+        mCoroutinesBatched.push_back(awaiter->mPrevious);
         ++numGot;
     }
     io_uring_cq_advance(&mRing, numGot);
+    for (auto const &coroutine: mCoroutinesBatched) {
+        coroutine.resume();
+    }
+    mCoroutinesBatched.clear();
     return true;
 }
 
@@ -446,24 +451,6 @@ inline Task<int> uring_timeout(UringLoop &loop, struct __kernel_timespec ts,
     if (res == -ETIME) [[likely]]
         res = 0;
     co_return checkErrorReturn(res);
-}
-
-template <class Rep, class Period>
-inline Task<int> uring_timeout(UringLoop &loop,
-                               std::chrono::duration<Rep, Period> dur,
-                               std::size_t count) {
-    return uring_timeout(loop, durationToKernelTimespec(dur), count,
-                         IORING_TIMEOUT_ETIME_SUCCESS |
-                             IORING_TIMEOUT_REALTIME);
-}
-
-template <class Clk, class Dur>
-inline Task<int> uring_timeout(UringLoop &loop,
-                               std::chrono::time_point<Clk, Dur> tp,
-                               std::size_t count) {
-    return uring_timeout(loop, timePointToKernelTimespec(tp), count,
-                         IORING_TIMEOUT_ETIME_SUCCESS | IORING_TIMEOUT_ABS |
-                             IORING_TIMEOUT_REALTIME);
 }
 
 } // namespace co_async

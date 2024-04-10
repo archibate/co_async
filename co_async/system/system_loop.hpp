@@ -2,17 +2,31 @@
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #include <co_async/system/uring_loop.hpp>/*{import :system.uring_loop;}*/
+#include <co_async/threading/basic_loop.hpp>/*{import :threading.basic_loop;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 
 namespace co_async {
 
 /*[export]*/ inline UringLoop loop;
 
-/*[export]*/ inline void co_spawn(auto task) {
-    loop_enqueue(loop, std::move(task));
+template <class T>
+/*[export]*/ inline Future<T> make_future() {
+    return Future<T>(loop);
 }
 
-/*[export]*/ inline auto co_spawn_and_wait(auto task) {
-    return loop_run(loop, std::move(task));
+template <class T, class P>
+/*[export]*/ inline void co_spawn(Task<T, P> &&task) {
+    return loop_enqueue_detach(loop, UniqueTask<T, P>(std::move(task)));
+}
+
+template <class T, class P>
+/*[export]*/ inline Future<T> co_async(Task<T, P> &&task) {
+    return loop_enqueue_future(loop, UniqueTask<T, P>(std::move(task)));
+}
+
+template <class T, class P>
+/*[export]*/ inline auto co_synchronize(Task<T, P> const &task) {
+    return loop_enqueue_and_wait(loop, task);
 }
 
 } // namespace co_async

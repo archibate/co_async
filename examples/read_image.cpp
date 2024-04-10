@@ -1,3 +1,4 @@
+#define CO_ASYNC_PERF 1
 #include <co_async/co_async.hpp>/*{import co_async;}*/
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #define STB_IMAGE_IMPLEMENTATION
@@ -20,6 +21,6 @@ Task<> amain() {
 }
 
 int main() {
-    co_spawn_and_wait(amain());
+    co_synchronize(amain());
     return 0;
 }

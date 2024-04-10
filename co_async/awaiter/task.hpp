@@ -83,7 +83,7 @@ private:
 public:
     Perf mPerf;
 
-    Promise(std::source_location const &loc = std::source_location::current())
+    Promise(std::source_location loc = std::source_location::current())
         : mPerf(loc) {}
 #endif
 };
@@ -107,88 +107,66 @@ struct Promise<void> : PromiseBase {
 #if CO_ASYNC_PERF
     Perf mPerf;
 
-    Promise(std::source_location const &loc = std::source_location::current())
+    Promise(std::source_location loc = std::source_location::current())
         : mPerf(loc) {}
 #endif
+};
+
+template <class T, class P>
+struct TaskAwaiter {
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    std::coroutine_handle<P>
+    await_suspend(std::coroutine_handle<> coroutine) const noexcept {
+        P &promise = mCoroutine.promise();
+        promise.setPrevious(coroutine);
+        return mCoroutine;
+    }
+
+    T await_resume() const {
+        return mCoroutine.promise().result();
+    }
+
+    std::coroutine_handle<P> mCoroutine;
 };
 
 /*[export]*/ template <class T = void, class P = Promise<T>>
 struct [[nodiscard]] Task {
     using promise_type = P;
 
-    Task(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
-        : mCoroutine(coroutine) {}
-
-    Task(Task &&that) noexcept : mCoroutine(that.mCoroutine) {
-        that.mCoroutine = nullptr;
+    Task(std::coroutine_handle<promise_type> coroutine) noexcept
+        : mCoroutine(coroutine) {
     }
 
-    Task &operator=(Task &&that) noexcept {
-        std::swap(mCoroutine, that.mCoroutine);
-    }
+    Task(Task &&) = delete;
 
     ~Task() {
-        if (mCoroutine) {
 #if CO_ASYNC_DEBUG
-            if (!mCoroutine.done()) [[unlikely]] {
+        if (!mCoroutine) return;
+        if (!mCoroutine.done()) [[unlikely]] {
 #if CO_ASYNC_PERF
-                auto &perf = mCoroutine.promise().mPerf;
-                std::cerr << "WARNING: task (" << perf.file << ":" << perf.line << ") destroyed undone\n";
+            auto &perf = mCoroutine.promise().mPerf;
+            std::cerr << "WARNING: task (" << perf.file << ":" << perf.line << ") destroyed undone\n";
 #else
-                std::cerr << "WARNING: task destroyed undone\n";
+            std::cerr << "WARNING: task destroyed undone\n";
 #endif
-            }
-#endif
-            mCoroutine.destroy();
         }
+#endif
+        mCoroutine.destroy();
     }
-
-    struct Awaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        std::coroutine_handle<promise_type>
-        await_suspend(std::coroutine_handle<> coroutine) const noexcept {
-            promise_type &promise = mCoroutine.promise();
-            promise.setPrevious(coroutine);
-            return mCoroutine;
-        }
-
-        T await_resume() const {
-            return mCoroutine.promise().result();
-        }
-
-        std::coroutine_handle<promise_type> mCoroutine;
-    };
 
     auto operator co_await() const noexcept {
-        return Awaiter(mCoroutine);
+        return TaskAwaiter<T, P>(mCoroutine);
     }
 
-    operator std::coroutine_handle<promise_type>() const noexcept {
+    operator std::coroutine_handle<promise_type> const &() const noexcept {
         return mCoroutine;
-    }
-
-    std::coroutine_handle<promise_type> release() noexcept {
-        auto coroutine = mCoroutine;
-        mCoroutine = nullptr;
-        return coroutine;
     }
 
 private:
     std::coroutine_handle<promise_type> mCoroutine;
-};
-
-/*[export]*/ template <class Loop, class T, class P>
-T loop_run(Loop &loop, Task<T, P> const &t) {
-    auto a = t.operator co_await();
-    auto c = a.await_suspend(std::noop_coroutine());
-    c.resume();
-    while (!c.done()) {
-        loop.run();
-    }
-    return a.await_resume();
 };
 
 } // namespace co_async

@@ -12,25 +12,25 @@ namespace co_async {
     requires(!std::same_as<void, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<
     std::invoke_result_t<F, typename AwaitableTraits<A>::RetType>>::Type>
-and_then(A &&a, F &&f) {
+and_then(A a, F f) {
     co_return co_await ensureAwaitable(
-        std::forward<F>(f)(co_await std::forward<A>(a)));
+        std::invoke(std::move(f), co_await std::move(a)));
 }
 
 /*[export]*/ template <Awaitable A, std::invocable<> F>
     requires(std::same_as<void, typename AwaitableTraits<A>::RetType>)
-Task<typename AwaitableTraits<std::invoke_result_t<F>>::Type> and_then(A &&a,
-                                                                       F &&f) {
-    co_await std::forward<A>(a);
-    co_return co_await ensureAwaitable(std::forward<F>(f)());
+Task<typename AwaitableTraits<std::invoke_result_t<F>>::Type> and_then(A a,
+                                                                       F f) {
+    co_await std::move(a);
+    co_return co_await ensureAwaitable(std::invoke(std::move(f)));
 }
 
 /*[export]*/ template <Awaitable A, Awaitable F>
     requires(!std::invocable<F> &&
              !std::invocable<F, typename AwaitableTraits<A>::RetType>)
-Task<typename AwaitableTraits<F>::RetType> and_then(A &&a, F &&f) {
-    co_await std::forward<A>(a);
-    co_return co_await std::forward<F>(f);
+Task<typename AwaitableTraits<F>::RetType> and_then(A a, F f) {
+    co_await std::move(a);
+    co_return co_await std::move(f);
 }
 
 } // namespace co_async

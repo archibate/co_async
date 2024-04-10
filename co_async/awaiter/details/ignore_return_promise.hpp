@@ -41,7 +41,7 @@ struct IgnoreReturnPromise {
     IgnoreReturnPromise &operator=(IgnoreReturnPromise &&) = delete;
 };
 
-struct AutoDestroyingFinalAwaiter {
+struct AutoDestroyFinalAwaiter {
     bool await_ready() const noexcept {
         return false;
     }

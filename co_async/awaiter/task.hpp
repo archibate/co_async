@@ -136,15 +136,26 @@ struct TaskAwaiter {
 struct [[nodiscard]] Task {
     using promise_type = P;
 
-    Task(std::coroutine_handle<promise_type> coroutine) noexcept
-        : mCoroutine(coroutine) {
+    /* Task(std::coroutine_handle<promise_type> coroutine) noexcept */
+    /*     : mCoroutine(coroutine) { */
+    /* } */
+
+    /* Task(Task &&) = delete; */
+
+    Task(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
+        : mCoroutine(coroutine) {}
+
+    Task(Task &&that) noexcept : mCoroutine(that.mCoroutine) {
+        that.mCoroutine = nullptr;
     }
 
-    Task(Task &&) = delete;
+    Task &operator=(Task &&that) noexcept {
+        std::swap(mCoroutine, that.mCoroutine);
+    }
 
     ~Task() {
-#if CO_ASYNC_DEBUG
         if (!mCoroutine) return;
+#if CO_ASYNC_DEBUG
         if (!mCoroutine.done()) [[unlikely]] {
 #if CO_ASYNC_PERF
             auto &perf = mCoroutine.promise().mPerf;
@@ -161,8 +172,12 @@ struct [[nodiscard]] Task {
         return TaskAwaiter<T, P>(mCoroutine);
     }
 
-    operator std::coroutine_handle<promise_type> const &() const noexcept {
+    std::coroutine_handle<promise_type> get() const noexcept {
         return mCoroutine;
+    }
+
+    std::coroutine_handle<promise_type> release() noexcept {
+        return std::exchange(mCoroutine, nullptr);
     }
 
 private:

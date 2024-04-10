@@ -28,7 +28,7 @@ Task<> amain() {
         co_return {
             .status = 200,
             .headers = {
-                {"content-type", "text/plain;charset=utf-8"},
+                {"content-type", "text/html;charset=utf-8"},
             },
             .body = "<h1>It works!</h1>",
         };
@@ -43,7 +43,8 @@ Task<> amain() {
 }
 
 int main() {
-    co_spawn_and_wait(amain());
+    std::ios::sync_with_stdio(false);
+    co_synchronize(amain());
     return 0;
 }
 ```

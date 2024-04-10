@@ -16,12 +16,12 @@ template <class T>
 
 template <class T, class P>
 /*[export]*/ inline void co_spawn(Task<T, P> &&task) {
-    return loop_enqueue_detach(loop, UniqueTask<T, P>(std::move(task)));
+    return loop_enqueue_detach(loop, std::move(task));
 }
 
 template <class T, class P>
-/*[export]*/ inline Future<T> co_async(Task<T, P> &&task) {
-    return loop_enqueue_future(loop, UniqueTask<T, P>(std::move(task)));
+/*[export]*/ inline Future<T> co_future(Task<T, P> &&task) {
+    return loop_enqueue_future(loop, std::move(task));
 }
 
 template <class T, class P>

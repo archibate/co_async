@@ -4,7 +4,6 @@
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #include <co_async/awaiter/concepts.hpp>         /*{import :awaiter.concepts;}*/
 #include <co_async/awaiter/task.hpp>             /*{import :awaiter.task;}*/
-#include <co_async/awaiter/unique_task.hpp> /*{import :awaiter.unique_task;}*/
 #include <co_async/awaiter/details/ignore_return_promise.hpp> /*{import :awaiter.details.ignore_return_promise;}*/
 #include <co_async/utils/uninitialized.hpp>  /*{import :utils.uninitialized;}*/
 #include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
@@ -88,7 +87,7 @@ private:
 #endif
 };
 
-template <class T>
+template <class T = void>
 /*[export]*/ struct FutureToken : FutureTokenBase {
     template <class U>
     void set_value(U &&value) {
@@ -149,7 +148,7 @@ private:
     FutureToken<T> *mToken;
 };
 
-template <class T>
+template <class T = void>
 /*[export]*/ struct [[nodiscard]] Future {
     explicit Future(BasicLoop &loop)
         : mToken(std::make_unique<FutureToken<T>>(loop)) {}
@@ -171,32 +170,36 @@ private:
 };
 
 template <class T, class P>
-inline UniqueTask<void, IgnoreReturnPromise<AutoDestroyingFinalAwaiter>>
-loopEnqueueDetachStarter(BasicLoop &loop, UniqueTask<T, P> task) {
+inline Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>>
+loopEnqueueDetachStarter(Task<T, P> task) {
     co_await task;
 }
 
 template <class T, class P>
-inline void loop_enqueue_detach(BasicLoop &loop, UniqueTask<T, P> task) {
-    auto wrapped = loopEnqueueDetachStarter(loop, std::move(task));
+inline void loop_enqueue_detach(BasicLoop &loop, Task<T, P> task) {
+    auto wrapped = loopEnqueueDetachStarter(std::move(task));
     auto coroutine = wrapped.get();
     loop.enqueue(coroutine);
     wrapped.release();
 }
 
 template <class T, class P>
-inline UniqueTask<void, IgnoreReturnPromise<>>
-loopEnqueueFutureStarter(BasicLoop &loop, UniqueTask<T, P> task,
+inline Task<void, IgnoreReturnPromise<>>
+loopEnqueueFutureStarter(BasicLoop &loop, Task<T, P> task,
                          FutureToken<T> *token) {
+#if CO_ASYNC_EXCEPT
     try {
+#endif
         token->set_value((co_await task, NonVoidHelper<>()));
+#if CO_ASYNC_EXCEPT
     } catch (...) {
         token->set_exception(std::current_exception());
     }
+#endif
 }
 
 template <class T, class P>
-inline Future<T> loop_enqueue_future(BasicLoop &loop, UniqueTask<T, P> task) {
+inline Future<T> loop_enqueue_future(BasicLoop &loop, Task<T, P> task) {
     Future<T> future(loop);
     auto *token = future.get_token();
     auto wrapped = loopEnqueueFutureStarter(loop, std::move(task), token);
@@ -217,5 +220,20 @@ T loop_enqueue_and_wait(Loop &loop, Task<T, P> const &task) {
     }
     return awaiter.await_resume();
 }
+
+struct FutureGroup {
+    std::vector<Future<>> mFutures;
+
+    void add(Future<> f) {
+        mFutures.push_back(std::move(f));
+    }
+
+    Task<> wait() {
+        for (auto &f: mFutures) {
+            co_await f;
+        }
+        mFutures.clear();
+    }
+};
 
 } // namespace co_async

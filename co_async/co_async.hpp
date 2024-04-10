@@ -12,7 +12,6 @@
 #include <co_async/awaiter/and_then.hpp> /*{export import :awaiter.and_then;}*/
 #include <co_async/awaiter/just.hpp>     /*{export import :awaiter.just;}*/
 #include <co_async/awaiter/task.hpp>     /*{export import :awaiter.task;}*/
-#include <co_async/awaiter/unique_task.hpp>/*{export import :awaiter.unique_task;}*/
 #include <co_async/system/system_loop.hpp>/*{export import :system.system_loop;}*/
 #include <co_async/iostream/file_stream.hpp>/*{export import :iostream.file_stream;}*/
 #include <co_async/iostream/stdio_stream.hpp>/*{export import :iostream.stdio_stream;}*/

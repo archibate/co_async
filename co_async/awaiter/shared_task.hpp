@@ -9,10 +9,10 @@
 namespace co_async {
 
 /*[export]*/ template <class T = void, class P = Promise<T>>
-struct [[nodiscard]] UniqueTask {
+struct [[nodiscard]] SharedTask {
     using promise_type = P;
 
-    UniqueTask(Task<T, P> &&task) noexcept {
+    SharedTask(Task<T, P> &&task) noexcept {
 #if CO_ASYNC_DEBUG
         mCoroutine = std::exchange(
             const_cast<std::coroutine_handle<P> &>(
@@ -26,18 +26,18 @@ struct [[nodiscard]] UniqueTask {
 #endif
     }
 
-    UniqueTask(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
+    SharedTask(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
         : mCoroutine(coroutine) {}
 
-    UniqueTask(UniqueTask &&that) noexcept : mCoroutine(that.mCoroutine) {
+    SharedTask(SharedTask &&that) noexcept : mCoroutine(that.mCoroutine) {
         that.mCoroutine = nullptr;
     }
 
-    UniqueTask &operator=(UniqueTask &&that) noexcept {
+    SharedTask &operator=(SharedTask &&that) noexcept {
         std::swap(mCoroutine, that.mCoroutine);
     }
 
-    ~UniqueTask() {
+    ~SharedTask() {
         if (!mCoroutine)
             return;
 #if CO_ASYNC_DEBUG

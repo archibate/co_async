@@ -9,12 +9,12 @@
 #include <fcntl.h>
 #endif
 
-#pragma once/*{export module co_async:system.uring_loop;}*/
+#pragma once /*{export module co_async:system.uring_loop;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
-#include <co_async/threading/basic_loop.hpp>/*{import :threading.basic_loop;}*/
+#include <co_async/threading/basic_loop.hpp> /*{import :threading.basic_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 #include <co_async/awaiter/details/auto_destroy_promise.hpp>/*{import :awaiter.details.auto_destroy_promise;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
@@ -68,7 +68,8 @@ struct UringLoop {
     }
 
     void reserveFixedBuffers(std::size_t numBufs, std::size_t bufSize = 8192) {
-        if (mFixedBuffers.size() > numBufs) return;
+        if (mFixedBuffers.size() > numBufs)
+            return;
         mFixedBuffers.resize(numBufs);
         std::vector<struct iovec> iovecs(numBufs);
         for (std::size_t i = mFixedBuffers.size(); i < numBufs; ++i) {
@@ -84,9 +85,11 @@ struct UringLoop {
     }
 
     void reserveFixedFiles(std::size_t numFiles) {
-        if (mFixedFiles.size() >= numFiles) return;
+        if (mFixedFiles.size() >= numFiles)
+            return;
         mFixedFiles.resize(numFiles);
         int null_fd = checkError(open("/dev/null", O_RDONLY));
+
         struct Closer {
             int fd;
 
@@ -94,6 +97,7 @@ struct UringLoop {
                 close(fd);
             }
         } closer{null_fd};
+
         for (std::size_t i = mFixedFiles.size(); i < numFiles; ++i) {
             mFixedFiles[i] = null_fd;
             null_fd = checkError(dup(null_fd));
@@ -216,11 +220,13 @@ inline Task<int> uring_openat(UringLoop &loop, int dirfd, char const *path,
         }));
 }
 
-inline Task<int> uring_openat_direct(UringLoop &loop, int dirfd, char const *path,
-                              int flags, mode_t mode, int file_index) {
-    int ret = checkErrorReturn(
-        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
-            io_uring_prep_openat_direct(sqe, dirfd, path, flags, mode, file_index);
+inline Task<int> uring_openat_direct(UringLoop &loop, int dirfd,
+                                     char const *path, int flags, mode_t mode,
+                                     int file_index) {
+    int ret =
+        checkErrorReturn(co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+            io_uring_prep_openat_direct(sqe, dirfd, path, flags, mode,
+                                        file_index);
         }));
     co_return ret;
 }

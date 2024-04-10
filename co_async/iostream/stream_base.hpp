@@ -1,7 +1,7 @@
-#pragma once/*{export module co_async:iostream.stream_base;}*/
+#pragma once /*{export module co_async:iostream.stream_base;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/awaiter/task.hpp>             /*{import :awaiter.task;}*/
 
 namespace co_async {
 
@@ -137,7 +137,8 @@ struct IStreamBase {
     }
 
     Task<bool> dropn(std::size_t n) {
-        if (!n) co_return true;
+        if (!n)
+            co_return true;
         std::size_t start = mIndex;
         while (true) {
             auto end = start + n;
@@ -190,12 +191,14 @@ struct IStreamBase {
         co_return s;
     }
 
-    template <class T> requires std::is_trivial_v<T>
+    template <class T>
+        requires std::is_trivial_v<T>
     Task<bool> getstruct(T &ret) {
         return getn(std::span<char>((char *)&ret, sizeof(T)));
     }
 
-    template <class T> requires std::is_trivial_v<T>
+    template <class T>
+        requires std::is_trivial_v<T>
     Task<T> getstruct() {
         T ret;
         if (!co_await getstruct(ret)) [[unlikely]] {
@@ -268,7 +271,8 @@ struct OStreamBase {
 
     template <class T>
     Task<> putstruct(T const &s) {
-        return puts(std::span<char const>((char const *)std::addressof(s), sizeof(T)));
+        return puts(
+            std::span<char const>((char const *)std::addressof(s), sizeof(T)));
     }
 
     Task<> putline(std::string_view s) {

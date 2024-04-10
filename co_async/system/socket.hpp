@@ -11,16 +11,16 @@
 #include <sys/un.h>
 #endif
 
-#pragma once/*{export module co_async:system.socket;}*/
+#pragma once /*{export module co_async:system.socket;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
-#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
-#include <co_async/utils/string_utils.hpp>/*{import :utils.string_utils;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
+#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
+#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
+#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
 
 namespace co_async {
 
@@ -183,15 +183,16 @@ inline Task<SocketHandle> createSocket(int family, int type) {
     co_return sock;
 }
 
-/*[export]*/ inline Task<SocketHandle> socket_connect(SocketAddress const &addr) {
+/*[export]*/ inline Task<SocketHandle>
+socket_connect(SocketAddress const &addr) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     co_await uring_connect(loop, sock.fileNo(),
                            (const struct sockaddr *)&addr.mAddr, addr.mAddrLen);
     co_return sock;
 }
 
-/*[export]*/ inline Task<SocketListener> listener_bind(SocketAddress const &addr,
-                                             int backlog = SOMAXCONN) {
+/*[export]*/ inline Task<SocketListener>
+listener_bind(SocketAddress const &addr, int backlog = SOMAXCONN) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
     SocketListener serv(sock.releaseFile());
@@ -202,7 +203,8 @@ inline Task<SocketHandle> createSocket(int family, int type) {
     co_return serv;
 }
 
-/*[export]*/ inline Task<SocketHandle> listener_accept(SocketListener &listener) {
+/*[export]*/ inline Task<SocketHandle>
+listener_accept(SocketListener &listener) {
     int fd = co_await uring_accept(loop, listener.fileNo(),
                                    (struct sockaddr *)&listener.mAddr.mAddr,
                                    &listener.mAddr.mAddrLen, 0);

@@ -1,4 +1,4 @@
-#pragma once/*{export module co_async:utils.rbtree;}*/
+#pragma once /*{export module co_async:utils.rbtree;}*/
 
 #if CO_ASYNC_PERF
 
@@ -17,6 +17,7 @@ struct Perf {
             char const *file;
             int line;
         };
+
         std::deque<TableEntry> table;
 
         ~PerfStatic() {
@@ -76,10 +77,12 @@ struct Perf {
                 }
             };
 
-            std::vector<std::pair<std::pair<std::string_view, int>, Entry>> sorted(m.begin(), m.end());
-            std::sort(sorted.begin(), sorted.end(), [] (auto const &lhs, auto const &rhs) {
-                return lhs.second.sum > rhs.second.sum;
-            });
+            std::vector<std::pair<std::pair<std::string_view, int>, Entry>>
+                sorted(m.begin(), m.end());
+            std::sort(sorted.begin(), sorted.end(),
+                      [](auto const &lhs, auto const &rhs) {
+                          return lhs.second.sum > rhs.second.sum;
+                      });
 
             std::size_t w = 0, nw = 1;
             for (auto const &[loc, e]: sorted) {
@@ -89,8 +92,9 @@ struct Perf {
 
             std::string o;
             auto oit = std::back_inserter(o);
-            std::format_to(oit, "{:>{}}:{:<4} {:^6} {:^6} {:^6} {:^{}}\n", "file",
-                           w, "line", "min", "avg", "max", "nr", nw + 1);
+            std::format_to(oit, "{:>{}}:{:<4} {:^6} {:^6} {:^6} {:^{}}\n",
+                           "file", w, "line", "min", "avg", "max", "nr",
+                           nw + 1);
             for (auto const &[loc, e]: sorted) {
                 std::format_to(oit, "{:>{}}:{:<4} {:>6} {:>6} {:>6} {:>{}}x\n",
                                p(loc.first), w, loc.second, t(e.min),
@@ -100,7 +104,7 @@ struct Perf {
         }
     };
 
-    inline static thread_local PerfStatic stat;
+    static inline thread_local PerfStatic stat;
 
 public:
     Perf(std::source_location const &loc = std::source_location::current())

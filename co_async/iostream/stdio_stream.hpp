@@ -5,11 +5,11 @@
 #include <termios.h>
 #endif
 
-#pragma once/*{export module co_async:iostream.stdio_stream;}*/
+#pragma once /*{export module co_async:iostream.stdio_stream;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
-#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/system/fs.hpp>                /*{import :system.fs;}*/
+#include <co_async/awaiter/task.hpp>             /*{import :awaiter.task;}*/
 #include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
 
 namespace co_async {
@@ -26,7 +26,8 @@ inline void disableCanon(FileHandle &file) {
 
 /*[export]*/ struct StdioBuf {
     explicit StdioBuf(FileHandle &fileIn, FileHandle &fileOut)
-    : mFileIn(fileIn), mFileOut(fileOut) {}
+        : mFileIn(fileIn),
+          mFileOut(fileOut) {}
 
     Task<std::size_t> read(std::span<char> buffer) {
         return fs_read(mFileIn, buffer);

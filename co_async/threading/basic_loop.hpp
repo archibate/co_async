@@ -1,7 +1,7 @@
-#pragma once/*{export module co_async:threading.basic_loop;}*/
+#pragma once /*{export module co_async:threading.basic_loop;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
-#include <co_async/awaiter/concepts.hpp>/*{import :awaiter.concepts;}*/
+#include <co_async/awaiter/concepts.hpp>         /*{import :awaiter.concepts;}*/
 #include <co_async/awaiter/details/auto_destroy_promise.hpp>/*{import :awaiter.details.auto_destroy_promise;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 

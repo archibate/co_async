@@ -7,14 +7,14 @@
 #include <fcntl.h>
 #endif
 
-#pragma once/*{export module co_async:system.fs;}*/
+#pragma once /*{export module co_async:system.fs;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
+#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 
 namespace co_async {
@@ -114,8 +114,11 @@ private:
 private:
     struct statx mStatx;
 
-    static std::chrono::system_clock::time_point statTimestampToTimePoint(struct statx_timestamp const &time) {
-        return std::chrono::system_clock::time_point(std::chrono::seconds(time.tv_sec) + std::chrono::nanoseconds(time.tv_nsec));
+    static std::chrono::system_clock::time_point
+    statTimestampToTimePoint(struct statx_timestamp const &time) {
+        return std::chrono::system_clock::time_point(
+            std::chrono::seconds(time.tv_sec) +
+            std::chrono::nanoseconds(time.tv_nsec));
     }
 };
 

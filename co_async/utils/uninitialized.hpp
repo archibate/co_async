@@ -1,4 +1,4 @@
-#pragma once/*{export module co_async:utils.uninitialized;}*/
+#pragma once /*{export module co_async:utils.uninitialized;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
@@ -29,7 +29,8 @@ struct Uninitialized {
     T moveValue() {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
-            throw std::invalid_argument("Uninitialized::moveValue called in an unvalued slot");
+            throw std::invalid_argument(
+                "Uninitialized::moveValue called in an unvalued slot");
         }
 #endif
         T ret(std::move(mValue));

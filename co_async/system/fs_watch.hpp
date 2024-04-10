@@ -37,8 +37,7 @@ struct BasicFileWatch : FileIStream {
         OnReadFinished = IN_CLOSE_NOWRITE,
     };
 
-    BasicFileWatch()
-        : FileIStream(FileHandle(checkError(inotify_init1(0)))) {}
+    BasicFileWatch() : FileIStream(FileHandle(checkError(inotify_init1(0)))) {}
 
     int watch(std::filesystem::path path, FileEvent event) {
         return checkError(
@@ -79,7 +78,7 @@ private:
     using enum BasicFileWatch::FileEvent;
 
     FileWatch &watch(std::filesystem::path path, FileEvent event,
-                        bool recursive = false) {
+                     bool recursive = false) {
         int wd = BasicFileWatch::watch(path, event);
         mWatches.emplace(wd, path);
         if (recursive && std::filesystem::is_directory(path)) {

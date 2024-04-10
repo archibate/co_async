@@ -59,7 +59,12 @@ int main() {
 - GCC >= 10
 - Clang >= 10
 
-> 小彭老师推荐使用 Arch Linux 系统作为开发平台
+小彭老师推荐使用 Arch Linux 系统作为开发平台，Ubuntu 20.04 需要手动升级一下 gcc 版本：
+
+```bash
+sudo apt install -y g++-10 libstdc++-10-dev
+export CXX=g++10
+```
 
 ### Windows
 

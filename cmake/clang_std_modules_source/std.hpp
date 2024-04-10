@@ -29,9 +29,7 @@
 #include <cstdbool>
 #include <cstdint>
 #include <ctgmath>
-#if __has_include(<cuchar>)
 #include <cuchar>
-#endif
 #endif
 
 // C++
@@ -101,9 +99,7 @@
 #include <execution>
 #include <filesystem>
 #include <optional>
-#if __has_include(<memory_resource>)
 #include <memory_resource>
-#endif
 #include <string_view>
 #include <variant>
 #endif
@@ -113,24 +109,26 @@
 #include <barrier>
 #endif
 #include <bit>
-#if __has_include(<compare>)
 #include <compare>
-#endif
-#if __has_include(<concepts>)
 #include <concepts>
-#endif
 #if __cpp_impl_coroutine
 # include <coroutine>
 #endif
+#if __has_include(<latch>)
 #include <latch>
+#endif
 #include <numbers>
 #include <ranges>
 #include <span>
 #if __has_include(<stop_token>)
 #include <stop_token>
 #endif
+#if __has_include(<semaphore>)
 #include <semaphore>
+#endif
+#if __has_include(<source_location>)
 #include <source_location>
+#endif
 #if __has_include(<syncstream>)
 #include <syncstream>
 #endif

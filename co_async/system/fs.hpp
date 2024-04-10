@@ -216,5 +216,9 @@ fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = -1) {
     co_await uring_ftruncate(loop, file.fileNo(), size);
 }
 
+/*[export]*/ inline Task<int> fs_nop() {
+    return uring_nop(loop);
+}
+
 } // namespace co_async
 #endif

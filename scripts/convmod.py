@@ -64,10 +64,10 @@ def process_cmake(path):
     res = ''
     with open(path, 'r') as f:
         for line in f:
-            if line == 'set(ENABLE_MODULES ON)\n':
-                line = 'set(ENABLE_MODULES OFF)\n'
-            elif line == 'set(ENABLE_MODULES OFF)\n':
-                line = 'set(ENABLE_MODULES ON)\n'
+            if line == '#set(CO_ASYNC_MODULE ON)\n':
+                line = 'set(CO_ASYNC_MODULE ON)\n'
+            elif line == 'set(CO_ASYNC_MODULE ON)\n':
+                line = '#set(CO_ASYNC_MODULE ON)\n'
             res += line
     if 1:
         with open(path, 'w') as f:

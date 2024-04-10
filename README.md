@@ -73,11 +73,14 @@ int main() {
 #include "co_async.hpp"
 ```
 
+Linux 
+
 ### 作为 C++20 模块导入
 
 将本项目下载到你的项目中作为子文件夹，引入并链接：
 
 ```cmake
+set(CO_ASYNC_MODULE ON)
 add_subdirectory(co_async)
 target_link_libraries(你的名字 PRIVATE co_async)
 ```
@@ -88,22 +91,24 @@ target_link_libraries(你的名字 PRIVATE co_async)
 import co_async;
 ```
 
-> 需要 GCC >= 11、Clang >= 17、MSVC >= 19 以支持 C++20 模块
+> 需要 GCC >= 11、Clang >= 17、MSVC >= 19，以及 CMake >= 3.28 且使用 `cmake -G Ninja` 选项
 
-### CMake Options
+### CMake 选项
 
-```cmake
-cmake -B build -DCO_ASYNC_DEBUG=ON  # enable debug
-cmake -B build -DCO_ASYNC_EXCEPT=ON  # enable exceptions
-cmake -B build -DCO_ASYNC_PERF=ON  # enable benchmarking
+```bash
+cmake -B build -DCO_ASYNC_DEBUG=ON  # 启用调试与安全性检测
+cmake -B build -DCO_ASYNC_EXCEPT=ON  # 启用异常（会影响协程函数性能）
+cmake -B build -DCO_ASYNC_PERF=ON  # 启用性能测试（程序结束时自动打印测时结果）
 ```
 
-## Benchmark
+## 性能测试
 
-- regular function call 25ns
-- coroutine function call 80ns
-- coroutine function call (with exception) 150ns
-- io uring nop 800ns
-- io uring open 7us
-- io uring statx 11us
-- io uring read/write 80us
+测试平台：AMD Ryzen 7 7800X3D（8 核心 16 线程 4.5 GHz）
+
+- 普通函数调用 25ns
+- 协程函数调用 80ns
+- 协程函数调用（开启异常） 150ns
+- I/O 基础延迟 0.8µs
+- I/O 打开文件 7µs
+- I/O 查询文件信息 11µs
+- I/O 读写 ~1MB 文件 80µs

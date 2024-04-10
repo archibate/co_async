@@ -9,7 +9,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/un.h>
-#include <errno.h>
 #endif
 
 #pragma once /*{export module co_async:system.socket;}*/
@@ -180,11 +179,6 @@ inline void socketSetOption(SocketHandle &sock, int level, int opt,
 
 inline Task<SocketHandle> createSocket(int family, int type) {
     int fd = co_await uring_socket(loop, family, type, 0, 0);
-    if (fd == -EINVAL) {
-        fd = checkError(socket(family, type, 0));
-    } else {
-        checkErrorReturn(fd);
-    }
     SocketHandle sock(fd);
     co_return sock;
 }

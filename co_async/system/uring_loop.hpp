@@ -238,9 +238,9 @@ inline Task<int> uring_openat_direct(UringLoop &loop, int dirfd,
 
 inline Task<int> uring_socket(UringLoop &loop, int domain, int type,
                               int protocol, unsigned int flags) {
-    co_return co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+    co_return checkErrorReturn(co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
         io_uring_prep_socket(sqe, domain, type, protocol, flags);
-    });
+    }));
 }
 
 inline Task<int> uring_accept(UringLoop &loop, int fd, struct sockaddr *addr,

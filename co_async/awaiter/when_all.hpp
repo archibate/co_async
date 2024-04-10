@@ -104,7 +104,7 @@ auto when_all(Ts &&...ts) {
 
 /*[export]*/ template <Awaitable T, class Alloc = std::allocator<T>>
 Task<std::conditional_t<
-    std::same_as<void, typename AwaitableTraits<T>::RetType>,
+    std::is_void_v<typename AwaitableTraits<T>::RetType>,
     std::vector<typename AwaitableTraits<T>::RetType, Alloc>, void>>
 when_all(std::vector<T, Alloc> const &tasks) {
     WhenAllCtlBlock control{tasks.size()};
@@ -119,7 +119,7 @@ when_all(std::vector<T, Alloc> const &tasks) {
         }
         co_await WhenAllAwaiter(control, taskArray);
     }
-    if constexpr (!std::same_as<void, typename AwaitableTraits<T>::RetType>) {
+    if constexpr (!std::is_void_v<typename AwaitableTraits<T>::RetType>) {
         std::vector<typename AwaitableTraits<T>::RetType, Alloc> res(alloc);
         res.reserve(tasks.size());
         for (auto &r: result) {

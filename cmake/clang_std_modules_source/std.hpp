@@ -29,7 +29,9 @@
 #include <cstdbool>
 #include <cstdint>
 #include <ctgmath>
+#if __has_include(<cuchar>)
 #include <cuchar>
+#endif
 #endif
 
 // C++
@@ -99,16 +101,24 @@
 #include <execution>
 #include <filesystem>
 #include <optional>
+#if __has_include(<memory_resource>)
 #include <memory_resource>
+#endif
 #include <string_view>
 #include <variant>
 #endif
 
 #if __cplusplus >= 202002L
+#if __has_include(<barrier>)
 #include <barrier>
+#endif
 #include <bit>
+#if __has_include(<compare>)
 #include <compare>
+#endif
+#if __has_include(<concepts>)
 #include <concepts>
+#endif
 #if __cpp_impl_coroutine
 # include <coroutine>
 #endif

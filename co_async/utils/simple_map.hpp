@@ -37,8 +37,9 @@ struct SimpleMap {
         return std::addressof(it->second);
     }
 
-    template <class Key, std::invocable<V const &> F = std::identity>
-        requires(requires(K k, Key key) {
+    template <class Key, class F = std::identity>
+        requires(requires(F f, V const &v, K k, Key key) {
+            std::invoke(f, v);
             k < key;
             key < k;
         })

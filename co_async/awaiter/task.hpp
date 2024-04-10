@@ -80,9 +80,9 @@ private:
     Uninitialized<T> mResult;
 
 #if CO_ASYNC_PERF
+public:
     Perf mPerf;
 
-public:
     Promise(std::source_location const &loc = std::source_location::current())
         : mPerf(loc) {}
 #endif
@@ -105,10 +105,8 @@ struct Promise<void> : PromiseBase {
     }
 
 #if CO_ASYNC_PERF
-private:
     Perf mPerf;
 
-public:
     Promise(std::source_location const &loc = std::source_location::current())
         : mPerf(loc) {}
 #endif
@@ -130,8 +128,19 @@ struct [[nodiscard]] Task {
     }
 
     ~Task() {
-        if (mCoroutine)
+        if (mCoroutine) {
+#if CO_ASYNC_DEBUG
+            if (!mCoroutine.done()) [[unlikely]] {
+#if CO_ASYNC_PERF
+                auto &perf = mCoroutine.promise().mPerf;
+                std::cerr << "WARNING: task (" << perf.file << ":" << perf.line << ") destroyed undone\n";
+#else
+                std::cerr << "WARNING: task destroyed undone\n";
+#endif
+            }
+#endif
             mCoroutine.destroy();
+        }
     }
 
     struct Awaiter {

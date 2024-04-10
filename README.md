@@ -57,7 +57,7 @@ int main() {
 
 - Linux 内核 >= 5.1
 - GCC >= 10
-- Clang >= 10
+- Clang >= 16
 
 小彭老师推荐使用 Arch Linux 系统作为开发平台，Ubuntu 20.04 需要手动升级一下 gcc 版本：
 

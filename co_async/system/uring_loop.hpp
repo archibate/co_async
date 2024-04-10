@@ -16,7 +16,7 @@
 #ifdef __linux__
 #include <co_async/threading/basic_loop.hpp> /*{import :threading.basic_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
 
 namespace co_async {
 
@@ -238,10 +238,9 @@ inline Task<int> uring_openat_direct(UringLoop &loop, int dirfd,
 
 inline Task<int> uring_socket(UringLoop &loop, int domain, int type,
                               int protocol, unsigned int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
-            io_uring_prep_socket(sqe, domain, type, protocol, flags);
-        }));
+    co_return co_await UringAwaiter(loop, [&](io_uring_sqe *sqe) {
+        io_uring_prep_socket(sqe, domain, type, protocol, flags);
+    });
 }
 
 inline Task<int> uring_accept(UringLoop &loop, int fd, struct sockaddr *addr,

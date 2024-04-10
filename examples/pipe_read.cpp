@@ -12,7 +12,6 @@ Task<> amain() {
                    .path("cat")
                    .arg("CMakeLists.txt")
                    .open(1, p.writer())
-                   .close_above()
                    .spawn();
     FileIStream rs(p.reader());
     std::string line;

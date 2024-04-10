@@ -89,17 +89,17 @@ public:
         auto i = uri.find('?');
         if (i != std::string_view::npos) {
             path = uri.substr(0, i);
-
-            auto pairs = uri.substr(i + 1);
-            for (auto pa: pairs | std::views::split('&')) {
-                std::string_view pair(pa.data(), pa.data() + pa.size());
-                auto j = pair.find('=');
-                if (j != std::string_view::npos) {
-                    auto k = pair.substr(0, j);
-                    auto v = pair.substr(j + 1);
+            do {
+                uri.remove_prefix(i);
+                i = uri.find('&');
+                auto pair = uri.substr(0, i);
+                auto m = pair.find('=');
+                if (m != std::string_view::npos) {
+                    auto k = pair.substr(0, m);
+                    auto v = pair.substr(m + 1);
                     params.insert_or_assign(std::string(k), urlDecode(v));
                 }
-            }
+            } while (i != std::string_view::npos);
         }
 
         return {std::string(path), std::move(params)};

@@ -87,7 +87,6 @@ namespace co_async {
     ProcessBuilder() {
         mAbsolutePath = false;
         mEnvInherited = false;
-        mTopFd = 0;
         checkError(posix_spawnattr_init(&mAttr));
         checkError(posix_spawn_file_actions_init(&mFileActions));
     }
@@ -111,23 +110,11 @@ namespace co_async {
 
     ProcessBuilder &open(int fd, int ourFd) {
         checkError(posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd));
-        if (fd + 1 > mTopFd) {
-            mTopFd = fd + 1;
-        }
         return *this;
     }
 
     ProcessBuilder &close(int fd) {
         checkError(posix_spawn_file_actions_addclose(&mFileActions, fd));
-        return *this;
-    }
-
-    ProcessBuilder &close_above(int topFd = 3) {
-        if (mTopFd > topFd) {
-            topFd = mTopFd;
-        }
-        checkError(
-            posix_spawn_file_actions_addclosefrom_np(&mFileActions, topFd));
         return *this;
     }
 
@@ -195,7 +182,6 @@ private:
     posix_spawnattr_t mAttr;
     bool mAbsolutePath;
     bool mEnvInherited;
-    int mTopFd;
     std::string mPath;
     std::vector<std::string> mArgvStore;
     std::vector<std::string> mEnvpStore;

@@ -21,7 +21,7 @@
 
 namespace co_async {
 
-struct BasicFileWatch : FileIStream {
+struct FileWatch : FileIStream {
     enum FileEvent : std::uint32_t {
         OnAccessed = IN_ACCESS,
         OnOpened = IN_OPEN,
@@ -37,49 +37,11 @@ struct BasicFileWatch : FileIStream {
         OnReadFinished = IN_CLOSE_NOWRITE,
     };
 
-    BasicFileWatch() : FileIStream(FileHandle(checkError(inotify_init1(0)))) {}
+    FileWatch() : FileIStream(FileHandle(checkError(inotify_init1(0)))) {}
 
-    int watch(std::filesystem::path path, FileEvent event) {
-        return checkError(
+    FileWatch &watch(std::filesystem::path path, FileEvent event, bool recursive = false) {
+        int wd = checkError(
             inotify_add_watch(get().fileNo(), path.c_str(), event));
-    }
-
-    void unwatch(int watch) {
-        checkError(inotify_rm_watch(get().fileNo(), watch));
-    }
-
-    struct WaitFileResult {
-        int watch;
-        FileEvent event;
-        std::string name;
-    };
-
-    Task<WaitFileResult> wait() {
-        if (!co_await getstruct(*mEventBuffer)) [[unlikely]] {
-            throw std::runtime_error("EOF while reading struct");
-        }
-        std::string name;
-        name.reserve(mEventBuffer->len);
-        co_await getn(name, mEventBuffer->len);
-        co_return {
-            .watch = mEventBuffer->wd,
-            .event = (FileEvent)mEventBuffer->mask,
-            .name = name.c_str(),
-        };
-    }
-
-private:
-    std::unique_ptr<struct inotify_event> mEventBuffer =
-        std::make_unique<struct inotify_event>();
-};
-
-/*[export]*/ struct FileWatch : private BasicFileWatch {
-    using BasicFileWatch::BasicFileWatch;
-    using enum BasicFileWatch::FileEvent;
-
-    FileWatch &watch(std::filesystem::path path, FileEvent event,
-                     bool recursive = false) {
-        int wd = BasicFileWatch::watch(path, event);
         mWatches.emplace(wd, path);
         if (recursive && std::filesystem::is_directory(path)) {
             for (auto const &entry:
@@ -90,24 +52,36 @@ private:
         return *this;
     }
 
+    /* FileWatch &unwatch(std::filesystem::path path) { */
+        /* checkError(inotify_rm_watch(get().fileNo(), wd)); */
+    /* } */
+
     struct WaitFileResult {
         std::filesystem::path path;
         FileEvent event;
     };
 
     Task<WaitFileResult> wait() {
-        auto basicRes = co_await BasicFileWatch::wait();
-        auto path = mWatches.at(basicRes.watch);
-        if (!basicRes.name.empty()) {
-            path /= make_path(basicRes.name);
+        if (!co_await getstruct(*mEventBuffer)) [[unlikely]] {
+            throw std::runtime_error("EOF while reading struct");
+        }
+        std::string name;
+        name.reserve(mEventBuffer->len);
+        co_await getn(name, mEventBuffer->len);
+        name = name.c_str();
+        auto path = mWatches.at(mEventBuffer->wd);
+        if (!name.empty()) {
+            path /= make_path(name);
         }
         co_return {
             .path = std::move(path),
-            .event = (FileEvent)basicRes.event,
+            .event = (FileEvent)mEventBuffer->mask,
         };
     }
 
 private:
+    std::unique_ptr<struct inotify_event> mEventBuffer =
+        std::make_unique<struct inotify_event>();
     std::map<int, std::filesystem::path> mWatches;
 };
 

@@ -118,4 +118,22 @@ struct to_string_t<T> {
 
 /*[export]*/ inline constexpr to_string_t<> to_string;
 
+/*[export]*/ inline std::string lower_string(std::string s) {
+    for (auto &c: s) {
+        if (c >= 'A' && c <= 'Z') {
+            c += 'a' - 'A';
+        }
+    }
+    return s;
+}
+
+/*[export]*/ inline std::string upper_string(std::string s) {
+    for (auto &c: s) {
+        if (c >= 'a' && c <= 'z') {
+            c -= 'a' - 'A';
+        }
+    }
+    return s;
+}
+
 } // namespace co_async

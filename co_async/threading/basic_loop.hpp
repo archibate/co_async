@@ -185,10 +185,10 @@ loopEnqueueDetachStarter(Task<T, P> task) {
 }
 
 template <class T, class P>
-inline void loop_enqueue_detach(Task<T, P> task) {
+inline void loop_enqueue_detach(BasicLoop &loop, Task<T, P> task) {
     auto wrapped = loopEnqueueDetachStarter(std::move(task));
     auto coroutine = wrapped.get();
-    BasicLoop::tlsInstance->enqueue(coroutine);
+    loop.enqueue(coroutine);
     wrapped.release();
 }
 
@@ -207,14 +207,14 @@ loopEnqueueFutureStarter(Task<T, P> task, FutureToken<T> *token) {
 }
 
 template <class T, class P>
-inline Future<T> loop_enqueue_future(Task<T, P> task) {
+inline Future<T> loop_enqueue_future(BasicLoop &loop, Task<T, P> task) {
     Future<T> future;
     auto *token = future.get_token();
     auto wrapped = loopEnqueueFutureStarter(std::move(task), token);
     auto coroutine = wrapped.get();
     token->setOwningCoroutine(coroutine);
     wrapped.release();
-    BasicLoop::tlsInstance->enqueue(coroutine);
+    loop.enqueue(coroutine);
     return future;
 }
 
@@ -240,8 +240,8 @@ loopEnqueueFutureNotifier(std::condition_variable &cv, Future<T> &future,
 }
 
 template <class T, class P>
-inline T loop_enqueue_synchronized(Task<T, P> task) {
-    auto future = loop_enqueue_future(std::move(task));
+inline T loop_enqueue_synchronized(BasicLoop &loop, Task<T, P> task) {
+    auto future = loop_enqueue_future(loop, std::move(task));
     std::condition_variable cv;
     std::mutex mtx;
     Uninitialized<T> result;
@@ -254,7 +254,7 @@ inline T loop_enqueue_synchronized(Task<T, P> task) {
                                               exception
 #endif
     );
-    BasicLoop::tlsInstance->enqueue(notifier.get());
+    loop.enqueue(notifier.get());
     std::unique_lock lck(mtx);
     cv.wait(lck);
     lck.unlock();
@@ -280,10 +280,6 @@ struct FutureGroup {
             co_await f;
         }
         mFutures.clear();
-    }
-
-    auto operator co_await() {
-        return wait();
     }
 };
 

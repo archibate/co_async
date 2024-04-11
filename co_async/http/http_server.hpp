@@ -28,9 +28,15 @@ namespace co_async {
 
     Task<> process_connection(SocketStream stream) const {
         HTTPRequest req;
-        co_await req.read_from(stream);
-        HTTPResponse res = co_await handleRequest(req);
-        co_await res.write_into(stream);
+        while (true) {
+            bool keepAlive = co_await req.read_from(stream);
+            HTTPResponse res = co_await handleRequest(req);
+            co_await res.write_into(stream, keepAlive);
+            if (!keepAlive) {
+                break;
+            }
+        }
+        co_await socket_shutdown(stream.get());
         co_await fs_close(stream.release());
     }
 

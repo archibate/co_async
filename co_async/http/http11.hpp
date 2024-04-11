@@ -19,7 +19,7 @@ namespace co_async {
     HTTPHeaders headers;
     std::string body;
 
-    Task<> write_into(auto &sock) const {
+    Task<> write_into(auto &sock, bool keepAlive) const {
         using namespace std::string_view_literals;
         co_await sock.puts(method);
         co_await sock.putchar(' ');
@@ -30,6 +30,11 @@ namespace co_async {
             co_await sock.puts(": "sv);
             co_await sock.puts(v);
             co_await sock.puts("\r\n"sv);
+        }
+        if (keepAlive) {
+            co_await sock.puts("connection: keep-alive\r\n"sv);
+        } else {
+            co_await sock.puts("connection: close\r\n"sv);
         }
         if (body.empty()) {
             co_await sock.puts("\r\n"sv);
@@ -42,7 +47,7 @@ namespace co_async {
         co_await sock.flush();
     }
 
-    Task<> read_from(auto &sock) {
+    Task<bool> read_from(auto &sock) {
         using namespace std::string_view_literals;
         auto line = co_await sock.getline("\r\n"sv);
         auto pos = line.find(' ');
@@ -87,6 +92,13 @@ namespace co_async {
                 headers.get("content-length"sv, from_string<std::size_t>)) {
             body = co_await sock.getn(*p);
         }
+
+        if (auto connection = headers.get("connection"sv)) {
+            if (lower_string(*connection) == "close") {
+                co_return false;
+            }
+        }
+        co_return true;
     }
 
     auto repr() const {
@@ -99,7 +111,7 @@ namespace co_async {
     HTTPHeaders headers;
     std::string body;
 
-    Task<> write_into(auto &sock) const {
+    Task<> write_into(auto &sock, bool keepAlive) const {
         using namespace std::string_view_literals;
         co_await sock.puts("HTTP/1.1 "sv);
         co_await sock.puts(to_string(status));
@@ -112,6 +124,11 @@ namespace co_async {
             co_await sock.puts(v);
             co_await sock.puts("\r\n"sv);
         }
+        if (keepAlive) {
+            co_await sock.puts("connection: keep-alive\r\n"sv);
+        } else {
+            co_await sock.puts("connection: close\r\n"sv);
+        }
         if (body.empty()) {
             co_await sock.puts("\r\n"sv);
         } else {
@@ -123,7 +140,7 @@ namespace co_async {
         co_await sock.flush();
     }
 
-    Task<> read_from(auto &sock) {
+    Task<bool> read_from(auto &sock) {
         using namespace std::string_view_literals;
         auto line = co_await sock.getline("\r\n"sv);
         if (line.size() <= 9 || line.substr(0, 9) != "HTTP/1.1 "sv)
@@ -167,6 +184,13 @@ namespace co_async {
                 headers.get("content-length"sv, from_string<std::size_t>)) {
             body = co_await sock.getn(*p);
         }
+
+        if (auto connection = headers.get("connection"sv)) {
+            if (lower_string(*connection) == "close") {
+                co_return false;
+            }
+        }
+        co_return true;
     }
 
     auto repr() const {

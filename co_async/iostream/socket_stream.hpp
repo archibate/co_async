@@ -20,7 +20,7 @@ namespace co_async {
         return std::move(mFile);
     }
 
-    SocketHandle const &get() const noexcept {
+    SocketHandle &get() noexcept {
         return mFile;
     }
 

@@ -21,8 +21,12 @@ struct SystemLoop {
         return BasicLoop::tlsInstance != nullptr;
     }
 
-    int this_thread_worker_id() const noexcept {
+    std::size_t this_thread_worker_id() const noexcept {
         return BasicLoop::tlsInstance - mBasicLoops.get();
+    }
+
+    std::size_t num_workers() const noexcept {
+        return mNumWorkers;
     }
 
     void start(std::size_t numWorkers = 0,
@@ -132,6 +136,24 @@ struct SystemLoop {
         return mBasicLoops[0];
     }
 
+    BasicLoop &currentWorkerLoop() {
+#if CO_ASYNC_DEBUG
+        if (!is_this_thread_worker()) [[unlikely]] {
+            throw std::logic_error("currently not on worker thread");
+        }
+#endif
+        return *BasicLoop::tlsInstance;
+    }
+
+    BasicLoop &nthWorkerLoop(std::size_t index) {
+#if CO_ASYNC_DEBUG
+        if (!mBasicLoops) [[unlikely]] {
+            throw std::logic_error("loop not started");
+        }
+#endif
+        return mBasicLoops[index];
+    }
+
 private:
     std::unique_ptr<BasicLoop[]> mBasicLoops;
     std::unique_ptr<UringLoop[]> mUringLoops;
@@ -140,7 +162,7 @@ private:
     std::stop_source mStop;
 };
 
-/*[export]*/ static inline SystemLoop globalSystemLoop;
+/*[export]*/ inline SystemLoop globalSystemLoop;
 
 template <class T, class P>
 /*[export]*/ inline void co_spawn(Task<T, P> &&task) {
@@ -149,17 +171,37 @@ template <class T, class P>
         throw std::logic_error("not a worker thread");
     }
 #endif
-    return loop_enqueue_detach(std::move(task));
+    return loop_enqueue_detach(*BasicLoop::tlsInstance, std::move(task));
 }
 
 template <class T, class P>
-/*[export]*/ inline Future<T> co_future(Task<T, P> &&task) {
+/*[export]*/ inline Future<T> co_future(Task<T, P> task) {
 #if CO_ASYNC_DEBUG
     if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
         throw std::logic_error("not a worker thread");
     }
 #endif
-    return loop_enqueue_future(std::move(task));
+    return loop_enqueue_future(*BasicLoop::tlsInstance, std::move(task));
+}
+
+template <class T, class P>
+/*[export]*/ inline void co_spawn(std::size_t workerId, Task<T, P> task) {
+#if CO_ASYNC_DEBUG
+    if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
+        throw std::logic_error("not a worker thread");
+    }
+#endif
+    return loop_enqueue_detach(globalSystemLoop.nthWorkerLoop(workerId), std::move(task));
+}
+
+template <class T, class P>
+/*[export]*/ inline Future<T> co_future(std::size_t workerId, Task<T, P> task) {
+#if CO_ASYNC_DEBUG
+    if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
+        throw std::logic_error("not a worker thread");
+    }
+#endif
+    return loop_enqueue_future(globalSystemLoop.nthWorkerLoop(workerId), std::move(task));
 }
 
 template <class T, class P>
@@ -171,17 +213,16 @@ template <class T, class P>
 #endif
     if (!globalSystemLoop.is_started())
         globalSystemLoop.start();
-    BasicLoop::tlsInstance = &globalSystemLoop.getAnyWorkingLoop();
-    return loop_enqueue_synchronized(std::move(task));
+    return loop_enqueue_synchronized(globalSystemLoop.getAnyWorkingLoop(), std::move(task));
 }
 
 template <class F, class... Args>
     requires std::is_invocable_r_v<Task<>, F, Args...>
-/*[export]*/ inline void co_spawn(F &&f, Args &&...args) {
+/*[export]*/ inline Task<> co_bind(F &&f, Args &&...args) {
     Task<> task = [](auto f) mutable -> Task<> {
         co_await std::move(f)();
     }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-    return co_spawn(std::move(task));
+    return task;
 }
 
 } // namespace co_async

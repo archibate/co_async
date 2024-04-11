@@ -1,3 +1,9 @@
+/*{module;}*/
+
+#if defined(__unix__) && __has_include(<cxxabi.h>)
+#include <cxxabi.h>
+#endif
+
 #pragma once/*{export module co_async:awaiter.details.ignore_return_promise;}*/
 
 #include <co_async/std.hpp>/*{import std;}*/
@@ -16,18 +22,26 @@ struct IgnoreReturnPromise {
 
     void unhandled_exception() noexcept {
 #if CO_ASYNC_EXCEPT
-#if CO_ASYNC_DEBUG
+/* #if CO_ASYNC_DEBUG */
         try {
             throw;
         } catch (std::exception const &e) {
-            std::cerr
-                << "WARNING: exception occurred in co_spawn'ed coroutine: "
-                << e.what() << "\n";
-        } catch (...) {
-            std::cerr
-                << "WARNING: exception occurred in co_spawn'ed coroutine\n";
-        }
+            auto name = typeid(e).name();
+#if defined(__unix__) && __has_include(<cxxabi.h>)
+            int status;
+            char *p = abi::__cxa_demangle(name, 0, 0, &status);
+            std::string s = p ? p : name;
+            std::free(p);
+#else
+            std::string s = name;
 #endif
+            std::cerr
+                << "co_spawn coroutine terminated after thrown exception '" + s + "'\n  e.what(): "
+                + std::string(e.what()) + "\n";
+        } catch (...) {
+            std::cerr << "co_spawn coroutine terminated after thrown exception\n";
+        }
+/* #endif */
 #else
         std::terminate();
 #endif

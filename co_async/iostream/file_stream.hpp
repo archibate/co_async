@@ -20,7 +20,7 @@ namespace co_async {
         return std::move(mFile);
     }
 
-    FileHandle const &get() const noexcept {
+    FileHandle &get() noexcept {
         return mFile;
     }
 

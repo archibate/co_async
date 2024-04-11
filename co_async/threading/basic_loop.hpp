@@ -10,24 +10,33 @@
 
 namespace co_async {
 
-struct alignas(64) BasicLoop {
+struct BasicLoop {
     bool run() {
         if (auto coroutine = mQueue.pop()) {
-            std::coroutine_handle<>::from_address(coroutine).resume();
+            coroutine->resume();
             return true;
         }
         return false;
     }
 
     void enqueue(std::coroutine_handle<> coroutine) {
-        mQueue.push(coroutine.address());
+        if (!mQueue.push(coroutine)) [[unlikely]] {
+            while (true) {
+                if (auto coroutine = mQueue.pop()) [[likely]] {
+                    coroutine->resume();
+                }
+                if (mQueue.push(coroutine)) [[likely]] {
+                    break;
+                }
+            }
+        }
     }
 
     BasicLoop() = default;
     BasicLoop(BasicLoop &&) = delete;
 
 private:
-    ConcurrentQueue mQueue;
+    ConcurrentQueue<std::coroutine_handle<>> mQueue;
 };
 
 struct FutureTokenBase {

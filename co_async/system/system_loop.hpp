@@ -23,7 +23,9 @@ struct SystemLoop {
     void start(std::size_t numWorkers = 0, std::size_t numBatchFetch = 1,
                std::size_t numBatchWait = 1,
                std::chrono::system_clock::duration batchTimeout =
-                   std::chrono::milliseconds(50)) {
+                   std::chrono::milliseconds(15),
+               std::chrono::system_clock::duration batchTimeoutDelta =
+                   std::chrono::milliseconds(12)) {
         if (mThreads) [[unlikely]] {
             throw std::runtime_error("loop already started");
         }
@@ -36,43 +38,11 @@ struct SystemLoop {
         mBasicLoops = std::make_unique<BasicLoop[]>(numWorkers);
         mUringLoops = std::make_unique<UringLoop[]>(numWorkers);
         mNumWorkers = numWorkers;
-        auto timeout = durationToKernelTimespec(batchTimeout);
         for (std::size_t i = 0; i < numWorkers; ++i) {
-            mThreads[i] = std::thread([=, this] {
-#if CO_ASYNC_DEBUG
-                std::cerr << "thread " << i << " started\n";
-#endif
-                auto &thisBasicLoop = mBasicLoops[i];
-                auto &thisUringLoop = mUringLoops[i];
-                tlsThisBasicLoop = &thisBasicLoop;
-                tlsThisUringLoop = &thisUringLoop;
-                auto stealWorker = [&] {
-                    if (thisBasicLoop.run())
-                        return true;
-                    for (std::size_t j = 1; j < numWorkers; ++j) {
-                        auto other = (i + j) % numWorkers;
-                        if (mBasicLoops[other].run()) {
-                            return true;
-                        }
-                    }
-                    return false;
-                };
-            again:
-                if (stealWorker())
-                    goto again;
-                if (thisUringLoop.runBatched(thisBasicLoop, numBatchFetch, {}))
-                    goto again;
-                if (stealWorker())
-                    goto again;
-                while (!mStop.stop_requested()) [[likely]] {
-                    if (thisUringLoop.runBatched(thisBasicLoop, numBatchWait,
-                                                 timeout))
-                        goto again;
-                    if (stealWorker())
-                        goto again;
-                }
-            });
-#if defined(__linux__) && defined(_GLIBCXX_HAS_GTHREADS)
+            mThreads[i] = std::thread(&SystemLoop::threadEntry, this, i,
+                                      numWorkers, numBatchFetch, numBatchWait,
+                                      batchTimeout, batchTimeoutDelta);
+#if defined(__linux__) && defined(_GLIBCXX_HAS_GTHREADS) && defined(CPU_ZERO)
             if (setAffinity) {
                 pthread_t h = mThreads[i].native_handle();
                 cpu_set_t cpuset;
@@ -81,6 +51,44 @@ struct SystemLoop {
                 pthread_setaffinity_np(h, sizeof(cpuset), &cpuset);
             }
 #endif
+        }
+    }
+
+    void threadEntry(int i, int numWorkers, int numBatchFetch, int numBatchWait,
+                     std::chrono::system_clock::duration batchTimeout,
+                     std::chrono::system_clock::duration batchTimeoutDelta) {
+        auto &thisBasicLoop = mBasicLoops[i];
+        auto &thisUringLoop = mUringLoops[i];
+        tlsThisBasicLoop = &thisBasicLoop;
+        tlsThisUringLoop = &thisUringLoop;
+        auto stealWork = [&] {
+            for (std::size_t j = 1; j < numWorkers; ++j) {
+                auto other = (i + j) % numWorkers;
+                if (mBasicLoops[other].run()) {
+                    return true;
+                }
+            }
+            return false;
+        };
+    compute:
+        thisBasicLoop.run();
+    event:
+        if (thisUringLoop.hasAnyEvent()) {
+            thisUringLoop.runBatchedNoWait(thisBasicLoop, numBatchFetch);
+            goto compute;
+        }
+        if (stealWork())
+            goto compute;
+        auto timeout = batchTimeout;
+        while (!mStop.stop_requested()) [[likely]] {
+            auto ts = durationToKernelTimespec(timeout);
+            if (thisUringLoop.runBatchedWait(thisBasicLoop, numBatchWait, &ts))
+                goto compute;
+            if (thisBasicLoop.run())
+                goto event;
+            if (stealWork())
+                goto compute;
+            timeout += batchTimeoutDelta;
         }
     }
 
@@ -188,6 +196,15 @@ template <class T, class P>
     if (!loop.is_started())
         loop.start();
     return loop_enqueue_synchronized(loop.getWorkerLoop(), std::move(task));
+}
+
+template <class F, class... Args>
+    requires std::is_invocable_r_v<Task<>, F, Args...>
+/*[export]*/ inline void co_spawn(F &&f, Args &&...args) {
+    Task<> task = [](auto f) mutable -> Task<> {
+        co_await std::move(f)();
+    }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    return co_spawn(std::move(task));
 }
 
 } // namespace co_async

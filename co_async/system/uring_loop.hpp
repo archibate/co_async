@@ -40,7 +40,12 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
 
 struct UringLoop {
     inline void runSingle(BasicLoop &basicLoop);
-    inline bool runBatched(BasicLoop &basicLoop, std::size_t numBatch, struct __kernel_timespec timeout);
+    inline bool runBatchedWait(BasicLoop &basicLoop, std::size_t numBatch, struct __kernel_timespec *timeout);
+    inline void runBatchedNoWait(BasicLoop &basicLoop, std::size_t numBatch);
+
+    bool hasAnyEvent() const {
+        return 0 != io_uring_cq_ready(&mRing);
+    }
 
     io_uring_sqe *getSqe() {
         io_uring_sqe *sqe = io_uring_get_sqe(&mRing);
@@ -178,9 +183,23 @@ void UringLoop::runSingle(BasicLoop &basicLoop) {
     basicLoop.enqueue(awaiter->mPrevious);
 }
 
-bool UringLoop::runBatched(BasicLoop &basicLoop, std::size_t numBatch, struct __kernel_timespec timeout) {
+void UringLoop::runBatchedNoWait(BasicLoop &basicLoop, std::size_t numBatch) {
     io_uring_cqe *cqe;
-    int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, &timeout, nullptr);
+    int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, nullptr, nullptr);
+    checkErrorReturn(res);
+    unsigned head, numGot = 0;
+    io_uring_for_each_cqe(&mRing, head, cqe) {
+        auto *awaiter = reinterpret_cast<UringAwaiter *>(cqe->user_data);
+        awaiter->mRes = cqe->res;
+        basicLoop.enqueue(awaiter->mPrevious);
+        ++numGot;
+    }
+    io_uring_cq_advance(&mRing, numGot);
+}
+
+bool UringLoop::runBatchedWait(BasicLoop &basicLoop, std::size_t numBatch, struct __kernel_timespec *timeout) {
+    io_uring_cqe *cqe;
+    int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, timeout, nullptr);
     if (res == -ETIME) {
         return false;
     }

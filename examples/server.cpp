@@ -23,15 +23,15 @@ Task<> amain() {
     co_await stdio().putline("正在监听: " + listener.address().toString());
     while (1) {
         auto conn = co_await listener_accept(listener);
-        co_await stdio().putline("线程 " +
-                                 to_string(loop.this_thread_worker_id()) +
-                                 " 收到请求: " + listener.address().toString());
+        co_spawn([](auto msg) -> Task<> {
+                co_await stdio().putline(msg);
+            }, "线程 " + to_string(loop.this_thread_worker_id()) +
+                 " 收到请求: " + listener.address().toString());
         co_spawn(http.process_connection(SocketStream(std::move(conn))));
     }
 }
 
 int main() {
-    loop.start(std::thread::hardware_concurrency());
     co_synchronize(amain());
     return 0;
 }

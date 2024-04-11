@@ -11,16 +11,16 @@
 #include <sys/un.h>
 #endif
 
-#pragma once /*{export module co_async:system.socket;}*/
+#pragma once/*{export module co_async:system.socket;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
-#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
+#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
+#include <co_async/utils/string_utils.hpp>/*{import :utils.string_utils;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 
 namespace co_async {
 
@@ -185,7 +185,7 @@ inline void socketSetOption(SocketHandle &sock, int level, int opt,
 }
 
 inline Task<SocketHandle> createSocket(int family, int type) {
-    int fd = co_await uring_socket(loop, family, type, 0, 0);
+    int fd = co_await uring_socket(family, type, 0, 0);
     SocketHandle sock(fd);
     co_return sock;
 }
@@ -193,7 +193,7 @@ inline Task<SocketHandle> createSocket(int family, int type) {
 /*[export]*/ inline Task<SocketHandle>
 socket_connect(SocketAddress const &addr) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
-    co_await uring_connect(loop, sock.fileNo(),
+    co_await uring_connect(sock.fileNo(),
                            (const struct sockaddr *)&addr.mAddr, addr.mAddrLen);
     co_return sock;
 }
@@ -212,7 +212,7 @@ listener_bind(SocketAddress const &addr, int backlog = SOMAXCONN) {
 
 /*[export]*/ inline Task<SocketHandle>
 listener_accept(SocketListener &listener) {
-    int fd = co_await uring_accept(loop, listener.fileNo(),
+    int fd = co_await uring_accept(listener.fileNo(),
                                    (struct sockaddr *)&listener.mAddr.mAddr,
                                    &listener.mAddr.mAddrLen, 0);
     SocketHandle sock(fd);
@@ -221,17 +221,17 @@ listener_accept(SocketListener &listener) {
 
 /*[export]*/ inline Task<std::size_t>
 socket_write(SocketHandle &sock, std::span<char const> buf) {
-    return uring_send(loop, sock.fileNo(), buf, 0);
+    return uring_send(sock.fileNo(), buf, 0);
 }
 
 /*[export]*/ inline Task<std::size_t>
 socket_read(SocketHandle &sock, std::span<char> buf) {
-    return uring_recv(loop, sock.fileNo(), buf, 0);
+    return uring_recv(sock.fileNo(), buf, 0);
 }
 
 /*[export]*/ inline Task<>
 socket_shutdown(SocketHandle &sock, int how = SHUT_RDWR) {
-    co_await uring_shutdown(loop, sock.fileNo(), how);
+    co_await uring_shutdown(sock.fileNo(), how);
 }
 
 } // namespace co_async

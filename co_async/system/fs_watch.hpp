@@ -6,17 +6,17 @@
 #include <fcntl.h>
 #endif
 
-#pragma once /*{export module co_async:system.fs;}*/
+#pragma once/*{export module co_async:system.fs;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
-#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
-#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/system/process.hpp>       /*{import :system.process;}*/
-#include <co_async/iostream/file_stream.hpp> /*{import :iostream.file_stream;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
+#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
+#include <co_async/system/process.hpp>/*{import :system.process;}*/
+#include <co_async/iostream/file_stream.hpp>/*{import :iostream.file_stream;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 
 namespace co_async {

@@ -8,16 +8,16 @@
 #include <signal.h>
 #endif
 
-#pragma once /*{export module co_async:system.socket;}*/
+#pragma once/*{export module co_async:system.socket;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
-#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
+#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
+#include <co_async/utils/string_utils.hpp>/*{import :utils.string_utils;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 
 namespace co_async {
 
@@ -75,7 +75,7 @@ namespace co_async {
 
 /*[export]*/ inline Task<WaitProcessResult> wait_process(Pid pid) {
     siginfo_t info{};
-    co_await uring_waitid(loop, P_PID, pid, &info, WEXITED, 0);
+    co_await uring_waitid(P_PID, pid, &info, WEXITED, 0);
     co_return {
         .pid = info.si_pid,
         .status = info.si_status,

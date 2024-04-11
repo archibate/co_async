@@ -1,4 +1,4 @@
-#include <co_async/co_async.hpp>                 /*{import co_async;}*/
+#include <co_async/co_async.hpp>/*{import co_async;}*/
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 using namespace co_async;
@@ -25,7 +25,7 @@ Task<> amain() {
         auto conn = co_await listener_accept(listener);
         co_spawn([](auto msg) -> Task<> {
                 co_await stdio().putline(msg);
-            }, "线程 " + to_string(loop.this_thread_worker_id()) +
+            }, "线程 " + to_string(globalSystemLoop.this_thread_worker_id()) +
                  " 收到请求: " + listener.address().toString());
         co_spawn(http.process_connection(SocketStream(std::move(conn))));
     }

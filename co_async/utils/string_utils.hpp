@@ -1,4 +1,4 @@
-#pragma once /*{export module co_async:utils.string_utils;}*/
+#pragma once/*{export module co_async:utils.string_utils;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 

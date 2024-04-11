@@ -1,11 +1,11 @@
-#pragma once /*{export module co_async:http.http11;}*/
+#pragma once/*{export module co_async:http.http11;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
-#include <co_async/awaiter/task.hpp>             /*{import :awaiter.task;}*/
-#include <co_async/utils/simple_map.hpp>         /*{import :utils.simple_map;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/utils/simple_map.hpp>/*{import :utils.simple_map;}*/
 #include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
-#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
+#include <co_async/utils/string_utils.hpp>/*{import :utils.string_utils;}*/
+#include <co_async/http/uri.hpp>/*{import :http.uri;}*/
 
 namespace co_async {
 

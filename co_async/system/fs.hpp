@@ -7,14 +7,14 @@
 #include <fcntl.h>
 #endif
 
-#pragma once /*{export module co_async:system.fs;}*/
+#pragma once/*{export module co_async:system.fs;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
-#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 
 namespace co_async {
@@ -142,44 +142,44 @@ template <std::convertible_to<std::string>... Ts>
 /*[export]*/ inline Task<FileHandle> fs_open(DirFilePath path, OpenMode mode,
                                              mode_t access = 0644) {
     int oflags = (int)mode;
-    int fd = co_await uring_openat(loop, path.dir_file(), path.c_str(), oflags,
+    int fd = co_await uring_openat(path.dir_file(), path.c_str(), oflags,
                                    access);
     FileHandle file(fd);
     co_return file;
 }
 
 /*[export]*/ inline Task<> fs_close(FileHandle &&file) {
-    co_await uring_close(loop, file.fileNo());
+    co_await uring_close(file.fileNo());
     file.releaseFile();
 }
 
 /*[export]*/ inline Task<> fs_mkdir(DirFilePath path, mode_t access = 0755) {
-    co_await uring_mkdirat(loop, path.dir_file(), path.c_str(), access);
+    co_await uring_mkdirat(path.dir_file(), path.c_str(), access);
 }
 
 /*[export]*/ inline Task<> fs_link(DirFilePath oldpath, DirFilePath newpath) {
-    co_await uring_linkat(loop, oldpath.dir_file(), oldpath.c_str(),
+    co_await uring_linkat(oldpath.dir_file(), oldpath.c_str(),
                           newpath.dir_file(), newpath.c_str(), 0);
 }
 
 /*[export]*/ inline Task<> fs_symlink(DirFilePath target,
                                       DirFilePath linkpath) {
-    co_await uring_symlinkat(loop, target.c_str(), linkpath.dir_file(),
+    co_await uring_symlinkat(target.c_str(), linkpath.dir_file(),
                              linkpath.c_str());
 }
 
 /*[export]*/ inline Task<> fs_unlink(DirFilePath path) {
-    co_await uring_unlinkat(loop, path.dir_file(), path.c_str(), 0);
+    co_await uring_unlinkat(path.dir_file(), path.c_str(), 0);
 }
 
 /*[export]*/ inline Task<> fs_rmdir(DirFilePath path) {
-    co_await uring_unlinkat(loop, path.dir_file(), path.c_str(), AT_REMOVEDIR);
+    co_await uring_unlinkat(path.dir_file(), path.c_str(), AT_REMOVEDIR);
 }
 
 /*[export]*/ inline Task<std::optional<FileStat>>
 fs_stat(DirFilePath path, int mask = STATX_BASIC_STATS | STATX_BTIME) {
     FileStat ret;
-    int res = co_await uring_statx(loop, path.dir_file(), path.c_str(), 0, mask,
+    int res = co_await uring_statx(path.dir_file(), path.c_str(), 0, mask,
                                    ret.getNativeStatx());
     int const allowed[] = {ENOENT, ENOTDIR, ENAMETOOLONG, ELOOP, EACCES};
     if (res < 0) {
@@ -195,29 +195,29 @@ fs_stat(DirFilePath path, int mask = STATX_BASIC_STATS | STATX_BTIME) {
 
 /*[export]*/ inline Task<std::uint64_t> fs_stat_size(DirFilePath path) {
     FileStat ret;
-    checkErrorReturn(co_await uring_statx(loop, path.dir_file(), path.c_str(),
+    checkErrorReturn(co_await uring_statx(path.dir_file(), path.c_str(),
                                           0, STATX_SIZE, ret.getNativeStatx()));
     co_return ret.size();
 }
 
 /*[export]*/ inline Task<std::size_t>
 fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = -1) {
-    return uring_read(loop, file.fileNo(), buffer, offset);
+    return uring_read(file.fileNo(), buffer, offset);
 }
 
 /*[export]*/ inline Task<std::size_t> fs_write(FileHandle &file,
                                                std::span<char const> buffer,
                                                std::uint64_t offset = -1) {
-    return uring_write(loop, file.fileNo(), buffer, offset);
+    return uring_write(file.fileNo(), buffer, offset);
 }
 
 /*[export]*/ inline Task<> fs_truncate(FileHandle &file,
                                        std::uint64_t size = 0) {
-    co_await uring_ftruncate(loop, file.fileNo(), size);
+    co_await uring_ftruncate(file.fileNo(), size);
 }
 
 /*[export]*/ inline Task<int> fs_nop() {
-    return uring_nop(loop);
+    return uring_nop();
 }
 
 } // namespace co_async

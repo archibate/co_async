@@ -3,7 +3,7 @@
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #include <co_async/awaiter/concepts.hpp>         /*{import :awaiter.concepts;}*/
 #include <co_async/awaiter/task.hpp>             /*{import :awaiter.task;}*/
-#include <co_async/awaiter/details/ignore_return_promise.hpp> /*{import :awaiter.details.ignore_return_promise;}*/
+#include <co_async/awaiter/details/ignore_return_promise.hpp>/*{import :awaiter.details.ignore_return_promise;}*/
 #include <co_async/utils/uninitialized.hpp>  /*{import :utils.uninitialized;}*/
 #include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
 #include <co_async/threading/concurrent_queue.hpp>/*{import :threading.concurrent_queue;}*/
@@ -34,6 +34,8 @@ struct BasicLoop {
 
     BasicLoop() = default;
     BasicLoop(BasicLoop &&) = delete;
+
+    static inline thread_local BasicLoop *tlsInstance;
 
 private:
     ConcurrentQueue<std::coroutine_handle<>> mQueue;
@@ -102,7 +104,7 @@ template <class T = void>
     void set_value(U &&value) {
         mData.putValue(std::forward<U>(value));
         if (auto coroutine = getWaitingCoroutine()) {
-            mLoop.enqueue(coroutine);
+            BasicLoop::tlsInstance->enqueue(coroutine);
         }
     }
 
@@ -110,7 +112,7 @@ template <class T = void>
     void set_exception(std::exception_ptr e) {
         mException = e;
         if (auto coroutine = getWaitingCoroutine()) {
-            mLoop.enqueue(coroutine);
+            BasicLoop::tlsInstance->enqueue(coroutine);
         }
     }
 #endif
@@ -126,10 +128,9 @@ template <class T = void>
         }
     }
 
-    explicit FutureToken(BasicLoop &loop) : mLoop(loop) {}
+    FutureToken &operator=(FutureToken &&) = delete;
 
 private:
-    BasicLoop &mLoop;
 #if CO_ASYNC_EXCEPT
     std::exception_ptr mException;
 #endif
@@ -159,8 +160,7 @@ private:
 
 template <class T = void>
 /*[export]*/ struct [[nodiscard]] Future {
-    explicit Future(BasicLoop &loop)
-        : mToken(std::make_unique<FutureToken<T>>(loop)) {}
+    explicit Future() : mToken(std::make_unique<FutureToken<T>>()) {}
 
     FutureToken<T> *get_token() const noexcept {
         return mToken.get();
@@ -185,17 +185,16 @@ loopEnqueueDetachStarter(Task<T, P> task) {
 }
 
 template <class T, class P>
-inline void loop_enqueue_detach(BasicLoop &loop, Task<T, P> task) {
+inline void loop_enqueue_detach(Task<T, P> task) {
     auto wrapped = loopEnqueueDetachStarter(std::move(task));
     auto coroutine = wrapped.get();
-    loop.enqueue(coroutine);
+    BasicLoop::tlsInstance->enqueue(coroutine);
     wrapped.release();
 }
 
 template <class T, class P>
 inline Task<void, IgnoreReturnPromise<>>
-loopEnqueueFutureStarter(BasicLoop &loop, Task<T, P> task,
-                         FutureToken<T> *token) {
+loopEnqueueFutureStarter(Task<T, P> task, FutureToken<T> *token) {
 #if CO_ASYNC_EXCEPT
     try {
 #endif
@@ -208,14 +207,14 @@ loopEnqueueFutureStarter(BasicLoop &loop, Task<T, P> task,
 }
 
 template <class T, class P>
-inline Future<T> loop_enqueue_future(BasicLoop &loop, Task<T, P> task) {
-    Future<T> future(loop);
+inline Future<T> loop_enqueue_future(Task<T, P> task) {
+    Future<T> future;
     auto *token = future.get_token();
-    auto wrapped = loopEnqueueFutureStarter(loop, std::move(task), token);
+    auto wrapped = loopEnqueueFutureStarter(std::move(task), token);
     auto coroutine = wrapped.get();
     token->setOwningCoroutine(coroutine);
     wrapped.release();
-    loop.enqueue(coroutine);
+    BasicLoop::tlsInstance->enqueue(coroutine);
     return future;
 }
 
@@ -241,8 +240,8 @@ loopEnqueueFutureNotifier(std::condition_variable &cv, Future<T> &future,
 }
 
 template <class T, class P>
-inline T loop_enqueue_synchronized(BasicLoop &loop, Task<T, P> task) {
-    auto future = loop_enqueue_future(loop, std::move(task));
+inline T loop_enqueue_synchronized(Task<T, P> task) {
+    auto future = loop_enqueue_future(std::move(task));
     std::condition_variable cv;
     std::mutex mtx;
     Uninitialized<T> result;
@@ -251,11 +250,11 @@ inline T loop_enqueue_synchronized(BasicLoop &loop, Task<T, P> task) {
 #endif
     auto notifier = loopEnqueueFutureNotifier(cv, future, result
 #if CO_ASYNC_EXCEPT
-                                               ,
-                                               exception
+                                              ,
+                                              exception
 #endif
     );
-    loop.enqueue(notifier.get());
+    BasicLoop::tlsInstance->enqueue(notifier.get());
     std::unique_lock lck(mtx);
     cv.wait(lck);
     lck.unlock();

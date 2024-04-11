@@ -53,7 +53,7 @@ namespace co_async {
         auto pos = line.find(' ');
         if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: invalid HTTP request:\n\t" << line << '\n';
+            std::cerr << "WARNING: invalid HTTP request:\n\t[" + line + "]\n";
 #endif
             throw std::invalid_argument("invalid http request: version");
         }
@@ -61,7 +61,7 @@ namespace co_async {
         auto pos2 = line.find(' ', pos + 1);
         if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: invalid HTTP request:\n\t" << line << '\n';
+            std::cerr << "WARNING: invalid HTTP request:\n\t[" + line + "]\n";
 #endif
             throw std::invalid_argument("invalid http request: method");
         }
@@ -75,8 +75,7 @@ namespace co_async {
             if (pos == line.npos || pos == line.size() - 1 ||
                 line[pos + 1] != ' ') [[unlikely]] {
 #if CO_ASYNC_DEBUG
-                std::cerr << "WARNING: invalid HTTP request:\n\t" << line
-                          << '\n';
+                std::cerr << "WARNING: invalid HTTP request:\n\t[" + line + "]\n";
 #endif
                 throw std::invalid_argument("invalid http request: header");
             }
@@ -146,7 +145,7 @@ namespace co_async {
         if (line.size() <= 9 || line.substr(0, 9) != "HTTP/1.1 "sv)
             [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: invalid HTTP response:\n\t" << line << '\n';
+            std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
 #endif
             throw std::invalid_argument("invalid http response: version");
         }
@@ -154,7 +153,7 @@ namespace co_async {
             status = *statusOpt;
         } else [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: invalid HTTP response:\n\t" << line << '\n';
+            std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
 #endif
             throw std::invalid_argument("invalid http response: status");
         }
@@ -167,8 +166,7 @@ namespace co_async {
             if (pos == line.npos || pos == line.size() - 1 ||
                 line[pos + 1] != ' ') [[unlikely]] {
 #if CO_ASYNC_DEBUG
-                std::cerr << "WARNING: invalid HTTP response:\n\t" << line
-                          << '\n';
+                std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
 #endif
                 throw std::invalid_argument("invalid http response: header");
             }

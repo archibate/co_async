@@ -31,7 +31,7 @@ Task<> amain() {
     });
 
     for (std::size_t i = 0; i < globalSystemLoop.num_workers(); ++i) {
-        co_spawn(i, co_bind([&listener, &http, i] () -> Task<> {
+        co_spawn(i, co_bind([&listener, &http] () -> Task<> {
             while (1) {
                 auto conn = co_await listener_accept(listener);
                 /* counter.fetch_add(1, std::memory_order_relaxed); */

@@ -43,7 +43,6 @@ Task<> amain() {
 }
 
 int main() {
-    std::ios::sync_with_stdio(false);
     co_synchronize(amain());
     return 0;
 }
@@ -160,3 +159,17 @@ GCC 编译器：13.2.1
 - 打开文件 7µs
 - 查询文件信息 11µs
 - 读写 ~1MB 文件 80µs
+
+百万并发 HTTP 压力测试 examples/stress_test.cpp：
+
+```
+$ wrk -t16 -c1000 -d20s http://127.0.0.1:8080/
+Running 20s test @ http://127.0.0.1:8080/
+  16 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.58ms    6.07ms 222.19ms   98.78%
+    Req/Sec    79.18k     9.15k  154.00k    94.73%
+  25281650 requests in 20.09s, 2.83GB read
+Requests/sec: 1258548.22
+Transfer/sec:    144.03MB
+```

@@ -107,22 +107,30 @@
 #endif
 
 #if __cplusplus >= 202002L
+#if __has_include(<barrier>)
 #include <barrier>
+#endif
 #include <bit>
 #include <compare>
 #include <concepts>
 #if __cpp_impl_coroutine
 # include <coroutine>
 #endif
+#if __has_include(<latch>)
 #include <latch>
+#endif
 #include <numbers>
 #include <ranges>
 #include <span>
 #if __has_include(<stop_token>)
 #include <stop_token>
 #endif
+#if __has_include(<semaphore>)
 #include <semaphore>
+#endif
+#if __has_include(<source_location>)
 #include <source_location>
+#endif
 #if __has_include(<syncstream>)
 #include <syncstream>
 #endif

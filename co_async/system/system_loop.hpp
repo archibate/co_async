@@ -120,30 +120,6 @@ struct SystemLoop {
     SystemLoop() = default;
     SystemLoop(SystemLoop &&) = delete;
 
-#if defined(__GNUC__) && __has_attribute(const)
-    __attribute__((const))
-#endif
-    operator BasicLoop &() {
-#if CO_ASYNC_DEBUG
-        if (!BasicLoop::tlsInstance) [[unlikely]] {
-            throw std::logic_error("not a worker thread");
-        }
-#endif
-        return *BasicLoop::tlsInstance;
-    }
-
-#if defined(__GNUC__) && __has_attribute(const)
-    __attribute__((const))
-#endif
-    operator UringLoop &() {
-#if CO_ASYNC_DEBUG
-        if (!UringLoop::tlsInstance) [[unlikely]] {
-            throw std::logic_error("not a worker thread");
-        }
-#endif
-        return *UringLoop::tlsInstance;
-    }
-
     BasicLoop &getAnyWorkingLoop() {
 #if CO_ASYNC_DEBUG
         if (is_this_thread_worker()) [[unlikely]] {

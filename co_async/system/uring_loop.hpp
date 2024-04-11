@@ -39,10 +39,8 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
 }
 
 struct UringLoop {
-    inline void run();
-    inline bool runBatched(
-        std::size_t numBatch = 128,
-        std::chrono::microseconds timeout = std::chrono::milliseconds(10));
+    inline void runSingle(BasicLoop &basicLoop);
+    inline bool runBatched(BasicLoop &basicLoop, std::size_t numBatch, struct __kernel_timespec timeout);
 
     io_uring_sqe *getSqe() {
         io_uring_sqe *sqe = io_uring_get_sqe(&mRing);
@@ -123,10 +121,6 @@ struct UringLoop {
         return mFixedFiles[file_index];
     }
 
-    operator BasicLoop &() {
-        return mBasicLoop;
-    }
-
     struct FixedBuffer {
         std::unique_ptr<char[]> mBuffer;
         std::size_t mBufferSize;
@@ -134,7 +128,6 @@ struct UringLoop {
 
 private:
     io_uring mRing;
-    BasicLoop mBasicLoop;
     std::vector<std::coroutine_handle<>> mCoroutinesBatched;
     std::vector<int> mFixedFiles;
     std::vector<FixedBuffer> mFixedBuffers;
@@ -176,39 +169,30 @@ struct UringAwaiter {
     int mRes = -ENOSYS;
 };
 
-void UringLoop::run() {
-    mBasicLoop.run();
+void UringLoop::runSingle(BasicLoop &basicLoop) {
     io_uring_cqe *cqe;
     checkErrorReturn(io_uring_wait_cqe(&mRing, &cqe));
     auto *awaiter = reinterpret_cast<UringAwaiter *>(cqe->user_data);
     awaiter->mRes = cqe->res;
     io_uring_cqe_seen(&mRing, cqe);
-    awaiter->mPrevious.resume();
+    basicLoop.enqueue(awaiter->mPrevious);
 }
 
-bool UringLoop::runBatched(std::size_t numBatch,
-                           std::chrono::microseconds timeout) {
-    mBasicLoop.run();
+bool UringLoop::runBatched(BasicLoop &basicLoop, std::size_t numBatch, struct __kernel_timespec timeout) {
     io_uring_cqe *cqe;
-    auto ts = durationToKernelTimespec(timeout);
-    int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, &ts, nullptr);
+    int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, &timeout, nullptr);
     if (res == -ETIME) {
         return false;
     }
     checkErrorReturn(res);
     unsigned head, numGot = 0;
-    mCoroutinesBatched.clear();
     io_uring_for_each_cqe(&mRing, head, cqe) {
         auto *awaiter = reinterpret_cast<UringAwaiter *>(cqe->user_data);
         awaiter->mRes = cqe->res;
-        mCoroutinesBatched.push_back(awaiter->mPrevious);
+        basicLoop.enqueue(awaiter->mPrevious);
         ++numGot;
     }
     io_uring_cq_advance(&mRing, numGot);
-    for (auto const &coroutine: mCoroutinesBatched) {
-        coroutine.resume();
-    }
-    mCoroutinesBatched.clear();
     return true;
 }
 

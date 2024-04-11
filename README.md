@@ -55,7 +55,7 @@ int main() {
 
 ### Linux
 
-- Linux 内核 >= 5.1
+- Linux 内核 >= 5.11
 - GCC >= 10
 - Clang >= 16
 
@@ -64,12 +64,11 @@ int main() {
 ```bash
 sudo apt install -y g++-10 libstdc++-10-dev
 export CXX=g++10
+rm -rf build
+cmake -B build
+cmake --build build --parallel 8
+build/server  # 对应于 examples/server.cpp
 ```
-
-### Windows
-
-- Windows >= 10（施工中，稍后支持）
-- Visual Studio >= 2022（施工中，稍后支持）
 
 ### Docker 环境构建
 
@@ -87,6 +86,13 @@ cmake -B build
 cmake --build build --parallel 8
 build/server  # 对应于 examples/server.cpp
 ```
+
+> Docker 继承宿主机的 Linux 内核版本，因此 Docker 无法解决 Linux 内核版本过低的问题。
+
+### Windows
+
+- Windows >= 10（施工中，稍后支持）
+- Visual Studio >= 2022（施工中，稍后支持）
 
 ## 安装与导入
 
@@ -131,7 +137,7 @@ target_link_libraries(你的名字 PRIVATE co_async)
 import co_async;
 ```
 
-> 需要 GCC >= 11 或 Clang >= 17 或 MSVC >= 19，以及 CMake >= 3.28 且使用 `cmake -G Ninja` 选项
+> 需要 GCC >= 11 或 Clang >= 17 或 MSVC >= 19，以及 CMake >= 3.28 且使用 `cmake -B build -G Ninja`。
 
 ### 额外 CMake 选项
 
@@ -144,6 +150,8 @@ cmake -B build -DCO_ASYNC_PERF=ON  # 启用性能测试（程序结束时自动�
 ## 性能测试
 
 测试平台：AMD Ryzen 7 7800X3D（8 核心 16 线程 4.5 GHz）
+Linux 内核：6.8.2
+GCC 编译器：13.2.1
 
 - 普通函数调用 25ns
 - 协程函数调用 80ns

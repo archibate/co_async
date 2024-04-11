@@ -47,12 +47,18 @@ namespace co_async {
         auto line = co_await sock.getline("\r\n"sv);
         auto pos = line.find(' ');
         if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
-            throw std::invalid_argument("invalid http request");
+#if CO_ASYNC_DEBUG
+            std::cerr << "WARNING: invalid HTTP request:\n\t" << line << '\n';
+#endif
+            throw std::invalid_argument("invalid http request: version");
         }
         method = line.substr(0, pos);
         auto pos2 = line.find(' ', pos + 1);
         if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
-            throw std::invalid_argument("invalid http request");
+#if CO_ASYNC_DEBUG
+            std::cerr << "WARNING: invalid HTTP request:\n\t" << line << '\n';
+#endif
+            throw std::invalid_argument("invalid http request: method");
         }
         uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
         while (true) {
@@ -63,7 +69,10 @@ namespace co_async {
             auto pos = line.find(':');
             if (pos == line.npos || pos == line.size() - 1 ||
                 line[pos + 1] != ' ') [[unlikely]] {
-                throw std::invalid_argument("invalid http request");
+#if CO_ASYNC_DEBUG
+            std::cerr << "WARNING: invalid HTTP request:\n\t" << line << '\n';
+#endif
+                throw std::invalid_argument("invalid http request: header");
             }
             auto key = line.substr(0, pos);
             for (auto &c: key) {
@@ -118,7 +127,10 @@ namespace co_async {
         auto line = co_await sock.getline("\r\n"sv);
         if (line.size() <= 9 || line.substr(0, 9) != "HTTP/1.1 "sv)
             [[unlikely]] {
-            throw std::invalid_argument("invalid http response");
+#if CO_ASYNC_DEBUG
+            std::cerr << "WARNING: invalid HTTP response:\n\t" << line << '\n';
+#endif
+            throw std::invalid_argument("invalid http response: version");
         }
         status = from_string<int>(line.substr(9));
         while (true) {
@@ -129,7 +141,10 @@ namespace co_async {
             auto pos = line.find(':');
             if (pos == line.npos || pos == line.size() - 1 ||
                 line[pos + 1] != ' ') [[unlikely]] {
-                throw std::invalid_argument("invalid http response");
+#if CO_ASYNC_DEBUG
+            std::cerr << "WARNING: invalid HTTP response:\n\t" << line << '\n';
+#endif
+                throw std::invalid_argument("invalid http response: header");
             }
             auto key = line.substr(0, pos);
             for (auto &c: key) {

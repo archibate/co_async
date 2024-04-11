@@ -163,6 +163,13 @@ private:
     return sa;
 }
 
+/*[export]*/ inline SocketAddress get_socket_peer_address(SocketHandle &sock) {
+    SocketAddress sa;
+    sa.mAddrLen = sizeof(sa.mAddrIpv6);
+    checkError(getpeername(sock.fileNo(), (sockaddr *)&sa.mAddr, &sa.mAddrLen));
+    return sa;
+}
+
 template <class T>
 inline T socketGetOption(SocketHandle &sock, int level, int optId) {
     T val;

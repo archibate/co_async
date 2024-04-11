@@ -1,33 +1,33 @@
 #pragma once /*{export module co_async:threading.basic_loop;}*/
 
-#include "co_async/awaiter/just.hpp"
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #include <co_async/awaiter/concepts.hpp>         /*{import :awaiter.concepts;}*/
 #include <co_async/awaiter/task.hpp>             /*{import :awaiter.task;}*/
 #include <co_async/awaiter/details/ignore_return_promise.hpp> /*{import :awaiter.details.ignore_return_promise;}*/
 #include <co_async/utils/uninitialized.hpp>  /*{import :utils.uninitialized;}*/
 #include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
+#include <co_async/threading/concurrent_queue.hpp>/*{import :threading.concurrent_queue;}*/
 
 namespace co_async {
 
-struct BasicLoop {
-    void run() {
-        while (!mQueue.empty()) {
-            auto coroutine = mQueue.front();
-            mQueue.pop_front();
-            coroutine.resume();
+struct alignas(64) BasicLoop {
+    bool run() {
+        if (auto coroutine = mQueue.pop()) {
+            std::coroutine_handle<>::from_address(coroutine).resume();
+            return true;
         }
+        return false;
     }
 
     void enqueue(std::coroutine_handle<> coroutine) {
-        mQueue.push_back(coroutine);
+        mQueue.push(coroutine.address());
     }
 
     BasicLoop() = default;
     BasicLoop(BasicLoop &&) = delete;
 
 private:
-    std::deque<std::coroutine_handle<>> mQueue;
+    ConcurrentQueue mQueue;
 };
 
 struct FutureTokenBase {
@@ -210,15 +210,54 @@ inline Future<T> loop_enqueue_future(BasicLoop &loop, Task<T, P> task) {
     return future;
 }
 
-template <class Loop, class T, class P>
-T loop_enqueue_and_wait(Loop &loop, Task<T, P> const &task) {
-    auto awaiter = task.operator co_await();
-    auto coroutine = awaiter.await_suspend(std::noop_coroutine());
-    coroutine.resume();
-    while (!coroutine.done()) {
-        loop.run();
+template <class T>
+inline Task<void, IgnoreReturnPromise<>>
+loopEnqueueFutureNotifier(std::condition_variable &cv, Future<T> &future,
+                          Uninitialized<T> &result
+#if CO_ASYNC_EXCEPT
+                          ,
+                          std::exception_ptr exception
+#endif
+) {
+#if CO_ASYNC_EXCEPT
+    try {
+#endif
+        result.putValue((co_await future, NonVoidHelper<>()));
+#if CO_ASYNC_EXCEPT
+    } catch (...) {
+        exception = std::current_exception();
     }
-    return awaiter.await_resume();
+#endif
+    cv.notify_one();
+}
+
+template <class T, class P>
+inline T loop_enqueue_synchronized(BasicLoop &loop, Task<T, P> task) {
+    auto future = loop_enqueue_future(loop, std::move(task));
+    std::condition_variable cv;
+    std::mutex mtx;
+    Uninitialized<T> result;
+#if CO_ASYNC_EXCEPT
+    std::exception_ptr exception;
+#endif
+    auto notifier = loopEnqueueFutureNotifier(cv, future, result
+#if CO_ASYNC_EXCEPT
+                                               ,
+                                               exception
+#endif
+    );
+    loop.enqueue(notifier.get());
+    std::unique_lock lck(mtx);
+    cv.wait(lck);
+    lck.unlock();
+#if CO_ASYNC_EXCEPT
+    if (exception) [[unlikely]] {
+        std::rethrow_exception(exception);
+    }
+#endif
+    if constexpr (!std::is_void_v<T>) {
+        return result.moveValue();
+    }
 }
 
 struct FutureGroup {

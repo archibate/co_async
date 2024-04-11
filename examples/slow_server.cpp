@@ -15,7 +15,7 @@ Task<> amain() {
             .headers = {
                 {"content-type", "text/html;charset=utf-8"},
             },
-            .body = "<h1>It works!</h1>",
+            .body = "<meta http-equiv=refresh content=1><h1>It works!</h1>",
         };
     });
 
@@ -23,14 +23,13 @@ Task<> amain() {
     FutureGroup fg;
     while (1) {
         auto conn = co_await listener_accept(listener);
-        co_await stdio().putline("收到请求: " + listener.address().toString());
-        fg.add(co_future(and_then(sleep_for(2s), http.process_connection(SocketStream(std::move(conn))))));
+        co_await stdio().putline("线程 " + to_string(loop.this_thread_worker_id()) + " 收到请求: " + listener.address().toString());
+        fg.add(co_future(and_then(sleep_for(300ms), http.process_connection(SocketStream(std::move(conn))))));
     }
     co_await fg.wait();
 }
 
 int main() {
-    std::ios::sync_with_stdio(false);
     co_synchronize(amain());
     return 0;
 }

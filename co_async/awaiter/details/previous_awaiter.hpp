@@ -1,4 +1,4 @@
-#pragma once/*{export module co_async:awaiter.details.previous_awaiter;}*/
+#pragma once /*{export module co_async:awaiter.details.previous_awaiter;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 

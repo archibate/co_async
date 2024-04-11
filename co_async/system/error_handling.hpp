@@ -4,15 +4,15 @@
 #include <errno.h>
 #endif
 
-#pragma once/*{export module co_async:system.error_handling;}*/
+#pragma once /*{export module co_async:system.error_handling;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 namespace co_async {
 
 #if CO_ASYNC_DEBUG
-auto checkError(auto res, std::source_location loc =
-                              std::source_location::current()) {
+auto checkError(auto res,
+                std::source_location loc = std::source_location::current()) {
     if (res == -1) [[unlikely]] {
         throw std::system_error(errno, std::system_category(),
                                 (std::string)loc.file_name() + ":" +
@@ -28,8 +28,8 @@ auto bypassSpecificError(auto res, int bypassval = -ETIME) {
     return res;
 }
 
-auto checkErrorReturn(auto res, std::source_location loc =
-                                    std::source_location::current()) {
+auto checkErrorReturn(
+    auto res, std::source_location loc = std::source_location::current()) {
     if (res < 0) [[unlikely]] {
         throw std::system_error(-res, std::system_category(),
                                 (std::string)loc.file_name() + ":" +

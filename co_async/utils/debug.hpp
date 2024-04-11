@@ -370,7 +370,7 @@ public:
     }
 };
 
-}
+} // namespace co_async
 
 #else
 
@@ -451,6 +451,6 @@ public:
     }
 };
 
-}
+} // namespace co_async
 
 #endif

@@ -9,14 +9,14 @@
 #include <fcntl.h>
 #endif
 
-#pragma once/*{export module co_async:system.uring_loop;}*/
+#pragma once /*{export module co_async:system.uring_loop;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
-#include <co_async/threading/basic_loop.hpp>/*{import :threading.basic_loop;}*/
+#include <co_async/threading/basic_loop.hpp> /*{import :threading.basic_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
 
 namespace co_async {
 
@@ -40,7 +40,8 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
 
 struct UringLoop {
     inline void runSingle();
-    inline bool runBatchedWait(std::size_t numBatch, struct __kernel_timespec *timeout);
+    inline bool runBatchedWait(std::size_t numBatch,
+                               struct __kernel_timespec *timeout);
     inline void runBatchedNoWait(std::size_t numBatch);
 
     bool hasAnyEvent() const {
@@ -131,7 +132,7 @@ struct UringLoop {
         std::size_t mBufferSize;
     };
 
-    inline static thread_local UringLoop *tlsInstance;
+    static inline thread_local UringLoop *tlsInstance;
 
 private:
     io_uring mRing;
@@ -170,6 +171,7 @@ struct UringAwaiter {
     int await_resume() const noexcept {
         return mRes;
     }
+
     std::coroutine_handle<> mPrevious;
     int mRes = -ENOSYS;
 };
@@ -197,7 +199,8 @@ void UringLoop::runBatchedNoWait(std::size_t numBatch) {
     io_uring_cq_advance(&mRing, numGot);
 }
 
-bool UringLoop::runBatchedWait(std::size_t numBatch, struct __kernel_timespec *timeout) {
+bool UringLoop::runBatchedWait(std::size_t numBatch,
+                               struct __kernel_timespec *timeout) {
     io_uring_cqe *cqe;
     int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, timeout, nullptr);
     if (res == -ETIME) {
@@ -216,191 +219,157 @@ bool UringLoop::runBatchedWait(std::size_t numBatch, struct __kernel_timespec *t
 }
 
 inline Task<int> uring_nop() {
-    co_return co_await UringAwaiter([&](io_uring_sqe *sqe) { io_uring_prep_nop(sqe); });
+    co_return co_await UringAwaiter(
+        [&](io_uring_sqe *sqe) { io_uring_prep_nop(sqe); });
 }
 
-inline Task<int> uring_openat(int dirfd, char const *path,
-                              int flags, mode_t mode) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_openat(sqe, dirfd, path, flags, mode);
-        }));
+inline Task<int> uring_openat(int dirfd, char const *path, int flags,
+                              mode_t mode) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_openat(sqe, dirfd, path, flags, mode);
+    }));
 }
 
-inline Task<int> uring_openat_direct(int dirfd,
-                                     char const *path, int flags, mode_t mode,
-                                     int file_index) {
-    int ret =
-        checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_openat_direct(sqe, dirfd, path, flags, mode,
-                                        file_index);
-        }));
+inline Task<int> uring_openat_direct(int dirfd, char const *path, int flags,
+                                     mode_t mode, int file_index) {
+    int ret = checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_openat_direct(sqe, dirfd, path, flags, mode, file_index);
+    }));
     co_return ret;
 }
 
-inline Task<int> uring_socket(int domain, int type,
-                              int protocol, unsigned int flags) {
+inline Task<int> uring_socket(int domain, int type, int protocol,
+                              unsigned int flags) {
     co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
         io_uring_prep_socket(sqe, domain, type, protocol, flags);
     }));
 }
 
-inline Task<int> uring_accept(int fd, struct sockaddr *addr,
-                              socklen_t *addrlen, int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_accept(sqe, fd, addr, addrlen, flags);
-        }));
+inline Task<int> uring_accept(int fd, struct sockaddr *addr, socklen_t *addrlen,
+                              int flags) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_accept(sqe, fd, addr, addrlen, flags);
+    }));
 }
 
-inline Task<int> uring_connect(int fd,
-                               const struct sockaddr *addr, socklen_t addrlen) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_connect(sqe, fd, addr, addrlen);
-        }));
+inline Task<int> uring_connect(int fd, const struct sockaddr *addr,
+                               socklen_t addrlen) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_connect(sqe, fd, addr, addrlen);
+    }));
 }
 
-inline Task<int> uring_mkdirat(int dirfd, char const *path,
-                               mode_t mode) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_mkdirat(sqe, dirfd, path, mode);
-        }));
+inline Task<int> uring_mkdirat(int dirfd, char const *path, mode_t mode) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_mkdirat(sqe, dirfd, path, mode);
+    }));
 }
 
-inline Task<int> uring_linkat(int olddirfd,
-                              char const *oldpath, int newdirfd,
+inline Task<int> uring_linkat(int olddirfd, char const *oldpath, int newdirfd,
                               char const *newpath, int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_linkat(sqe, olddirfd, oldpath, newdirfd, newpath,
-                                 flags);
-        }));
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_linkat(sqe, olddirfd, oldpath, newdirfd, newpath, flags);
+    }));
 }
 
-inline Task<int> uring_renameat(int olddirfd,
-                                char const *oldpath, int newdirfd,
+inline Task<int> uring_renameat(int olddirfd, char const *oldpath, int newdirfd,
                                 char const *newpath, int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_renameat(sqe, olddirfd, oldpath, newdirfd, newpath,
-                                   flags);
-        }));
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_renameat(sqe, olddirfd, oldpath, newdirfd, newpath,
+                               flags);
+    }));
 }
 
-inline Task<int> uring_unlinkat(int dirfd, char const *path,
-                                int flags = 0) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_unlinkat(sqe, dirfd, path, flags);
-        }));
+inline Task<int> uring_unlinkat(int dirfd, char const *path, int flags = 0) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_unlinkat(sqe, dirfd, path, flags);
+    }));
 }
 
-inline Task<int> uring_symlinkat(char const *target,
-                                 int newdirfd, char const *linkpath) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_symlinkat(sqe, target, newdirfd, linkpath);
-        }));
+inline Task<int> uring_symlinkat(char const *target, int newdirfd,
+                                 char const *linkpath) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_symlinkat(sqe, target, newdirfd, linkpath);
+    }));
 }
 
-inline Task<int> uring_statx(int dirfd, char const *path,
-                             int flags, unsigned int mask,
-                             struct statx *statxbuf) {
+inline Task<int> uring_statx(int dirfd, char const *path, int flags,
+                             unsigned int mask, struct statx *statxbuf) {
     co_return co_await UringAwaiter([&](io_uring_sqe *sqe) {
         io_uring_prep_statx(sqe, dirfd, path, flags, mask, statxbuf);
     });
 }
 
-inline Task<std::size_t> uring_read(int fd,
-                                    std::span<char> buf, std::uint64_t offset) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_read(sqe, fd, buf.data(), buf.size(), offset);
-        }));
+inline Task<std::size_t> uring_read(int fd, std::span<char> buf,
+                                    std::uint64_t offset) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_read(sqe, fd, buf.data(), buf.size(), offset);
+    }));
 }
 
-inline Task<std::size_t> uring_write(int fd,
-                                     std::span<char const> buf,
+inline Task<std::size_t> uring_write(int fd, std::span<char const> buf,
                                      std::uint64_t offset) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_write(sqe, fd, buf.data(), buf.size(), offset);
-        }));
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_write(sqe, fd, buf.data(), buf.size(), offset);
+    }));
 }
 
-inline Task<std::size_t> uring_read_fixed(int fd,
-                                          std::span<char> buf,
+inline Task<std::size_t> uring_read_fixed(int fd, std::span<char> buf,
                                           std::uint64_t offset, int buf_index) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_read_fixed(sqe, fd, buf.data(), buf.size(), offset,
-                                     buf_index);
-        }));
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_read_fixed(sqe, fd, buf.data(), buf.size(), offset,
+                                 buf_index);
+    }));
 }
 
-inline Task<std::size_t> uring_write_fixed(int fd,
-                                           std::span<char const> buf,
+inline Task<std::size_t> uring_write_fixed(int fd, std::span<char const> buf,
                                            std::uint64_t offset,
                                            int buf_index) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_write_fixed(sqe, fd, buf.data(), buf.size(), offset,
-                                      buf_index);
-        }));
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_write_fixed(sqe, fd, buf.data(), buf.size(), offset,
+                                  buf_index);
+    }));
 }
 
-inline Task<std::size_t> uring_readv(int fd,
-                                     std::span<struct iovec const> buf,
+inline Task<std::size_t> uring_readv(int fd, std::span<struct iovec const> buf,
                                      std::uint64_t offset, int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_readv2(sqe, fd, buf.data(), buf.size(), offset,
-                                 flags);
-        }));
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_readv2(sqe, fd, buf.data(), buf.size(), offset, flags);
+    }));
 }
 
-inline Task<std::size_t> uring_writev(int fd,
-                                      std::span<struct iovec const> buf,
+inline Task<std::size_t> uring_writev(int fd, std::span<struct iovec const> buf,
                                       std::uint64_t offset, int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_writev2(sqe, fd, buf.data(), buf.size(), offset,
-                                  flags);
-        }));
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_writev2(sqe, fd, buf.data(), buf.size(), offset, flags);
+    }));
 }
 
-inline Task<std::size_t> uring_recv(int fd,
-                                    std::span<char> buf, int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_recv(sqe, fd, buf.data(), buf.size(), flags);
-        }));
+inline Task<std::size_t> uring_recv(int fd, std::span<char> buf, int flags) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_recv(sqe, fd, buf.data(), buf.size(), flags);
+    }));
 }
 
-inline Task<std::size_t> uring_send(int fd,
-                                    std::span<char const> buf, int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_send(sqe, fd, buf.data(), buf.size(), flags);
-        }));
+inline Task<std::size_t> uring_send(int fd, std::span<char const> buf,
+                                    int flags) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_send(sqe, fd, buf.data(), buf.size(), flags);
+    }));
 }
 
-inline Task<std::size_t> uring_recvmsg(int fd,
-                                       struct msghdr *msg, unsigned int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_recvmsg(sqe, fd, msg, flags);
-        }));
+inline Task<std::size_t> uring_recvmsg(int fd, struct msghdr *msg,
+                                       unsigned int flags) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_recvmsg(sqe, fd, msg, flags);
+    }));
 }
 
-inline Task<std::size_t> uring_sendmsg(int fd,
-                                       struct msghdr *msg, unsigned int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_sendmsg(sqe, fd, msg, flags);
-        }));
+inline Task<std::size_t> uring_sendmsg(int fd, struct msghdr *msg,
+                                       unsigned int flags) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_sendmsg(sqe, fd, msg, flags);
+    }));
 }
 
 inline Task<int> uring_close(int fd) {
@@ -409,10 +378,8 @@ inline Task<int> uring_close(int fd) {
 }
 
 inline Task<int> uring_shutdown(int fd, int how) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_shutdown(sqe, fd, how);
-        }));
+    co_return checkErrorReturn(co_await UringAwaiter(
+        [&](io_uring_sqe *sqe) { io_uring_prep_shutdown(sqe, fd, how); }));
 }
 
 inline Task<int> uring_fsync(int fd, unsigned int flags) {
@@ -421,29 +388,24 @@ inline Task<int> uring_fsync(int fd, unsigned int flags) {
 }
 
 inline Task<int> uring_ftruncate(int fd, loff_t len) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_ftruncate(sqe, fd, len);
-        }));
+    co_return checkErrorReturn(co_await UringAwaiter(
+        [&](io_uring_sqe *sqe) { io_uring_prep_ftruncate(sqe, fd, len); }));
 }
 
 inline Task<int> uring_cancel_fd(int fd, unsigned int flags) {
-    co_return co_await UringAwaiter([&](io_uring_sqe *sqe) {
-        io_uring_prep_cancel_fd(sqe, fd, flags);
-    });
+    co_return co_await UringAwaiter(
+        [&](io_uring_sqe *sqe) { io_uring_prep_cancel_fd(sqe, fd, flags); });
 }
 
-inline Task<int> uring_waitid(idtype_t idtype, id_t id,
-                              siginfo_t *infop, int options,
-                              unsigned int flags) {
-    co_return checkErrorReturn(
-        co_await UringAwaiter([&](io_uring_sqe *sqe) {
-            io_uring_prep_waitid(sqe, idtype, id, infop, options, flags);
-        }));
+inline Task<int> uring_waitid(idtype_t idtype, id_t id, siginfo_t *infop,
+                              int options, unsigned int flags) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_waitid(sqe, idtype, id, infop, options, flags);
+    }));
 }
 
-inline Task<int> uring_timeout(struct __kernel_timespec ts,
-                               unsigned int count, unsigned int flags) {
+inline Task<int> uring_timeout(struct __kernel_timespec ts, unsigned int count,
+                               unsigned int flags) {
     int res = co_await UringAwaiter([&](io_uring_sqe *sqe) {
         io_uring_prep_timeout(sqe, &ts, count, flags);
     });

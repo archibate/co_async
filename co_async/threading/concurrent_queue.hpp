@@ -1,4 +1,4 @@
-#pragma once/*{export module co_async:threading.concurrent_queue;}*/
+#pragma once /*{export module co_async:threading.concurrent_queue;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #include <co_async/utils/debug.hpp>
@@ -6,11 +6,11 @@
 namespace co_async {
 
 #ifdef __cpp_lib_hardware_interference_size
-    using std::hardware_constructive_interference_size;
-    using std::hardware_destructive_interference_size;
+using std::hardware_constructive_interference_size;
+using std::hardware_destructive_interference_size;
 #else
-    constexpr std::size_t hardware_constructive_interference_size = 64;
-    constexpr std::size_t hardware_destructive_interference_size = 64;
+constexpr std::size_t hardware_constructive_interference_size = 64;
+constexpr std::size_t hardware_destructive_interference_size = 64;
 #endif
 
 #if defined(__GNUC__) && __has_builtin(__builtin_unreachable)
@@ -59,7 +59,8 @@ struct ConcurrentQueue {
             mStamp.compare_exchange_weak(s, Stamp(0));
             return std::nullopt;
         }
-        while (!mStamp.compare_exchange_weak(s, advectRead(s), std::memory_order_acq_rel)) {
+        while (!mStamp.compare_exchange_weak(s, advectRead(s),
+                                             std::memory_order_acq_rel)) {
             if (!canRead(s)) {
                 return std::nullopt;
             }
@@ -72,7 +73,8 @@ struct ConcurrentQueue {
         if (!canWrite(s)) [[unlikely]] {
             return false;
         }
-        while (!mStamp.compare_exchange_weak(s, advectWrite(s), std::memory_order_acq_rel)) {
+        while (!mStamp.compare_exchange_weak(s, advectWrite(s),
+                                             std::memory_order_acq_rel)) {
             if (!canWrite(s)) [[unlikely]] {
                 return false;
             }
@@ -102,11 +104,13 @@ private:
     }
 
     inline Stamp advectRead(Stamp s) const {
-        return ((((s >> Shift) + 1) & (kSize - 1)) << Shift) | (s & (kSize - 1));
+        return ((((s >> Shift) + 1) & (kSize - 1)) << Shift) |
+               (s & (kSize - 1));
     }
 
     inline Stamp advectWrite(Stamp s) const {
-        return (((s & (kSize - 1)) + 1) & (kSize - 1)) | (s & ((kSize - 1) << Shift));
+        return (((s & (kSize - 1)) + 1) & (kSize - 1)) |
+               (s & ((kSize - 1) << Shift));
     }
 
     std::unique_ptr<T[]> mHead = std::make_unique<T[]>(kSize);
@@ -136,4 +140,4 @@ private:
 /*     } */
 /* }; */
 
-}
+} // namespace co_async

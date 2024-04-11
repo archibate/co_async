@@ -7,14 +7,14 @@
 #include <fcntl.h>
 #endif
 
-#pragma once/*{export module co_async:system.fs;}*/
+#pragma once /*{export module co_async:system.fs;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
+#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 
 namespace co_async {
@@ -142,8 +142,8 @@ template <std::convertible_to<std::string>... Ts>
 /*[export]*/ inline Task<FileHandle> fs_open(DirFilePath path, OpenMode mode,
                                              mode_t access = 0644) {
     int oflags = (int)mode;
-    int fd = co_await uring_openat(path.dir_file(), path.c_str(), oflags,
-                                   access);
+    int fd =
+        co_await uring_openat(path.dir_file(), path.c_str(), oflags, access);
     FileHandle file(fd);
     co_return file;
 }
@@ -195,8 +195,8 @@ fs_stat(DirFilePath path, int mask = STATX_BASIC_STATS | STATX_BTIME) {
 
 /*[export]*/ inline Task<std::uint64_t> fs_stat_size(DirFilePath path) {
     FileStat ret;
-    checkErrorReturn(co_await uring_statx(path.dir_file(), path.c_str(),
-                                          0, STATX_SIZE, ret.getNativeStatx()));
+    checkErrorReturn(co_await uring_statx(path.dir_file(), path.c_str(), 0,
+                                          STATX_SIZE, ret.getNativeStatx()));
     co_return ret.size();
 }
 

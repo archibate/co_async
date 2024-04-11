@@ -1,9 +1,9 @@
-#pragma once/*{export module co_async:system.system_loop;}*/
+#pragma once /*{export module co_async:system.system_loop;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
-#include <co_async/system/uring_loop.hpp>/*{import :system.uring_loop;}*/
+#include <co_async/system/uring_loop.hpp>   /*{import :system.uring_loop;}*/
 #include <co_async/threading/basic_loop.hpp>/*{import :threading.basic_loop;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/awaiter/task.hpp>        /*{import :awaiter.task;}*/
 #if defined(__linux__) && defined(_GLIBCXX_HAS_GTHREADS)
 #include <pthread.h>
 #elif defined(_WIN32) && defined(_EXPORT_STD)
@@ -164,7 +164,7 @@ private:
     std::stop_source mStop;
 };
 
-/*[export]*/ inline static SystemLoop globalSystemLoop;
+/*[export]*/ static inline SystemLoop globalSystemLoop;
 
 template <class T, class P>
 /*[export]*/ inline void co_spawn(Task<T, P> &&task) {

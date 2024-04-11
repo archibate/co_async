@@ -1,4 +1,4 @@
-#pragma once/*{export module co_async:utils.uninitialized;}*/
+#pragma once /*{export module co_async:utils.uninitialized;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
@@ -46,7 +46,8 @@ struct Uninitialized {
     void putValue(Ts &&...args) {
 #if CO_ASYNC_DEBUG
         if (mHasValue) [[unlikely]] {
-            std::cerr << "WARNING: Uninitialized::putValue with value already exist\n";
+            std::cerr << "WARNING: Uninitialized::putValue with value already "
+                         "exist\n";
             mValue.~T();
         }
 #endif

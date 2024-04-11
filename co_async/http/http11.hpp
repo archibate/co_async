@@ -1,11 +1,11 @@
-#pragma once/*{export module co_async:http.http11;}*/
+#pragma once /*{export module co_async:http.http11;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/utils/simple_map.hpp>/*{import :utils.simple_map;}*/
+#include <co_async/awaiter/task.hpp>             /*{import :awaiter.task;}*/
+#include <co_async/utils/simple_map.hpp>         /*{import :utils.simple_map;}*/
 #include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
-#include <co_async/utils/string_utils.hpp>/*{import :utils.string_utils;}*/
-#include <co_async/http/uri.hpp>/*{import :http.uri;}*/
+#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
+#include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
 
 namespace co_async {
 
@@ -70,7 +70,8 @@ namespace co_async {
             if (pos == line.npos || pos == line.size() - 1 ||
                 line[pos + 1] != ' ') [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: invalid HTTP request:\n\t" << line << '\n';
+                std::cerr << "WARNING: invalid HTTP request:\n\t" << line
+                          << '\n';
 #endif
                 throw std::invalid_argument("invalid http request: header");
             }
@@ -142,7 +143,8 @@ namespace co_async {
             if (pos == line.npos || pos == line.size() - 1 ||
                 line[pos + 1] != ' ') [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: invalid HTTP response:\n\t" << line << '\n';
+                std::cerr << "WARNING: invalid HTTP response:\n\t" << line
+                          << '\n';
 #endif
                 throw std::invalid_argument("invalid http response: header");
             }

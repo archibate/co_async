@@ -1,8 +1,8 @@
-#pragma once/*{export module co_async:awaiter.task;}*/
+#pragma once /*{export module co_async:awaiter.task;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 #include <co_async/utils/uninitialized.hpp>/*{import :utils.uninitialized;}*/
-#include <co_async/utils/perf.hpp>/*{import :utils.perf;}*/
+#include <co_async/utils/perf.hpp>         /*{import :utils.perf;}*/
 #include <co_async/awaiter/details/previous_awaiter.hpp>/*{import :awaiter.details.previous_awaiter;}*/
 
 namespace co_async {
@@ -154,12 +154,14 @@ struct [[nodiscard]] Task {
     }
 
     ~Task() {
-        if (!mCoroutine) return;
+        if (!mCoroutine)
+            return;
 #if CO_ASYNC_DEBUG
         if (!mCoroutine.done()) [[unlikely]] {
 #if CO_ASYNC_PERF
             auto &perf = mCoroutine.promise().mPerf;
-            std::cerr << "WARNING: task (" << perf.file << ":" << perf.line << ") destroyed undone\n";
+            std::cerr << "WARNING: task (" << perf.file << ":" << perf.line
+                      << ") destroyed undone\n";
 #else
             std::cerr << "WARNING: task destroyed undone\n";
 #endif

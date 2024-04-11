@@ -1,4 +1,4 @@
-#pragma once/*{export module co_async:awaiter.details.ignore_return_promise;}*/
+#pragma once /*{export module co_async:awaiter.details.ignore_return_promise;}*/
 
 #include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
 
@@ -20,9 +20,12 @@ struct IgnoreReturnPromise {
         try {
             throw;
         } catch (std::exception const &e) {
-            std::cerr << "WARNING: exception occurred in co_spawn'ed coroutine: " << e.what() << "\n";
+            std::cerr
+                << "WARNING: exception occurred in co_spawn'ed coroutine: "
+                << e.what() << "\n";
         } catch (...) {
-            std::cerr << "WARNING: exception occurred in co_spawn'ed coroutine\n";
+            std::cerr
+                << "WARNING: exception occurred in co_spawn'ed coroutine\n";
         }
 #endif
 #else

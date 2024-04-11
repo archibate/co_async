@@ -11,16 +11,16 @@
 #include <sys/un.h>
 #endif
 
-#pragma once /*{export module co_async:system.socket;}*/
+#pragma once/*{export module co_async:system.socket;}*/
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
-#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
+#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
+#include <co_async/utils/string_utils.hpp>/*{import :utils.string_utils;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 
 namespace co_async {
 

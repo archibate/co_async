@@ -1,6 +1,6 @@
-#pragma once /*{export module co_async:awaiter.details.previous_awaiter;}*/
+#pragma once/*{export module co_async:awaiter.details.previous_awaiter;}*/
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>/*{import std;}*/
 
 namespace co_async {
 

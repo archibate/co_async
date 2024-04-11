@@ -1,6 +1,6 @@
-#pragma once /*{export module co_async:utils.uninitialized;}*/
+#pragma once/*{export module co_async:utils.uninitialized;}*/
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>/*{import std;}*/
 #include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
 
 namespace co_async {

@@ -4,9 +4,9 @@
 #include <errno.h>
 #endif
 
-#pragma once /*{export module co_async:system.error_handling;}*/
+#pragma once/*{export module co_async:system.error_handling;}*/
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>/*{import std;}*/
 
 namespace co_async {
 

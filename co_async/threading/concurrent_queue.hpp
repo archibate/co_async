@@ -1,6 +1,6 @@
-#pragma once /*{export module co_async:threading.concurrent_queue;}*/
+#pragma once/*{export module co_async:threading.concurrent_queue;}*/
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>/*{import std;}*/
 #include <co_async/utils/debug.hpp>
 
 namespace co_async {
@@ -13,8 +13,8 @@ constexpr std::size_t hardware_constructive_interference_size = 64;
 constexpr std::size_t hardware_destructive_interference_size = 64;
 #endif
 
-#if defined(__GNUC__) && __has_builtin(__builtin_unreachable)
 inline void assume(bool v) {
+#if defined(__GNUC__) && __has_builtin(__builtin_unreachable)
     if (!v) [[unlikely]] {
 #if CO_ASYNC_DEBUG
         throw std::logic_error("assumption failed");
@@ -22,41 +22,41 @@ inline void assume(bool v) {
         __builtin_unreachable();
 #endif
     }
-}
 #endif
+}
 
-#if 0
+#if 1
+template <class T>
 struct alignas(hardware_destructive_interference_size) ConcurrentQueue {
-    void *pop() {
+    std::optional<T> pop() {
         std::lock_guard lck(mMutex);
         if (mQueue.empty()) {
-            return nullptr;
+            return std::nullopt;
         }
-        void *p = mQueue.front();
+        T p = std::move(mQueue.front());
         mQueue.pop_front();
-        assume(p);
         return p;
     }
 
-    void push(void *p) {
-        assume(p);
+    bool push(T p) {
         std::lock_guard lck(mMutex);
         mQueue.push_back(p);
+        return true;
     }
 
 private:
-    std::deque<void *> mQueue;
+    std::deque<T> mQueue;
     std::mutex mMutex;
 };
 #else
 template <class T, std::size_t Shift = 12, class Stamp = std::uint32_t>
-struct ConcurrentQueue {
+struct alignas(hardware_destructive_interference_size) ConcurrentQueue {
     static constexpr Stamp kSize = 1 << Shift;
 
     [[nodiscard]] std::optional<T> pop() {
         auto s = mStamp.load(std::memory_order_acquire);
         if (!canRead(s)) {
-            mStamp.compare_exchange_weak(s, Stamp(0));
+            /* mStamp.compare_exchange_weak(s, Stamp(0)); */
             return std::nullopt;
         }
         while (!mStamp.compare_exchange_weak(s, advectRead(s),

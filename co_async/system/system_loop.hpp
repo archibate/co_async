@@ -1,9 +1,9 @@
-#pragma once /*{export module co_async:system.system_loop;}*/
+#pragma once/*{export module co_async:system.system_loop;}*/
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
-#include <co_async/system/uring_loop.hpp>   /*{import :system.uring_loop;}*/
+#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/system/uring_loop.hpp>/*{import :system.uring_loop;}*/
 #include <co_async/threading/basic_loop.hpp>/*{import :threading.basic_loop;}*/
-#include <co_async/awaiter/task.hpp>        /*{import :awaiter.task;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 #if defined(__linux__) && defined(_GLIBCXX_HAS_GTHREADS)
 #include <pthread.h>
 #elif defined(_WIN32) && defined(_EXPORT_STD)
@@ -25,7 +25,7 @@ struct SystemLoop {
         return BasicLoop::tlsInstance - mBasicLoops.get();
     }
 
-    void start(std::size_t numWorkers = 0, std::size_t numBatchFetch = 1,
+    void start(std::size_t numWorkers = 0,
                std::size_t numBatchWait = 1,
                std::chrono::system_clock::duration batchTimeout =
                    std::chrono::milliseconds(15),
@@ -45,7 +45,7 @@ struct SystemLoop {
         mNumWorkers = numWorkers;
         for (std::size_t i = 0; i < numWorkers; ++i) {
             mThreads[i] = std::thread(&SystemLoop::threadEntry, this, i,
-                                      numWorkers, numBatchFetch, numBatchWait,
+                                      numWorkers, numBatchWait,
                                       batchTimeout, batchTimeoutDelta);
 #if defined(__linux__) && defined(_GLIBCXX_HAS_GTHREADS)
             if (setAffinity) {
@@ -63,7 +63,7 @@ struct SystemLoop {
         }
     }
 
-    void threadEntry(int i, int numWorkers, int numBatchFetch, int numBatchWait,
+    void threadEntry(int i, int numWorkers, int numBatchWait,
                      std::chrono::system_clock::duration batchTimeout,
                      std::chrono::system_clock::duration batchTimeoutDelta) {
         auto &thisBasicLoop = mBasicLoops[i];
@@ -82,8 +82,8 @@ struct SystemLoop {
     compute:
         thisBasicLoop.run();
     event:
-        if (thisUringLoop.hasAnyEvent()) {
-            thisUringLoop.runBatchedNoWait(numBatchFetch);
+        if (auto n = thisUringLoop.hasAnyEvent()) {
+            thisUringLoop.runBatchedNoWait(n);
             goto compute;
         }
         if (stealWork())

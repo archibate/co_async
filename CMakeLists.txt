@@ -1,5 +1,6 @@
 #set(CO_ASYNC_MODULE ON)
-set(CO_ASYNC_DEBUG ON)
+#set(CO_ASYNC_DEBUG ON)
+set(CO_ASYNC_PERF ON)
 
 if (CO_ASYNC_MODULE)
     cmake_minimum_required(VERSION 3.28)

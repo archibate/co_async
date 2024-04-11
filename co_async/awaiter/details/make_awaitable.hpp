@@ -1,20 +1,20 @@
-#pragma once /*{export module co_async:awaiter.details.make_awaitable;}*/
+#pragma once/*{export module co_async:awaiter.details.make_awaitable;}*/
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
-#include <co_async/awaiter/task.hpp>             /*{import :awaiter.task;}*/
-#include <co_async/awaiter/concepts.hpp>         /*{import :awaiter.concepts;}*/
+#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/awaiter/concepts.hpp>/*{import :awaiter.concepts;}*/
 
 namespace co_async {
 
 template <Awaitable A>
-A &&ensureAwaitable(A &&a) {
-    return std::forward<A>(a);
+A ensureAwaitable(A a) {
+    return std::move(a);
 }
 
 template <class A>
     requires(!Awaitable<A>)
-Task<A> ensureAwaitable(A &&a) {
-    co_return std::forward<A>(a);
+Task<A> ensureAwaitable(A a) {
+    co_return std::move(a);
 }
 
 template <Awaitable A>

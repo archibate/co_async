@@ -1,8 +1,8 @@
-#pragma once /*{export module co_async:utils.rbtree;}*/
+#pragma once/*{export module co_async:utils.rbtree;}*/
 
 #if CO_ASYNC_PERF
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>/*{import std;}*/
 
 namespace co_async {
 
@@ -20,7 +20,19 @@ struct Perf {
 
         std::deque<TableEntry> table;
 
+        PerfStatic() {
+            signal(SIGINT, +[] (int signo) {
+                std::exit(130);
+            });
+        }
+
+        PerfStatic(PerfStatic &&) = delete;
+
         ~PerfStatic() {
+            dump();
+        }
+
+        void dump() const {
             if (table.empty()) {
                 return;
             }
@@ -125,7 +137,7 @@ public:
 
 #else
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>/*{import std;}*/
 
 namespace co_async {
 

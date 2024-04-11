@@ -1,10 +1,10 @@
-#pragma once /*{export module co_async:threading.basic_loop;}*/
+#pragma once/*{export module co_async:threading.basic_loop;}*/
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
-#include <co_async/awaiter/concepts.hpp>         /*{import :awaiter.concepts;}*/
-#include <co_async/awaiter/task.hpp>             /*{import :awaiter.task;}*/
+#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/awaiter/concepts.hpp>/*{import :awaiter.concepts;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 #include <co_async/awaiter/details/ignore_return_promise.hpp>/*{import :awaiter.details.ignore_return_promise;}*/
-#include <co_async/utils/uninitialized.hpp>  /*{import :utils.uninitialized;}*/
+#include <co_async/utils/uninitialized.hpp>/*{import :utils.uninitialized;}*/
 #include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
 #include <co_async/threading/concurrent_queue.hpp>/*{import :threading.concurrent_queue;}*/
 
@@ -13,6 +13,8 @@ namespace co_async {
 struct BasicLoop {
     bool run() {
         if (auto coroutine = mQueue.pop()) {
+            if (!coroutine) [[unlikely]] throw;
+            if (coroutine->done()) [[unlikely]] throw;
             coroutine->resume();
             return true;
         }
@@ -21,6 +23,9 @@ struct BasicLoop {
 
     void enqueue(std::coroutine_handle<> coroutine) {
         if (!mQueue.push(coroutine)) [[unlikely]] {
+#if CO_ASYNC_DEBUG
+            std::cerr << "WARNING: coroutine queue overrun\n";
+#endif
             while (true) {
                 if (auto coroutine = mQueue.pop()) [[likely]] {
                     coroutine->resume();
@@ -53,11 +58,6 @@ struct FutureTokenBase {
                 expect, coroutine.address(), std::memory_order_acq_rel)) {
             return std::noop_coroutine();
         } else {
-#if CO_ASYNC_DEBUG
-            if (expect == (void *)-1) [[unlikely]] {
-                throw std::logic_error("future cannot be waited twice");
-            }
-#endif
             return coroutine;
         }
     }
@@ -67,7 +67,7 @@ struct FutureTokenBase {
             mCoroutineWaiting.exchange((void *)-1, std::memory_order_acq_rel);
 #if CO_ASYNC_DEBUG
         if (p == (void *)-1) [[unlikely]] {
-            throw std::logic_error("future value cannot be set twice");
+            throw std::logic_error("future value cannot be set twice (get)");
         }
         mCompleted = true;
 #endif
@@ -280,6 +280,10 @@ struct FutureGroup {
             co_await f;
         }
         mFutures.clear();
+    }
+
+    auto operator co_await() {
+        return wait();
     }
 };
 

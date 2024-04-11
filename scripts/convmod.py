@@ -40,7 +40,7 @@ def process(dir):
                                 current = parent
                             line = '#pragma once/*{' + line + '}*/'
                         elif m := re.match(IMPORT_STD, line):
-                            line = '#include <cmake/clang_std_modules_source/std.hpp>/*{' + line + '}*/'
+                            line = '#include <co_async/std.hpp>/*{' + line + '}*/'
                         elif m := re.match(IMPORT, line):
                             export, colon, partition = m.groups()
                             if colon:

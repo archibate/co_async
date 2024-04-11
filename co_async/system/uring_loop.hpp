@@ -9,14 +9,14 @@
 #include <fcntl.h>
 #endif
 
-#pragma once /*{export module co_async:system.uring_loop;}*/
+#pragma once/*{export module co_async:system.uring_loop;}*/
 
-#include <cmake/clang_std_modules_source/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
-#include <co_async/threading/basic_loop.hpp> /*{import :threading.basic_loop;}*/
+#include <co_async/threading/basic_loop.hpp>/*{import :threading.basic_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 
 namespace co_async {
 
@@ -44,8 +44,8 @@ struct UringLoop {
                                struct __kernel_timespec *timeout);
     inline void runBatchedNoWait(std::size_t numBatch);
 
-    bool hasAnyEvent() const {
-        return 0 != io_uring_cq_ready(&mRing);
+    std::size_t hasAnyEvent() const {
+        return io_uring_cq_ready(&mRing);
     }
 
     io_uring_sqe *getSqe() {

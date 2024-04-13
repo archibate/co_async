@@ -37,37 +37,6 @@ namespace co_async {
     } exitType;
 };
 
-/*[export]*/ struct PipeHandlePair {
-    FileHandle mReader;
-    FileHandle mWriter;
-
-    FileHandle reader() {
-#if CO_ASYNC_DEBUG
-        if (!mReader) [[unlikely]] {
-            throw std::invalid_argument(
-                "PipeHandlePair::reader() can only be called once");
-        }
-#endif
-        return std::move(mReader);
-    }
-
-    FileHandle writer() {
-#if CO_ASYNC_DEBUG
-        if (!mWriter) [[unlikely]] {
-            throw std::invalid_argument(
-                "PipeHandlePair::writer() can only be called once");
-        }
-#endif
-        return std::move(mWriter);
-    }
-};
-
-/*[export]*/ inline Task<PipeHandlePair> make_pipe() {
-    int p[2];
-    checkError(pipe2(p, 0));
-    co_return {FileHandle(p[0]), FileHandle(p[1])};
-}
-
 /*[export]*/ inline Task<> kill_process(Pid pid, int sig = SIGKILL) {
     checkError(kill(pid, sig));
     co_return;

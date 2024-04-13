@@ -24,7 +24,7 @@ inline void disableCanon(FileHandle &file) {
     }
 }
 
-/*[export]*/ struct StdioBuf {
+struct StdioBuf {
     explicit StdioBuf(FileHandle &fileIn, FileHandle &fileOut)
         : mFileIn(fileIn),
           mFileOut(fileOut) {}

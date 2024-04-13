@@ -224,7 +224,7 @@ loopEnqueueFutureNotifier(std::condition_variable &cv, Future<T> &future,
                           Uninitialized<T> &result
 #if CO_ASYNC_EXCEPT
                           ,
-                          std::exception_ptr exception
+                          std::exception_ptr &exception
 #endif
 ) {
 #if CO_ASYNC_EXCEPT

@@ -151,6 +151,7 @@ cmake -B build -DCO_ASYNC_PERF=ON  # 启用性能测试（程序结束时自动�
 测试平台：AMD Ryzen 7 7800X3D（8 核心 16 线程 4.5 GHz）
 Linux 内核：6.8.2
 GCC 编译器：13.2.1
+内存：2 x 16 GB（DDR5 4800 MHz）
 
 - 普通函数调用 25ns
 - 协程函数调用 80ns

@@ -88,4 +88,86 @@ inline std::string_view getHTTPStatusName(int status) {
     }
 }
 
+inline std::string guessContentTypeByExtension(std::string_view ext) {
+    using namespace std::string_view_literals;
+    using namespace std::string_literals;
+    if (ext == ".html"sv || ext == ".htm"sv) {
+        return "text/html;charset=utf-8"s;
+    } else if (ext == ".css"sv) {
+        return "text/css;charset=utf-8"s;
+    } else if (ext == ".js"sv) {
+        return "application/javascript;charset=utf-8"s;
+    } else if (ext == ".txt"sv || ext == ".md"sv) {
+        return "text/plain;charset=utf-8"s;
+    } else if (ext == ".json"sv) {
+        return "application/json"s;
+    } else if (ext == ".png"sv) {
+        return "image/png"s;
+    } else if (ext == ".jpg"sv || ext == ".jpeg"sv) {
+        return "image/jpeg"s;
+    } else if (ext == ".gif"sv) {
+        return "image/gif"s;
+    } else if (ext == ".xml"sv) {
+        return "application/xml"s;
+    } else if (ext == ".pdf"sv) {
+        return "application/pdf"s;
+    } else if (ext == ".mp4"sv) {
+        return "video/mp4"s;
+    } else if (ext == ".mp3"sv) {
+        return "audio/mp3"s;
+    } else if (ext == ".zip"sv) {
+        return "application/zip"s;
+    } else if (ext == ".svg"sv) {
+        return "image/svg+xml"s;
+    } else if (ext == ".wav"sv) {
+        return "audio/wav"s;
+    } else if (ext == ".ogg"sv) {
+        return "audio/ogg"s;
+    } else if (ext == ".mpg"sv || ext == ".mpeg"sv) {
+        return "video/mpeg"s;
+    } else if (ext == ".webm"sv) {
+        return "video/webm"s;
+    } else if (ext == ".ico"sv) {
+        return "image/x-icon"s;
+    } else if (ext == ".rar"sv) {
+        return "application/x-rar-compressed"s;
+    } else if (ext == ".7z"sv) {
+        return "application/x-7z-compressed"s;
+    } else if (ext == ".tar"sv) {
+        return "application/x-tar"s;
+    } else if (ext == ".gz"sv) {
+        return "application/gzip"s;
+    } else if (ext == ".bz2"sv) {
+        return "application/x-bzip2"s;
+    } else if (ext == ".xz"sv) {
+        return "application/x-xz"s;
+    } else if (ext == ".zip"sv) {
+        return "application/zip"s;
+    } else if (ext == ".tar.gz"sv || ext == ".tgz"sv) {
+        return "application/tar+gzip"s;
+    } else if (ext == ".tar.bz2"sv || ext == ".tbz2"sv) {
+        return "application/tar+bzip2"s;
+    } else if (ext == ".tar.xz"sv || ext == ".txz"sv) {
+        return "application/tar+xz"s;
+    } else if (ext == ".doc"sv || ext == ".docx"sv) {
+        return "application/msword"s;
+    } else if (ext == ".xls"sv || ext == ".xlsx"sv) {
+        return "application/vnd.ms-excel"s;
+    } else if (ext == ".ppt"sv || ext == ".pptx"sv) {
+        return "application/vnd.ms-powerpoint"s;
+    } else if (ext == ".csv"sv) {
+        return "text/csv;charset=utf-8"s;
+    } else if (ext == ".rtf"sv) {
+        return "application/rtf"s;
+    } else if (ext == ".exe"sv) {
+        return "application/x-msdownload"s;
+    } else if (ext == ".msi"sv) {
+        return "application/x-msi"s;
+    } else if (ext == ".bin"sv) {
+        return "application/octet-stream"s;
+    } else {
+        return ""s;
+    }
+}
+
 } // namespace co_async

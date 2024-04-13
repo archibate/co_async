@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <sys/un.h>
 #endif
@@ -202,6 +203,7 @@ socket_connect(SocketAddress const &addr) {
 listener_bind(SocketAddress const &addr, int backlog = SOMAXCONN) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
+    /* socketSetOption(sock, IPPROTO_TCP, TCP_CORK, 1); */
     SocketListener serv(sock.releaseFile());
     checkError(bind(serv.fileNo(), (struct sockaddr const *)&addr.mAddr,
                     addr.mAddrLen));

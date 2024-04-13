@@ -8,14 +8,10 @@ Task<> amain() {
     auto listener = co_await listener_bind({"127.0.0.1", 8080});
     HTTPServer http;
     http.route("GET", "/", [](HTTPRequest const &request) -> Task<HTTPResponse> {
-        co_return {
-            .status = 200,
-            .headers =
-                {
-                    {"content-type", "text/html;charset=utf-8"},
-                },
-            .body = "<meta http-equiv=refresh content=1><h1>It works!</h1>",
-        };
+        co_return co_await HTTPServer::make_response_from_directory(make_path("."));
+    });
+    http.prefix_route("GET", "/", HTTPServer::SuffixPath, [](HTTPRequest const &request, std::string_view suffix) -> Task<HTTPResponse> {
+        co_return co_await HTTPServer::make_response_from_file_or_directory(make_path(suffix));
     });
 
     co_await stdio().putline("正在监听: " + listener.address().toString());

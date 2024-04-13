@@ -7,7 +7,7 @@
 
 namespace co_async {
 
-/*[export]*/ struct SocketBuf {
+struct SocketBuf {
     Task<std::size_t> raw_read(std::span<char> buffer) {
         return socket_read(mFile, buffer);
     }

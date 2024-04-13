@@ -7,7 +7,7 @@
 
 namespace co_async {
 
-/*[export]*/ struct FileBuf {
+struct FileBuf {
     Task<std::size_t> raw_read(std::span<char> buffer) {
         return fs_read(mFile, buffer);
     }

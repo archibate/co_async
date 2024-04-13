@@ -118,22 +118,123 @@ struct to_string_t<T> {
 
 /*[export]*/ inline constexpr to_string_t<> to_string;
 
-/*[export]*/ inline std::string lower_string(std::string s) {
-    for (auto &c: s) {
+/*[export]*/ inline std::string lower_string(std::string_view s) {
+    std::string ret;
+    ret.resize(s.size());
+    std::transform(s.begin(), s.end(), ret.begin(), [](char c) {
         if (c >= 'A' && c <= 'Z') {
             c += 'a' - 'A';
         }
-    }
-    return s;
+        return c;
+    });
+    return ret;
 }
 
-/*[export]*/ inline std::string upper_string(std::string s) {
-    for (auto &c: s) {
+/*[export]*/ inline std::string upper_string(std::string_view s) {
+    std::string ret;
+    ret.resize(s.size());
+    std::transform(s.begin(), s.end(), ret.begin(), [](char c) {
         if (c >= 'a' && c <= 'z') {
             c -= 'a' - 'A';
         }
+        return c;
+    });
+    return ret;
+}
+
+/*[export]*/ inline std::string trim_string(std::string_view s, std::string_view trims = {" \t\r\n", 4}) {
+    auto pos = s.find_first_not_of(trims);
+    if (pos == std::string_view::npos) {
+        return {};
     }
-    return s;
+    auto end = s.find_last_not_of(trims);
+    return std::string(s.substr(pos, end - pos + 1));
+}
+
+template <class Delim>
+struct SplitString {
+    SplitString(std::string_view s, Delim delimiter) : s(s), delimiter(delimiter) {}
+
+    struct sentinel {
+        explicit sentinel() = default;
+    };
+
+    struct iterator {
+        explicit iterator(std::string_view s, Delim delimiter) noexcept
+            : s(s), delimiter(delimiter), ended(false), toBeEnded(false) {
+            find_next();
+        }
+
+        std::string_view operator*() const noexcept { return current; }
+
+        iterator &operator++() {
+            find_next();
+            return *this;
+        }
+
+        bool operator!=(sentinel) const noexcept { return !ended; }
+
+        bool operator==(sentinel) const noexcept { return ended; }
+
+        friend bool operator==(sentinel const &lhs, iterator const &rhs) noexcept {
+            return rhs == lhs;
+        }
+
+        friend bool operator!=(sentinel const &lhs, iterator const &rhs) noexcept {
+            return rhs != lhs;
+        }
+
+    private:
+        void find_next() {
+            auto pos = s.find(delimiter);
+            if (pos == std::string_view::npos) {
+                current = s;
+                s = {};
+                ended = toBeEnded;
+                toBeEnded = true;
+            } else {
+                current = s.substr(0, pos);
+                if constexpr (std::is_same_v<Delim, std::string_view>) {
+                    s = s.substr(pos + delimiter.size());
+                } else if constexpr (std::is_same_v<Delim, char>) {
+                    s = s.substr(pos + 1);
+                } else {
+                    static_assert(!std::is_void_v<std::void_t<Delim>>);
+                }
+            }
+        }
+
+        std::string_view s;
+        Delim delimiter;
+        std::string_view current;
+        bool ended;
+        bool toBeEnded;
+    };
+
+    iterator begin() const noexcept { return iterator(s, delimiter); }
+    sentinel end() const noexcept { return sentinel(); }
+
+    std::vector<std::string> collect() const {
+        std::vector<std::string> result;
+        for (auto &&part : *this) {
+            result.emplace_back(part);
+        }
+        return result;
+    }
+
+private:
+    std::string_view s;
+    Delim delimiter;
+};
+
+/*[export]*/ inline SplitString<std::string_view> split_string(
+    std::string_view s, std::string_view delimiter) {
+    return {s, delimiter};
+}
+
+/*[export]*/ inline SplitString<char> split_string(
+    std::string_view s, char delimiter) {
+    return {s, delimiter};
 }
 
 } // namespace co_async

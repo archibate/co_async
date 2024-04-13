@@ -117,7 +117,7 @@ struct IStreamBase {
         co_return s;
     }
 
-    Task<bool> getn(std::span<char> s) {
+    Task<bool> getspan(std::span<char> s) {
         auto p = s.data();
         auto n = s.size();
         std::size_t start = mIndex;
@@ -194,7 +194,7 @@ struct IStreamBase {
     template <class T>
         requires std::is_trivial_v<T>
     Task<bool> getstruct(T &ret) {
-        return getn(std::span<char>((char *)&ret, sizeof(T)));
+        return getspan(std::span<char>((char *)&ret, sizeof(T)));
     }
 
     template <class T>

@@ -188,6 +188,9 @@ void UringLoop::runSingle() {
 void UringLoop::runBatchedNoWait(std::size_t numBatch) {
     io_uring_cqe *cqe;
     int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, nullptr, nullptr);
+    if (res == -EINTR) [[unlikely]] {
+        return;
+    }
     checkErrorReturn(res);
     unsigned head, numGot = 0;
     io_uring_for_each_cqe(&mRing, head, cqe) {
@@ -203,6 +206,9 @@ bool UringLoop::runBatchedWait(std::size_t numBatch,
                                struct __kernel_timespec *timeout) {
     io_uring_cqe *cqe;
     int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, timeout, nullptr);
+    if (res == -EINTR) [[unlikely]] {
+        return false;
+    }
     if (res == -ETIME) {
         return false;
     }
@@ -412,6 +418,13 @@ inline Task<int> uring_timeout(struct __kernel_timespec ts, unsigned int count,
     if (res == -ETIME) [[likely]]
         res = 0;
     co_return checkErrorReturn(res);
+}
+
+inline Task<int> uring_splice(int fd_in, std::int64_t off_in, int fd_out, std::int64_t off_out,
+                              std::size_t nbytes, unsigned int flags) {
+    co_return checkErrorReturn(co_await UringAwaiter([&](io_uring_sqe *sqe) {
+        io_uring_prep_splice(sqe, fd_in, off_in, fd_out, off_out, nbytes, flags);
+    }));
 }
 
 } // namespace co_async

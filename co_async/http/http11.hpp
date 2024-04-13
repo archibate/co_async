@@ -5,6 +5,9 @@
 #include <co_async/utils/simple_map.hpp>/*{import :utils.simple_map;}*/
 #include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
 #include <co_async/utils/string_utils.hpp>/*{import :utils.string_utils;}*/
+#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
+#include <co_async/system/pipe.hpp>/*{import :system.pipe;}*/
+#include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
 #include <co_async/http/uri.hpp>/*{import :http.uri;}*/
 
 namespace co_async {
@@ -13,13 +16,79 @@ namespace co_async {
     using SimpleMap<std::string, std::string>::SimpleMap;
 };
 
+struct HTTPPolymorphicBody {
+    HTTPPolymorphicBody() = default;
+    HTTPPolymorphicBody(std::string content) : mBody(std::move(content)) {}
+    HTTPPolymorphicBody(std::string_view content) : mBody(std::string(content)) {}
+    HTTPPolymorphicBody(const char *content) : mBody(content) {}
+    HTTPPolymorphicBody(DirFilePath path) : mBody(std::move(path)) {}
+    HTTPPolymorphicBody(std::filesystem::path path) : mBody(DirFilePath(path)) {}
+
+    bool isNone() const noexcept {
+        return std::holds_alternative<std::monostate>(mBody);
+    }
+
+    bool isString() const noexcept {
+        return std::holds_alternative<std::string>(mBody);
+    }
+
+    bool isFile() const noexcept {
+        return std::holds_alternative<DirFilePath>(mBody);
+    }
+
+    std::string_view getString() const {
+        return std::get<std::string>(mBody);
+    }
+
+    DirFilePath getFile() const {
+        return std::get<DirFilePath>(mBody);
+    }
+
+    Task<> write_into(SocketStream &sock) const {
+        using namespace std::string_view_literals;
+        if (std::get_if<std::monostate>(&mBody)) {
+            co_await sock.puts("\r\n"sv);
+        } else if (auto bodyStr = std::get_if<std::string>(&mBody)) {
+            co_await sock.puts("content-length: "sv);
+            co_await sock.puts(to_string(bodyStr->size()));
+            co_await sock.puts("\r\n\r\n"sv);
+            co_await sock.puts(*bodyStr);
+        } else if (auto bodyPath = std::get_if<DirFilePath>(&mBody)) {
+            auto size = co_await fs_stat_size(*bodyPath);
+            co_await sock.puts("content-length: "sv);
+            co_await sock.puts(to_string(size));
+            co_await sock.puts("\r\n\r\n"sv);
+            co_await sock.flush();
+            std::unique_ptr<char[]> buffer = std::make_unique_for_overwrite<char[]>(size);
+            std::span<char> bufSpan(buffer.get(), size);
+            auto file = co_await fs_open(*bodyPath, OpenMode::Read);
+            auto [readPipe, writePipe] = co_await make_pipe();
+            while (size > 0) {
+                auto n = co_await fs_splice(file, writePipe, size);
+                co_await fs_splice(readPipe, sock.get(), n);
+                size -= n;
+            }
+            co_await fs_close(std::move(file));
+            co_await fs_close(std::move(readPipe));
+            co_await fs_close(std::move(writePipe));
+        }
+    }
+
+    auto repr() const {
+        return mBody;
+    }
+
+private:
+    std::variant<std::monostate, std::string, DirFilePath> mBody;
+};
+
 /*[export]*/ struct HTTPRequest {
     std::string method;
     URI uri;
     HTTPHeaders headers;
-    std::string body;
+    HTTPPolymorphicBody body;
 
-    Task<> write_into(auto &sock, bool keepAlive) const {
+    Task<> write_into(SocketStream &sock, bool keepAlive) const {
         using namespace std::string_view_literals;
         co_await sock.puts(method);
         co_await sock.putchar(' ');
@@ -36,18 +105,11 @@ namespace co_async {
         } else {
             co_await sock.puts("connection: close\r\n"sv);
         }
-        if (body.empty()) {
-            co_await sock.puts("\r\n"sv);
-        } else {
-            co_await sock.puts("content-length: "sv);
-            co_await sock.puts(to_string(body.size()));
-            co_await sock.puts("\r\n\r\n"sv);
-            co_await sock.puts(body);
-        }
+        co_await body.write_into(sock);
         co_await sock.flush();
     }
 
-    Task<bool> read_from(auto &sock) {
+    Task<bool> read_from(SocketStream &sock) {
         using namespace std::string_view_literals;
         auto line = co_await sock.getline("\r\n"sv);
         auto pos = line.find(' ');
@@ -108,9 +170,9 @@ namespace co_async {
 /*[export]*/ struct HTTPResponse {
     int status;
     HTTPHeaders headers;
-    std::string body;
+    HTTPPolymorphicBody body;
 
-    Task<> write_into(auto &sock, bool keepAlive) const {
+    Task<> write_into(SocketStream &sock, bool keepAlive) const {
         using namespace std::string_view_literals;
         co_await sock.puts("HTTP/1.1 "sv);
         co_await sock.puts(to_string(status));
@@ -128,18 +190,11 @@ namespace co_async {
         } else {
             co_await sock.puts("connection: close\r\n"sv);
         }
-        if (body.empty()) {
-            co_await sock.puts("\r\n"sv);
-        } else {
-            co_await sock.puts("content-length: "sv);
-            co_await sock.puts(to_string(body.size()));
-            co_await sock.puts("\r\n\r\n"sv);
-            co_await sock.puts(body);
-        }
+        co_await body.write_into(sock);
         co_await sock.flush();
     }
 
-    Task<bool> read_from(auto &sock) {
+    Task<bool> read_from(SocketStream &sock) {
         using namespace std::string_view_literals;
         auto line = co_await sock.getline("\r\n"sv);
         if (line.size() <= 9 || line.substr(0, 9) != "HTTP/1.1 "sv)

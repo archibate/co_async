@@ -5,16 +5,17 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dirent.h>
 #endif
 
-#pragma once/*{export module co_async:system.fs;}*/
+#pragma once /*{export module co_async:system.fs;}*/
 
 #include <co_async/std.hpp>/*{import std;}*/
 
 #ifdef __linux__
 
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
+#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 
 namespace co_async {
@@ -65,7 +66,7 @@ protected:
         return mPath.c_str();
     }
 
-    std::filesystem::path path() const {
+    std::filesystem::path const &path() const {
         return mPath;
     }
 
@@ -93,6 +94,38 @@ private:
 
     mode_t mode() const noexcept {
         return mStatx.stx_mode;
+    }
+
+    int uid() const noexcept {
+        return mStatx.stx_uid;
+    }
+
+    int gid() const noexcept {
+        return mStatx.stx_gid;
+    }
+
+    bool is_directory() const noexcept {
+        return (mStatx.stx_mode & S_IFDIR) != 0;
+    }
+
+    bool is_regular_file() const noexcept {
+        return (mStatx.stx_mode & S_IFREG) != 0;
+    }
+
+    bool is_symlink() const noexcept {
+        return (mStatx.stx_mode & S_IFLNK) != 0;
+    }
+
+    bool is_readable() const noexcept {
+        return (mStatx.stx_mode & S_IRUSR) != 0;
+    }
+
+    bool is_writable() const noexcept {
+        return (mStatx.stx_mode & S_IWUSR) != 0;
+    }
+
+    bool is_executable() const noexcept {
+        return (mStatx.stx_mode & S_IXUSR) != 0;
     }
 
     std::chrono::system_clock::time_point accessed_time() const {
@@ -123,17 +156,18 @@ private:
 };
 
 /*[export]*/ enum class OpenMode : int {
-    Read = O_RDONLY,
-    Write = O_WRONLY | O_TRUNC | O_CREAT,
-    ReadWrite = O_RDWR | O_CREAT,
-    Append = O_WRONLY | O_APPEND | O_CREAT,
+    Read = O_RDONLY | O_LARGEFILE | O_CLOEXEC,
+    Write = O_WRONLY | O_TRUNC | O_CREAT | O_LARGEFILE | O_CLOEXEC,
+    ReadWrite = O_RDWR | O_CREAT | O_LARGEFILE | O_CLOEXEC,
+    Append = O_WRONLY | O_APPEND | O_CREAT | O_LARGEFILE | O_CLOEXEC,
+    Directory = O_RDONLY | O_DIRECTORY | O_LARGEFILE | O_CLOEXEC,
 };
 
-/*[export]*/ inline std::filesystem::path make_path(std::string path) {
-    return std::filesystem::path((char8_t const *)path.c_str());
+/*[export]*/ inline std::filesystem::path make_path(std::string_view path) {
+    return std::filesystem::path((char8_t const *)std::string(path).c_str());
 }
 
-template <std::convertible_to<std::string>... Ts>
+template <std::convertible_to<std::string_view>... Ts>
     requires(sizeof...(Ts) >= 2)
 /*[export]*/ inline std::filesystem::path make_path(Ts &&...chunks) {
     return (make_path(chunks) / ...);
@@ -214,6 +248,18 @@ fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = -1) {
 /*[export]*/ inline Task<> fs_truncate(FileHandle &file,
                                        std::uint64_t size = 0) {
     co_await uring_ftruncate(file.fileNo(), size);
+}
+
+/*[export]*/ inline Task<std::size_t> fs_splice(FileHandle &fileIn, FileHandle &fileOut,
+                                     std::size_t size,
+                                     std::uint64_t offsetIn = -1,
+                                     std::uint64_t offsetOut = -1) {
+    co_return checkErrorReturn(co_await uring_splice(fileIn.fileNo(), offsetIn, fileOut.fileNo(),
+                          offsetOut, size, 0));
+}
+
+/*[export]*/ inline Task<std::size_t> fs_getdents(FileHandle &dirFile, std::span<char> buffer) {
+    co_return checkError(getdents64(dirFile.fileNo(), buffer.data(), buffer.size()));
 }
 
 /*[export]*/ inline Task<int> fs_nop() {

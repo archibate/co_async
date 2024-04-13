@@ -7,7 +7,7 @@
 
 namespace co_async {
 
-/*[export]*/ struct StringReadBuf {
+struct StringReadBuf {
     StringReadBuf() noexcept : mPosition(0) {}
 
     StringReadBuf(std::string_view strView)
@@ -35,7 +35,7 @@ private:
     std::size_t mPosition;
 };
 
-/*[export]*/ struct StringWriteBuf {
+struct StringWriteBuf {
     StringWriteBuf() noexcept {}
 
     StringWriteBuf(std::string &&str) noexcept : mString(std::move(str)) {}

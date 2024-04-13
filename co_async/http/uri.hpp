@@ -41,7 +41,7 @@ private:
     }
 
 public:
-    static void urlDecode(std::string &r, std::string_view s) {
+    static void url_decode(std::string &r, std::string_view s) {
         std::size_t b = 0;
         while (true) {
             auto i = s.find('%', b);
@@ -57,13 +57,14 @@ public:
         }
     }
 
-    static std::string urlDecode(std::string_view s) {
+    static std::string url_decode(std::string_view s) {
         std::string r;
-        urlDecode(r, s);
+        r.reserve(s.size());
+        url_decode(r, s);
         return r;
     }
 
-    static void urlEncode(std::string &r, std::string_view s) {
+    static void url_encode(std::string &r, std::string_view s) {
         static constexpr char lut[] = "0123456789ABCDEF";
         for (char c: s) {
             if (isCharUrlSafe(c)) {
@@ -76,9 +77,30 @@ public:
         }
     }
 
-    static std::string urlEncode(std::string_view s) {
+    static std::string url_encode(std::string_view s) {
         std::string r;
-        urlEncode(r, s);
+        r.reserve(s.size());
+        url_encode(r, s);
+        return r;
+    }
+
+    static void url_encode_path(std::string &r, std::string_view s) {
+        static constexpr char lut[] = "0123456789ABCDEF";
+        for (char c: s) {
+            if (isCharUrlSafe(c) || c == '/') {
+                r.push_back(c);
+            } else {
+                r.push_back('%');
+                r.push_back(lut[static_cast<std::uint8_t>(c) >> 4]);
+                r.push_back(lut[static_cast<std::uint8_t>(c) & 0xF]);
+            }
+        }
+    }
+
+    static std::string url_encode_path(std::string_view s) {
+        std::string r;
+        r.reserve(s.size());
+        url_encode_path(r, s);
         return r;
     }
 
@@ -97,7 +119,7 @@ public:
                 if (m != std::string_view::npos) {
                     auto k = pair.substr(0, m);
                     auto v = pair.substr(m + 1);
-                    params.insert_or_assign(std::string(k), urlDecode(v));
+                    params.insert_or_assign(std::string(k), url_decode(v));
                 }
             } while (i != std::string_view::npos);
         }
@@ -110,9 +132,9 @@ public:
         char queryChar = '?';
         for (auto &[k, v]: params) {
             r.push_back(queryChar);
-            urlEncode(r, k);
+            url_encode(r, k);
             r.push_back('=');
-            urlEncode(r, v);
+            url_encode(r, v);
             queryChar = '&';
         }
     }

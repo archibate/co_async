@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <spawn.h>
 #include <signal.h>
+#include <errno.h>
 #endif
 
 #pragma once/*{export module co_async:system.socket;}*/
@@ -89,6 +90,12 @@ namespace co_async {
         return *this;
     }
 
+    ProcessBuilder &open(int fd, FileHandle &&file) {
+        open(fd, file.fileNo());
+        mFileStore.push_back(std::move(file));
+        return *this;
+    }
+
     ProcessBuilder &open(int fd, FileHandle const &file) {
         return open(fd, file.fileNo());
     }
@@ -156,9 +163,16 @@ namespace co_async {
             }
             envp.push_back(nullptr);
         }
-        checkErrorReturn((mAbsolutePath ? posix_spawn : posix_spawnp)(
+        int status = (mAbsolutePath ? posix_spawn : posix_spawnp)(
             &pid, mPath.c_str(), &mFileActions, &mAttr, argv.data(),
-            mEnvpStore.empty() ? environ : envp.data()));
+            mEnvpStore.empty() ? environ : envp.data());
+        if (status != 0) [[unlikely]] {
+            throw std::system_error(errno, std::system_category(), "posix_spawn");
+        }
+        mPath.clear();
+        mArgvStore.clear();
+        mEnvpStore.clear();
+        mFileStore.clear();
         co_return pid;
     }
 
@@ -170,6 +184,7 @@ private:
     std::string mPath;
     std::vector<std::string> mArgvStore;
     std::vector<std::string> mEnvpStore;
+    std::vector<FileHandle> mFileStore;
 };
 
 } // namespace co_async

@@ -4,7 +4,6 @@
 #include <co_async/awaiter/task.hpp>          /*{import :awaiter.task;}*/
 #include <co_async/http/http11.hpp>           /*{import :http.http11;}*/
 #include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
-#include <co_async/iostream/directory_stream.hpp>/*{import :iostream.directory_stream;}*/
 #include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
 #include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
 #include <co_async/utils/simple_map.hpp>     /*{import :utils.simple_map;}*/
@@ -33,9 +32,14 @@ namespace co_async {
             {handler, split_string(upper_string(methods), ' ').collect()});
     }
 
-    void prefix_route(std::string_view methods, std::string_view prefix,
+    void route(std::string_view methods, std::string_view prefix,
                       SuffixMode mode, HTTPPrefixHandler handler) {
-        mPrefixRoutes.push_back(
+        auto it = std::lower_bound(mPrefixRoutes.begin(),
+                                   mPrefixRoutes.end(), prefix,
+                                   [](auto const &item, auto const &prefix) {
+                                       return item.first.size() > prefix.size();
+                                   });
+        mPrefixRoutes.insert(it,
             {std::string(prefix),
              {handler, mode,
               split_string(upper_string(methods), ' ').collect()}});
@@ -55,83 +59,6 @@ namespace co_async {
         co_await fs_close(stream.release());
     }
 
-    static std::string html_encode(std::string_view str) {
-        std::string res;
-        res.reserve(str.size());
-        for (auto c: str) {
-            switch (c) {
-            case '&': res.append("&amp;"); break;
-            case '"': res.append("&quot;"); break;
-            case '\'': res.append("&apos;"); break;
-            case '<': res.append("&lt;"); break;
-            case '>': res.append("&gt;"); break;
-            default: res.push_back(c);
-            }
-        }
-        return res;
-    }
-
-    static Task<HTTPResponse> make_response_from_directory(DirFilePath path) {
-        auto dirPath = path.path().generic_string();
-        std::string dirBase;
-        if (dirPath == ".") {
-            dirPath = "";
-        } else {
-            dirBase = URI::url_encode_path(dirPath) + "/";
-        }
-        std::string content = "<h1>Files in /" + dirPath + ":</h1>";
-        auto parentPath = path.path().parent_path().generic_string();
-        content += "<a href=\"/" + URI::url_encode_path(parentPath) + "\">..</a><br>";
-        DirectoryStream dir(co_await fs_open(path, OpenMode::Directory));
-        while (auto entry = co_await dir.getdirent()) {
-            if (entry == ".." || entry == ".") continue;
-            content += "<a href=\"/" + dirBase + URI::url_encode_path(*entry) + "\">" +
-                       html_encode(*entry) + "</a><br>";
-        }
-        co_return make_ok_response(content);
-    }
-
-    static Task<HTTPResponse> make_response_from_file_or_directory(DirFilePath path) {
-        auto stat = co_await fs_stat(path, STATX_MODE);
-        if (!stat) [[unlikely]] {
-            co_return HTTPServer::make_error_response(404);
-        }
-        if (!stat->is_readable()) [[unlikely]] {
-            co_return HTTPServer::make_error_response(403);
-        }
-        if (stat->is_directory()) {
-            co_return co_await make_response_from_directory(std::move(path));
-        }
-        co_return {
-            .status = 200,
-            .headers =
-                {
-                    {"content-type", guessContentTypeByExtension(
-                                         path.path().extension().string())},
-                },
-            .body = path,
-        };
-    }
-
-    static Task<HTTPResponse> make_response_from_file(DirFilePath path) {
-        auto stat = co_await fs_stat(path, STATX_MODE);
-        if (!stat || stat->is_directory()) [[unlikely]] {
-            co_return HTTPServer::make_error_response(404);
-        }
-        if (!stat->is_readable()) [[unlikely]] {
-            co_return HTTPServer::make_error_response(403);
-        }
-        co_return {
-            .status = 200,
-            .headers =
-                {
-                    {"content-type", guessContentTypeByExtension(
-                                         path.path().extension().string())},
-                },
-            .body = path,
-        };
-    }
-
     static HTTPResponse make_error_response(int status) {
         auto error =
             to_string(status) + " " + std::string(getHTTPStatusName(status));
@@ -144,19 +71,6 @@ namespace co_async {
             .body = "<html><head><title>" + error +
                     "</title></head><body><center><h1>" + error +
                     "</h1></center><hr><center>co_async</center></body></html>",
-        };
-    }
-
-    static HTTPResponse
-    make_ok_response(std::string body,
-                     std::string contentType = "text/html;charset=utf-8") {
-        return {
-            .status = 200,
-            .headers =
-                {
-                    {"content-type", std::move(contentType)},
-                },
-            .body = std::move(body),
         };
     }
 
@@ -181,9 +95,15 @@ private:
                    mMethods.end();
         }
 
-        bool checkSuffix(std::string_view suffix) const {
+        bool checkSuffix(std::string_view &suffix) const {
             switch (mSuffixMode) {
             case SuffixName: {
+                if (suffix.starts_with('/')) {
+                    suffix.remove_prefix(1);
+                }
+                if (suffix.empty()) [[unlikely]] {
+                    return false;
+                }
                 // make sure no '/' in suffix
                 if (suffix.find('/') != std::string_view::npos) [[unlikely]] {
                     return false;
@@ -191,6 +111,12 @@ private:
                 return true;
             }
             case SuffixPath: {
+                if (suffix.starts_with('/')) {
+                    suffix.remove_prefix(1);
+                }
+                if (suffix.empty()) {
+                    return true;
+                }
                 // make sure no ".." or "." after spliting by '/'
                 for (auto const &part: split_string(suffix, '/')) {
                     switch (part.size()) {
@@ -204,6 +130,8 @@ private:
                             return false;
                         }
                         break;
+                    case 0:
+                        return false;
                     }
                 }
                 return true;

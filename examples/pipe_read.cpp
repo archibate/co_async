@@ -13,6 +13,11 @@ Task<> amain() {
                    .arg("CMakeLists.txt")
                    .open(1, p.writer())
                    .spawn();
+    /* auto proc = ProcessBuilder(); */
+    /* proc.path("cat"); */
+    /* proc.arg("CMakeLists.txt"); */
+    /* proc.open(1, p.writer()); */
+    /* auto pid = co_await proc.spawn(); */
     FileIStream rs(p.reader());
     std::string line;
     while (co_await rs.getline(line, '\n')) {

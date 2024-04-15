@@ -112,7 +112,7 @@ public:
         if (i != std::string_view::npos) {
             path = uri.substr(0, i);
             do {
-                uri.remove_prefix(i);
+                uri.remove_prefix(i + 1);
                 i = uri.find('&');
                 auto pair = uri.substr(0, i);
                 auto m = pair.find('=');

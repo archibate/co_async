@@ -26,6 +26,14 @@ struct SocketBuf {
 
     explicit SocketBuf(SocketHandle file) : mFile(std::move(file)) {}
 
+    std::chrono::nanoseconds timeout() const {
+        return mTimeout;
+    }
+
+    void timeout(std::chrono::nanoseconds timeout) {
+        mTimeout = timeout;
+    }
+
 private:
     SocketHandle mFile;
     std::chrono::nanoseconds mTimeout = std::chrono::seconds(10);

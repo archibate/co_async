@@ -21,15 +21,20 @@ auto checkError(auto res,
     return res;
 }
 
-auto bypassSpecificError(auto res, int bypassval = -ETIME) {
-    if (res == bypassval) {
-        res = 0;
+auto checkErrorReturn(
+    auto res, std::source_location loc = std::source_location::current()) {
+    if (res < 0) [[unlikely]] {
+        throw std::system_error(-res, std::system_category(),
+                                (std::string)loc.file_name() + ":" +
+                                    std::to_string(loc.line()));
     }
     return res;
 }
 
-auto checkErrorReturn(
-    auto res, std::source_location loc = std::source_location::current()) {
+auto checkErrorReturnCanceled(auto res, int cancelres = 0, int cancelerr = -ECANCELED, std::source_location loc = std::source_location::current()) {
+    if (res == cancelerr) {
+        return cancelres;
+    }
     if (res < 0) [[unlikely]] {
         throw std::system_error(-res, std::system_category(),
                                 (std::string)loc.file_name() + ":" +
@@ -60,6 +65,16 @@ auto checkError(auto res) {
 }
 
 auto checkErrorReturn(auto res) {
+    if (res < 0) [[unlikely]] {
+        throw std::system_error(-res, std::system_category());
+    }
+    return res;
+}
+
+auto checkErrorReturnCanceled(auto res, int cancelres = 0, int cancelerr = -ECANCELED) {
+    if (res == cancelerr) {
+        return cancelres;
+    }
     if (res < 0) [[unlikely]] {
         throw std::system_error(-res, std::system_category());
     }

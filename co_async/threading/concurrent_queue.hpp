@@ -1,7 +1,6 @@
 #pragma once/*{export module co_async:threading.concurrent_queue;}*/
 
 #include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/utils/debug.hpp>
 
 namespace co_async {
 

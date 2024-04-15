@@ -54,7 +54,7 @@ int main() {
 
 ### Linux
 
-- Linux 内核 >= 5.11
+- Linux 内核 >= 5.19
 - GCC >= 10
 - Clang >= 16
 

@@ -43,11 +43,11 @@ namespace co_async {
 
     Task<> process_connection(SocketStream stream) const {
         HTTPRequest req;
-        while (true) {
-            bool keepAlive = co_await req.read_from(stream);
+        while (co_await req.read_from(stream)) {
             HTTPResponse res = co_await handleRequest(req);
-            co_await res.write_into(stream, keepAlive);
-            if (!keepAlive) {
+            res.keepAlive = req.keepAlive;
+            co_await res.write_into(stream);
+            if (!res.keepAlive) {
                 break;
             }
         }

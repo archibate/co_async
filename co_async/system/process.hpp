@@ -34,6 +34,7 @@ namespace co_async {
         Dumped = CLD_DUMPED,
         Killed = CLD_KILLED,
         Exited = CLD_EXITED,
+        Timeout = -1,
     } exitType;
 };
 
@@ -42,10 +43,25 @@ namespace co_async {
     co_return;
 }
 
-/*[export]*/ inline Task<WaitProcessResult> wait_process(Pid pid) {
+/*[export]*/ inline Task<WaitProcessResult> wait_process(Pid pid, int options = WEXITED) {
     siginfo_t info{};
-    co_await uring_waitid(P_PID, pid, &info, WEXITED, 0);
-    co_return {
+    checkErrorReturn(co_await uring_waitid(P_PID, pid, &info, options, 0));
+    co_return WaitProcessResult{
+        .pid = info.si_pid,
+        .status = info.si_status,
+        .exitType = (WaitProcessResult::ExitType)info.si_code,
+    };
+}
+
+/*[export]*/ inline Task<std::optional<WaitProcessResult>> wait_process(Pid pid, std::chrono::nanoseconds timeout, int options = WEXITED) {
+    siginfo_t info{};
+    auto ts = durationToKernelTimespec(timeout);
+    int ret = co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0), uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME));
+    if (ret == -ECANCELED) {
+        co_return std::nullopt;
+    }
+    checkErrorReturn(ret);
+    co_return WaitProcessResult{
         .pid = info.si_pid,
         .status = info.si_status,
         .exitType = (WaitProcessResult::ExitType)info.si_code,

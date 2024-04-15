@@ -13,8 +13,6 @@ namespace co_async {
 struct BasicLoop {
     bool run() {
         if (auto coroutine = mQueue.pop()) {
-            if (!coroutine) [[unlikely]] throw;
-            if (coroutine->done()) [[unlikely]] throw;
             coroutine->resume();
             return true;
         }

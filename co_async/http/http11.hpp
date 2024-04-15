@@ -87,8 +87,9 @@ private:
     URI uri;
     HTTPHeaders headers;
     HTTPPolymorphicBody body;
+    bool keepAlive = true;
 
-    Task<> write_into(SocketStream &sock, bool keepAlive) const {
+    Task<> write_into(SocketStream &sock) const {
         using namespace std::string_view_literals;
         co_await sock.puts(method);
         co_await sock.putchar(' ');
@@ -112,6 +113,7 @@ private:
     Task<bool> read_from(SocketStream &sock) {
         using namespace std::string_view_literals;
         auto line = co_await sock.getline("\r\n"sv);
+        if (line.empty()) co_return false;
         auto pos = line.find(' ');
         if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
 #if CO_ASYNC_DEBUG
@@ -155,9 +157,7 @@ private:
         }
 
         if (auto connection = headers.get("connection"sv)) {
-            if (lower_string(*connection) == "close") {
-                co_return false;
-            }
+            keepAlive = lower_string(*connection) != "close";
         }
         co_return true;
     }
@@ -171,8 +171,9 @@ private:
     int status;
     HTTPHeaders headers;
     HTTPPolymorphicBody body;
+    bool keepAlive = true;
 
-    Task<> write_into(SocketStream &sock, bool keepAlive) const {
+    Task<> write_into(SocketStream &sock) const {
         using namespace std::string_view_literals;
         co_await sock.puts("HTTP/1.1 "sv);
         co_await sock.puts(to_string(status));
@@ -197,6 +198,7 @@ private:
     Task<bool> read_from(SocketStream &sock) {
         using namespace std::string_view_literals;
         auto line = co_await sock.getline("\r\n"sv);
+        if (line.empty()) co_return false;
         if (line.size() <= 9 || line.substr(0, 9) != "HTTP/1.1 "sv)
             [[unlikely]] {
 #if CO_ASYNC_DEBUG
@@ -239,9 +241,7 @@ private:
         }
 
         if (auto connection = headers.get("connection"sv)) {
-            if (lower_string(*connection) == "close") {
-                co_return false;
-            }
+            keepAlive = lower_string(*connection) != "close";
         }
         co_return true;
     }

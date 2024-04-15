@@ -9,11 +9,11 @@ namespace co_async {
 
 struct SocketBuf {
     Task<std::size_t> raw_read(std::span<char> buffer) {
-        return socket_read(mFile, buffer);
+        return socket_read(mFile, buffer, mTimeout);
     }
 
     Task<std::size_t> raw_write(std::span<char const> buffer) {
-        return socket_write(mFile, buffer);
+        return socket_write(mFile, buffer, mTimeout);
     }
 
     SocketHandle release() noexcept {
@@ -28,6 +28,7 @@ struct SocketBuf {
 
 private:
     SocketHandle mFile;
+    std::chrono::nanoseconds mTimeout = std::chrono::seconds(10);
 };
 
 /*[export]*/ using SocketIStream = IStream<SocketBuf>;

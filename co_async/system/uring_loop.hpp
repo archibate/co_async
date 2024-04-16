@@ -175,7 +175,6 @@ struct UringOp {
     friend UringOp &uring_join(UringOp &&lhs, UringOp &&rhs) {
         lhs.mSqe->flags |= IOSQE_IO_LINK;
         rhs.mPrevious = std::noop_coroutine();
-        io_uring_sqe_set_data(rhs.mSqe, nullptr);
         return lhs;
     }
 
@@ -193,11 +192,9 @@ void UringLoop::runSingle() {
     io_uring_cqe *cqe;
     checkErrorReturn(io_uring_wait_cqe(&mRing, &cqe));
     auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
-    if (op) [[likely]] {
-        op->mRes = cqe->res;
-        io_uring_cqe_seen(&mRing, cqe);
-        BasicLoop::tlsInstance->enqueue(op->mPrevious);
-    }
+    op->mRes = cqe->res;
+    io_uring_cqe_seen(&mRing, cqe);
+    BasicLoop::tlsInstance->enqueue(op->mPrevious);
 }
 
 void UringLoop::runBatchedNoWait(std::size_t numBatch) {
@@ -210,10 +207,8 @@ void UringLoop::runBatchedNoWait(std::size_t numBatch) {
     unsigned head, numGot = 0;
     io_uring_for_each_cqe(&mRing, head, cqe) {
         auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
-        if (op) [[likely]] {
-            op->mRes = cqe->res;
-            BasicLoop::tlsInstance->enqueue(op->mPrevious);
-        }
+        op->mRes = cqe->res;
+        BasicLoop::tlsInstance->enqueue(op->mPrevious);
         ++numGot;
     }
     io_uring_cq_advance(&mRing, numGot);
@@ -233,10 +228,8 @@ bool UringLoop::runBatchedWait(std::size_t numBatch,
     unsigned head, numGot = 0;
     io_uring_for_each_cqe(&mRing, head, cqe) {
         auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
-        if (op) [[likely]] {
-            op->mRes = cqe->res;
-            BasicLoop::tlsInstance->enqueue(op->mPrevious);
-        }
+        op->mRes = cqe->res;
+        BasicLoop::tlsInstance->enqueue(op->mPrevious);
         ++numGot;
     }
     io_uring_cq_advance(&mRing, numGot);

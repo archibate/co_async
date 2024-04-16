@@ -33,16 +33,16 @@ namespace co_async {
     }
 
     void route(std::string_view methods, std::string_view prefix,
-                      SuffixMode mode, HTTPPrefixHandler handler) {
-        auto it = std::lower_bound(mPrefixRoutes.begin(),
-                                   mPrefixRoutes.end(), prefix,
-                                   [](auto const &item, auto const &prefix) {
-                                       return item.first.size() > prefix.size();
-                                   });
-        mPrefixRoutes.insert(it,
-            {std::string(prefix),
-             {handler, mode,
-              split_string(upper_string(methods), ' ').collect()}});
+               SuffixMode mode, HTTPPrefixHandler handler) {
+        auto it =
+            std::lower_bound(mPrefixRoutes.begin(), mPrefixRoutes.end(), prefix,
+                             [](auto const &item, auto const &prefix) {
+                                 return item.first.size() > prefix.size();
+                             });
+        mPrefixRoutes.insert(
+            it, {std::string(prefix),
+                 {handler, mode,
+                  split_string(upper_string(methods), ' ').collect()}});
     }
 
     Task<> process_connection(SocketStream stream) const {
@@ -130,8 +130,7 @@ private:
                             return false;
                         }
                         break;
-                    case 0:
-                        return false;
+                    case 0: return false;
                     }
                 }
                 return true;

@@ -11,17 +11,17 @@ Task<> amain() {
     http.route("GET", "/", [](HTTPRequest const &request) -> Task<HTTPResponse> {
         co_return co_await HTTPServerUtils::make_response_from_directory(make_path("."));
     });
-    http.route("GET", "/", HTTPServer::SuffixPath, [](HTTPRequest const &request, std::string_view suffix) -> Task<HTTPResponse> {
-        co_return co_await HTTPServerUtils::make_response_from_file_or_directory(make_path(suffix));
-    });
     http.route("GET", "/scripts", HTTPServer::SuffixName, [](HTTPRequest const &request, std::string_view suffix) -> Task<HTTPResponse> {
         co_return co_await HTTPServerUtils::make_response_from_cgi_script(request, make_path("scripts", suffix));
+    });
+    http.route("GET", "/", HTTPServer::SuffixPath, [](HTTPRequest const &request, std::string_view suffix) -> Task<HTTPResponse> {
+        co_return co_await HTTPServerUtils::make_response_from_file_or_directory(make_path(suffix));
     });
 
     co_await stdio().putline("正在监听: " + listener.address().toString());
     while (1) {
         auto conn = co_await listener_accept(listener);
-        co_await stdio().putline("线程 " + to_string(globalSystemLoop.this_thread_worker_id()) + " 收到请求: " + listener.address().toString());
+        co_await stdio().putline("线程 " + to_string(globalSystemLoop.this_thread_worker_id()) + " 收到连接: " + listener.address().toString());
         co_spawn(http.process_connection(SocketStream(std::move(conn))));
     }
 }

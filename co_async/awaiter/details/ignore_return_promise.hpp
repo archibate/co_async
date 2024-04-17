@@ -56,6 +56,13 @@ struct IgnoreReturnPromise {
     void setPrevious(std::coroutine_handle<>) noexcept {}
 
     IgnoreReturnPromise &operator=(IgnoreReturnPromise &&) = delete;
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    IgnoreReturnPromise(std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
 };
 
 struct AutoDestroyFinalAwaiter {

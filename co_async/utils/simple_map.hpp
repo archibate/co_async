@@ -95,6 +95,14 @@ struct SimpleMap {
         return mData.end();
     }
 
+    bool empty() const noexcept {
+        return mData.empty();
+    }
+
+    std::size_t size() const noexcept {
+        return mData.size();
+    }
+
 private:
     std::map<K, V, std::less<>> mData;
 };

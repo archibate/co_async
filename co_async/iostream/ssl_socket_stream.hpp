@@ -14,7 +14,6 @@
 #include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
 #include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
 #include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/utils/simple_map.hpp>     /*{import :utils.simple_map;}*/
 #include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
 #include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
 
@@ -270,7 +269,7 @@ private:
         std::make_unique<br_pem_decoder_context>();
     std::string result;
     std::string objName;
-    SimpleMap<std::string, std::string> objs;
+    std::vector<std::pair<std::string, std::string>> objs;
 
     static void pemResultAppender(void *self, void const *buf, size_t len) {
         reinterpret_cast<SSLPemDecoder *>(self)->onResult(
@@ -294,7 +293,7 @@ public:
                 objName = br_pem_decoder_name(pemDec.get());
                 break;
             case BR_PEM_END_OBJ:
-                objs.insert_or_assign(std::move(objName), std::move(result));
+                objs.emplace_back(std::move(objName), std::move(result));
                 result.clear();
                 break;
             case BR_PEM_ERROR:
@@ -308,12 +307,22 @@ public:
         return *this;
     }
 
-    SimpleMap<std::string, std::string> const &objects() const {
+    std::vector<std::pair<std::string, std::string>> const &objects() const {
         return objs;
     }
 
-    std::string get(std::string_view key) const {
-        return objs.get(key).value();
+    static std::vector<std::string> tryDecode(std::string_view s) {
+        std::vector<std::string> res;
+        if (s.find("-----BEGIN ") != s.npos) {
+            SSLPemDecoder dec;
+            dec.decode(s);
+            for (auto &[k, v]: dec.objs) {
+                res.push_back(std::move(v));
+            }
+        } else {
+            res.emplace_back(s);
+        }
+        return res;
     }
 };
 
@@ -374,13 +383,9 @@ public:
         return *this;
     }
 
-    SSLPrivateKey &decode(std::string_view s) {
-        if (auto rsa =
-                SSLPemDecoder().decode(s).objects().get("RSA PRIVATE KEY")) {
-            decodeBinary(*rsa);
-        } else if (auto ec = SSLPemDecoder().decode(s).objects().get(
-                       "EC PRIVATE KEY")) {
-            decodeBinary(*ec);
+    SSLPrivateKey &decode(std::string_view pkey) {
+        for (auto &s: SSLPemDecoder::tryDecode(pkey)) {
+            decodeBinary(s);
         }
         return *this;
     }
@@ -411,9 +416,11 @@ public:
         return *this;
     }
 
-    SSLClientTrustAnchor &add(std::string_view certX506Pem) {
-        return addBinary(
-            SSLPemDecoder().decode(certX506Pem).get("CERTIFICATE"));
+    SSLClientTrustAnchor &add(std::string_view certX506) {
+        for (auto &s: SSLPemDecoder::tryDecode(certX506)) {
+            addBinary(s);
+        }
+        return *this;
     }
 
 private:
@@ -430,9 +437,11 @@ public:
         return *this;
     }
 
-    SSLServerCertificate &add(std::string_view certX506Pem) {
-        return addBinary(
-            SSLPemDecoder().decode(certX506Pem).get("CERTIFICATE"));
+    SSLServerCertificate &add(std::string_view certX506) {
+        for (auto &s: SSLPemDecoder::tryDecode(certX506)) {
+            addBinary(s);
+        }
+        return *this;
     }
 
 private:
@@ -500,8 +509,10 @@ protected:
                     throw;
                 }
 #endif
-                if (wlen > 0) {
+                if (wlen > 0) [[likely]] {
                     br_ssl_engine_sendrec_ack(eng, wlen);
+                } else {
+                    co_return;
                 }
                 continue;
             }
@@ -539,6 +550,8 @@ protected:
 #endif
                 if (rlen > 0) [[likely]] {
                     br_ssl_engine_recvrec_ack(eng, rlen);
+                } else {
+                    co_return;
                 }
                 continue;
             }
@@ -566,7 +579,6 @@ public:
             alen = buffer.size();
         }
         memcpy(buffer.data(), buf, alen);
-        debug(), std::string_view((char *)buf, alen);
         br_ssl_engine_recvapp_ack(eng, alen);
         co_return alen;
     }

@@ -1,3 +1,4 @@
+/* #define CO_ASYNC_PERF 1 */
 #include <co_async/utils/debug.hpp>
 #include <co_async/co_async.hpp>/*{import co_async;}*/
 #include <co_async/std.hpp>/*{import std;}*/
@@ -7,7 +8,7 @@ using namespace std::literals;
 
 Task<> amain() {
     SSLClientTrustAnchor ta;
-    ta.add(co_await file_read(make_path("/home/bate/Codes/bearssl/samples/cert-ica-rsa.pem")));
+    ta.add(co_await file_read(make_path("scripts/certificates/cert-root-rsa.pem")));
     auto s = co_await SSLClientSocketStream::connect("localhost", 4433, ta);
     HTTPRequest req = {
         .method = "GET",

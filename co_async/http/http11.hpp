@@ -7,7 +7,7 @@
 #include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
 #include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
 #include <co_async/system/pipe.hpp>          /*{import :system.pipe;}*/
-#include <co_async/http/uri.hpp>              /*{import :http.uri;}*/
+#include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
 
 namespace co_async {
 
@@ -165,6 +165,7 @@ private:
         }
         uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
         while (true) {
+            line.clear();
             if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
                 co_return false;
             }
@@ -187,7 +188,6 @@ private:
                 }
             }
             headers.insert_or_assign(std::move(key), line.substr(pos + 2));
-            line.clear();
         }
         if (auto p =
                 headers.get("content-length"sv, from_string<std::size_t>)) {
@@ -242,8 +242,8 @@ private:
         auto line = co_await sock.getline("\r\n"sv);
         if (line.empty())
             co_return false;
-        if (line.size() <= 9 || line.substr(0, 9) != "HTTP/1.1 "sv)
-            [[unlikely]] {
+        if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv ||
+            line[8] != ' ') [[unlikely]] {
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
 #endif
@@ -258,6 +258,7 @@ private:
             throw std::invalid_argument("invalid http response: status");
         }
         while (true) {
+            line.clear();
             if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
                 co_return false;
             }
@@ -280,7 +281,6 @@ private:
                 }
             }
             headers.insert_or_assign(std::move(key), line.substr(pos + 2));
-            line.clear();
         }
         if (auto p =
                 headers.get("content-length"sv, from_string<std::size_t>)) {

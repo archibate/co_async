@@ -7,6 +7,7 @@ using namespace std::literals;
 
 Task<> amain() {
     SSLClientTrustAnchor ta;
+    ta.add(co_await file_read(make_path("/home/bate/Codes/bearssl/samples/cert-ica-rsa.pem")));
     auto s = co_await SSLClientSocketStream::connect("localhost", 4433, ta);
     HTTPRequest req = {
         .method = "GET",

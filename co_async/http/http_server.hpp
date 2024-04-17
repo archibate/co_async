@@ -3,7 +3,6 @@
 #include <co_async/std.hpp>                   /*{import std;}*/
 #include <co_async/awaiter/task.hpp>          /*{import :awaiter.task;}*/
 #include <co_async/http/http11.hpp>           /*{import :http.http11;}*/
-#include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
 #include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
 #include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
 #include <co_async/utils/simple_map.hpp>     /*{import :utils.simple_map;}*/
@@ -45,7 +44,7 @@ namespace co_async {
                   split_string(upper_string(methods), ' ').collect()}});
     }
 
-    Task<> process_connection(SocketStream stream) const {
+    Task<> process_connection(auto stream) const {
         HTTPRequest req;
         while (co_await req.read_from(stream)) {
             HTTPResponse res = co_await handleRequest(req);
@@ -55,7 +54,6 @@ namespace co_async {
                 break;
             }
         }
-        co_await socket_shutdown(stream.get());
         co_await fs_close(stream.release());
     }
 

@@ -46,12 +46,7 @@ namespace co_async {
     static Task<HTTPResponse> make_response_from_directory(DirFilePath path) {
         auto dirPath = path.path().generic_string();
         std::string dirBase;
-        if (dirPath == ".") {
-            dirPath = "";
-        } else {
-            dirBase = URI::url_encode_path(dirPath) + "/";
-        }
-        std::string content = "<h1>Files in /" + dirPath + ":</h1>";
+        std::string content = "<h1>Files in " + dirPath + ":</h1>";
         auto parentPath = path.path().parent_path().generic_string();
         content +=
             "<a href=\"/" + URI::url_encode_path(parentPath) + "\">..</a><br>";
@@ -59,7 +54,7 @@ namespace co_async {
         while (auto entry = co_await dir.getdirent()) {
             if (entry == ".." || entry == ".")
                 continue;
-            content += "<a href=\"/" + dirBase + URI::url_encode_path(*entry) +
+            content += "<a href=\"./" + URI::url_encode_path(*entry) +
                        "\">" + html_encode(*entry) + "</a><br>";
         }
         co_return make_ok_response(content);
@@ -83,6 +78,32 @@ namespace co_async {
                 {
                     {"content-type", guessContentTypeByExtension(
                                          path.path().extension().string())},
+                },
+            .body = path,
+        };
+    }
+
+    static Task<HTTPResponse>
+    make_response_from_path(HTTPRequest req, std::filesystem::path path) {
+        auto stat = co_await fs_stat(path, STATX_MODE);
+        if (!stat) [[unlikely]] {
+            co_return HTTPServer::make_error_response(404);
+        }
+        if (!stat->is_readable()) [[unlikely]] {
+            co_return HTTPServer::make_error_response(403);
+        }
+        if (stat->is_directory()) {
+            co_return co_await make_response_from_directory(path);
+        }
+        if (stat->is_executable()) {
+            co_return co_await make_response_from_cgi_script(req, path);
+        }
+        co_return {
+            .status = 200,
+            .headers =
+                {
+                    {"content-type", guessContentTypeByExtension(
+                                         path.extension().string())},
                 },
             .body = path,
         };
@@ -128,11 +149,23 @@ namespace co_async {
             for (char c: k) {
                 if (!('a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == '_'))
                     [[unlikely]] {
-                    goto skip;
+                    goto skip1;
                 }
             }
             proc.env("HTTP_GET_" + k, v);
-        skip:;
+        skip1:;
+        }
+        for (auto const &[k, v]: req.headers) {
+            auto key = k;
+            for (char &c: key) {
+                if (c == '-') c = '_';
+                if (!('a' <= c && c <= 'z' || c == '_'))
+                    [[unlikely]] {
+                    goto skip2;
+                }
+            }
+            proc.env("HTTP_HEADER_" + key, v);
+        skip2:;
         }
         auto pipe = co_await make_pipe();
         proc.close(0);
@@ -163,6 +196,11 @@ namespace co_async {
                 trim_string(lower_string(line.substr(0, pos))),
                 trim_string(line.substr(pos + 1)));
         }
+        int status = 200;
+        if (auto statusOpt = headers.get("status", from_string<int>)) {
+            status = *statusOpt;
+            headers.erase("status");
+        }
         co_await reader.getall(content);
         auto res = co_await wait_process(pid);
         if (res.status != 0) [[unlikely]] {
@@ -172,7 +210,7 @@ namespace co_async {
             co_return HTTPServer::make_error_response(500);
         }
         co_return {
-            .status = 200,
+            .status = status,
             .headers = std::move(headers),
             .body = std::move(content),
         };

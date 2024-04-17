@@ -1,4 +1,3 @@
-#include <co_async/utils/debug.hpp>
 #include <co_async/co_async.hpp>/*{import co_async;}*/
 #include <co_async/std.hpp>/*{import std;}*/
 
@@ -8,14 +7,8 @@ using namespace std::literals;
 Task<> amain() {
     auto listener = co_await listener_bind({"127.0.0.1", 8080});
     HTTPServer http;
-    http.route("GET", "/", [](HTTPRequest const &request) -> Task<HTTPResponse> {
-        co_return co_await HTTPServerUtils::make_response_from_directory(make_path("."));
-    });
-    http.route("GET", "/scripts", HTTPServer::SuffixName, [](HTTPRequest const &request, std::string_view suffix) -> Task<HTTPResponse> {
-        co_return co_await HTTPServerUtils::make_response_from_cgi_script(request, make_path("scripts", suffix));
-    });
     http.route("GET", "/", HTTPServer::SuffixPath, [](HTTPRequest const &request, std::string_view suffix) -> Task<HTTPResponse> {
-        co_return co_await HTTPServerUtils::make_response_from_file_or_directory(make_path(suffix));
+        co_return co_await HTTPServerUtils::make_response_from_path(request, make_path(".", suffix));
     });
 
     co_await stdio().putline("正在监听: " + listener.address().toString());

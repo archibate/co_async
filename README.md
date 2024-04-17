@@ -103,7 +103,7 @@ build/server  # 对应于 examples/server.cpp
 #include "co_async.hpp"
 ```
 
-> 若为 Linux 系统则需要编译时加上 `-luring` 选项。
+编译选项：`g++ -std=c++20 你的项目.cpp -luring -lbearssl`
 
 ### 作为普通库导入
 

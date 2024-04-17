@@ -1,0 +1,3 @@
+add_library(co_async_liburing INTERFACE)
+target_sources(co_async_liburing INTERFACE liburing.cpp)
+target_include_directories(co_async_liburing INTERFACE include)

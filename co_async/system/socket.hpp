@@ -31,8 +31,8 @@ namespace co_async {
     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
 
     IpAddress(char const *ip) {
-        in_addr addr = {};
-        in6_addr addr6 = {};
+        struct in_addr addr = {};
+        struct in6_addr addr6 = {};
         if (checkError(inet_pton(AF_INET, ip, &addr))) {
             mAddr = addr;
             return;
@@ -41,7 +41,7 @@ namespace co_async {
             mAddr = addr6;
             return;
         }
-        hostent *hent = gethostbyname(ip);
+        struct hostent *hent = gethostbyname(ip);
         for (int i = 0; hent->h_addr_list[i]; i++) {
             if (hent->h_addrtype == AF_INET) {
                 std::memcpy(&addr, hent->h_addr_list[i], sizeof(in_addr));
@@ -72,7 +72,7 @@ namespace co_async {
         return toString();
     }
 
-    std::variant<in_addr, in6_addr> mAddr;
+    std::variant<struct in_addr, struct in6_addr> mAddr;
 };
 
 /*[export]*/ struct SocketAddress {

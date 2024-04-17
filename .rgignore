@@ -2,6 +2,7 @@
 /cmake/clang_std_modules_source
 /examples/*.hpp
 /examples/*.h
-/arch
+/3rd
+/co_async/ssl/bearssl
 /build
 /scripts

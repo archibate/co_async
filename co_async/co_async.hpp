@@ -18,5 +18,7 @@
 #include <co_async/iostream/file_stream.hpp>/*{export import :iostream.file_stream;}*/
 #include <co_async/iostream/stdio_stream.hpp>/*{export import :iostream.stdio_stream;}*/
 #include <co_async/iostream/string_stream.hpp>/*{export import :iostream.string_stream;}*/
+#include <co_async/iostream/socket_stream.hpp>/*{export import :iostream.socket_stream;}*/
+#include <co_async/iostream/ssl_socket_stream.hpp>/*{export import :iostream.ssl_socket_stream;}*/
 #include <co_async/iostream/directory_stream.hpp>/*{export import :iostream.directory_stream;}*/
 #include <co_async/iostream/stream_base.hpp>/*{export import :iostream.stream_base;}*/

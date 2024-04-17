@@ -157,7 +157,7 @@ private:
 };
 
 template <class T = void>
-/*[export]*/ struct [[nodiscard]] Future {
+/*[export]*/ struct [[nodiscard]] Future { // TODO: crash!
     explicit Future() : mToken(std::make_unique<FutureToken<T>>()) {}
 
     FutureToken<T> *get_token() const noexcept {

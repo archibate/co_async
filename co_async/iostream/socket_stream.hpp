@@ -41,6 +41,22 @@ private:
 
 /*[export]*/ using SocketIStream = IStream<SocketBuf>;
 /*[export]*/ using SocketOStream = OStream<SocketBuf>;
-/*[export]*/ using SocketStream = IOStream<SocketBuf>;
+
+/*[export]*/ struct SocketStream : IOStream<SocketBuf> {
+    using IOStream<SocketBuf>::IOStream;
+
+    Task<SocketStream> connect(const char *host, int port) {
+        auto conn = co_await socket_connect({host, port});
+        SocketStream sock(std::move(conn));
+        co_return sock;
+    }
+
+    Task<SocketStream> accept(SocketListener &listener) {
+        auto conn = co_await listener_accept(listener);
+        SocketStream sock(std::move(conn));
+        co_return sock;
+    }
+};
+
 
 } // namespace co_async

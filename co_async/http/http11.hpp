@@ -7,7 +7,6 @@
 #include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
 #include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
 #include <co_async/system/pipe.hpp>          /*{import :system.pipe;}*/
-#include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
 #include <co_async/http/uri.hpp>              /*{import :http.uri;}*/
 
 namespace co_async {
@@ -55,7 +54,7 @@ struct HTTPPolymorphicBody {
         return std::get<DirFilePath>(mBody);
     }
 
-    Task<> write_into(SocketStream &sock) const {
+    Task<> write_into(auto &sock) const {
         using namespace std::string_view_literals;
         if (std::get_if<std::monostate>(&mBody)) {
             co_await sock.puts("\r\n"sv);
@@ -86,7 +85,7 @@ struct HTTPPolymorphicBody {
         }
     }
 
-    Task<bool> read_from(SocketStream &sock, std::size_t size) {
+    Task<bool> read_from(auto &sock, std::size_t size) {
         if (is_file()) {
             auto file = co_await fs_open(get_file(), OpenMode::Write);
             auto [readPipe, writePipe] = co_await make_pipe();
@@ -123,7 +122,7 @@ private:
     HTTPPolymorphicBody body;
     bool keepAlive = true;
 
-    Task<> write_into(SocketStream &sock) const {
+    Task<> write_into(auto &sock) const {
         using namespace std::string_view_literals;
         co_await sock.puts(method);
         co_await sock.putchar(' ');
@@ -144,7 +143,7 @@ private:
         co_await sock.flush();
     }
 
-    Task<bool> read_from(SocketStream &sock) {
+    Task<bool> read_from(auto &sock) {
         using namespace std::string_view_literals;
         std::string line;
         if (!co_await sock.getline(line, "\r\n"sv))
@@ -216,7 +215,7 @@ private:
     HTTPPolymorphicBody body;
     bool keepAlive = true;
 
-    Task<> write_into(SocketStream &sock) const {
+    Task<> write_into(auto &sock) const {
         using namespace std::string_view_literals;
         co_await sock.puts("HTTP/1.1 "sv);
         co_await sock.puts(to_string(status));
@@ -238,7 +237,7 @@ private:
         co_await sock.flush();
     }
 
-    Task<bool> read_from(SocketStream &sock) {
+    Task<bool> read_from(auto &sock) {
         using namespace std::string_view_literals;
         auto line = co_await sock.getline("\r\n"sv);
         if (line.empty())

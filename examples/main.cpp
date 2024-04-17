@@ -1,3 +1,4 @@
+#include <co_async/utils/debug.hpp>
 #include <co_async/co_async.hpp>/*{import co_async;}*/
 #include <co_async/std.hpp>/*{import std;}*/
 
@@ -5,9 +6,16 @@ using namespace co_async;
 using namespace std::literals;
 
 Task<> amain() {
-    auto path = make_path(".");
-    auto w = co_await FileWatch().watch(path, FileWatch::OnWriteFinished, true).wait();
-    co_await stdio().putline(w.path.string());
+    SSLClientTrustAnchor ta;
+    auto s = co_await SSLClientSocketStream::connect("localhost", 4433, ta);
+    HTTPRequest req = {
+        .method = "GET",
+        .uri = URI::parse("/"),
+    };
+    co_await req.write_into(s);
+    HTTPResponse res;
+    co_await res.read_from(s);
+    debug(), res;
 }
 
 int main() {

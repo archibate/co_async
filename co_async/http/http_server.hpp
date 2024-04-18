@@ -11,22 +11,23 @@
 #include <co_async/system/timer.hpp>         /*{import :system.timer;}*/
 #include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
 #include <co_async/http/http11.hpp>          /*{import :http.http11;}*/
+#include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
+#include <co_async/iostream/ssl_socket_stream.hpp>/*{import :iostream.ssl_socket_stream;}*/
 
 namespace co_async {
 
+/*[export]*/ enum class HTTPRouteMode {
+    SuffixRaw = 0, // "/a-9\\*g./.."
+    SuffixName,    // "/a"
+    SuffixPath,    // "/a/b/c"
+};
+
 /*[export]*/ template <class HTTP>
-struct HTTPServer {
-    using HTTPHandler = Task<HTTPResponse> (*)(HTTP &http,
-                                               HTTPRequest const &);
+struct HTTPServerBase {
+    using HTTPHandler = Task<HTTPResponse> (*)(HTTP &http, HTTPRequest const &);
     using HTTPPrefixHandler = Task<HTTPResponse> (*)(HTTP &http,
                                                      HTTPRequest const &,
                                                      std::string_view);
-
-    enum SuffixMode {
-        SuffixRaw = 0, // "/a-9\\*g./.."
-        SuffixName,    // "/a"
-        SuffixPath,    // "/a/b/c"
-    };
 
     void route(std::string_view methods, std::string_view path,
                HTTPHandler handler) {
@@ -36,7 +37,7 @@ struct HTTPServer {
     }
 
     void route(std::string_view methods, std::string_view prefix,
-               SuffixMode mode, HTTPPrefixHandler handler) {
+               HTTPRouteMode mode, HTTPPrefixHandler handler) {
         auto it =
             std::lower_bound(mPrefixRoutes.begin(), mPrefixRoutes.end(), prefix,
                              [](auto const &item, auto const &prefix) {
@@ -85,7 +86,7 @@ private:
 
     struct PrefixRoute {
         HTTPPrefixHandler mHandler;
-        SuffixMode mSuffixMode;
+        HTTPRouteMode mRouteMode;
         std::vector<std::string> mMethods;
 
         bool checkMethod(std::string_view method) const {
@@ -94,8 +95,8 @@ private:
         }
 
         bool checkSuffix(std::string_view &suffix) const {
-            switch (mSuffixMode) {
-            case SuffixName: {
+            switch (mRouteMode) {
+            case HTTPRouteMode::SuffixName: {
                 if (suffix.starts_with('/')) {
                     suffix.remove_prefix(1);
                 }
@@ -108,7 +109,7 @@ private:
                 }
                 return true;
             }
-            case SuffixPath: {
+            case HTTPRouteMode::SuffixPath: {
                 if (suffix.starts_with('/')) {
                     suffix.remove_prefix(1);
                 }
@@ -164,5 +165,8 @@ private:
         co_return make_error_response(http, 404);
     }
 };
+
+using HTTPServer = HTTPServerBase<HTTP11<SocketStream>>;
+using HTTPSServer = HTTPServerBase<HTTP11<SSLServerSocketStream>>;
 
 } // namespace co_async

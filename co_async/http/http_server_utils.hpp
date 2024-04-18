@@ -4,7 +4,6 @@
 #include <co_async/awaiter/task.hpp>          /*{import :awaiter.task;}*/
 #include <co_async/http/http11.hpp>           /*{import :http.http11;}*/
 #include <co_async/http/http_server.hpp>      /*{import :http.http_server;}*/
-#include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
 #include <co_async/iostream/directory_stream.hpp>/*{import :iostream.directory_stream;}*/
 #include <co_async/system/socket.hpp>            /*{import :system.socket;}*/
 #include <co_async/system/fs.hpp>                /*{import :system.fs;}*/
@@ -14,8 +13,7 @@
 
 namespace co_async {
 
-/*[export]*/ template <class HTTP>
-struct HTTPServerUtils {
+/*[export]*/ struct HTTPServerUtils {
     static std::string html_encode(std::string_view str) {
         std::string res;
         res.reserve(str.size());
@@ -32,6 +30,7 @@ struct HTTPServerUtils {
         return res;
     }
 
+    template <class HTTP>
     static Task<>
     make_ok_response(HTTP &http, std::string body,
                      std::string contentType = "text/html;charset=utf-8") {
@@ -46,6 +45,7 @@ struct HTTPServerUtils {
         co_await http.write_body(res, body);
     }
 
+    template <class HTTP>
     static Task<> make_response_from_directory(HTTP &http, DirFilePath path) {
         auto dirPath = path.path().generic_string();
         std::string dirBase;
@@ -60,13 +60,15 @@ struct HTTPServerUtils {
             content += "<a href=\"./" + URI::url_encode_path(*entry) +
                        "\">" + html_encode(*entry) + "</a><br>";
         }
-        co_await make_ok_response(content);
+        co_await make_ok_response(http, content);
     }
 
+    template <class HTTP>
     static void make_error_response(HTTP &http, int status) {
-        return HTTPServer<HTTP>::make_error_response(http, status);
+        return HTTPServerBase<HTTP>::make_error_response(http, status);
     }
 
+    template <class HTTP>
     static Task<>
     make_response_from_file_or_directory(HTTP &http, DirFilePath path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
@@ -77,7 +79,7 @@ struct HTTPServerUtils {
             co_return make_error_response(http, 403);
         }
         if (stat->is_directory()) {
-            co_return co_await make_response_from_directory(std::move(path));
+            co_return co_await make_response_from_directory(http, std::move(path));
         }
         HTTPResponse res{
             .status = 200,
@@ -91,6 +93,7 @@ struct HTTPServerUtils {
         co_await http.write_body_stream(res, co_await FileIStream::open(path));
     }
 
+    template <class HTTP>
     static Task<HTTPResponse>
     make_response_from_path(HTTP &http, HTTPRequest const &req, std::filesystem::path path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
@@ -101,10 +104,10 @@ struct HTTPServerUtils {
             co_return make_error_response(http, 403);
         }
         if (stat->is_directory()) {
-            co_return co_await make_response_from_directory(path);
+            co_return co_await make_response_from_directory(http, path);
         }
         if (stat->is_executable()) {
-            co_return co_await make_response_from_cgi_script(req, path);
+            co_return co_await make_response_from_cgi_script(http, req, path);
         }
         HTTPResponse res{
             .status = 200,
@@ -118,6 +121,7 @@ struct HTTPServerUtils {
         co_await http.write_body_stream(res, co_await FileIStream::open(path));
     }
 
+    template <class HTTP>
     static Task<HTTPResponse> make_response_from_file(HTTP &http, DirFilePath path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat || stat->is_directory()) [[unlikely]] {
@@ -138,6 +142,7 @@ struct HTTPServerUtils {
         co_await http.write_body_stream(res, co_await FileIStream::open(path));
     }
 
+    template <class HTTP>
     static Task<HTTPResponse>
     make_response_from_cgi_script(HTTP &http, HTTPRequest const &req,
                                   std::filesystem::path path) {

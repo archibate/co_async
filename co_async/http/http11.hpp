@@ -1,12 +1,12 @@
 #pragma once /*{export module co_async:http.http11;}*/
 
-#include <co_async/std.hpp>                  /*{import std;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
-#include <co_async/utils/simple_map.hpp>     /*{import :utils.simple_map;}*/
+#include <co_async/std.hpp>                    /*{import std;}*/
+#include <co_async/awaiter/task.hpp>           /*{import :awaiter.task;}*/
+#include <co_async/utils/simple_map.hpp>       /*{import :utils.simple_map;}*/
+#include <co_async/iostream/string_stream.hpp> /*{import :iostream.string_stream;}*/
 #include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
 #include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
 #include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/system/pipe.hpp>          /*{import :system.pipe;}*/
 #include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
 
 namespace co_async {
@@ -15,135 +15,171 @@ namespace co_async {
     using SimpleMap<std::string, std::string>::SimpleMap;
 };
 
-struct HTTPPolymorphicBody {
-    HTTPPolymorphicBody() = default;
-
-    HTTPPolymorphicBody(std::string content) : mBody(std::move(content)) {}
-
-    HTTPPolymorphicBody(std::string_view content)
-        : mBody(std::string(content)) {}
-
-    HTTPPolymorphicBody(char const *content) : mBody(content) {}
-
-    HTTPPolymorphicBody(DirFilePath path) : mBody(std::move(path)) {}
-
-    HTTPPolymorphicBody(std::filesystem::path path)
-        : mBody(DirFilePath(path)) {}
-
-    bool is_none() const noexcept {
-        return std::holds_alternative<std::monostate>(mBody);
-    }
-
-    bool is_string() const noexcept {
-        return std::holds_alternative<std::string>(mBody);
-    }
-
-    bool is_file() const noexcept {
-        return std::holds_alternative<DirFilePath>(mBody);
-    }
-
-    void set_none() {
-        mBody = std::monostate{};
-    }
-
-    std::string_view get_string() const {
-        return std::get<std::string>(mBody);
-    }
-
-    DirFilePath get_file() const {
-        return std::get<DirFilePath>(mBody);
-    }
-
-    Task<> write_into(auto &sock) const {
-        using namespace std::string_view_literals;
-        if (std::get_if<std::monostate>(&mBody)) {
-            co_await sock.puts("\r\n"sv);
-        } else if (auto bodyStr = std::get_if<std::string>(&mBody)) {
-            co_await sock.puts("content-length: "sv);
-            co_await sock.puts(to_string(bodyStr->size()));
-            co_await sock.puts("\r\n\r\n"sv);
-            co_await sock.puts(*bodyStr);
-        } else if (auto bodyPath = std::get_if<DirFilePath>(&mBody)) {
-            auto size = co_await fs_stat_size(*bodyPath);
-            co_await sock.puts("content-length: "sv);
-            co_await sock.puts(to_string(size));
-            co_await sock.puts("\r\n\r\n"sv);
-            co_await sock.flush();
-            std::unique_ptr<char[]> buffer =
-                std::make_unique_for_overwrite<char[]>(size);
-            std::span<char> bufSpan(buffer.get(), size);
-            auto file = co_await fs_open(*bodyPath, OpenMode::Read);
-            auto [readPipe, writePipe] = co_await make_pipe();
-            while (size > 0) {
-                auto n = co_await fs_splice(file, writePipe, size);
-                co_await fs_splice(readPipe, sock.get(), n);
-                size -= n;
-            }
-            co_await fs_close(std::move(file));
-            co_await fs_close(std::move(readPipe));
-            co_await fs_close(std::move(writePipe));
-        }
-    }
-
-    Task<bool> read_from(auto &sock, std::size_t size) {
-        if (is_file()) {
-            auto file = co_await fs_open(get_file(), OpenMode::Write);
-            auto [readPipe, writePipe] = co_await make_pipe();
-            while (size > 0) {
-                auto n = co_await fs_splice(sock.get(), writePipe, size);
-                co_await fs_splice(readPipe, file, n);
-                size -= n;
-            }
-            co_await fs_close(std::move(file));
-            co_await fs_close(std::move(readPipe));
-            co_await fs_close(std::move(writePipe));
-            co_return true;
-        }
-        std::string content;
-        if (!co_await sock.getn(content, size)) [[unlikely]] {
-            co_return false;
-        }
-        mBody = std::move(content);
-        co_return true;
-    }
-
-    auto repr() const {
-        return mBody;
-    }
-
-private:
-    std::variant<std::monostate, std::string, DirFilePath> mBody;
+/*[export]*/ enum class HTTPTransferEncoding {
+    Auto = 0,
+    Identity,
+    Chunked,
+    Gzip,
+    Compress,
+    Deflate,
+    Br,
 };
 
 /*[export]*/ struct HTTPRequest {
     std::string method;
     URI uri;
     HTTPHeaders headers;
-    HTTPPolymorphicBody body;
-    bool keepAlive = true;
+    HTTPTransferEncoding encoding = HTTPTransferEncoding::Auto;
 
-    Task<> write_into(auto &sock) const {
+    auto repr() const {
+        return std::make_tuple(method, uri, headers);
+    }
+};
+
+/*[export]*/ struct HTTPResponse {
+    int status;
+    HTTPHeaders headers;
+    HTTPTransferEncoding encoding = HTTPTransferEncoding::Auto;
+
+    auto repr() const {
+        return std::make_tuple(status, headers);
+    }
+};
+
+/*[export]*/ template <class Sock>
+struct HTTP11 {
+    Sock sock;
+
+    Task<> write_body_stream(auto &resq, auto &&body) {
         using namespace std::string_view_literals;
-        co_await sock.puts(method);
+        switch (resq.encoding) {
+        case HTTPTransferEncoding::Auto: [[fallthrough]];
+        case HTTPTransferEncoding::Chunked: {
+            co_await sock.puts("transfer-encoding: chunked\r\n"sv);
+            while (co_await body.fillbuf()) {
+                auto bufSpan = body.rdbuf();
+                auto n = bufSpan.size();
+                char buf[sizeof(n) * 2 + 4] = {}, *ep = buf;
+                *ep++ = '\r';
+                *ep++ = '\n';
+                do {
+                    *ep++ = "01234567890ABCDEF"[n & 15];
+                } while (n >>= 4);
+                *ep++ = '\r';
+                *ep++ = '\n';
+                co_await sock.puts(std::string_view{buf, static_cast<std::size_t>(ep - buf)});
+                co_await sock.putspan(bufSpan);
+            }
+            co_await sock.puts("\r\n0\r\n"sv);
+        } break;
+        case HTTPTransferEncoding::Gzip:
+            co_await sock.puts("transfer-encoding: gzip\r\n\r\n"sv);
+            break;
+        case HTTPTransferEncoding::Compress:
+            co_await sock.puts("transfer-encoding: compress\r\n\r\n"sv);
+            break;
+        case HTTPTransferEncoding::Deflate:
+            co_await sock.puts("transfer-encoding: deflate\r\n\r\n"sv);
+            break;
+        case HTTPTransferEncoding::Br:
+            co_await sock.puts("transfer-encoding: br\r\n\r\n"sv);
+            break;
+        case HTTPTransferEncoding::Identity:
+            co_await sock.puts("content-length: "sv);
+            co_await sock.puts(to_string(body.size()));
+            co_await sock.puts("\r\n\r\n"sv);
+            co_await sock.puts(body);
+            break;
+        }
+    }
+
+    Task<> write_body(auto &resq, std::string_view body) {
+        using namespace std::string_view_literals;
+        if (resq.encoding == HTTPTransferEncoding::Identity ||
+            resq.encoding == HTTPTransferEncoding::Auto) {
+            co_await sock.puts("content-length: "sv);
+            co_await sock.puts(to_string(body.size()));
+            co_await sock.puts("\r\n\r\n"sv);
+            co_await sock.puts(body);
+        } else {
+            write_body_stream(resq, sock, StringIStream(body));
+        }
+        co_await sock.flush();
+    }
+
+    Task<> write_nobody(auto &resq) {
+        using namespace std::string_view_literals;
+        co_await sock.puts("\r\n"sv);
+        co_await sock.flush();
+    }
+
+    Task<bool> read_stream_body(auto &resq, auto &&body) {
+        using namespace std::string_view_literals;
+        switch (resq.encoding) {
+        case HTTPTransferEncoding::Auto: [[fallthrough]];
+        case HTTPTransferEncoding::Identity: {
+            if (auto n = resq.headers.get("content-length"sv, from_string<int>)) {
+                co_await body.puts(co_await sock.getn(*n));
+                co_await body.flush();
+            }
+        }
+        case HTTPTransferEncoding::Chunked: {
+            while (true) {
+                std::string line;
+                if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
+                    co_return false;
+                }
+                auto n = std::strtoul(line.c_str(), nullptr, 16);
+                if (n == 0) {
+                    break;
+                }
+                auto bufSpan = sock.rdbuf();
+                if (bufSpan.empty()) [[unlikely]] {
+                    co_return false;
+                }
+                co_await body.putspan(bufSpan.subspan(0, n));
+                sock.rdbufadvance(n);
+                if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
+                    co_return false;
+                }
+            }
+            co_await body.flush();
+        } break;
+        default: throw;
+        }
+        co_return true;
+    }
+
+    Task<std::string> read_body(auto &resq) {
+        using namespace std::string_view_literals;
+        std::string body;
+        if (resq.encoding == HTTPTransferEncoding::Identity ||
+            resq.encoding == HTTPTransferEncoding::Auto) {
+            if (auto n = resq.headers.get("content-length"sv, from_string<int>)) {
+                body = co_await sock.getn(*n);
+            }
+        } else {
+            co_await read_stream_body(resq, StringOStream(body));
+        }
+        co_return body;
+    }
+
+    Task<> write_header(HTTPRequest const &req) {
+        using namespace std::string_view_literals;
+        co_await sock.puts(req.method);
         co_await sock.putchar(' ');
-        co_await sock.puts(uri.dump());
+        co_await sock.puts(req.uri.dump());
         co_await sock.puts(" HTTP/1.1\r\n"sv);
-        for (auto const &[k, v]: headers) {
+        for (auto const &[k, v]: req.headers) {
             co_await sock.puts(k);
             co_await sock.puts(": "sv);
             co_await sock.puts(v);
             co_await sock.puts("\r\n"sv);
         }
-        if (keepAlive) {
-            co_await sock.puts("connection: keep-alive\r\n"sv);
-        } else {
-            co_await sock.puts("connection: close\r\n"sv);
-        }
-        co_await body.write_into(sock);
-        co_await sock.flush();
+        co_await sock.puts("connection: keep-alive\r\n"sv);
     }
 
-    Task<bool> read_from(auto &sock) {
+    Task<bool> read_header(HTTPRequest &req) {
         using namespace std::string_view_literals;
         std::string line;
         if (!co_await sock.getline(line, "\r\n"sv))
@@ -155,7 +191,7 @@ private:
 #endif
             throw std::invalid_argument("invalid http request: version");
         }
-        method = line.substr(0, pos);
+        req.method = line.substr(0, pos);
         auto pos2 = line.find(' ', pos + 1);
         if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
 #if CO_ASYNC_DEBUG
@@ -163,7 +199,7 @@ private:
 #endif
             throw std::invalid_argument("invalid http request: method");
         }
-        uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
+        req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
         while (true) {
             line.clear();
             if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
@@ -187,57 +223,29 @@ private:
                     c += 'a' - 'A';
                 }
             }
-            headers.insert_or_assign(std::move(key), line.substr(pos + 2));
-        }
-        if (auto p =
-                headers.get("content-length"sv, from_string<std::size_t>)) {
-            if (!co_await body.read_from(sock, *p)) [[unlikely]] {
-                co_return false;
-            }
-        } else {
-            body.set_none();
+            req.headers.insert_or_assign(std::move(key), line.substr(pos + 2));
         }
 
-        if (auto connection = headers.get("connection"sv)) {
-            keepAlive = lower_string(*connection) != "close";
-        }
         co_return true;
     }
 
-    auto repr() const {
-        return std::make_tuple(method, uri, headers, body);
-    }
-};
-
-/*[export]*/ struct HTTPResponse {
-    int status;
-    HTTPHeaders headers;
-    HTTPPolymorphicBody body;
-    bool keepAlive = true;
-
-    Task<> write_into(auto &sock) const {
+    Task<> write_header(HTTPResponse const &res) {
         using namespace std::string_view_literals;
         co_await sock.puts("HTTP/1.1 "sv);
-        co_await sock.puts(to_string(status));
+        co_await sock.puts(to_string(res.status));
         co_await sock.putchar(' ');
-        co_await sock.puts(getHTTPStatusName(status));
+        co_await sock.puts(getHTTPStatusName(res.status));
         co_await sock.puts("\r\n"sv);
-        for (auto const &[k, v]: headers) {
+        for (auto const &[k, v]: res.headers) {
             co_await sock.puts(k);
             co_await sock.puts(": "sv);
             co_await sock.puts(v);
             co_await sock.puts("\r\n"sv);
         }
-        if (keepAlive) {
-            co_await sock.puts("connection: keep-alive\r\n"sv);
-        } else {
-            co_await sock.puts("connection: close\r\n"sv);
-        }
-        co_await body.write_into(sock);
-        co_await sock.flush();
+        co_await sock.puts("connection: keep-alive\r\n"sv);
     }
 
-    Task<bool> read_from(auto &sock) {
+    Task<bool> read_header(HTTPResponse &res) {
         using namespace std::string_view_literals;
         auto line = co_await sock.getline("\r\n"sv);
         if (line.empty())
@@ -250,7 +258,7 @@ private:
             throw std::invalid_argument("invalid http response: version");
         }
         if (auto statusOpt = from_string<int>(line.substr(9, 3))) [[likely]] {
-            status = *statusOpt;
+            res.status = *statusOpt;
         } else [[unlikely]] {
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
@@ -280,25 +288,26 @@ private:
                     c += 'a' - 'A';
                 }
             }
-            headers.insert_or_assign(std::move(key), line.substr(pos + 2));
-        }
-        if (auto p =
-                headers.get("content-length"sv, from_string<std::size_t>)) {
-            if (!co_await body.read_from(sock, *p)) [[unlikely]] {
-                co_return false;
-            }
-        } else {
-            body.set_none();
+            res.headers.insert_or_assign(std::move(key), line.substr(pos + 2));
         }
 
-        if (auto connection = headers.get("connection"sv)) {
-            keepAlive = lower_string(*connection) != "close";
+        if (auto transEnc = res.headers.get("transfer-encoding"sv)) {
+            static constexpr std::pair<std::string_view, HTTPTransferEncoding> encodings[] = {
+                {"identity"sv, HTTPTransferEncoding::Identity},
+                {"chunked"sv, HTTPTransferEncoding::Chunked},
+                {"gzip"sv, HTTPTransferEncoding::Gzip},
+                {"compress"sv, HTTPTransferEncoding::Compress},
+                {"deflate"sv, HTTPTransferEncoding::Deflate},
+                {"br"sv, HTTPTransferEncoding::Br},
+            };
+            for (auto const &[name, enc]: encodings) {
+                if (*transEnc == name) {
+                    res.encoding = enc;
+                    break;
+                }
+            }
         }
         co_return true;
-    }
-
-    auto repr() const {
-        return std::make_tuple(status, headers, body);
     }
 };
 

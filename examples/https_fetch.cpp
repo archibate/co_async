@@ -8,11 +8,16 @@ using namespace std::literals;
 
 Task<> amain() {
     SSLClientTrustAnchor ta;
-    ta.add(co_await file_read(make_path("scripts/certificates/cert-root-rsa.pem")));
-    HTTP11 http(co_await SSLClientSocketStream::connect("localhost", 4433, ta));
+    ta.add(co_await file_read(make_path("/etc/ca-certificates/extracted/tls-ca-bundle.pem")));
+    HTTP11 http(co_await SSLClientSocketStream::connect("man7.org", 443, ta));
     HTTPRequest req = {
         .method = "GET",
         .uri = URI::parse("/"),
+        .headers = {
+            {"host", "man7.org"},
+            {"user-agent", "curl/8.7.1"},
+            {"accept", "*/*"},
+        },
     };
     co_await http.write_header(req);
     co_await http.write_nobody(req);

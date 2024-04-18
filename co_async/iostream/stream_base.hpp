@@ -15,8 +15,8 @@ struct IStreamBase {
     IStreamBase &operator=(IStreamBase &&) = default;
 
     Task<std::optional<char>> getchar() {
-        if (bufferEmpty()) {
-            if (!co_await fillBuffer()) {
+        if (bufempty()) {
+            if (!co_await fillbuf()) {
                 co_return std::nullopt;
             }
         }
@@ -35,7 +35,7 @@ struct IStreamBase {
                     co_return true;
                 }
             }
-            if (!co_await fillBuffer()) {
+            if (!co_await fillbuf()) {
                 co_return false;
             }
             start = 0;
@@ -51,7 +51,7 @@ struct IStreamBase {
                     co_return true;
                 }
             }
-            if (!co_await fillBuffer()) {
+            if (!co_await fillbuf()) {
                 co_return false;
             }
             start = 0;
@@ -65,8 +65,8 @@ struct IStreamBase {
                 co_return false;
             }
             for (std::size_t i = 1; i < eol.size(); ++i) {
-                if (bufferEmpty()) {
-                    if (!co_await fillBuffer()) {
+                if (bufempty()) {
+                    if (!co_await fillbuf()) {
                         co_return false;
                     }
                 }
@@ -89,8 +89,8 @@ struct IStreamBase {
                 co_return false;
             }
             for (std::size_t i = 1; i < eol.size(); ++i) {
-                if (bufferEmpty()) {
-                    if (!co_await fillBuffer()) {
+                if (bufempty()) {
+                    if (!co_await fillbuf()) {
                         co_return false;
                     }
                 }
@@ -129,7 +129,7 @@ struct IStreamBase {
                 co_return true;
             }
             p = std::copy(mBuffer.get() + start, mBuffer.get() + mEnd, p);
-            if (!co_await fillBuffer()) {
+            if (!co_await fillbuf()) {
                 co_return false;
             }
             start = 0;
@@ -146,7 +146,7 @@ struct IStreamBase {
                 mIndex = end;
                 co_return true;
             }
-            if (!co_await fillBuffer()) {
+            if (!co_await fillbuf()) {
                 co_return false;
             }
             start = 0;
@@ -163,7 +163,7 @@ struct IStreamBase {
                 co_return true;
             }
             s.append(mBuffer.get() + start, mEnd - start);
-            if (!co_await fillBuffer()) {
+            if (!co_await fillbuf()) {
                 co_return false;
             }
             start = 0;
@@ -182,7 +182,7 @@ struct IStreamBase {
         do {
             s.append(mBuffer.get() + start, mEnd - start);
             start = 0;
-        } while (co_await fillBuffer());
+        } while (co_await fillbuf());
     }
 
     Task<std::string> getall() {
@@ -207,16 +207,23 @@ struct IStreamBase {
         co_return ret;
     }
 
-private:
-    bool bufferEmpty() const noexcept {
-        return mIndex == mEnd;
+    std::span<char const> rdbuf() const noexcept {
+        return {mBuffer.get() + mIndex, mEnd - mIndex};
     }
 
-    Task<bool> fillBuffer() {
+    void rdbufadvance(std::size_t n) {
+        mIndex += n;
+    }
+
+    Task<bool> fillbuf() {
         auto *that = static_cast<Reader *>(this);
         mEnd = co_await that->raw_read(std::span(mBuffer.get(), mBufSize));
         mIndex = 0;
         co_return mEnd != 0;
+    }
+
+    bool bufempty() const noexcept {
+        return mIndex == mEnd;
     }
 
     std::unique_ptr<char[]> mBuffer;
@@ -235,7 +242,7 @@ struct OStreamBase {
     OStreamBase &operator=(OStreamBase &&) = default;
 
     Task<> putchar(char c) {
-        if (bufferFull()) {
+        if (buffull()) {
             co_await flush();
         }
         mBuffer[mIndex] = c;
@@ -281,6 +288,14 @@ struct OStreamBase {
         co_await flush();
     }
 
+    std::span<char> wrbuf() const noexcept {
+        return {mBuffer.get() + mIndex, mBufSize - mIndex};
+    }
+
+    void wrbufadvance(std::size_t n) {
+        mIndex += n;
+    }
+
     Task<> flush() {
         if (mIndex) [[likely]] {
             auto *that = static_cast<Writer *>(this);
@@ -297,11 +312,11 @@ struct OStreamBase {
         }
     }
 
-private:
-    bool bufferFull() const noexcept {
+    bool buffull() const noexcept {
         return mIndex == mBufSize;
     }
 
+private:
     std::unique_ptr<char[]> mBuffer;
     std::size_t mIndex = 0;
     std::size_t mBufSize = 0;

@@ -15,16 +15,16 @@ Task<> amain() {
 
     auto listener = co_await listener_bind({"localhost", 4433});
     while (true) {
-        auto s = co_await SSLServerSocketStream::accept(listener, cert, pkey);
+        HTTP11 http(co_await SSLServerSocketStream::accept(listener, cert, pkey));
         HTTPRequest req;
-        co_await req.read_from(s);
+        co_await http.read_header(req);
+        co_await http.write_nobody(req);
         HTTPResponse res = {
             .status = 200,
             .headers = {{"content-type", "text/html"}},
-            .body = "<h1>It works!</h1>",
-            .keepAlive = false,
         };
-        co_await res.write_into(s);
+        co_await http.write_header(res);
+        co_await http.write_body(res, "<h1>It works!</h1>");
     }
 }
 

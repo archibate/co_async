@@ -1,8 +1,8 @@
 #pragma once /*{export module co_async:http.http_server;}*/
 
-#include <co_async/std.hpp>                   /*{import std;}*/
-#include <co_async/awaiter/task.hpp>          /*{import :awaiter.task;}*/
-#include <co_async/http/http11.hpp>           /*{import :http.http11;}*/
+#include <co_async/std.hpp>                  /*{import std;}*/
+#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/http/http11.hpp>          /*{import :http.http11;}*/
 #include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
 #include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
 #include <co_async/utils/simple_map.hpp>     /*{import :utils.simple_map;}*/
@@ -10,12 +10,16 @@
 #include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
 #include <co_async/system/timer.hpp>         /*{import :system.timer;}*/
 #include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
+#include <co_async/http/http11.hpp>          /*{import :http.http11;}*/
 
 namespace co_async {
 
-/*[export]*/ struct HTTPServer {
-    using HTTPHandler = Task<HTTPResponse> (*)(HTTPRequest const &);
-    using HTTPPrefixHandler = Task<HTTPResponse> (*)(HTTPRequest const &,
+/*[export]*/ template <class HTTP>
+struct HTTPServer {
+    using HTTPHandler = Task<HTTPResponse> (*)(HTTP &http,
+                                               HTTPRequest const &);
+    using HTTPPrefixHandler = Task<HTTPResponse> (*)(HTTP &http,
+                                                     HTTPRequest const &,
                                                      std::string_view);
 
     enum SuffixMode {
@@ -44,32 +48,28 @@ namespace co_async {
                   split_string(upper_string(methods), ' ').collect()}});
     }
 
-    Task<> process_connection(auto stream) const {
+    Task<> process_connection(auto &http, auto sock) const {
         HTTPRequest req;
-        while (co_await req.read_from(stream)) {
-            HTTPResponse res = co_await handleRequest(req);
-            res.keepAlive = req.keepAlive;
-            co_await res.write_into(stream);
-            if (!res.keepAlive) {
-                break;
-            }
+        while (co_await http.read_header(req, sock)) {
+            co_await handleRequest(http, sock, req);
         }
-        co_await fs_close(stream.release());
+        co_await fs_close(sock.release());
     }
 
-    static HTTPResponse make_error_response(int status) {
+    static void make_error_response(HTTP &http, int status) {
         auto error =
             to_string(status) + " " + std::string(getHTTPStatusName(status));
-        return {
+        http.write_header(HTTPResponse{
             .status = status,
             .headers =
                 {
                     {"content-type", "text/html;charset=utf-8"},
                 },
-            .body = "<html><head><title>" + error +
-                    "</title></head><body><center><h1>" + error +
-                    "</h1></center><hr><center>co_async</center></body></html>",
-        };
+        });
+        http.write_body(
+            "<html><head><title>" + error +
+            "</title></head><body><center><h1>" + error +
+            "</h1></center><hr><center>co_async</center></body></html>");
     }
 
 private:
@@ -141,27 +141,27 @@ private:
     SimpleMap<std::string, Route> mRoutes;
     std::vector<std::pair<std::string, PrefixRoute>> mPrefixRoutes;
 
-    Task<HTTPResponse> handleRequest(HTTPRequest const &req) const {
+    Task<> handleRequest(auto &http, HTTPRequest const &req) const {
         if (auto route = mRoutes.at(req.uri.path)) {
             if (!route->checkMethod(req.method)) [[unlikely]] {
-                co_return make_error_response(405);
+                co_return make_error_response(http, 405);
             }
-            co_return co_await route->mHandler(req);
+            co_return co_await route->mHandler(http, req);
         }
         for (auto const &[prefix, route]: mPrefixRoutes) {
             if (req.uri.path.starts_with(prefix)) {
                 if (!route.checkMethod(req.method)) [[unlikely]] {
-                    co_return make_error_response(405);
+                    co_return make_error_response(http, 405);
                 }
                 auto suffix =
                     std::string_view(req.uri.path).substr(prefix.size());
                 if (!route.checkSuffix(suffix)) [[unlikely]] {
-                    co_return make_error_response(400);
+                    co_return make_error_response(http, 405);
                 }
-                co_return co_await route.mHandler(req, suffix);
+                co_return co_await route.mHandler(http, req, suffix);
             }
         }
-        co_return make_error_response(404);
+        co_return make_error_response(http, 404);
     }
 };
 

@@ -46,5 +46,31 @@ namespace co_async {
     co_return {FileHandle(p[0]), FileHandle(p[1])};
 }
 
+/*[export]*/ inline Task<> send_file(FileHandle &sock, FileHandle &&file) {
+    auto [readPipe, writePipe] = co_await make_pipe();
+    while (auto n = co_await fs_splice(file, writePipe, 65536)) {
+        std::size_t m;
+        while ((m = co_await fs_splice(readPipe, sock, n)) < n) [[unlikely]] {
+            n -= m;
+        }
+    }
+    co_await fs_close(std::move(file));
+    co_await fs_close(std::move(readPipe));
+    co_await fs_close(std::move(writePipe));
+}
+
+/*[export]*/ inline Task<> recv_file(FileHandle &sock, FileHandle &&file) {
+    auto [readPipe, writePipe] = co_await make_pipe();
+    while (auto n = co_await fs_splice(sock, writePipe, 65536)) {
+        std::size_t m;
+        while ((m = co_await fs_splice(readPipe, file, n)) < n) [[unlikely]] {
+            n -= m;
+        }
+    }
+    co_await fs_close(std::move(file));
+    co_await fs_close(std::move(readPipe));
+    co_await fs_close(std::move(writePipe));
+}
+
 }
 #endif

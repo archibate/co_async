@@ -3,6 +3,7 @@
 #include <co_async/http/http11.hpp>/*{export import :http.http11;}*/
 #include <co_async/http/http_server.hpp>/*{export import :http.http_server;}*/
 #include <co_async/http/http_server_utils.hpp>/*{export import :http.http_server_utils;}*/
+#include <co_async/http/http_client.hpp>/*{export import :http.http_client;}*/
 #include <co_async/system/fs.hpp>/*{export import :system.fs;}*/
 #include <co_async/system/pipe.hpp>/*{export import :system.pipe;}*/
 #include <co_async/system/fs_watch.hpp>/*{export import :system.fs_watch;}*/

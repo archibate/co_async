@@ -1,6 +1,5 @@
 /*{module;}*/
 
-#include "co_async/utils/debug.hpp"
 #include <bearssl.h>
 
 #pragma once /*{export module co_async:ssl.ssl_socket;}*/
@@ -383,7 +382,7 @@ public:
         return *this;
     }
 
-    SSLPrivateKey &decode(std::string_view pkey) {
+    SSLPrivateKey &set(std::string_view pkey) {
         for (auto &s: SSLPemDecoder::tryDecode(pkey)) {
             decodeBinary(s);
         }

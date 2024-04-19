@@ -36,7 +36,7 @@ struct SocketBuf {
 
 private:
     SocketHandle mFile;
-    std::chrono::nanoseconds mTimeout = std::chrono::seconds(10);
+    std::chrono::nanoseconds mTimeout = std::chrono::seconds(5);
 };
 
 /*[export]*/ using SocketIStream = IStream<SocketBuf>;
@@ -45,13 +45,13 @@ private:
 /*[export]*/ struct SocketStream : IOStream<SocketBuf> {
     using IOStream<SocketBuf>::IOStream;
 
-    Task<SocketStream> connect(const char *host, int port) {
+    static Task<SocketStream> connect(const char *host, int port) {
         auto conn = co_await socket_connect({host, port});
         SocketStream sock(std::move(conn));
         co_return sock;
     }
 
-    Task<SocketStream> accept(SocketListener &listener) {
+    static Task<SocketStream> accept(SocketListener &listener) {
         auto conn = co_await listener_accept(listener);
         SocketStream sock(std::move(conn));
         co_return sock;

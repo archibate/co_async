@@ -48,7 +48,6 @@ namespace co_async {
     template <class HTTP>
     static Task<> make_response_from_directory(HTTP &http, DirFilePath path) {
         auto dirPath = path.path().generic_string();
-        std::string dirBase;
         std::string content = "<h1>Files in " + dirPath + ":</h1>";
         auto parentPath = path.path().parent_path().generic_string();
         content +=
@@ -57,14 +56,14 @@ namespace co_async {
         while (auto entry = co_await dir.getdirent()) {
             if (entry == ".." || entry == ".")
                 continue;
-            content += "<a href=\"./" + URI::url_encode_path(*entry) +
+            content += "<a href=\"/" + URI::url_encode_path(make_path(dirPath, *entry).generic_string()) +
                        "\">" + html_encode(*entry) + "</a><br>";
         }
         co_await make_ok_response(http, content);
     }
 
     template <class HTTP>
-    static void make_error_response(HTTP &http, int status) {
+    static Task<> make_error_response(HTTP &http, int status) {
         return HTTPServerBase<HTTP>::make_error_response(http, status);
     }
 
@@ -94,14 +93,14 @@ namespace co_async {
     }
 
     template <class HTTP>
-    static Task<HTTPResponse>
+    static Task<>
     make_response_from_path(HTTP &http, HTTPRequest const &req, std::filesystem::path path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat) [[unlikely]] {
-            co_return make_error_response(http, 404);
+            co_return co_await make_error_response(http, 404);
         }
         if (!stat->is_readable()) [[unlikely]] {
-            co_return make_error_response(http, 403);
+            co_return co_await make_error_response(http, 403);
         }
         if (stat->is_directory()) {
             co_return co_await make_response_from_directory(http, path);
@@ -116,13 +115,14 @@ namespace co_async {
                     {"content-type", guessContentTypeByExtension(
                                          path.extension().string())},
                 },
+            .encoding = HTTPTransferEncoding::Identity,
         };
         co_await http.write_header(res);
         co_await http.write_body_stream(res, co_await FileIStream::open(path));
     }
 
     template <class HTTP>
-    static Task<HTTPResponse> make_response_from_file(HTTP &http, DirFilePath path) {
+    static Task<> make_response_from_file(HTTP &http, DirFilePath path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat || stat->is_directory()) [[unlikely]] {
             co_return make_error_response(http, 404);
@@ -143,21 +143,21 @@ namespace co_async {
     }
 
     template <class HTTP>
-    static Task<HTTPResponse>
+    static Task<>
     make_response_from_cgi_script(HTTP &http, HTTPRequest const &req,
                                   std::filesystem::path path) {
-        auto post = co_await http.read_body();
+        auto post = co_await http.read_body(req);
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat || stat->is_directory()) [[unlikely]] {
-            co_return make_error_response(http, 404);
+            co_return co_await make_error_response(http, 404);
         }
         if (!stat->is_executable()) [[unlikely]] {
-            co_return make_error_response(http, 403);
+            co_return co_await make_error_response(http, 403);
         }
         HTTPHeaders headers;
         std::string content;
         auto proc = ProcessBuilder();
-        proc.path(path.string(), true);
+        proc.path(path, true);
         proc.inherit_env();
         proc.env("HTTP_PATH", req.uri.path);
         proc.env("HTTP_METHOD", req.method);
@@ -191,7 +191,7 @@ namespace co_async {
         Pid pid = co_await proc.spawn();
         FileIStream reader(pipeOut.reader());
         FileOStream writer(pipeIn.writer());
-        writer.puts(post);
+        co_await writer.puts(post);
         post.clear();
         std::string line;
         while (true) {
@@ -227,7 +227,7 @@ namespace co_async {
 #if CO_ASYNC_DEBUG
             std::cerr << "cgi script exit failure\n";
 #endif
-            co_return make_error_response(http, 500);
+            co_return co_await make_error_response(http, 500);
         }
         HTTPResponse res{
             .status = status,

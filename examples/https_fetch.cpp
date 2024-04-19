@@ -1,29 +1,28 @@
-/* #define CO_ASYNC_PERF 1 */
 #include <co_async/utils/debug.hpp>
 #include <co_async/co_async.hpp>/*{import co_async;}*/
 #include <co_async/std.hpp>/*{import std;}*/
+#define CO_ASYNC_PERF 1
+#include <co_async/utils/perf.hpp>
 
 using namespace co_async;
 using namespace std::literals;
 
 Task<> amain() {
-    SSLClientTrustAnchor ta;
-    ta.add(co_await file_read(make_path("/etc/ca-certificates/extracted/tls-ca-bundle.pem")));
-    HTTP11 http(co_await SSLClientSocketStream::connect("man7.org", 443, ta));
+    HTTPClientPool pool;
+    co_await pool.load_ca_certifi();
+    Perf _;
+    auto conn = co_await pool.connect("https://man7.org");
     HTTPRequest req = {
         .method = "GET",
         .uri = URI::parse("/"),
-        .headers = {
-            {"host", "man7.org"},
-            {"user-agent", "curl/8.7.1"},
-            {"accept", "*/*"},
-        },
     };
-    co_await http.write_header(req);
-    co_await http.write_nobody(req);
-    HTTPResponse res;
-    co_await http.read_header(res);
-    debug(), co_await http.read_body(res);
+    Perf _2;
+    co_await conn->write_header(req);
+    co_await conn->write_nobody();
+    Perf _3;
+    co_await conn->read_header();
+    Perf _4;
+    debug(), co_await conn->read_body();
 }
 
 int main() {

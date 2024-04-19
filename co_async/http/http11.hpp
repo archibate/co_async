@@ -4,6 +4,7 @@
 #include <co_async/awaiter/task.hpp>           /*{import :awaiter.task;}*/
 #include <co_async/utils/simple_map.hpp>       /*{import :utils.simple_map;}*/
 #include <co_async/iostream/string_stream.hpp> /*{import :iostream.string_stream;}*/
+#include <co_async/iostream/zlib_stream.hpp> /*{import :iostream/zlib_stream;}*/
 #include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
 #include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
 #include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
@@ -50,12 +51,12 @@ namespace co_async {
 struct HTTP11 {
     Sock sock;
 
-    Task<> write_body_stream(auto &resq, auto &&body) {
+    Task<> write_body_stream(auto const &resq, auto &&body) {
         using namespace std::string_view_literals;
         switch (resq.encoding) {
         case HTTPTransferEncoding::Auto: [[fallthrough]];
         case HTTPTransferEncoding::Chunked: {
-            co_await sock.puts("transfer-encoding: chunked\r\n"sv);
+            co_await sock.puts("transfer-encoding: chunked\r\n\r\n"sv);
             while (co_await body.fillbuf()) {
                 auto bufSpan = body.rdbuf();
                 auto n = bufSpan.size();
@@ -85,15 +86,19 @@ struct HTTP11 {
             co_await sock.puts("transfer-encoding: br\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Identity:
-            co_await sock.puts("content-length: "sv);
-            co_await sock.puts(to_string(body.size()));
-            co_await sock.puts("\r\n\r\n"sv);
-            co_await sock.puts(body);
+            {
+                auto content = co_await body.getall();
+                co_await sock.puts("content-length: "sv);
+                co_await sock.puts(to_string(content.size()));
+                co_await sock.puts("\r\n\r\n"sv);
+                co_await sock.puts(content);
+            }
             break;
         }
+        co_await sock.flush();
     }
 
-    Task<> write_body(auto &resq, std::string_view body) {
+    Task<> write_body(auto const &resq, std::string_view body) {
         using namespace std::string_view_literals;
         if (resq.encoding == HTTPTransferEncoding::Identity ||
             resq.encoding == HTTPTransferEncoding::Auto) {
@@ -102,30 +107,30 @@ struct HTTP11 {
             co_await sock.puts("\r\n\r\n"sv);
             co_await sock.puts(body);
         } else {
-            write_body_stream(resq, sock, StringIStream(body));
+            co_await write_body_stream(resq, StringIStream(body));
         }
         co_await sock.flush();
     }
 
-    Task<> write_nobody(auto &resq) {
+    Task<> write_nobody(auto const &resq) {
         using namespace std::string_view_literals;
         co_await sock.puts("\r\n"sv);
         co_await sock.flush();
     }
 
-    Task<bool> read_stream_body(auto &resq, auto &&body) {
+    Task<bool> read_body_stream(auto const &resq, auto &&body) {
         using namespace std::string_view_literals;
         switch (resq.encoding) {
         case HTTPTransferEncoding::Auto: [[fallthrough]];
         case HTTPTransferEncoding::Identity: {
             if (auto n = resq.headers.get("content-length"sv, from_string<int>)) {
                 co_await body.puts(co_await sock.getn(*n));
-                co_await body.flush();
             }
         }
         case HTTPTransferEncoding::Chunked: {
+            std::string line;
             while (true) {
-                std::string line;
+                line.clear();
                 if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
                     co_return false;
                 }
@@ -133,35 +138,62 @@ struct HTTP11 {
                 if (n == 0) {
                     break;
                 }
-                auto bufSpan = sock.rdbuf();
-                if (bufSpan.empty()) [[unlikely]] {
-                    co_return false;
-                }
-                co_await body.putspan(bufSpan.subspan(0, n));
-                sock.rdbufadvance(n);
-                if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
+                line.clear();
+                co_await sock.getn(line, n);
+                co_await body.puts(line);
+                line.clear();
+                if (!co_await sock.dropn(2)) [[unlikely]] {
                     co_return false;
                 }
             }
-            co_await body.flush();
         } break;
-        default: throw;
+        case HTTPTransferEncoding::Gzip: [[fallthrough]];
+        case HTTPTransferEncoding::Compress: [[fallthrough]];
+        case HTTPTransferEncoding::Deflate: [[fallthrough]];
+        case HTTPTransferEncoding::Br: {
+            std::string content = co_await sock.getall();
+            co_await body.puts(content);
+        } break;
         }
+        co_await body.flush();
         co_return true;
     }
 
-    Task<std::string> read_body(auto &resq) {
+    Task<std::string> read_body(auto const &resq) {
         using namespace std::string_view_literals;
-        std::string body;
-        if (resq.encoding == HTTPTransferEncoding::Identity ||
-            resq.encoding == HTTPTransferEncoding::Auto) {
+        switch (resq.encoding) {
+        case HTTPTransferEncoding::Auto: [[fallthrough]];
+        case HTTPTransferEncoding::Identity: {
             if (auto n = resq.headers.get("content-length"sv, from_string<int>)) {
-                body = co_await sock.getn(*n);
+                co_return co_await sock.getn(*n);
             }
-        } else {
-            co_await read_stream_body(resq, StringOStream(body));
+            co_return {};
         }
-        co_return body;
+        case HTTPTransferEncoding::Chunked: {
+            std::string line, body;
+            while (true) {
+                line.clear();
+                if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
+                    co_return {};
+                }
+                auto n = std::strtoul(line.c_str(), nullptr, 16);
+                if (n == 0) {
+                    break;
+                }
+                co_await sock.getn(body, n);
+                line.clear();
+                if (!co_await sock.dropn(2)) [[unlikely]] {
+                    co_return {};
+                }
+            }
+            co_return body;
+        }
+        default: {
+            StringOStream os;
+            co_await read_body_stream(resq, os);
+            co_return os.release();
+        }
+        };
     }
 
     Task<> write_header(HTTPRequest const &req) {

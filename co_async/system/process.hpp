@@ -110,8 +110,8 @@ namespace co_async {
         return *this;
     }
 
-    ProcessBuilder &path(std::string_view path, bool isAbsolute = false) {
-        mPath = path;
+    ProcessBuilder &path(std::filesystem::path path, bool isAbsolute = false) {
+        mPath = path.string();
         mAbsolutePath = isAbsolute;
         return *this;
     }

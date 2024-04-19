@@ -2,7 +2,9 @@
 
 #include <co_async/std.hpp>/*{import std;}*/
 #include <co_async/utils/uninitialized.hpp>/*{import :utils.uninitialized;}*/
+#if CO_ASYNC_PERF
 #include <co_async/utils/perf.hpp>/*{import :utils.perf;}*/
+#endif
 #include <co_async/awaiter/details/previous_awaiter.hpp>/*{import :awaiter.details.previous_awaiter;}*/
 
 namespace co_async {

@@ -9,7 +9,7 @@ using namespace std::literals;
 Task<> amain() {
     SSLServerCertificate cert;
     SSLPrivateKey pkey;
-    pkey.decode(co_await file_read(make_path("scripts/certificates/key-ee-rsa.pem")));
+    pkey.set(co_await file_read(make_path("scripts/certificates/key-ee-rsa.pem")));
     cert.add(co_await file_read(make_path("scripts/certificates/cert-ee-rsa.pem")));
     cert.add(co_await file_read(make_path("scripts/certificates/cert-ica-rsa.pem")));
 

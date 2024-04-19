@@ -5,17 +5,15 @@ using namespace co_async;
 using namespace std::literals;
 
 Task<> amain() {
-    auto listener = co_await listener_bind({"127.0.0.1", 8080});
-    HTTPServer http;
-    http.route("GET", "/", HTTPRouteMode::SuffixPath, [](HTTPRequest const &request, std::string_view suffix) -> Task<HTTPResponse> {
-        co_return co_await HTTPServerUtils::make_response_from_path(request, make_path(".", suffix));
+    HTTPServer server;
+    co_await server.bind({"127.0.0.1", 8080});
+    server.route("GET", "/", HTTPRouteMode::SuffixPath, [](HTTPServer::Session &http, HTTPRequest const &request, std::string_view suffix) -> Task<> {
+        co_await HTTPServerUtils::make_response_from_path(http, request, make_path(".", suffix));
     });
 
-    co_await stdio().putline("正在监听: " + listener.address().toString());
     while (1) {
-        auto conn = co_await listener_accept(listener);
-        co_await stdio().putline("线程 " + to_string(globalSystemLoop.this_thread_worker_id()) + " 收到连接: " + listener.address().toString());
-        co_spawn(http.process_connection(SocketStream(std::move(conn))));
+        auto conn = co_await server.accept();
+        co_spawn(server.process_connection(std::move(conn)));
     }
 }
 

@@ -154,19 +154,17 @@ struct IStreamBase {
     }
 
     Task<bool> getn(std::string &s, std::size_t n) {
-        std::size_t start = mIndex;
         while (true) {
-            auto end = start + n;
-            if (end <= mEnd) {
-                s.append(mBuffer.get() + start, end - start);
-                mIndex = end;
+            if (mIndex + n <= mEnd) {
+                s.append(mBuffer.get() + mIndex, n);
+                mIndex += n;
                 co_return true;
             }
-            s.append(mBuffer.get() + start, mEnd - start);
+            s.append(mBuffer.get() + mIndex, mEnd - mIndex);
+            n -= mEnd - mIndex;
             if (!co_await fillbuf()) {
                 co_return false;
             }
-            start = 0;
         }
     }
 
@@ -253,7 +251,7 @@ struct OStreamBase {
         auto p = s.data();
         auto const pe = s.data() + s.size();
     again:
-        if (pe - p <= mBufSize - mIndex) {
+        if (std::size_t(pe - p) <= mBufSize - mIndex) {
             auto b = mBuffer.get() + mIndex;
             mIndex += pe - p;
             while (p < pe) {

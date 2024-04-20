@@ -25,11 +25,11 @@ protected:
     virtual int getProtocolVersion() = 0;
     virtual Task<> doWriteHeader(HTTPRequest const &req) = 0;
     virtual Task<> doWriteBody(std::string_view body) = 0;
-    virtual Task<> doWriteBodyStream(FileStream &body) = 0;
+    virtual Task<> doWriteBodyStream(FileIStream &body) = 0;
     virtual Task<> doWriteNoBody() = 0;
     virtual Task<bool> doReadHeader(HTTPResponse &res) = 0;
     virtual Task<std::string> doReadBody() = 0;
-    virtual Task<> doReadBodyStream(FileStream &body) = 0;
+    virtual Task<> doReadBodyStream(FileOStream &body) = 0;
 
     std::string mHostName;
 
@@ -53,8 +53,7 @@ public:
         using namespace std::string_literals;
         req.headers.insert("user-agent"s, "co_async/0.0.1"s);
         req.headers.insert("host"s, mHostName);
-        /* req.headers.insert("accept-encoding"s, "gzip, deflate, br, compress"s); */
-        /* req.headers.insert("accept-encoding"s, "deflate"s); */
+        /* req.headers.insert("accept-encoding"s, "gzip, deflate, br, compress, zstd"s); */
         req.headers.insert("accept"s, "*/*"s);
         co_await doWriteHeader(req);
     }
@@ -63,7 +62,7 @@ public:
         co_await doWriteBody(body);
     }
 
-    Task<> write_body_stream(FileStream &body) {
+    Task<> write_body_stream(FileIStream &body) {
         co_await doWriteBodyStream(body);
     }
 
@@ -81,7 +80,7 @@ public:
         co_return co_await doReadBody();
     }
 
-    Task<> read_body_stream(FileStream &body) {
+    Task<> read_body_stream(FileOStream &body) {
         co_await doReadBodyStream(body);
     }
 };
@@ -100,7 +99,7 @@ public:
         co_await mHttp->write_body(body);
     }
 
-    Task<> doWriteBodyStream(FileStream &body) override {
+    Task<> doWriteBodyStream(FileIStream &body) override {
         co_await mHttp->write_body_stream(body);
     }
 
@@ -116,7 +115,7 @@ public:
         co_return co_await mHttp->read_body();
     }
 
-    Task<> doReadBodyStream(FileStream &body) override {
+    Task<> doReadBodyStream(FileOStream &body) override {
         co_await mHttp->read_body_stream(body);
     }
 };

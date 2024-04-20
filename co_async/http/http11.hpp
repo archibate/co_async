@@ -1,6 +1,5 @@
 #pragma once /*{export module co_async:http.http11;}*/
 
-#include "co_async/utils/debug.hpp"
 #include <co_async/std.hpp>                    /*{import std;}*/
 #include <co_async/awaiter/task.hpp>           /*{import :awaiter.task;}*/
 #include <co_async/utils/simple_map.hpp>       /*{import :utils.simple_map;}*/
@@ -25,17 +24,28 @@ namespace co_async {
         Compress,
         Deflate,
         Br,
+        Zstd,
     };
 
+private:
     Type mType;
     std::size_t mContentLength;
 
+public:
     HTTPTransferEncoding(Type type = Identity, std::size_t len = 0) noexcept
         : mType(type),
           mContentLength(len) {}
 
     operator Type() const noexcept {
         return mType;
+    }
+
+    auto &contentLength() noexcept {
+        return mContentLength;
+    }
+
+    auto contentLength() const noexcept {
+        return mContentLength;
     }
 
     auto repr() const {
@@ -75,7 +85,9 @@ private:
 
     void checkPhase(int from, int to) {
         if (mPhase != from) [[unlikely]] {
-            throw std::runtime_error("function calling order wrong");
+            throw std::runtime_error(
+                "function calling order wrong (" + to_string(mPhase) + ", " +
+                to_string(from) + ", " + to_string(to) + ")");
         }
         mPhase = to;
     }
@@ -83,45 +95,58 @@ private:
 public:
 #endif
 
-    Task<> write_body_stream(auto &&body) {
+    Task<> write_body_stream(auto &body) {
 #if CO_ASYNC_DEBUG
         checkPhase(1, 0);
 #endif
         using namespace std::string_view_literals;
+        /* encoding = HTTPTransferEncoding::Identity; */
         switch (encoding) {
         case HTTPTransferEncoding::Chunked: {
-            co_await sock.puts("transfer-encoding: chunked\r\n"sv);
-            auto bufSpan = body.rdbuf();
-            while (!bufSpan.size() && !co_await body.fillbuf()) {
+            bool hadHeader = false;
+            do {
                 auto bufSpan = body.rdbuf();
                 auto n = bufSpan.size();
-                char buf[sizeof(n) * 2 + 4] = {}, *ep = buf;
-                *ep++ = '\r';
-                *ep++ = '\n';
-                do {
-                    *ep++ = "01234567890ABCDEF"[n & 15];
-                } while (n >>= 4);
-                std::reverse(buf + 2, ep);
-                *ep++ = '\r';
-                *ep++ = '\n';
-                co_await sock.puts(
-                    std::string_view{buf, static_cast<std::size_t>(ep - buf)});
-                co_await sock.putspan(bufSpan);
+                if (n < 0) {
+                    char buf[sizeof(n) * 2 + 4] = {}, *ep = buf;
+                    *ep++ = '\r';
+                    *ep++ = '\n';
+                    do {
+                        *ep++ = "01234567890ABCDEF"[n & 15];
+                    } while (n >>= 4);
+                    std::reverse(buf + 2, ep);
+                    *ep++ = '\r';
+                    *ep++ = '\n';
+                    if (!hadHeader) {
+                        co_await sock.puts("transfer-encoding: chunked\r\n"sv);
+                        hadHeader = true;
+                    }
+                    co_await sock.puts(std::string_view{
+                        buf, static_cast<std::size_t>(ep - buf)});
+                        std::string_view(bufSpan.data(), bufSpan.size());
+                    co_await sock.putspan(bufSpan);
+                }
+            } while (co_await body.fillbuf());
+            if (!hadHeader) {
+                co_await sock.puts("\r\n"sv);
+            } else {
+                co_await sock.puts("\r\n0\r\n"sv);
             }
-            co_await sock.puts("\r\n0\r\n"sv);
-            bufSpan = body.rdbuf();
         } break;
         case HTTPTransferEncoding::Gzip:
-            co_await sock.puts("transfer-encoding: gzip\r\n\r\n"sv);
+            co_await sock.puts("content-encoding: gzip\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Compress:
-            co_await sock.puts("transfer-encoding: compress\r\n\r\n"sv);
+            co_await sock.puts("content-encoding: compress\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Deflate:
-            co_await sock.puts("transfer-encoding: deflate\r\n\r\n"sv);
+            co_await sock.puts("content-encoding: deflate\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Br:
-            co_await sock.puts("transfer-encoding: br\r\n\r\n"sv);
+            co_await sock.puts("content-encoding: br\r\n\r\n"sv);
+            break;
+        case HTTPTransferEncoding::Zstd:
+            co_await sock.puts("content-encoding: zstd\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Identity: {
             auto content = co_await body.getall();
@@ -136,6 +161,9 @@ public:
 
     Task<> write_body(std::string_view body) {
         using namespace std::string_view_literals;
+        if (body.empty()) {
+            co_return co_await write_nobody();
+        }
         switch (encoding) {
         case HTTPTransferEncoding::Identity: {
 #if CO_ASYNC_DEBUG
@@ -166,7 +194,10 @@ public:
             co_await sock.puts(body);
             co_await sock.puts("\r\n0\r\n"sv);
         } break;
-        default: co_await write_body_stream(StringIStream(body));
+        default: {
+            StringIStream is(body);
+            co_await write_body_stream(is);
+        } break;
         }
         co_await sock.flush();
     }
@@ -180,17 +211,17 @@ public:
         co_await sock.flush();
     }
 
-    Task<bool> read_body_stream(auto &&body) {
+    Task<bool> read_body_stream(auto &body) {
 #if CO_ASYNC_DEBUG
         checkPhase(-1, 0);
 #endif
         using namespace std::string_view_literals;
         switch (encoding) {
         case HTTPTransferEncoding::Identity: {
-            if (auto n = encoding.mContentLength; n > 0) {
+            if (auto n = encoding.contentLength(); n > 0) {
                 co_await body.puts(co_await sock.getn(n));
             }
-        }
+        } break;
         case HTTPTransferEncoding::Chunked: {
             std::string line;
             while (true) {
@@ -198,7 +229,7 @@ public:
                 if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
                     co_return false;
                 }
-                auto n = std::strtoul(line.c_str(), nullptr, 16);
+                std::size_t n = std::strtoull(line.c_str(), nullptr, 16);
                 if (n == 0) {
                     break;
                 }
@@ -214,7 +245,8 @@ public:
         case HTTPTransferEncoding::Gzip: [[fallthrough]];
         case HTTPTransferEncoding::Compress: [[fallthrough]];
         case HTTPTransferEncoding::Deflate: [[fallthrough]];
-        case HTTPTransferEncoding::Br: {
+        case HTTPTransferEncoding::Br: [[fallthrough]];
+        case HTTPTransferEncoding::Zstd: {
             std::string content = co_await sock.getall();
             co_await body.puts(content);
         } break;
@@ -230,7 +262,7 @@ public:
 #if CO_ASYNC_DEBUG
             checkPhase(-1, 0);
 #endif
-            if (auto n = encoding.mContentLength; n > 0) {
+            if (auto n = encoding.contentLength(); n > 0) {
                 co_return co_await sock.getn(n);
             }
             co_return {};
@@ -249,8 +281,8 @@ public:
                 if (n == 0) {
                     break;
                 }
+                    auto os = body.size();
                 co_await sock.getn(body, n);
-                line.clear();
                 if (!co_await sock.dropn(2)) [[unlikely]] {
                     co_return {};
                 }
@@ -261,7 +293,7 @@ public:
             StringOStream os;
             co_await read_body_stream(os);
             co_return os.release();
-        }
+        } break;
         };
     }
 
@@ -288,6 +320,7 @@ public:
 #if CO_ASYNC_DEBUG
         checkPhase(0, -1);
 #endif
+        using namespace std::string_literals;
         using namespace std::string_view_literals;
         std::string line;
         if (!co_await sock.getline(line, "\r\n"sv))
@@ -336,32 +369,30 @@ public:
 
         encoding = HTTPTransferEncoding::Identity;
         if (auto transEnc = req.headers.get("transfer-encoding"sv)) {
-            req.headers.erase("transfer-encoding");
-            static constexpr std::pair<std::string_view,
-                                       HTTPTransferEncoding::Type>
-                encodings[] = {
-                    {"identity"sv, HTTPTransferEncoding::Identity},
-                    {"chunked"sv, HTTPTransferEncoding::Chunked},
-                    {"gzip"sv, HTTPTransferEncoding::Gzip},
-                    {"compress"sv, HTTPTransferEncoding::Compress},
-                    {"deflate"sv, HTTPTransferEncoding::Deflate},
-                    {"br"sv, HTTPTransferEncoding::Br},
-                };
-            for (auto const &[name, enc]: encodings) {
-                if (*transEnc == name) {
-                    encoding = enc;
-                    break;
-                }
-            }
+            encoding = encodingByName(*transEnc);
+            req.headers.erase("transfer-encoding"sv);
+        } else if (auto contEnc = req.headers.get("content-encoding"sv)) {
+            encoding = encodingByName(*contEnc);
+            req.headers.erase("content-encoding"sv);
         }
         if (encoding == HTTPTransferEncoding::Identity) {
             std::size_t len =
                 req.headers.get("content-length"sv, from_string<std::size_t>)
                     .value_or(0);
             req.headers.erase("content-length"sv);
-            encoding.mContentLength = len;
+            encoding.contentLength() = len;
         }
-        req.headers.erase("connection");
+        if (auto acceptEnc = req.headers.get("accept-encoding"sv)) {
+            for (std::string_view encName: split_string(*acceptEnc, ", "sv)) {
+                if (auto i = encName.find(';'); i != encName.npos) {
+                    encName = encName.substr(0, i);
+                }
+                auto enc = encodingByName(encName);
+                (void)enc; // TODO
+            }
+            req.headers.erase("accept-encoding"sv);
+        }
+        req.headers.erase("connection"sv);
         co_return true;
     }
 
@@ -436,33 +467,41 @@ public:
 
         encoding = HTTPTransferEncoding::Identity;
         if (auto transEnc = res.headers.get("transfer-encoding"sv)) {
-            res.headers.erase("transfer-encoding");
-            static constexpr std::pair<std::string_view,
-                                       HTTPTransferEncoding::Type>
-                encodings[] = {
-                    {"identity"sv, HTTPTransferEncoding::Identity},
-                    {"chunked"sv, HTTPTransferEncoding::Chunked},
-                    {"gzip"sv, HTTPTransferEncoding::Gzip},
-                    {"compress"sv, HTTPTransferEncoding::Compress},
-                    {"deflate"sv, HTTPTransferEncoding::Deflate},
-                    {"br"sv, HTTPTransferEncoding::Br},
-                };
-            for (auto const &[name, enc]: encodings) {
-                if (*transEnc == name) {
-                    encoding = enc;
-                    break;
-                }
-            }
+            encoding = encodingByName(*transEnc);
+            res.headers.erase("transfer-encoding"sv);
+        } else if (auto contEnc = res.headers.get("content-encoding"sv)) {
+            encoding = encodingByName(*contEnc);
+            res.headers.erase("content-encoding"sv);
         }
         if (encoding == HTTPTransferEncoding::Identity) {
             std::size_t len =
                 res.headers.get("content-length"sv, from_string<std::size_t>)
                     .value_or(0);
             res.headers.erase("content-length"sv);
-            encoding.mContentLength = len;
+            encoding.contentLength() = len;
         }
         res.headers.erase("connection");
         co_return true;
+    }
+
+    static HTTPTransferEncoding encodingByName(std::string_view name) {
+        using namespace std::string_view_literals;
+        static constexpr std::pair<std::string_view, HTTPTransferEncoding::Type>
+            encodings[] = {
+                {"identity"sv, HTTPTransferEncoding::Identity},
+                {"chunked"sv, HTTPTransferEncoding::Chunked},
+                {"gzip"sv, HTTPTransferEncoding::Gzip},
+                {"compress"sv, HTTPTransferEncoding::Compress},
+                {"deflate"sv, HTTPTransferEncoding::Deflate},
+                {"br"sv, HTTPTransferEncoding::Br},
+                {"zstd"sv, HTTPTransferEncoding::Zstd},
+            };
+        for (auto const &[k, v]: encodings) {
+            if (name == k) {
+                return v;
+            }
+        }
+        return HTTPTransferEncoding::Identity;
     }
 };
 

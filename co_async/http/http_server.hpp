@@ -16,17 +16,17 @@
 namespace co_async {
 
 /*[export]*/ enum class HTTPRouteMode {
-    SuffixRaw = 0, // "/a-9\\*g./.."
+    SuffixAny = 0, // "/a-9\\*g./.."
     SuffixName,    // "/a"
     SuffixPath,    // "/a/b/c"
 };
 
 template <class HTTP>
 struct HTTPServerBase {
-    using Session = HTTP;
-    using HTTPHandler = Task<> (*)(HTTP &http, HTTPRequest const &);
-    using HTTPPrefixHandler = Task<> (*)(HTTP &http, HTTPRequest const &,
-                                         std::string_view);
+    using Protocol = HTTP;
+    using HTTPHandler = std::function<Task<>(HTTP &, HTTPRequest const &)>;
+    using HTTPPrefixHandler = std::function<Task<>(HTTP &, HTTPRequest const &, std::string_view)>;
+    using HTTPDefaultHandler = std::function<Task<>(HTTP &, HTTPRequest const &)>;
 
     void route(std::string_view methods, std::string_view path,
                HTTPHandler handler) {
@@ -48,6 +48,10 @@ struct HTTPServerBase {
                   split_string(upper_string(methods), ' ').collect()}});
     }
 
+    void route(HTTPDefaultHandler handler) {
+        mDefaultRoute = handler;
+    }
+
     Task<> process_connection(HTTP http) const {
         HTTPRequest req;
         while (co_await http.read_header(req)) {
@@ -67,8 +71,7 @@ struct HTTPServerBase {
                 },
         };
         co_await http.write_header(res);
-        co_await http.write_body(res,
-            "<html><head><title>" + error +
+        co_await http.write_body("<html><head><title>" + error +
             "</title></head><body><center><h1>" + error +
             "</h1></center><hr><center>co_async</center></body></html>");
     }
@@ -141,65 +144,70 @@ private:
 
     SimpleMap<std::string, Route> mRoutes;
     std::vector<std::pair<std::string, PrefixRoute>> mPrefixRoutes;
+    HTTPDefaultHandler mDefaultRoute = [] (HTTP &http, HTTPRequest const &req) -> Task<> {
+        co_await make_error_response(http, 404);
+    };
 
     Task<> handleRequest(HTTP &http, HTTPRequest const &req) const {
         if (auto route = mRoutes.at(req.uri.path)) {
             if (!route->checkMethod(req.method)) [[unlikely]] {
-                co_return co_await make_error_response(http, 405);
+                co_await make_error_response(http, 405);
             }
-            co_return co_await route->mHandler(http, req);
+            co_await route->mHandler(http, req);
         }
         for (auto const &[prefix, route]: mPrefixRoutes) {
             if (req.uri.path.starts_with(prefix)) {
                 if (!route.checkMethod(req.method)) [[unlikely]] {
-                    co_return co_await make_error_response(http, 405);
+                    co_await make_error_response(http, 405);
+                    co_return;
                 }
-                auto suffix =
-                    std::string_view(req.uri.path).substr(prefix.size());
+                auto suffix = std::string_view(req.uri.path);
+                suffix.remove_prefix(prefix.size());
                 if (!route.checkSuffix(suffix)) [[unlikely]] {
-                    co_return co_await make_error_response(http, 405);
+                    co_await make_error_response(http, 405);
+                    co_return;
                 }
-                co_return co_await route.mHandler(http, req, suffix);
+                co_await route.mHandler(http, req, suffix);
             }
         }
-        co_return co_await make_error_response(http, 404);
+        co_await mDefaultRoute(http, req);
     }
 };
 
-/*[export]*/ struct HTTPServer : HTTPServerBase<HTTP11<SocketStream>> {
+/*[export]*/ struct HTTPServer : HTTPServerBase<HTTPProtocol<SocketStream>> {
     Task<> bind(SocketAddress addr) {
         mListener = co_await listener_bind(addr);
     }
 
-    Task<Session> accept() {
-        co_return Session(co_await SocketStream::accept(mListener));
+    explicit HTTPServer(SocketListener &listener) : mListener(listener) {
+    }
+
+    Task<Protocol> accept() {
+        co_return Protocol(co_await SocketStream::accept(mListener));
     }
 
 private:
-    SocketListener mListener;
+    SocketListener &mListener;
 };
 
 /*[export]*/ struct HTTPSServer
-    : HTTPServerBase<HTTP11<SSLServerSocketStream>> {
+    : HTTPServerBase<HTTPProtocol<SSLServerSocketStream>> {
     Task<> bind(SocketAddress addr) {
         mListener = co_await listener_bind(addr);
     }
 
-    Task<Session> accept() {
-        co_return Session(co_await SSLServerSocketStream::accept(
+    Task<Protocol> accept() {
+        co_return Protocol(co_await SSLServerSocketStream::accept(
             mListener, mCerts, mPKey, &mCache));
     }
 
-    void add_cert(std::string_view cert) {
+    explicit HTTPSServer(SocketListener &listener, std::string_view cert, std::string_view pkey, std::size_t cacheSize) : mListener(listener), mCache(cacheSize) {
         mCerts.add(cert);
-    }
-
-    void set_pkey(std::string_view pkey) {
         mPKey.set(pkey);
     }
 
 private:
-    SocketListener mListener;
+    SocketListener &mListener;
     SSLServerCertificate mCerts;
     SSLPrivateKey mPKey;
     SSLSessionCache mCache;

@@ -42,7 +42,7 @@ namespace co_async {
                 },
         };
         co_await http.write_header(res);
-        co_await http.write_body(res, body);
+        co_await http.write_body(body);
     }
 
     template <class HTTP>
@@ -89,7 +89,7 @@ namespace co_async {
                 },
         };
         co_await http.write_header(res);
-        co_await http.write_body_stream(res, co_await FileIStream::open(path));
+        co_await http.write_body_stream(co_await FileIStream::open(path));
     }
 
     template <class HTTP>
@@ -115,10 +115,9 @@ namespace co_async {
                     {"content-type", guessContentTypeByExtension(
                                          path.extension().string())},
                 },
-            .encoding = HTTPTransferEncoding::Identity,
         };
         co_await http.write_header(res);
-        co_await http.write_body_stream(res, co_await FileIStream::open(path));
+        co_await http.write_body_stream(co_await FileIStream::open(path));
     }
 
     template <class HTTP>
@@ -139,7 +138,7 @@ namespace co_async {
                 },
         };
         co_await http.write_header(res);
-        co_await http.write_body_stream(res, co_await FileIStream::open(path));
+        co_await http.write_body_stream(co_await FileIStream::open(path));
     }
 
     template <class HTTP>
@@ -234,7 +233,7 @@ namespace co_async {
             .headers = std::move(headers),
         };
         co_await http.write_header(res);
-        co_await http.write_body(res, content);
+        co_await http.write_body(content);
     }
 };
 

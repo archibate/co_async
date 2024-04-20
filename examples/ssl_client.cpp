@@ -9,7 +9,7 @@ using namespace std::literals;
 Task<> amain() {
     SSLClientTrustAnchor ta;
     ta.add(co_await file_read(make_path("scripts/certificates/cert-root-rsa.pem")));
-    HTTP11 http(co_await SSLClientSocketStream::connect("localhost", 4433, ta));
+    HTTPProtocol http(co_await SSLClientSocketStream::connect("localhost", 4433, ta, {}, {}, std::chrono::seconds(5)));
     HTTPRequest req = {
         .method = "GET",
         .uri = URI::parse("/"),
@@ -18,7 +18,7 @@ Task<> amain() {
     co_await http.write_nobody(req);
     HTTPResponse res;
     co_await http.read_header(res);
-    debug(), co_await http.read_body(res);
+    debug(), co_await http.read_body(res.encoding);
 }
 
 int main() {

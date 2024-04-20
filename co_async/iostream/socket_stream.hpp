@@ -2,6 +2,7 @@
 
 #include <co_async/std.hpp>/*{import std;}*/
 #include <co_async/system/socket.hpp>/*{import :system.socket;}*/
+#include <co_async/system/socket_proxy.hpp>/*{import :system.socket_proxy;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 #include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
 
@@ -45,8 +46,8 @@ private:
 /*[export]*/ struct SocketStream : IOStream<SocketBuf> {
     using IOStream<SocketBuf>::IOStream;
 
-    static Task<SocketStream> connect(const char *host, int port) {
-        auto conn = co_await socket_connect({host, port});
+    static Task<SocketStream> connect(const char *host, int port, std::string_view proxy, std::chrono::nanoseconds timeout) {
+        auto conn = co_await socket_proxy_connect(host, port, proxy, timeout);
         SocketStream sock(std::move(conn));
         co_return sock;
     }

@@ -1,28 +1,25 @@
 #include <co_async/utils/debug.hpp>
 #include <co_async/co_async.hpp>/*{import co_async;}*/
 #include <co_async/std.hpp>/*{import std;}*/
-#define CO_ASYNC_PERF 1
-#include <co_async/utils/perf.hpp>
 
 using namespace co_async;
 using namespace std::literals;
 
 Task<> amain() {
-    HTTPClientPool pool;
-    co_await pool.load_ca_certifi();
-    Perf _;
-    auto conn = co_await pool.connect("https://man7.org");
-    HTTPRequest req = {
-        .method = "GET",
-        .uri = URI::parse("/"),
-    };
-    Perf _2;
-    co_await conn->write_header(req);
-    co_await conn->write_nobody();
-    Perf _3;
-    co_await conn->read_header();
-    Perf _4;
-    debug(), co_await conn->read_body();
+    co_await HTTPConnectionHTTPS::load_ca_certificates();
+
+    auto conn = co_await http_connect("https://man7.org");
+    for (int i = 0; i < 4; i++) {
+        HTTPRequest req = {
+            .method = "GET",
+            .uri = URI::parse("/"),
+        };
+        co_await conn->write_header(req);
+        co_await conn->write_nobody();
+        HTTPResponse res;
+        co_await conn->read_header(res);
+        debug(), co_await conn->read_body(), i;
+    }
 }
 
 int main() {

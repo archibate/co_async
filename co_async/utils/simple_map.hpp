@@ -76,7 +76,12 @@ struct SimpleMap {
             key < k;
         })
     bool erase(Key &&key) {
-        return mData.erase(std::forward<Key>(key)) != 0;
+        auto it = mData.find(std::forward<Key>(key));
+        if (it == mData.end()) {
+            return false;
+        }
+        mData.erase(it);
+        return true;
     }
 
     auto begin() const noexcept {

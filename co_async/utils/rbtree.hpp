@@ -4,7 +4,7 @@
 
 namespace co_async {
 
-template <class Value, class Compare = std::less<Value>>
+template <class Value, class Compare = std::less<>>
 struct RbTree {
     enum RbColor {
         RED,
@@ -294,14 +294,14 @@ private:
     }
 
     template <class Visitor>
-    void doTraversalInorder(RbNode *node, Visitor &&visitor) {
+    void doTraverseInorder(RbNode *node, Visitor &&visitor) {
         if (node == nullptr) {
             return;
         }
 
-        traversalInorder(node->left, visitor);
+        doTraverseInorder(node->left, visitor);
         visitor(node);
-        doTraversalInorder(node->right, visitor);
+        doTraverseInorder(node->right, visitor);
     }
 
 public:
@@ -335,9 +335,13 @@ public:
         return static_cast<Value &>(*getBack());
     }
 
+    template <class Visitor, class V>
+    std::pair<RbNode *, RbNode *> traverseEqualRange(Visitor &&visitor, V &&value) {
+    }
+
     template <class Visitor>
-    void traversalInorder(Visitor &&visitor) {
-        doTraversalInorder(root, std::forward<Visitor>(visitor));
+    void traverseInorder(Visitor &&visitor) {
+        doTraverseInorder(root, std::forward<Visitor>(visitor));
     }
 };
 

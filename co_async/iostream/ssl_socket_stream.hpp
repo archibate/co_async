@@ -10,6 +10,7 @@
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 #include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
 #include <co_async/system/socket.hpp>        /*{import :system.socket;}*/
+#include <co_async/system/socket_proxy.hpp>  /*{import :system.socket_proxy;}*/
 #include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
 #include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
 #include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
@@ -18,241 +19,242 @@
 
 namespace co_async {
 
-/* see brssl.h */
 inline std::string bearSSLErrorName(int err) {
-    static std::pair<int, const char *> errors[] = {{
-                      BR_ERR_BAD_PARAM,
-                      "BR_ERR_BAD_PARAM",
-                  },
-                  {
-                      BR_ERR_BAD_STATE,
-                      "BR_ERR_BAD_STATE",
-                  },
-                  {
-                      BR_ERR_UNSUPPORTED_VERSION,
-                      "BR_ERR_UNSUPPORTED_VERSION",
-                  },
-                  {
-                      BR_ERR_BAD_VERSION,
-                      "BR_ERR_BAD_VERSION",
-                  },
-                  {
-                      BR_ERR_BAD_LENGTH,
-                      "BR_ERR_BAD_LENGTH",
-                  },
-                  {
-                      BR_ERR_TOO_LARGE,
-                      "BR_ERR_TOO_LARGE",
-                  },
-                  {
-                      BR_ERR_BAD_MAC,
-                      "BR_ERR_BAD_MAC",
-                  },
-                  {
-                      BR_ERR_NO_RANDOM,
-                      "BR_ERR_NO_RANDOM",
-                  },
-                  {
-                      BR_ERR_UNKNOWN_TYPE,
-                      "BR_ERR_UNKNOWN_TYPE",
-                  },
-                  {
-                      BR_ERR_UNEXPECTED,
-                      "BR_ERR_UNEXPECTED",
-                  },
-                  {
-                      BR_ERR_BAD_CCS,
-                      "BR_ERR_BAD_CCS",
-                  },
-                  {
-                      BR_ERR_BAD_ALERT,
-                      "BR_ERR_BAD_ALERT",
-                  },
-                  {
-                      BR_ERR_BAD_HANDSHAKE,
-                      "BR_ERR_BAD_HANDSHAKE",
-                  },
-                  {
-                      BR_ERR_OVERSIZED_ID,
-                      "BR_ERR_OVERSIZED_ID",
-                  },
-                  {
-                      BR_ERR_BAD_CIPHER_SUITE,
-                      "BR_ERR_BAD_CIPHER_SUITE",
-                  },
-                  {
-                      BR_ERR_BAD_COMPRESSION,
-                      "BR_ERR_BAD_COMPRESSION",
-                  },
-                  {
-                      BR_ERR_BAD_FRAGLEN,
-                      "BR_ERR_BAD_FRAGLEN",
-                  },
-                  {
-                      BR_ERR_BAD_SECRENEG,
-                      "BR_ERR_BAD_SECRENEG",
-                  },
-                  {
-                      BR_ERR_EXTRA_EXTENSION,
-                      "BR_ERR_EXTRA_EXTENSION",
-                  },
-                  {
-                      BR_ERR_BAD_SNI,
-                      "BR_ERR_BAD_SNI",
-                  },
-                  {
-                      BR_ERR_BAD_HELLO_DONE,
-                      "BR_ERR_BAD_HELLO_DONE",
-                  },
-                  {
-                      BR_ERR_LIMIT_EXCEEDED,
-                      "BR_ERR_LIMIT_EXCEEDED",
-                  },
-                  {
-                      BR_ERR_BAD_FINISHED,
-                      "BR_ERR_BAD_FINISHED",
-                  },
-                  {
-                      BR_ERR_RESUME_MISMATCH,
-                      "BR_ERR_RESUME_MISMATCH",
-                  },
-                  {
-                      BR_ERR_INVALID_ALGORITHM,
-                      "BR_ERR_INVALID_ALGORITHM",
-                  },
-                  {
-                      BR_ERR_BAD_SIGNATURE,
-                      "BR_ERR_BAD_SIGNATURE",
-                  },
-                  {
-                      BR_ERR_WRONG_KEY_USAGE,
-                      "BR_ERR_WRONG_KEY_USAGE",
-                  },
-                  {
-                      BR_ERR_NO_CLIENT_AUTH,
-                      "BR_ERR_NO_CLIENT_AUTH",
-                  },
-                  {
-                      BR_ERR_IO,
-                      "BR_ERR_IO",
-                  },
-                  {
-                      BR_ERR_X509_INVALID_VALUE,
-                      "BR_ERR_X509_INVALID_VALUE",
-                  },
-                  {
-                      BR_ERR_X509_TRUNCATED,
-                      "BR_ERR_X509_TRUNCATED",
-                  },
-                  {
-                      BR_ERR_X509_EMPTY_CHAIN,
-                      "BR_ERR_X509_EMPTY_CHAIN",
-                  },
-                  {
-                      BR_ERR_X509_INNER_TRUNC,
-                      "BR_ERR_X509_INNER_TRUNC",
-                  },
-                  {
-                      BR_ERR_X509_BAD_TAG_CLASS,
-                      "BR_ERR_X509_BAD_TAG_CLASS",
-                  },
-                  {
-                      BR_ERR_X509_BAD_TAG_VALUE,
-                      "BR_ERR_X509_BAD_TAG_VALUE",
-                  },
-                  {
-                      BR_ERR_X509_INDEFINITE_LENGTH,
-                      "BR_ERR_X509_INDEFINITE_LENGTH",
-                  },
-                  {
-                      BR_ERR_X509_EXTRA_ELEMENT,
-                      "BR_ERR_X509_EXTRA_ELEMENT",
-                  },
-                  {
-                      BR_ERR_X509_UNEXPECTED,
-                      "BR_ERR_X509_UNEXPECTED",
-                  },
-                  {
-                      BR_ERR_X509_NOT_CONSTRUCTED,
-                      "BR_ERR_X509_NOT_CONSTRUCTED",
-                  },
-                  {
-                      BR_ERR_X509_NOT_PRIMITIVE,
-                      "BR_ERR_X509_NOT_PRIMITIVE",
-                  },
-                  {
-                      BR_ERR_X509_PARTIAL_BYTE,
-                      "BR_ERR_X509_PARTIAL_BYTE",
-                  },
-                  {
-                      BR_ERR_X509_BAD_BOOLEAN,
-                      "BR_ERR_X509_BAD_BOOLEAN",
-                  },
-                  {
-                      BR_ERR_X509_OVERFLOW,
-                      "BR_ERR_X509_OVERFLOW",
-                  },
-                  {
-                      BR_ERR_X509_BAD_DN,
-                      "BR_ERR_X509_BAD_DN",
-                  },
-                  {
-                      BR_ERR_X509_BAD_TIME,
-                      "BR_ERR_X509_BAD_TIME",
-                  },
-                  {
-                      BR_ERR_X509_UNSUPPORTED,
-                      "BR_ERR_X509_UNSUPPORTED",
-                  },
-                  {
-                      BR_ERR_X509_LIMIT_EXCEEDED,
-                      "BR_ERR_X509_LIMIT_EXCEEDED",
-                  },
-                  {
-                      BR_ERR_X509_WRONG_KEY_TYPE,
-                      "BR_ERR_X509_WRONG_KEY_TYPE",
-                  },
-                  {
-                      BR_ERR_X509_BAD_SIGNATURE,
-                      "BR_ERR_X509_BAD_SIGNATURE",
-                  },
-                  {
-                      BR_ERR_X509_TIME_UNKNOWN,
-                      "BR_ERR_X509_TIME_UNKNOWN",
-                  },
-                  {
-                      BR_ERR_X509_EXPIRED,
-                      "BR_ERR_X509_EXPIRED",
-                  },
-                  {
-                      BR_ERR_X509_DN_MISMATCH,
-                      "BR_ERR_X509_DN_MISMATCH",
-                  },
-                  {
-                      BR_ERR_X509_BAD_SERVER_NAME,
-                      "BR_ERR_X509_BAD_SERVER_NAME",
-                  },
-                  {
-                      BR_ERR_X509_CRITICAL_EXTENSION,
-                      "BR_ERR_X509_CRITICAL_EXTENSION",
-                  },
-                  {
-                      BR_ERR_X509_NOT_CA,
-                      "BR_ERR_X509_NOT_CA",
-                  },
-                  {
-                      BR_ERR_X509_FORBIDDEN_KEY_USAGE,
-                      "BR_ERR_X509_FORBIDDEN_KEY_USAGE",
-                  },
-                  {
-                      BR_ERR_X509_WEAK_PUBLIC_KEY,
-                      "BR_ERR_X509_WEAK_PUBLIC_KEY",
-                  },
-                  {
-                      BR_ERR_X509_NOT_TRUSTED,
-                      "BR_ERR_X509_NOT_TRUSTED",
-                  },
-                  {0, 0}};
+    static std::pair<int, char const *> errors[] = {
+        {
+            BR_ERR_BAD_PARAM,
+            "BR_ERR_BAD_PARAM",
+        },
+        {
+            BR_ERR_BAD_STATE,
+            "BR_ERR_BAD_STATE",
+        },
+        {
+            BR_ERR_UNSUPPORTED_VERSION,
+            "BR_ERR_UNSUPPORTED_VERSION",
+        },
+        {
+            BR_ERR_BAD_VERSION,
+            "BR_ERR_BAD_VERSION",
+        },
+        {
+            BR_ERR_BAD_LENGTH,
+            "BR_ERR_BAD_LENGTH",
+        },
+        {
+            BR_ERR_TOO_LARGE,
+            "BR_ERR_TOO_LARGE",
+        },
+        {
+            BR_ERR_BAD_MAC,
+            "BR_ERR_BAD_MAC",
+        },
+        {
+            BR_ERR_NO_RANDOM,
+            "BR_ERR_NO_RANDOM",
+        },
+        {
+            BR_ERR_UNKNOWN_TYPE,
+            "BR_ERR_UNKNOWN_TYPE",
+        },
+        {
+            BR_ERR_UNEXPECTED,
+            "BR_ERR_UNEXPECTED",
+        },
+        {
+            BR_ERR_BAD_CCS,
+            "BR_ERR_BAD_CCS",
+        },
+        {
+            BR_ERR_BAD_ALERT,
+            "BR_ERR_BAD_ALERT",
+        },
+        {
+            BR_ERR_BAD_HANDSHAKE,
+            "BR_ERR_BAD_HANDSHAKE",
+        },
+        {
+            BR_ERR_OVERSIZED_ID,
+            "BR_ERR_OVERSIZED_ID",
+        },
+        {
+            BR_ERR_BAD_CIPHER_SUITE,
+            "BR_ERR_BAD_CIPHER_SUITE",
+        },
+        {
+            BR_ERR_BAD_COMPRESSION,
+            "BR_ERR_BAD_COMPRESSION",
+        },
+        {
+            BR_ERR_BAD_FRAGLEN,
+            "BR_ERR_BAD_FRAGLEN",
+        },
+        {
+            BR_ERR_BAD_SECRENEG,
+            "BR_ERR_BAD_SECRENEG",
+        },
+        {
+            BR_ERR_EXTRA_EXTENSION,
+            "BR_ERR_EXTRA_EXTENSION",
+        },
+        {
+            BR_ERR_BAD_SNI,
+            "BR_ERR_BAD_SNI",
+        },
+        {
+            BR_ERR_BAD_HELLO_DONE,
+            "BR_ERR_BAD_HELLO_DONE",
+        },
+        {
+            BR_ERR_LIMIT_EXCEEDED,
+            "BR_ERR_LIMIT_EXCEEDED",
+        },
+        {
+            BR_ERR_BAD_FINISHED,
+            "BR_ERR_BAD_FINISHED",
+        },
+        {
+            BR_ERR_RESUME_MISMATCH,
+            "BR_ERR_RESUME_MISMATCH",
+        },
+        {
+            BR_ERR_INVALID_ALGORITHM,
+            "BR_ERR_INVALID_ALGORITHM",
+        },
+        {
+            BR_ERR_BAD_SIGNATURE,
+            "BR_ERR_BAD_SIGNATURE",
+        },
+        {
+            BR_ERR_WRONG_KEY_USAGE,
+            "BR_ERR_WRONG_KEY_USAGE",
+        },
+        {
+            BR_ERR_NO_CLIENT_AUTH,
+            "BR_ERR_NO_CLIENT_AUTH",
+        },
+        {
+            BR_ERR_IO,
+            "BR_ERR_IO",
+        },
+        {
+            BR_ERR_X509_INVALID_VALUE,
+            "BR_ERR_X509_INVALID_VALUE",
+        },
+        {
+            BR_ERR_X509_TRUNCATED,
+            "BR_ERR_X509_TRUNCATED",
+        },
+        {
+            BR_ERR_X509_EMPTY_CHAIN,
+            "BR_ERR_X509_EMPTY_CHAIN",
+        },
+        {
+            BR_ERR_X509_INNER_TRUNC,
+            "BR_ERR_X509_INNER_TRUNC",
+        },
+        {
+            BR_ERR_X509_BAD_TAG_CLASS,
+            "BR_ERR_X509_BAD_TAG_CLASS",
+        },
+        {
+            BR_ERR_X509_BAD_TAG_VALUE,
+            "BR_ERR_X509_BAD_TAG_VALUE",
+        },
+        {
+            BR_ERR_X509_INDEFINITE_LENGTH,
+            "BR_ERR_X509_INDEFINITE_LENGTH",
+        },
+        {
+            BR_ERR_X509_EXTRA_ELEMENT,
+            "BR_ERR_X509_EXTRA_ELEMENT",
+        },
+        {
+            BR_ERR_X509_UNEXPECTED,
+            "BR_ERR_X509_UNEXPECTED",
+        },
+        {
+            BR_ERR_X509_NOT_CONSTRUCTED,
+            "BR_ERR_X509_NOT_CONSTRUCTED",
+        },
+        {
+            BR_ERR_X509_NOT_PRIMITIVE,
+            "BR_ERR_X509_NOT_PRIMITIVE",
+        },
+        {
+            BR_ERR_X509_PARTIAL_BYTE,
+            "BR_ERR_X509_PARTIAL_BYTE",
+        },
+        {
+            BR_ERR_X509_BAD_BOOLEAN,
+            "BR_ERR_X509_BAD_BOOLEAN",
+        },
+        {
+            BR_ERR_X509_OVERFLOW,
+            "BR_ERR_X509_OVERFLOW",
+        },
+        {
+            BR_ERR_X509_BAD_DN,
+            "BR_ERR_X509_BAD_DN",
+        },
+        {
+            BR_ERR_X509_BAD_TIME,
+            "BR_ERR_X509_BAD_TIME",
+        },
+        {
+            BR_ERR_X509_UNSUPPORTED,
+            "BR_ERR_X509_UNSUPPORTED",
+        },
+        {
+            BR_ERR_X509_LIMIT_EXCEEDED,
+            "BR_ERR_X509_LIMIT_EXCEEDED",
+        },
+        {
+            BR_ERR_X509_WRONG_KEY_TYPE,
+            "BR_ERR_X509_WRONG_KEY_TYPE",
+        },
+        {
+            BR_ERR_X509_BAD_SIGNATURE,
+            "BR_ERR_X509_BAD_SIGNATURE",
+        },
+        {
+            BR_ERR_X509_TIME_UNKNOWN,
+            "BR_ERR_X509_TIME_UNKNOWN",
+        },
+        {
+            BR_ERR_X509_EXPIRED,
+            "BR_ERR_X509_EXPIRED",
+        },
+        {
+            BR_ERR_X509_DN_MISMATCH,
+            "BR_ERR_X509_DN_MISMATCH",
+        },
+        {
+            BR_ERR_X509_BAD_SERVER_NAME,
+            "BR_ERR_X509_BAD_SERVER_NAME",
+        },
+        {
+            BR_ERR_X509_CRITICAL_EXTENSION,
+            "BR_ERR_X509_CRITICAL_EXTENSION",
+        },
+        {
+            BR_ERR_X509_NOT_CA,
+            "BR_ERR_X509_NOT_CA",
+        },
+        {
+            BR_ERR_X509_FORBIDDEN_KEY_USAGE,
+            "BR_ERR_X509_FORBIDDEN_KEY_USAGE",
+        },
+        {
+            BR_ERR_X509_WEAK_PUBLIC_KEY,
+            "BR_ERR_X509_WEAK_PUBLIC_KEY",
+        },
+        {
+            BR_ERR_X509_NOT_TRUSTED,
+            "BR_ERR_X509_NOT_TRUSTED",
+        },
+        {0, 0},
+    };
     std::size_t u;
     for (u = 0; errors[u].second; u++) {
         if (errors[u].first == err) {
@@ -682,27 +684,40 @@ private:
 public:
     explicit SSLClientSocketBuf(SocketHandle file,
                                 SSLClientTrustAnchor const &ta,
-                                char const *host)
+                                char const *host,
+                                std::span<char const *const> protocols)
         : SSLSocketBufBase(std::move(file)) {
         br_ssl_client_init_full(ctx.get(), x509Ctx.get(),
                                 std::data(ta.trustAnchors),
                                 std::size(ta.trustAnchors));
         setEngine(&ctx->eng);
+        br_ssl_engine_set_protocol_names(
+            &ctx->eng, const_cast<char const **>(protocols.data()),
+            protocols.size());
         br_ssl_client_reset(ctx.get(), host, 0);
     }
 
     void ssl_reset(char const *host, bool resume) {
         br_ssl_client_reset(ctx.get(), host, resume);
     }
+
+    std::string ssl_get_selected_protocol() {
+        if (auto p = br_ssl_engine_get_selected_protocol(&ctx->eng)) {
+            return p;
+        }
+        return {};
+    }
 };
 
 /*[export]*/ struct SSLClientSocketStream : IOStream<SSLClientSocketBuf> {
     using IOStream<SSLClientSocketBuf>::IOStream;
 
-    static Task<SSLClientSocketStream> connect(char const *host, int port,
-                                               SSLClientTrustAnchor const &ta) {
-        auto conn = co_await socket_connect({host, port});
-        SSLClientSocketStream sock(std::move(conn), ta, host);
+    static Task<SSLClientSocketStream>
+    connect(char const *host, int port, SSLClientTrustAnchor const &ta,
+            std::span<char const *const> protocols, std::string_view proxy,
+            std::chrono::nanoseconds timeout) {
+        auto conn = co_await socket_proxy_connect(host, port, proxy, timeout);
+        SSLClientSocketStream sock(std::move(conn), ta, host, protocols);
         co_return sock;
     }
 

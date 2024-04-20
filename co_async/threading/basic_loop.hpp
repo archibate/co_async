@@ -269,8 +269,9 @@ inline T loop_enqueue_synchronized(BasicLoop &loop, Task<T, P> task) {
 struct FutureGroup {
     std::vector<Future<>> mFutures;
 
-    void add(Future<> f) {
+    FutureGroup &add(Future<> f) {
         mFutures.push_back(std::move(f));
+        return *this;
     }
 
     Task<> wait() {

@@ -8,7 +8,7 @@ Task<> amain() {
     co_await HTTPConnectionHTTPS::load_ca_certificates();
 
     auto listener = co_await listener_bind({"127.0.0.1", 8080});
-    for (std::size_t i = 0; i < 16; ++i) {
+    for (std::size_t i = 0; i < globalSystemLoop.num_workers(); ++i) {
         co_spawn(co_bind([&]() -> Task<> {
             auto conn = co_await http_connect("https://api.openai.com");
             HTTPServer server(listener);
@@ -33,13 +33,17 @@ Task<> amain() {
                     auto pipe = co_await make_pipe();
                     FileStream reader(pipe.reader());
                     FileStream writer(pipe.writer());
-                    co_await conn->read_body_stream(writer);
-                    HTTPResponse res = {
-                        .status = response.status,
-                        .headers = response.headers,
-                    };
-                    co_await http.write_header(res);
-                    co_await http.write_body_stream(reader);
+                    co_await FutureGroup()
+                        .add(co_future(conn->read_body_stream(writer)))
+                        .add(co_future(co_bind([&]() -> Task<> {
+                            HTTPResponse res = {
+                                .status = response.status,
+                                .headers = response.headers,
+                            };
+                            co_await http.write_header(res);
+                            co_await http.write_body_stream(reader);
+                        })))
+                        .wait();
                 }
                 co_return;
             });
@@ -53,6 +57,7 @@ Task<> amain() {
 }
 
 int main() {
+    globalSystemLoop.start(1);
     co_synchronize(amain());
     return 0;
 }

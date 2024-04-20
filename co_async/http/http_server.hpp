@@ -175,10 +175,6 @@ private:
 };
 
 /*[export]*/ struct HTTPServer : HTTPServerBase<HTTPProtocol<SocketStream>> {
-    Task<> bind(SocketAddress addr) {
-        mListener = co_await listener_bind(addr);
-    }
-
     explicit HTTPServer(SocketListener &listener) : mListener(listener) {
     }
 
@@ -192,10 +188,6 @@ private:
 
 /*[export]*/ struct HTTPSServer
     : HTTPServerBase<HTTPProtocol<SSLServerSocketStream>> {
-    Task<> bind(SocketAddress addr) {
-        mListener = co_await listener_bind(addr);
-    }
-
     Task<Protocol> accept() {
         co_return Protocol(co_await SSLServerSocketStream::accept(
             mListener, mCerts, mPKey, &mCache));

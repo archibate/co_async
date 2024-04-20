@@ -95,6 +95,7 @@ namespace co_async {
     template <class HTTP>
     static Task<>
     make_response_from_path(HTTP &http, HTTPRequest const &req, std::filesystem::path path) {
+        co_await http.read_body();
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat) [[unlikely]] {
             co_return co_await make_error_response(http, 404);
@@ -145,7 +146,7 @@ namespace co_async {
     static Task<>
     make_response_from_cgi_script(HTTP &http, HTTPRequest const &req,
                                   std::filesystem::path path) {
-        auto post = co_await http.read_body(req);
+        auto post = co_await http.read_body();
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat || stat->is_directory()) [[unlikely]] {
             co_return co_await make_error_response(http, 404);

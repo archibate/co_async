@@ -90,8 +90,9 @@ public:
         using namespace std::string_view_literals;
         switch (encoding) {
         case HTTPTransferEncoding::Chunked: {
-            co_await sock.puts("transfer-encoding: chunked\r\n\r\n"sv);
-            while (co_await body.fillbuf()) {
+            co_await sock.puts("transfer-encoding: chunked\r\n"sv);
+            auto bufSpan = body.rdbuf();
+            while (!bufSpan.size() && !co_await body.fillbuf()) {
                 auto bufSpan = body.rdbuf();
                 auto n = bufSpan.size();
                 char buf[sizeof(n) * 2 + 4] = {}, *ep = buf;
@@ -100,6 +101,7 @@ public:
                 do {
                     *ep++ = "01234567890ABCDEF"[n & 15];
                 } while (n >>= 4);
+                std::reverse(buf + 2, ep);
                 *ep++ = '\r';
                 *ep++ = '\n';
                 co_await sock.puts(
@@ -107,6 +109,7 @@ public:
                 co_await sock.putspan(bufSpan);
             }
             co_await sock.puts("\r\n0\r\n"sv);
+            bufSpan = body.rdbuf();
         } break;
         case HTTPTransferEncoding::Gzip:
             co_await sock.puts("transfer-encoding: gzip\r\n\r\n"sv);
@@ -147,7 +150,7 @@ public:
 #if CO_ASYNC_DEBUG
             checkPhase(1, 0);
 #endif
-            co_await sock.puts("transfer-encoding: chunked\r\n\r\n"sv);
+            co_await sock.puts("transfer-encoding: chunked\r\n"sv);
             auto n = body.size();
             char buf[sizeof(n) * 2 + 4] = {}, *ep = buf;
             *ep++ = '\r';
@@ -155,6 +158,7 @@ public:
             do {
                 *ep++ = "01234567890ABCDEF"[n & 15];
             } while (n >>= 4);
+            std::reverse(buf + 2, ep);
             *ep++ = '\r';
             *ep++ = '\n';
             co_await sock.puts(

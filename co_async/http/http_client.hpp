@@ -50,7 +50,6 @@ public:
     }
 
     Task<> write_header(HTTPRequest req) {
-        // TODO: auto-reconnect?
         using namespace std::string_literals;
         req.headers.insert("user-agent"s, "co_async/0.0.1"s);
         req.headers.insert("host"s, mHostName);

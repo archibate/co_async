@@ -7,14 +7,14 @@
 
 namespace co_async {
 
-struct StringReadBuf {
-    StringReadBuf() noexcept : mPosition(0) {}
+struct StringReadStreamRaw : virtual IStreamRaw {
+    StringReadStreamRaw() noexcept : mPosition(0) {}
 
-    StringReadBuf(std::string_view strView)
+    StringReadStreamRaw(std::string_view strView)
         : mStringView(strView),
           mPosition(0) {}
 
-    Task<std::size_t> raw_read(std::span<char> buffer) {
+    Task<std::size_t> raw_read(std::span<char> buffer) override {
         std::size_t size =
             std::min(buffer.size(), mStringView.size() - mPosition);
         std::copy_n(mStringView.begin() + mPosition, size, buffer.begin());
@@ -35,14 +35,14 @@ private:
     std::size_t mPosition;
 };
 
-struct StringWriteBuf {
-    StringWriteBuf() noexcept {}
+struct StringWriteStreamRaw : virtual OStreamRaw {
+    StringWriteStreamRaw() noexcept {}
 
-    StringWriteBuf(std::string &&str) noexcept : mString(std::move(str)) {}
+    StringWriteStreamRaw(std::string &&str) noexcept : mString(std::move(str)) {}
 
-    StringWriteBuf(std::string_view str) : mString(str) {}
+    StringWriteStreamRaw(std::string_view str) : mString(str) {}
 
-    Task<std::size_t> raw_write(std::span<char const> buffer) {
+    Task<std::size_t> raw_write(std::span<char const> buffer) override {
         mString.append(buffer.data(), buffer.size());
         co_return buffer.size();
     }
@@ -59,7 +59,7 @@ private:
     std::string mString;
 };
 
-/*[export]*/ using StringIStream = IStream<StringReadBuf>;
-/*[export]*/ using StringOStream = OStream<StringWriteBuf>;
+/*[export]*/ using StringIStream = IStreamImpl<StringReadStreamRaw>;
+/*[export]*/ using StringOStream = OStreamImpl<StringWriteStreamRaw>;
 
 } // namespace co_async

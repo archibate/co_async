@@ -7,7 +7,7 @@ using namespace std::literals;
 Task<> amain() {
     auto listener = co_await listener_bind({"127.0.0.1", 8080});
     HTTPServer server(listener);
-    server.route("GET", "/", HTTPRouteMode::SuffixPath, [](HTTPServer::Protocol &http, HTTPRequest const &request, std::string_view suffix) -> Task<> {
+    server.route("GET", "/", HTTPRouteMode::SuffixPath, [](HTTPServer::HTTPProtocol &http, HTTPRequest const &request, std::string_view suffix) -> Task<> {
         co_await HTTPServerUtils::make_response_from_path(http, request, make_path(".", suffix));
     });
 

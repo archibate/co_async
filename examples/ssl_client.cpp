@@ -14,11 +14,11 @@ Task<> amain() {
         .method = "GET",
         .uri = URI::parse("/"),
     };
-    co_await http.write_header(req);
+    co_await http.writeRequest(req);
     co_await http.write_nobody(req);
     HTTPResponse res;
-    co_await http.read_header(res);
-    debug(), co_await http.read_body(res.encoding);
+    co_await http.readResponse(res);
+    debug(), co_await http.readBody(res.encoding);
 }
 
 int main() {

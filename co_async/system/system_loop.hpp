@@ -67,7 +67,7 @@ struct SystemLoop {
         }
     }
 
-    void threadEntry(int i, int numWorkers, int numBatchWait,
+    void threadEntry(std::size_t i, std::size_t numWorkers, std::size_t numBatchWait,
                      std::chrono::system_clock::duration batchTimeout,
                      std::chrono::system_clock::duration batchTimeoutDelta) {
         auto &thisBasicLoop = mBasicLoops[i];
@@ -108,7 +108,7 @@ struct SystemLoop {
     void stop() {
         if (mThreads) {
             mStop.request_stop();
-            for (int i = 0; i < mNumWorkers; ++i) {
+            for (std::size_t i = 0; i < mNumWorkers; ++i) {
                 mThreads[i].join();
             }
             mThreads.reset();

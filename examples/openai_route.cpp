@@ -1,4 +1,3 @@
-#include "co_async/utils/debug.hpp"
 #include <co_async/co_async.hpp>/*{import co_async;}*/
 #include <co_async/std.hpp>     /*{import std;}*/
 
@@ -6,65 +5,45 @@ using namespace co_async;
 using namespace std::literals;
 
 Task<> amain() {
-    co_await HTTPConnectionHTTPS::load_ca_certificates();
+    co_await https_load_ca_certificates();
     auto host = "api.openai.com"s;
 
     auto listener = co_await listener_bind({"127.0.0.1", 8080});
     for (std::size_t i = 0; i < globalSystemLoop.num_workers(); ++i) {
         co_spawn(co_bind([&]() -> Task<> {
             HTTPServer server(listener);
-            server.route([&](HTTPServer::Protocol &http,
-                             HTTPRequest const &request) -> Task<> {
-                auto conn = co_await http_connect("https://" + host);
-                HTTPRequest req = {
-                    .method = request.method,
-                    .uri = request.uri,
-                    .headers = request.headers,
+            server.route("GET", "/favicon.ico",
+                         [&](HTTPServer::IO const &io) -> Task<> {
+                             co_await HTTPServer::make_error_response(io, 404);
+                         });
+            server.route([&](HTTPServer::IO const &io) -> Task<> {
+                auto connection = co_await http_connect("https://" + host);
+                HTTPRequest request = {
+                    .method = io.request.method,
+                    .uri = io.request.uri,
+                    .headers = io.request.headers,
                 };
-                req.headers.insert_or_assign("host", host);
-                co_await conn->write_header(req);
-                if (1) {
-                         auto body = co_await http.read_body();
-                         debug(), body;
-                    co_await conn->write_body(body);
-                } else {
-                    auto pipe = co_await make_pipe();
-                    FileIStream reader(pipe.reader());
-                    FileOStream writer(pipe.writer());
-                    co_await when_all(and_then(http.read_body_stream(writer),
-                                               co_bind([&]() -> Task<> {
-                                                   co_await fs_close(
-                                                       writer.release());
-                                               })),
-                                      conn->write_body_stream(reader));
-                }
+                request.headers.insert_or_assign("host", host);
                 HTTPResponse response;
-                co_await conn->read_header(response);
-                HTTPResponse res = {
-                    .status = response.status,
-                    .headers = response.headers,
-                };
-                co_await http.write_header(res);
-                if (1) {
-                         auto body = co_await conn->read_body();
-                         debug(), body;
-                         http.encoding = HTTPTransferEncoding::Identity;
-                    co_await http.write_body(body);
-                } else {
-                    auto pipe = co_await make_pipe();
-                    FileIStream reader(pipe.reader());
-                    FileOStream writer(pipe.writer());
-                    co_await when_all(and_then(conn->read_body_stream(writer),
-                                               co_bind([&]() -> Task<> {
-                                                   co_await fs_close(
-                                                       writer.release());
-                                               })),
-                                      http.write_body_stream(reader));
-                }
-                co_return;
+                auto [r1, w1] = co_await pipe_stream();
+                auto [r2, w2] = co_await pipe_stream();
+                ConditionVariable cv;
+                co_await when_all(
+                    co_bind([&]() -> Task<> { co_await w1.close(); }),
+                    co_bind([&]() -> Task<> {
+                        co_await cv.wait();
+                        co_await io.response(response, r2);
+                        co_await r2.close();
+                    }),
+                    co_bind([&]() -> Task<> {
+                        co_await connection.request(request, r1, response, w2, cv);
+                        co_await r1.close();
+                        co_await w2.close();
+                    }));
             });
             while (1) {
-                co_await server.process_connection(co_await server.accept());
+                co_await server.process_connection(
+                    co_await server.accept_http());
             }
         }));
     }

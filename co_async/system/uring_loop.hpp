@@ -104,9 +104,9 @@ struct UringLoop {
         io_uring_register_files(&mRing, mFixedFiles.data(), mFixedFiles.size());
     }
 
-    std::span<char> lookupFixedBuffer(int buf_index) {
+    std::span<char> lookupFixedBuffer(std::size_t buf_index) {
 #if CO_ASYNC_DEBUG
-        if (buf_index < 0 || buf_index >= mFixedFiles.size()) [[unlikely]] {
+        if (buf_index >= mFixedFiles.size()) [[unlikely]] {
             throw std::out_of_range("UringLoop::lookupFixedFile");
         }
 #endif
@@ -114,9 +114,9 @@ struct UringLoop {
         return {buffer.mBuffer.get(), buffer.mBufferSize};
     }
 
-    int lookupFixedFile(int file_index) {
+    int lookupFixedFile(std::size_t file_index) {
 #if CO_ASYNC_DEBUG
-        if (file_index < 0 || file_index >= mFixedFiles.size()) [[unlikely]] {
+        if (file_index >= mFixedFiles.size()) [[unlikely]] {
             throw std::out_of_range("UringLoop::lookupFixedFile");
         }
 #endif

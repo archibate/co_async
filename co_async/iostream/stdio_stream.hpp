@@ -24,16 +24,16 @@ inline void disableCanon(FileHandle &file) {
     }
 }
 
-struct StdioBuf {
-    explicit StdioBuf(FileHandle &fileIn, FileHandle &fileOut)
+struct StdioStreamRaw : virtual IOStreamRaw {
+    explicit StdioStreamRaw(FileHandle &fileIn, FileHandle &fileOut)
         : mFileIn(fileIn),
           mFileOut(fileOut) {}
 
-    Task<std::size_t> raw_read(std::span<char> buffer) {
+    Task<std::size_t> raw_read(std::span<char> buffer) override {
         return fs_read(mFileIn, buffer);
     }
 
-    Task<std::size_t> raw_write(std::span<char const> buffer) {
+    Task<std::size_t> raw_write(std::span<char const> buffer) override {
         return fs_write(mFileOut, buffer);
     }
 
@@ -50,7 +50,7 @@ private:
     FileHandle &mFileOut;
 };
 
-/*[export]*/ using StdioStream = IOStream<StdioBuf>;
+/*[export]*/ using StdioStream = IOStreamImpl<StdioStreamRaw>;
 
 template <int fileNo>
 inline FileHandle &stdHandle() {

@@ -12,12 +12,17 @@
 #include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
 #include <co_async/system/fs.hpp>/*{import :system.fs;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/iostream/file_stream.hpp>/*{import :iostream.file_stream;}*/
 
 namespace co_async {
 
 /*[export]*/ struct PipeHandlePair {
     FileHandle mReader;
     FileHandle mWriter;
+
+    std::tuple<FileIStream, FileOStream> stream() {
+        return {FileIStream(reader()), FileOStream(writer())};
+    }
 
     FileHandle reader() {
 #if CO_ASYNC_DEBUG
@@ -40,14 +45,18 @@ namespace co_async {
     }
 };
 
-/*[export]*/ inline Task<PipeHandlePair> make_pipe() {
+/*[export]*/ inline Task<PipeHandlePair> fs_pipe() {
     int p[2];
     checkError(pipe2(p, 0));
     co_return {FileHandle(p[0]), FileHandle(p[1])};
 }
 
+/*[export]*/ inline Task<std::tuple<FileIStream, FileOStream>> pipe_stream() {
+    co_return (co_await fs_pipe()).stream();
+}
+
 /*[export]*/ inline Task<> send_file(FileHandle &sock, FileHandle &&file) {
-    auto [readPipe, writePipe] = co_await make_pipe();
+    auto [readPipe, writePipe] = co_await fs_pipe();
     while (auto n = co_await fs_splice(file, writePipe, 65536)) {
         std::size_t m;
         while ((m = co_await fs_splice(readPipe, sock, n)) < n) [[unlikely]] {
@@ -60,7 +69,7 @@ namespace co_async {
 }
 
 /*[export]*/ inline Task<> recv_file(FileHandle &sock, FileHandle &&file) {
-    auto [readPipe, writePipe] = co_await make_pipe();
+    auto [readPipe, writePipe] = co_await fs_pipe();
     while (auto n = co_await fs_splice(sock, writePipe, 65536)) {
         std::size_t m;
         while ((m = co_await fs_splice(readPipe, file, n)) < n) [[unlikely]] {

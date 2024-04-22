@@ -17,14 +17,14 @@ Task<> amain() {
     while (true) {
         HTTPProtocol http(co_await SSLServerSocketStream::accept(listener, cert, pkey));
         HTTPRequest req;
-        co_await http.read_header(req);
+        co_await http.readRequest(req);
         co_await http.write_nobody(req);
         HTTPResponse res = {
             .status = 200,
             .headers = {{"content-type", "text/html"}},
         };
-        co_await http.write_header(res);
-        co_await http.write_body(res.encoding, "<h1>It works!</h1>");
+        co_await http.writeResponse(res);
+        co_await http.writeBody(res.encoding, "<h1>It works!</h1>");
     }
 }
 

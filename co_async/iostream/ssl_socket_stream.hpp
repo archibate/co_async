@@ -408,7 +408,6 @@ public:
         auto &x506 = x506Stores.emplace_back();
         x506.decode(certX506);
         auto dn = x506.getDN();
-        auto &k = x506.getPubKey()->key.rsa;
         trustAnchors.push_back({
             {(unsigned char *)dn.data(), dn.size()},
             BR_X509_TA_CA,
@@ -459,14 +458,15 @@ struct SSLSessionCache {
     }
 };
 
-struct SSLSocketBufBase : SocketBuf {
+struct SSLSocketStreamRaw : SocketStreamRaw {
 private:
     br_ssl_engine_context *eng = nullptr;
     std::unique_ptr<char[]> iobuf =
         std::make_unique<char[]>(BR_SSL_BUFSIZE_BIDI);
 
 public:
-    explicit SSLSocketBufBase(SocketHandle file) : SocketBuf(std::move(file)) {}
+    explicit SSLSocketStreamRaw(SocketHandle file)
+        : SocketStreamRaw(std::move(file)) {}
 
 protected:
     void setEngine(br_ssl_engine_context *eng_) {
@@ -497,8 +497,8 @@ protected:
 #if CO_ASYNC_EXCEPT
                 try {
 #endif
-                    wlen =
-                        co_await SocketBuf::raw_write({(char const *)buf, len});
+                    wlen = co_await SocketStreamRaw::raw_write(
+                        {(char const *)buf, len});
 #if CO_ASYNC_EXCEPT
                 } catch (...) {
                     if (!eng->shutdown_recv) {
@@ -537,7 +537,8 @@ protected:
 #if CO_ASYNC_EXCEPT
                 try {
 #endif
-                    rlen = co_await SocketBuf::raw_read({(char *)buf, len});
+                    rlen =
+                        co_await SocketStreamRaw::raw_read({(char *)buf, len});
 #if CO_ASYNC_EXCEPT
                 } catch (...) {
                     if (!eng->shutdown_recv) {
@@ -619,43 +620,42 @@ public:
         }
     }
 
-    /*     SSLSocketBufBase(SSLSocketBufBase &&that) noexcept */
-    /*     : SocketBuf(std::move(that)), eng(std::exchange(that.eng, nullptr)), iobuf(std::move(that.iobuf)) {} */
-    /*  */
-    /*     SSLSocketBufBase &operator=(SSLSocketBufBase &&that) noexcept { */
-    /*         SocketBuf::operator=(std::move(that)); */
-    /*         std::swap(eng, that.eng); */
-    /*         std::swap(iobuf, that.iobuf); */
-    /*         return *this; */
-    /*     } */
-    /*  */
-    /*     ~SSLSocketBufBase() { */
-    /*         if (eng) { */
-    /*             br_ssl_engine_close(eng); */
-    /* #if CO_ASYNC_DEBUG */
-    /*             if (br_ssl_engine_current_state(eng) != BR_SSL_CLOSED) [[unlikely]] { */
-    /*                 std::cerr << "SSL closed improperly\n"; */
-    /*             } */
-    /*             int err = br_ssl_engine_last_error(eng); */
-    /*             if (err != BR_ERR_OK) [[unlikely]] { */
-    /*                 std::cerr << "SSL closed with error: " + bearSSLErrorName(err) + "\n"; */
-    /*             } */
-    /* #endif */
-    /*         } */
-    /*     } */
+    SSLSocketStreamRaw(SSLSocketStreamRaw &&that) noexcept : SocketStreamRaw(std::move(that)), eng(std::exchange(that.eng, nullptr)) {}
+    SSLSocketStreamRaw &operator=(SSLSocketStreamRaw &&that) noexcept {
+        static_cast<SocketStreamRaw &>(*this) = std::move(that);
+        std::swap(eng, that.eng);
+        return *this;
+    }
+
+    ~SSLSocketStreamRaw() {
+        if (eng) {
+            br_ssl_engine_close(eng);
+#if CO_ASYNC_DEBUG
+            if (br_ssl_engine_current_state(eng) != BR_SSL_CLOSED)
+                [[unlikely]] {
+                std::cerr << "SSL closed improperly\n";
+            }
+            int err = br_ssl_engine_last_error(eng);
+            if (err != BR_ERR_OK) [[unlikely]] {
+                std::cerr << "SSL closed with error: " + bearSSLErrorName(err) +
+                                 "\n";
+            }
+#endif
+        }
+    }
 };
 
-struct SSLServerSocketBuf : SSLSocketBufBase {
+struct SSLServerSocketStreamRaw : SSLSocketStreamRaw {
 private:
     std::unique_ptr<br_ssl_server_context> ctx =
         std::make_unique<br_ssl_server_context>();
 
 public:
-    explicit SSLServerSocketBuf(SocketHandle file,
-                                SSLServerCertificate const &cert,
-                                SSLPrivateKey const &pkey,
-                                SSLSessionCache *cache = nullptr)
-        : SSLSocketBufBase(std::move(file)) {
+    explicit SSLServerSocketStreamRaw(SocketHandle file,
+                                      SSLServerCertificate const &cert,
+                                      SSLPrivateKey const &pkey,
+                                      SSLSessionCache *cache = nullptr)
+        : SSLSocketStreamRaw(std::move(file)) {
         if (auto rsa = pkey.getRSA()) {
             br_ssl_server_init_full_rsa(ctx.get(), std::data(cert.certificates),
                                         std::size(cert.certificates), rsa);
@@ -672,9 +672,13 @@ public:
         }
         br_ssl_server_reset(ctx.get());
     }
+
+    bool ssl_is_protocol_offered(std::string_view protocol) {
+        return false; // TODO: bearssl how to check this on server side?
+    }
 };
 
-struct SSLClientSocketBuf : SSLSocketBufBase {
+struct SSLClientSocketStreamRaw : SSLSocketStreamRaw {
 private:
     std::unique_ptr<br_ssl_client_context> ctx =
         std::make_unique<br_ssl_client_context>();
@@ -682,11 +686,11 @@ private:
         std::make_unique<br_x509_minimal_context>();
 
 public:
-    explicit SSLClientSocketBuf(SocketHandle file,
-                                SSLClientTrustAnchor const &ta,
-                                char const *host,
-                                std::span<char const *const> protocols)
-        : SSLSocketBufBase(std::move(file)) {
+    explicit SSLClientSocketStreamRaw(SocketHandle file,
+                                      SSLClientTrustAnchor const &ta,
+                                      char const *host,
+                                      std::span<char const *const> protocols)
+        : SSLSocketStreamRaw(std::move(file)) {
         br_ssl_client_init_full(ctx.get(), x509Ctx.get(),
                                 std::data(ta.trustAnchors),
                                 std::size(ta.trustAnchors));
@@ -709,8 +713,9 @@ public:
     }
 };
 
-/*[export]*/ struct SSLClientSocketStream : IOStream<SSLClientSocketBuf> {
-    using IOStream<SSLClientSocketBuf>::IOStream;
+/*[export]*/ struct SSLClientSocketStream
+    : IOStreamImpl<SSLClientSocketStreamRaw> {
+    using IOStreamImpl<SSLClientSocketStreamRaw>::IOStreamImpl;
 
     static Task<SSLClientSocketStream>
     connect(char const *host, int port, SSLClientTrustAnchor const &ta,
@@ -722,13 +727,14 @@ public:
     }
 
     Task<> flush() {
-        co_await IOStream<SSLClientSocketBuf>::flush();
+        co_await IOStreamImpl<SSLClientSocketStreamRaw>::flush();
         co_await ssl_flush();
     }
 };
 
-/*[export]*/ struct SSLServerSocketStream : IOStream<SSLServerSocketBuf> {
-    using IOStream<SSLServerSocketBuf>::IOStream;
+/*[export]*/ struct SSLServerSocketStream
+    : IOStreamImpl<SSLServerSocketStreamRaw> {
+    using IOStreamImpl<SSLServerSocketStreamRaw>::IOStreamImpl;
 
     static Task<SSLServerSocketStream>
     accept(SocketListener &listener, SSLServerCertificate const &cert,
@@ -739,7 +745,7 @@ public:
     }
 
     Task<> flush() {
-        co_await IOStream<SSLServerSocketBuf>::flush();
+        co_await IOStreamImpl<SSLServerSocketStreamRaw>::flush();
         co_await ssl_flush();
     }
 };

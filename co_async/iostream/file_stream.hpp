@@ -7,13 +7,17 @@
 
 namespace co_async {
 
-struct FileBuf {
-    Task<std::size_t> raw_read(std::span<char> buffer) {
+struct FileStreamRaw : virtual IOStreamRaw {
+    Task<std::size_t> raw_read(std::span<char> buffer) override {
         return fs_read(mFile, buffer);
     }
 
-    Task<std::size_t> raw_write(std::span<char const> buffer) {
+    Task<std::size_t> raw_write(std::span<char const> buffer) override {
         return fs_write(mFile, buffer);
+    }
+
+    Task<> close() {
+        co_await fs_close(std::move(mFile));
     }
 
     FileHandle release() noexcept {
@@ -24,30 +28,30 @@ struct FileBuf {
         return mFile;
     }
 
-    explicit FileBuf(FileHandle file) : mFile(std::move(file)) {}
+    explicit FileStreamRaw(FileHandle file) : mFile(std::move(file)) {}
 
 private:
     FileHandle mFile;
 };
 
-/*[export]*/ struct FileIStream : IStream<FileBuf> {
-    using IStream<FileBuf>::IStream;
+/*[export]*/ struct FileIStream : IStreamImpl<FileStreamRaw> {
+    using IStreamImpl<FileStreamRaw>::IStreamImpl;
 
     static Task<FileIStream> open(DirFilePath path) {
         co_return FileIStream(co_await fs_open(path, OpenMode::Read));
     }
 };
 
-/*[export]*/ struct FileOStream : OStream<FileBuf> {
-    using OStream<FileBuf>::OStream;
+/*[export]*/ struct FileOStream : OStreamImpl<FileStreamRaw> {
+    using OStreamImpl<FileStreamRaw>::OStreamImpl;
 
     static Task<FileOStream> open(DirFilePath path, bool append = false) {
         co_return FileOStream(co_await fs_open(path, append ? OpenMode::Append : OpenMode::Write));
     }
 };
 
-/*[export]*/ struct FileStream : IOStream<FileBuf> {
-    using IOStream<FileBuf>::IOStream;
+/*[export]*/ struct FileStream : IOStreamImpl<FileStreamRaw> {
+    using IOStreamImpl<FileStreamRaw>::IOStreamImpl;
 
     static Task<FileStream> open(DirFilePath path) {
         co_return FileStream(co_await fs_open(path, OpenMode::ReadWrite));

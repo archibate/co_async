@@ -5,14 +5,28 @@
 
 namespace co_async {
 
-template <class Reader>
-struct IStreamBase {
-    explicit IStreamBase(std::size_t bufferSize = 8192)
-        : mBuffer(std::make_unique<char[]>(bufferSize)),
-          mBufSize(bufferSize) {}
+struct IStreamRaw {
+protected:
+    virtual Task<std::size_t> raw_read(std::span<char> buffer) = 0;
+};
 
-    IStreamBase(IStreamBase &&) = default;
-    IStreamBase &operator=(IStreamBase &&) = default;
+struct OStreamRaw {
+protected:
+    virtual Task<std::size_t> raw_write(std::span<char const> buffer) = 0;
+};
+
+struct IOStreamRaw : virtual IStreamRaw, virtual OStreamRaw {
+};
+
+struct IStream : virtual IStreamRaw {
+    explicit IStream(std::size_t bufferSize = 8192)
+        :mBuffer(std::make_unique<char[]>(bufferSize)),
+        mBufSize(bufferSize) {}
+
+    virtual ~IStream() = default;
+
+    IStream(IStream &&) = default;
+    IStream &operator=(IStream &&) = default;
 
     Task<std::optional<char>> getchar() {
         if (bufempty()) {
@@ -214,8 +228,7 @@ struct IStreamBase {
     }
 
     Task<bool> fillbuf() {
-        auto *that = static_cast<Reader *>(this);
-        mEnd = co_await that->raw_read(std::span(mBuffer.get(), mBufSize));
+        mEnd = co_await raw_read(std::span(mBuffer.get(), mBufSize));
         mIndex = 0;
         co_return mEnd != 0;
     }
@@ -230,14 +243,15 @@ struct IStreamBase {
     std::size_t mBufSize = 0;
 };
 
-template <class Writer>
-struct OStreamBase {
-    explicit OStreamBase(std::size_t bufferSize = 8192)
+struct OStream : virtual OStreamRaw {
+    explicit OStream(std::size_t bufferSize = 8192)
         : mBuffer(std::make_unique<char[]>(bufferSize)),
           mBufSize(bufferSize) {}
 
-    OStreamBase(OStreamBase &&) = default;
-    OStreamBase &operator=(OStreamBase &&) = default;
+    virtual ~OStream() = default;
+
+    OStream(OStream &&) = default;
+    OStream &operator=(OStream &&) = default;
 
     Task<> putchar(char c) {
         if (buffull()) {
@@ -276,7 +290,7 @@ struct OStreamBase {
 
     template <class T>
     Task<> putstruct(T const &s) {
-        return puts(
+        return putspan(
             std::span<char const>((char const *)std::addressof(s), sizeof(T)));
     }
 
@@ -296,12 +310,11 @@ struct OStreamBase {
 
     Task<> flush() {
         if (mIndex) [[likely]] {
-            auto *that = static_cast<Writer *>(this);
             auto buf = std::span(mBuffer.get(), mIndex);
-            auto len = co_await that->raw_write(buf);
+            auto len = co_await raw_write(buf);
             while (len != buf.size()) [[unlikely]] {
                 buf = buf.subspan(len);
-                len = co_await that->raw_write(buf);
+                len = co_await raw_write(buf);
             }
             if (len == 0) [[unlikely]] {
                 throw std::runtime_error("ostream shutdown while writing");
@@ -320,44 +333,40 @@ private:
     std::size_t mBufSize = 0;
 };
 
-template <class StreamBuf>
-struct IOStreamBase : IStreamBase<StreamBuf>, OStreamBase<StreamBuf> {
-    explicit IOStreamBase(std::size_t bufferSize = 8192)
-        : IStreamBase<StreamBuf>(bufferSize),
-          OStreamBase<StreamBuf>(bufferSize) {}
+struct IOStream : IStream, OStream {
+    explicit IOStream(std::size_t bufferSize = 8192)
+        : IStream(bufferSize),
+          OStream(bufferSize) {}
 };
 
-/*[export]*/ template <class StreamBuf>
-struct [[nodiscard]] IOStream : IOStreamBase<IOStream<StreamBuf>>, StreamBuf {
+/*[export]*/ template <std::derived_from<IOStreamRaw> StreamRaw>
+struct [[nodiscard]] IOStreamImpl : IOStream, StreamRaw {
     template <class... Args>
-        requires std::constructible_from<StreamBuf, Args...>
-    explicit IOStream(Args &&...args)
-        : IOStreamBase<IOStream<StreamBuf>>(),
-          StreamBuf(std::forward<Args>(args)...) {}
+        requires std::constructible_from<StreamRaw, Args...>
+    explicit IOStreamImpl(Args &&...args)
+        : IOStream(), StreamRaw(std::forward<Args>(args)...) {}
 
-    IOStream() = default;
+    IOStreamImpl() = default;
 };
 
-/*[export]*/ template <class StreamBuf>
-struct [[nodiscard]] OStream : OStreamBase<OStream<StreamBuf>>, StreamBuf {
+/*[export]*/ template <std::derived_from<OStreamRaw> StreamRaw>
+struct [[nodiscard]] OStreamImpl : OStream, StreamRaw {
     template <class... Args>
-        requires std::constructible_from<StreamBuf, Args...>
-    explicit OStream(Args &&...args)
-        : OStreamBase<OStream<StreamBuf>>(),
-          StreamBuf(std::forward<Args>(args)...) {}
+        requires std::constructible_from<StreamRaw, Args...>
+    explicit OStreamImpl(Args &&...args)
+        : OStream(), StreamRaw(std::forward<Args>(args)...) {}
 
-    OStream() = default;
+    OStreamImpl() = default;
 };
 
-/*[export]*/ template <class StreamBuf>
-struct [[nodiscard]] IStream : IStreamBase<IStream<StreamBuf>>, StreamBuf {
+/*[export]*/ template <std::derived_from<IStreamRaw> StreamRaw>
+struct [[nodiscard]] IStreamImpl : IStream, StreamRaw {
     template <class... Args>
-        requires std::constructible_from<StreamBuf, Args...>
-    explicit IStream(Args &&...args)
-        : IStreamBase<IStream<StreamBuf>>(),
-          StreamBuf(std::forward<Args>(args)...) {}
+        requires std::constructible_from<StreamRaw, Args...>
+    explicit IStreamImpl(Args &&...args)
+        : IStream(), StreamRaw(std::forward<Args>(args)...) {}
 
-    IStream() = default;
+    IStreamImpl() = default;
 };
 
 } // namespace co_async

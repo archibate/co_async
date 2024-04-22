@@ -8,12 +8,12 @@
 
 namespace co_async {
 
-struct SocketBuf {
-    Task<std::size_t> raw_read(std::span<char> buffer) {
+struct SocketStreamRaw : virtual IOStreamRaw {
+    Task<std::size_t> raw_read(std::span<char> buffer) override {
         return socket_read(mFile, buffer, mTimeout);
     }
 
-    Task<std::size_t> raw_write(std::span<char const> buffer) {
+    Task<std::size_t> raw_write(std::span<char const> buffer) override {
         return socket_write(mFile, buffer, mTimeout);
     }
 
@@ -25,7 +25,7 @@ struct SocketBuf {
         return mFile;
     }
 
-    explicit SocketBuf(SocketHandle file) : mFile(std::move(file)) {}
+    explicit SocketStreamRaw(SocketHandle file) : mFile(std::move(file)) {}
 
     std::chrono::nanoseconds timeout() const {
         return mTimeout;
@@ -40,11 +40,8 @@ private:
     std::chrono::nanoseconds mTimeout = std::chrono::seconds(5);
 };
 
-/*[export]*/ using SocketIStream = IStream<SocketBuf>;
-/*[export]*/ using SocketOStream = OStream<SocketBuf>;
-
-/*[export]*/ struct SocketStream : IOStream<SocketBuf> {
-    using IOStream<SocketBuf>::IOStream;
+/*[export]*/ struct SocketStream : IOStreamImpl<SocketStreamRaw> {
+    using IOStreamImpl<SocketStreamRaw>::IOStreamImpl;
 
     static Task<SocketStream> connect(const char *host, int port, std::string_view proxy, std::chrono::nanoseconds timeout) {
         auto conn = co_await socket_proxy_connect(host, port, proxy, timeout);

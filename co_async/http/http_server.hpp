@@ -8,6 +8,7 @@
 #include <co_async/utils/simple_map.hpp>     /*{import :utils.simple_map;}*/
 #include <co_async/system/socket.hpp>        /*{import :system.socket;}*/
 #include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
+#include <co_async/system/pipe.hpp>          /*{import :system.pipe;}*/
 #include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
 #include <co_async/http/http11.hpp>          /*{import :http.http11;}*/
 #include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
@@ -21,12 +22,53 @@ namespace co_async {
     SuffixPath,    // "/a/b/c"
 };
 
-template <class HTTP>
-struct HTTPServerBase {
-    using Protocol = HTTP;
-    using HTTPHandler = std::function<Task<>(HTTP &, HTTPRequest const &)>;
-    using HTTPPrefixHandler = std::function<Task<>(HTTP &, HTTPRequest const &, std::string_view)>;
-    using HTTPDefaultHandler = std::function<Task<>(HTTP &, HTTPRequest const &)>;
+struct HTTPServer {
+    struct IO {
+        explicit IO(HTTPProtocol *http) noexcept : mHttp(http) {}
+
+        HTTPRequest request;
+
+        Task<std::string> body() {
+            if (mBodyRead) [[unlikely]] {
+                throw std::runtime_error("body() may only be called once");
+            }
+            mBodyRead = true;
+            std::string body;
+            if (!co_await mHttp->readBody(body)) {
+                throw std::runtime_error("failed to read request body");
+            }
+            co_return body;
+        }
+
+        Task<> body_stream(FileOStream &out) {
+            if (mBodyRead) [[unlikely]] {
+                throw std::runtime_error("body() may only be called once");
+            }
+            co_await mHttp->readBodyStream(out);
+        }
+
+        Task<> response(HTTPResponse &resp, std::string_view body) const {
+            co_await mHttp->writeResponse(resp);
+            co_await mHttp->writeBody(body);
+        }
+
+        Task<> response(HTTPResponse &resp, IStream &body) const {
+            co_await mHttp->writeResponse(resp);
+            co_await mHttp->writeBodyStream(body);
+        }
+
+    private:
+        bool mBodyRead = false;
+        HTTPProtocol *mHttp;
+    };
+
+    using HTTPHandler = std::function<Task<>(IO const &)>;
+    using HTTPPrefixHandler =
+        std::function<Task<>(IO const &, std::string_view)>;
+
+    explicit HTTPServer(SocketListener &listener) : mListener(listener) {}
+
+    HTTPServer(HTTPServer &&) = delete;
 
     void route(std::string_view methods, std::string_view path,
                HTTPHandler handler) {
@@ -48,19 +90,31 @@ struct HTTPServerBase {
                   split_string(upper_string(methods), ' ').collect()}});
     }
 
-    void route(HTTPDefaultHandler handler) {
+    void route(HTTPHandler handler) {
         mDefaultRoute = handler;
     }
 
-    Task<> process_connection(HTTP http) const {
-        HTTPRequest req;
-        while (co_await http.read_header(req)) {
-            co_await handleRequest(http, req);
+    Task<std::unique_ptr<HTTPProtocol>> accept_https(SSLServerCertificate const &cert, SSLPrivateKey const &pkey, SSLSessionCache *cache = nullptr) const {
+        auto sock = co_await SSLServerSocketStream::accept(mListener, cert, pkey, cache);
+        if (sock.ssl_is_protocol_offered("h2")) {
+            /* co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SSLServerSocketStream>(std::move(sock))); // TODO */
         }
-        co_await fs_close(http.sock.release());
+        co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SSLServerSocketStream>(std::move(sock)));
     }
 
-    static Task<> make_error_response(HTTP &http, int status) {
+    Task<std::unique_ptr<HTTPProtocol>> accept_http() const {
+        auto sock = co_await SocketStream::accept(mListener);
+        co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SocketStream>(std::move(sock)));
+    }
+
+    Task<> process_connection(std::unique_ptr<HTTPProtocol> http) const {
+        IO io(http.get());
+        while (co_await http->readRequest(io.request)) {
+            co_await handleRequest(io);
+        }
+    }
+
+    static Task<> make_error_response(IO const &io, int status) {
         auto error =
             to_string(status) + " " + std::string(getHTTPStatusName(status));
         HTTPResponse res{
@@ -70,10 +124,10 @@ struct HTTPServerBase {
                     {"content-type", "text/html;charset=utf-8"},
                 },
         };
-        co_await http.write_header(res);
-        co_await http.write_body("<html><head><title>" + error +
-            "</title></head><body><center><h1>" + error +
-            "</h1></center><hr><center>co_async</center></body></html>");
+        co_await io.response(res,
+                "<html><head><title>" + error +
+                "</title></head><body><center><h1>" + error +
+                "</h1></center><hr><center>co_async</center></body></html>");
     }
 
 private:
@@ -142,67 +196,37 @@ private:
         }
     };
 
+    SocketListener &mListener;
     SimpleMap<std::string, Route> mRoutes;
     std::vector<std::pair<std::string, PrefixRoute>> mPrefixRoutes;
-    HTTPDefaultHandler mDefaultRoute = [] (HTTP &http, HTTPRequest const &req) -> Task<> {
-        co_await make_error_response(http, 404);
+    HTTPHandler mDefaultRoute = [](IO const &io) -> Task<> {
+        co_await make_error_response(io, 404);
     };
 
-    Task<> handleRequest(HTTP &http, HTTPRequest const &req) const {
-        if (auto route = mRoutes.at(req.uri.path)) {
-            if (!route->checkMethod(req.method)) [[unlikely]] {
-                co_await make_error_response(http, 405);
+    Task<> handleRequest(IO const &io) const {
+        if (auto route = mRoutes.at(io.request.uri.path)) {
+            if (!route->checkMethod(io.request.method)) [[unlikely]] {
+                co_await make_error_response(io, 405);
             }
-            co_await route->mHandler(http, req);
+            co_await route->mHandler(io);
         }
         for (auto const &[prefix, route]: mPrefixRoutes) {
-            if (req.uri.path.starts_with(prefix)) {
-                if (!route.checkMethod(req.method)) [[unlikely]] {
-                    co_await make_error_response(http, 405);
+            if (io.request.uri.path.starts_with(prefix)) {
+                if (!route.checkMethod(io.request.method)) [[unlikely]] {
+                    co_await make_error_response(io, 405);
                     co_return;
                 }
-                auto suffix = std::string_view(req.uri.path);
+                auto suffix = std::string_view(io.request.uri.path);
                 suffix.remove_prefix(prefix.size());
                 if (!route.checkSuffix(suffix)) [[unlikely]] {
-                    co_await make_error_response(http, 405);
+                    co_await make_error_response(io, 405);
                     co_return;
                 }
-                co_await route.mHandler(http, req, suffix);
+                co_await route.mHandler(io, suffix);
             }
         }
-        co_await mDefaultRoute(http, req);
+        co_await mDefaultRoute(io);
     }
-};
-
-/*[export]*/ struct HTTPServer : HTTPServerBase<HTTPProtocol<SocketStream>> {
-    explicit HTTPServer(SocketListener &listener) : mListener(listener) {
-    }
-
-    Task<Protocol> accept() {
-        co_return Protocol(co_await SocketStream::accept(mListener));
-    }
-
-private:
-    SocketListener &mListener;
-};
-
-/*[export]*/ struct HTTPSServer
-    : HTTPServerBase<HTTPProtocol<SSLServerSocketStream>> {
-    Task<Protocol> accept() {
-        co_return Protocol(co_await SSLServerSocketStream::accept(
-            mListener, mCerts, mPKey, &mCache));
-    }
-
-    explicit HTTPSServer(SocketListener &listener, std::string_view cert, std::string_view pkey, std::size_t cacheSize) : mListener(listener), mCache(cacheSize) {
-        mCerts.add(cert);
-        mPKey.set(pkey);
-    }
-
-private:
-    SocketListener &mListener;
-    SSLServerCertificate mCerts;
-    SSLPrivateKey mPKey;
-    SSLSessionCache mCache;
 };
 
 } // namespace co_async

@@ -79,7 +79,7 @@ public:
 
     virtual ~HTTPProtocol() = default;
 
-    virtual Task<> writeBodyStream(IStream &body);
+    virtual Task<> writeBodyStream(IStream &body) = 0;
     virtual Task<bool> readBodyStream(OStream &body) = 0;
     virtual Task<> writeBody(std::string_view body) = 0;
     virtual Task<bool> readBody(std::string &body) = 0;
@@ -132,44 +132,44 @@ public:
                     *ep++ = '\r';
                     *ep++ = '\n';
                     if (!hadHeader) {
-                        co_await sock.puts("transfer-encoding: chunked\r\n"sv);
+                        co_await sock->puts("transfer-encoding: chunked\r\n"sv);
                         hadHeader = true;
                     }
-                    co_await sock.puts(std::string_view{
+                    co_await sock->puts(std::string_view{
                         buf, static_cast<std::size_t>(ep - buf)});
-                    co_await sock.putspan(bufSpan);
+                    co_await sock->putspan(bufSpan);
                 }
             } while (co_await body.fillbuf());
             if (!hadHeader) {
-                co_await sock.puts("\r\n"sv);
+                co_await sock->puts("\r\n"sv);
             } else {
-                co_await sock.puts("\r\n0\r\n\r\n"sv);
+                co_await sock->puts("\r\n0\r\n\r\n"sv);
             }
         } break;
         case HTTPTransferEncoding::Gzip:
-            co_await sock.puts("content-encoding: gzip\r\n\r\n"sv);
+            co_await sock->puts("content-encoding: gzip\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Compress:
-            co_await sock.puts("content-encoding: compress\r\n\r\n"sv);
+            co_await sock->puts("content-encoding: compress\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Deflate:
-            co_await sock.puts("content-encoding: deflate\r\n\r\n"sv);
+            co_await sock->puts("content-encoding: deflate\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Br:
-            co_await sock.puts("content-encoding: br\r\n\r\n"sv);
+            co_await sock->puts("content-encoding: br\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Zstd:
-            co_await sock.puts("content-encoding: zstd\r\n\r\n"sv);
+            co_await sock->puts("content-encoding: zstd\r\n\r\n"sv);
             break;
         case HTTPTransferEncoding::Identity: {
             auto content = co_await body.getall();
-            co_await sock.puts("content-length: "sv);
-            co_await sock.puts(to_string(content.size()));
-            co_await sock.puts("\r\n\r\n"sv);
-            co_await sock.puts(content);
+            co_await sock->puts("content-length: "sv);
+            co_await sock->puts(to_string(content.size()));
+            co_await sock->puts("\r\n\r\n"sv);
+            co_await sock->puts(content);
         } break;
         }
-        co_await sock.flush();
+        co_await sock->flush();
     }
 
     Task<> writeBody(std::string_view body) override {
@@ -179,23 +179,23 @@ public:
             checkPhase(1, 0);
 #endif
             using namespace std::string_view_literals;
-            co_await sock.puts("\r\n"sv);
+            co_await sock->puts("\r\n"sv);
         } else {
             switch (encoding) {
             case HTTPTransferEncoding::Identity: {
 #if CO_ASYNC_DEBUG
                 checkPhase(1, 0);
 #endif
-                co_await sock.puts("content-length: "sv);
-                co_await sock.puts(to_string(body.size()));
-                co_await sock.puts("\r\n\r\n"sv);
-                co_await sock.puts(body);
+                co_await sock->puts("content-length: "sv);
+                co_await sock->puts(to_string(body.size()));
+                co_await sock->puts("\r\n\r\n"sv);
+                co_await sock->puts(body);
             } break;
             case HTTPTransferEncoding::Chunked: {
 #if CO_ASYNC_DEBUG
                 checkPhase(1, 0);
 #endif
-                co_await sock.puts("transfer-encoding: chunked\r\n"sv);
+                co_await sock->puts("transfer-encoding: chunked\r\n"sv);
                 auto n = body.size();
                 char buf[sizeof(n) * 2 + 4] = {}, *ep = buf;
                 *ep++ = '\r';
@@ -206,10 +206,10 @@ public:
                 std::reverse(buf + 2, ep);
                 *ep++ = '\r';
                 *ep++ = '\n';
-                co_await sock.puts(
+                co_await sock->puts(
                     std::string_view{buf, static_cast<std::size_t>(ep - buf)});
-                co_await sock.puts(body);
-                co_await sock.puts("\r\n0\r\n\r\n"sv);
+                co_await sock->puts(body);
+                co_await sock->puts("\r\n0\r\n\r\n"sv);
             } break;
             default: {
                 StringIStream is(body);
@@ -217,7 +217,7 @@ public:
             } break;
             }
         }
-        co_await sock.flush();
+        co_await sock->flush();
     }
 
     Task<bool> readBodyStream(OStream &body) override {
@@ -229,7 +229,7 @@ public:
         case HTTPTransferEncoding::Identity: {
             if (auto n = encoding.contentLength(); n > 0) {
                 std::string line;
-                co_await sock.getn(line, n);
+                co_await sock->getn(line, n);
                 co_await body.puts(line);
             }
         } break;
@@ -237,20 +237,20 @@ public:
             std::string line;
             while (true) {
                 line.clear();
-                if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
+                if (!co_await sock->getline(line, "\r\n"sv)) [[unlikely]] {
                     co_return false;
                 }
                 std::size_t n = std::strtoull(line.c_str(), nullptr, 16);
                 if (n <= 0) {
-                    if (!co_await sock.dropn(2)) [[unlikely]] {
+                    if (!co_await sock->dropn(2)) [[unlikely]] {
                         co_return false;
                     }
                     break;
                 }
                 line.clear();
-                co_await sock.getn(line, n);
+                co_await sock->getn(line, n);
                 co_await body.puts(line);
-                if (!co_await sock.dropn(2)) [[unlikely]] {
+                if (!co_await sock->dropn(2)) [[unlikely]] {
                     co_return false;
                 }
             }
@@ -260,7 +260,7 @@ public:
         case HTTPTransferEncoding::Deflate: [[fallthrough]];
         case HTTPTransferEncoding::Br: [[fallthrough]];
         case HTTPTransferEncoding::Zstd: {
-            std::string content = co_await sock.getall();
+            std::string content = co_await sock->getall();
             co_await body.puts(content);
         } break;
         }
@@ -276,7 +276,7 @@ public:
             checkPhase(-1, 0);
 #endif
             if (auto n = encoding.contentLength(); n > 0) {
-                co_await sock.getn(body, n);
+                co_await sock->getn(body, n);
             }
         } break;
         case HTTPTransferEncoding::Chunked: {
@@ -286,15 +286,15 @@ public:
             std::string line;
             while (true) {
                 line.clear();
-                if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
+                if (!co_await sock->getline(line, "\r\n"sv)) [[unlikely]] {
                     co_return false;
                 }
                 auto n = std::strtoul(line.c_str(), nullptr, 16);
                 if (n == 0) {
                     break;
                 }
-                co_await sock.getn(body, n);
-                if (!co_await sock.dropn(2)) [[unlikely]] {
+                co_await sock->getn(body, n);
+                if (!co_await sock->dropn(2)) [[unlikely]] {
                     co_return false;
                 }
             }
@@ -313,17 +313,17 @@ public:
         checkPhase(0, 1);
 #endif
         using namespace std::string_view_literals;
-        co_await sock.puts(req.method);
-        co_await sock.putchar(' ');
-        co_await sock.puts(req.uri.dump());
-        co_await sock.puts(" HTTP/1.1\r\n"sv);
+        co_await sock->puts(req.method);
+        co_await sock->putchar(' ');
+        co_await sock->puts(req.uri.dump());
+        co_await sock->puts(" HTTP/1.1\r\n"sv);
         for (auto const &[k, v]: req.headers) {
-            co_await sock.puts(k);
-            co_await sock.puts(": "sv);
-            co_await sock.puts(v);
-            co_await sock.puts("\r\n"sv);
+            co_await sock->puts(k);
+            co_await sock->puts(": "sv);
+            co_await sock->puts(v);
+            co_await sock->puts("\r\n"sv);
         }
-        co_await sock.puts("connection: keep-alive\r\n"sv);
+        co_await sock->puts("connection: keep-alive\r\n"sv);
         encoding = HTTPTransferEncoding::Chunked;
     }
 
@@ -334,7 +334,7 @@ public:
         using namespace std::string_literals;
         using namespace std::string_view_literals;
         std::string line;
-        if (!co_await sock.getline(line, "\r\n"sv))
+        if (!co_await sock->getline(line, "\r\n"sv))
             co_return false;
         auto pos = line.find(' ');
         if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
@@ -354,7 +354,7 @@ public:
         req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
         while (true) {
             line.clear();
-            if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
+            if (!co_await sock->getline(line, "\r\n"sv)) [[unlikely]] {
                 co_return false;
             }
             if (line.empty()) {
@@ -411,18 +411,18 @@ public:
         checkPhase(0, 1);
 #endif
         using namespace std::string_view_literals;
-        co_await sock.puts("HTTP/1.1 "sv);
-        co_await sock.puts(to_string(res.status));
-        co_await sock.putchar(' ');
-        co_await sock.puts(getHTTPStatusName(res.status));
-        co_await sock.puts("\r\n"sv);
+        co_await sock->puts("HTTP/1.1 "sv);
+        co_await sock->puts(to_string(res.status));
+        co_await sock->putchar(' ');
+        co_await sock->puts(getHTTPStatusName(res.status));
+        co_await sock->puts("\r\n"sv);
         for (auto const &[k, v]: res.headers) {
-            co_await sock.puts(k);
-            co_await sock.puts(": "sv);
-            co_await sock.puts(v);
-            co_await sock.puts("\r\n"sv);
+            co_await sock->puts(k);
+            co_await sock->puts(": "sv);
+            co_await sock->puts(v);
+            co_await sock->puts("\r\n"sv);
         }
-        co_await sock.puts("connection: keep-alive\r\n"sv);
+        co_await sock->puts("connection: keep-alive\r\n"sv);
         encoding = HTTPTransferEncoding::Chunked;
     }
 
@@ -431,7 +431,7 @@ public:
         checkPhase(0, -1);
 #endif
         using namespace std::string_view_literals;
-        auto line = co_await sock.getline("\r\n"sv);
+        auto line = co_await sock->getline("\r\n"sv);
         if (line.empty())
             co_return false;
         if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv ||
@@ -451,7 +451,7 @@ public:
         }
         while (true) {
             line.clear();
-            if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
+            if (!co_await sock->getline(line, "\r\n"sv)) [[unlikely]] {
                 co_return false;
             }
             if (line.empty()) {

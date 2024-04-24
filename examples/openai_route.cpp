@@ -24,19 +24,17 @@ Task<> amain() {
                     .headers = io.request.headers,
                 };
                 request.headers.insert_or_assign("host", host);
-                HTTPResponse response;
+                FutureSource<HTTPResponse> response;
                 auto [r1, w1] = co_await pipe_stream();
                 auto [r2, w2] = co_await pipe_stream();
-                ConditionVariable cv;
                 co_await when_all(
                     co_bind([&]() -> Task<> { co_await w1.close(); }),
                     co_bind([&]() -> Task<> {
-                        co_await cv.wait();
-                        co_await io.response(response, r2);
+                        co_await io.response(co_await response, r2);
                         co_await r2.close();
                     }),
                     co_bind([&]() -> Task<> {
-                        co_await connection.request(request, r1, response, w2, cv);
+                        co_await connection.request(request, r1, response, w2);
                         co_await r1.close();
                         co_await w2.close();
                     }));

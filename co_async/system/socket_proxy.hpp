@@ -29,7 +29,7 @@ namespace co_async {
         do {
             n = co_await socket_write(sock, buf, timeout);
             if (!n) [[unlikely]] {
-                throw std::runtime_error("proxy server refuse to connect");
+                throw std::runtime_error("proxy server failed to establish connection");
             }
             buf = buf.subspan(n);
         } while (buf.size() > 0);

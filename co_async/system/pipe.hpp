@@ -51,10 +51,6 @@ namespace co_async {
     co_return {FileHandle(p[0]), FileHandle(p[1])};
 }
 
-/*[export]*/ inline Task<std::tuple<FileIStream, FileOStream>> pipe_stream() {
-    co_return (co_await fs_pipe()).stream();
-}
-
 /*[export]*/ inline Task<> send_file(FileHandle &sock, FileHandle &&file) {
     auto [readPipe, writePipe] = co_await fs_pipe();
     while (auto n = co_await fs_splice(file, writePipe, 65536)) {

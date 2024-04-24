@@ -458,15 +458,16 @@ struct SSLSessionCache {
     }
 };
 
-struct SSLSocketStreamRaw : SocketStreamRaw {
+struct SSLSocketStreamRaw : virtual IOStreamRaw {
 private:
+    SocketStreamRaw raw;
     br_ssl_engine_context *eng = nullptr;
     std::unique_ptr<char[]> iobuf =
         std::make_unique<char[]>(BR_SSL_BUFSIZE_BIDI);
 
 public:
     explicit SSLSocketStreamRaw(SocketHandle file)
-        : SocketStreamRaw(std::move(file)) {}
+        : raw(std::move(file)) {}
 
 protected:
     void setEngine(br_ssl_engine_context *eng_) {
@@ -497,7 +498,7 @@ protected:
 #if CO_ASYNC_EXCEPT
                 try {
 #endif
-                    wlen = co_await SocketStreamRaw::raw_write(
+                    wlen = co_await raw.raw_write(
                         {(char const *)buf, len});
 #if CO_ASYNC_EXCEPT
                 } catch (...) {
@@ -538,7 +539,7 @@ protected:
                 try {
 #endif
                     rlen =
-                        co_await SocketStreamRaw::raw_read({(char *)buf, len});
+                        co_await raw.raw_read({(char *)buf, len});
 #if CO_ASYNC_EXCEPT
                 } catch (...) {
                     if (!eng->shutdown_recv) {
@@ -558,17 +559,17 @@ protected:
                 continue;
             }
 
-            br_ssl_engine_flush(eng, 0);
+            br_ssl_engine_flush(eng, 0); // TODO: really needed?
         }
     }
 
 public:
-    Task<> ssl_flush() {
+    Task<> raw_flush() override {
         br_ssl_engine_flush(eng, 0);
         co_await bearSSLRunUntil(BR_SSL_SENDAPP | BR_SSL_RECVAPP);
     }
 
-    Task<std::size_t> raw_read(std::span<char> buffer) {
+    Task<std::size_t> raw_read(std::span<char> buffer) override {
         unsigned char *buf;
         size_t alen;
 
@@ -585,7 +586,7 @@ public:
         co_return alen;
     }
 
-    Task<std::size_t> raw_write(std::span<char const> buffer) {
+    Task<std::size_t> raw_write(std::span<char const> buffer) override {
         unsigned char *buf;
         size_t alen;
 
@@ -603,46 +604,32 @@ public:
     }
 
     void ssl_close() {
+#if CO_ASYNC_DEBUG
+        if (br_ssl_engine_current_state(eng) != BR_SSL_CLOSED)
+            [[unlikely]] {
+                std::cerr << "SSL closed improperly\n" << br_ssl_engine_current_state(eng);
+            }
+#endif
         br_ssl_engine_close(eng);
-#if CO_ASYNC_DEBUG
-        if (br_ssl_engine_current_state(eng) != BR_SSL_CLOSED) [[unlikely]] {
-            std::cerr << "SSL closed improperly\n";
-        }
-#endif
-        int err = br_ssl_engine_last_error(eng);
-        if (err != BR_ERR_OK) [[unlikely]] {
-#if CO_ASYNC_DEBUG
-            std::cerr << "SSL closed with error: " + bearSSLErrorName(err) +
-                             "\n";
-#endif
-            throw std::runtime_error("SSL closed with error: " +
-                                     bearSSLErrorName(err));
-        }
     }
 
-    SSLSocketStreamRaw(SSLSocketStreamRaw &&that) noexcept : SocketStreamRaw(std::move(that)), eng(std::exchange(that.eng, nullptr)) {}
-    SSLSocketStreamRaw &operator=(SSLSocketStreamRaw &&that) noexcept {
-        static_cast<SocketStreamRaw &>(*this) = std::move(that);
-        std::swap(eng, that.eng);
-        return *this;
-    }
-
-    ~SSLSocketStreamRaw() {
-        if (eng) {
-            br_ssl_engine_close(eng);
-#if CO_ASYNC_DEBUG
-            if (br_ssl_engine_current_state(eng) != BR_SSL_CLOSED)
-                [[unlikely]] {
-                std::cerr << "SSL closed improperly\n";
-            }
-            int err = br_ssl_engine_last_error(eng);
-            if (err != BR_ERR_OK) [[unlikely]] {
-                std::cerr << "SSL closed with error: " + bearSSLErrorName(err) +
-                                 "\n";
-            }
-#endif
-        }
-    }
+    /* SSLSocketStreamRaw(SSLSocketStreamRaw &&that) noexcept */
+    /*     : raw(std::move(that.raw)), */
+    /*       eng(std::exchange(that.eng, nullptr)), */
+    /*       iobuf(std::move(that.iobuf)) {} */
+    /*  */
+    /* SSLSocketStreamRaw &operator=(SSLSocketStreamRaw &&that) noexcept { */
+    /*     std::swap(raw, that.raw); */
+    /*     std::swap(eng, that.eng); */
+    /*     std::swap(iobuf, that.iobuf); */
+    /*     return *this; */
+    /* } */
+    /*  */
+    /* ~SSLSocketStreamRaw() { */
+    /*     if (eng) { */
+    /*         br_ssl_engine_close(eng); */
+    /*     } */
+    /* } */
 };
 
 struct SSLServerSocketStreamRaw : SSLSocketStreamRaw {
@@ -725,11 +712,6 @@ public:
         SSLClientSocketStream sock(std::move(conn), ta, host, protocols);
         co_return sock;
     }
-
-    Task<> flush() {
-        co_await IOStreamImpl<SSLClientSocketStreamRaw>::flush();
-        co_await ssl_flush();
-    }
 };
 
 /*[export]*/ struct SSLServerSocketStream
@@ -742,11 +724,6 @@ public:
         auto conn = co_await listener_accept(listener);
         SSLServerSocketStream sock(std::move(conn), cert, skey, cache);
         co_return sock;
-    }
-
-    Task<> flush() {
-        co_await IOStreamImpl<SSLServerSocketStreamRaw>::flush();
-        co_await ssl_flush();
     }
 };
 

@@ -1,5 +1,6 @@
 #pragma once /*{export module co_async:http.http_client;}*/
 
+#include "co_async/utils/debug.hpp"
 #include <co_async/std.hpp>                  /*{import std;}*/
 #include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
 #include <co_async/http/http11.hpp>          /*{import :http.http11;}*/
@@ -12,61 +13,80 @@
 #include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
 #include <co_async/iostream/ssl_socket_stream.hpp>/*{import :iostream.ssl_socket_stream;}*/
 #include <co_async/iostream/pipe_stream.hpp>/*{import :iostream.pipe_stream;}*/
-#include <co_async/threading/condition_variable.hpp>/*{import :threading.condition_variable;}*/
+#include <co_async/threading/future.hpp>/*{import :threading.future;}*/
 
 namespace co_async {
 
+inline SSLClientTrustAnchor gTrustAnchors;
+
 /*[export]*/ struct HTTPConnection {
-protected:
+private:
     std::unique_ptr<HTTPProtocol> mHttp;
-    std::string mHostName;
+    HTTPHeaders mDefaultHeaders;
+
+    void updateHeaders(HTTPRequest &req) {
+        for (auto const &[k, v]: mDefaultHeaders) {
+            req.headers.insert(k, v);
+        }
+    }
 
 public:
-    HTTPConnection(std::unique_ptr<HTTPProtocol> http, std::string_view hostName) : mHttp(std::move(http)), mHostName(hostName) {
+    HTTPConnection(std::unique_ptr<HTTPProtocol> http,
+                   std::string_view hostName)
+        : mHttp(std::move(http)) {
+        using namespace std::string_literals;
+        mDefaultHeaders.insert_or_assign("host", std::string(hostName));
+        mDefaultHeaders.insert_or_assign("user-agent", "co_async/0.0.1"s);
     }
 
-    std::string const &hostName() const noexcept {
-        return mHostName;
-    }
-
-    Task<> request(HTTPRequest const &req, std::string_view in, HTTPResponse &res, std::string &out) {
+    Task<> request(HTTPRequest req, std::string_view in,
+                   HTTPResponse &res, std::string &out) {
+        updateHeaders(req);
         co_await mHttp->writeRequest(req);
         co_await mHttp->writeBody(in);
         co_await mHttp->readResponse(res);
         co_await mHttp->readBody(out);
     }
 
-    Task<> request(HTTPRequest const &req, std::string_view in, HTTPResponse &res, OStream &out) {
+    Task<> request(HTTPRequest req, std::string_view in,
+                   HTTPResponse &res, OStream &out) {
+        updateHeaders(req);
         co_await mHttp->writeRequest(req);
         co_await mHttp->writeBody(in);
         co_await mHttp->readResponse(res);
         co_await mHttp->readBodyStream(out);
     }
 
-    Task<> request(HTTPRequest const &req, IStream &in, HTTPResponse &res, std::string &out) {
+    Task<> request(HTTPRequest req, IStream &in, HTTPResponse &res,
+                   std::string &out) {
+        updateHeaders(req);
         co_await mHttp->writeRequest(req);
         co_await mHttp->writeBodyStream(in);
         co_await mHttp->readResponse(res);
         co_await mHttp->readBody(out);
     }
 
-    Task<> request(HTTPRequest const &req, IStream &in, HTTPResponse &res, OStream &out) {
+    Task<> request(HTTPRequest req, IStream &in, HTTPResponse &res,
+                   OStream &out) {
+        updateHeaders(req);
         co_await mHttp->writeRequest(req);
         co_await mHttp->writeBodyStream(in);
         co_await mHttp->readResponse(res);
         co_await mHttp->readBodyStream(out);
     }
 
-    Task<> request(HTTPRequest const &req, IStream &in, HTTPResponse &res, OStream &out, ConditionVariable &resReady) {
+    Task<> request(HTTPRequest req, IStream &in, FutureToken<HTTPResponse> res,
+                   OStream &out) {
+        updateHeaders(req);
         co_await mHttp->writeRequest(req);
         co_await mHttp->writeBodyStream(in);
-        co_await mHttp->readResponse(res);
-        co_await resReady.notify_one();
+        co_await mHttp->readResponse(res.reference_writer());
         co_await mHttp->readBodyStream(out);
     }
 };
 
-inline std::tuple<std::string, int> parseHostAndPort(std::string_view hostName, int defaultPort) {
+inline std::tuple<std::string, int> parseHostAndPort(std::string_view hostName,
+                                                     int defaultPort) {
     int port = defaultPort;
     auto host = hostName;
     if (auto i = host.rfind(':'); i != host.npos) {
@@ -75,13 +95,15 @@ inline std::tuple<std::string, int> parseHostAndPort(std::string_view hostName, 
             host.remove_suffix(host.size() - i);
         }
     }
-    return {host, port};
+    return {std::string(host), port};
 }
 
-/*[export]*/ inline Task<HTTPConnection> http_connect(std::string_view host, std::chrono::nanoseconds timeout = std::chrono::seconds(5), bool followProxy = true) {
+/*[export]*/ inline Task<HTTPConnection>
+http_connect(std::string_view host,
+             std::chrono::nanoseconds timeout = std::chrono::seconds(5),
+             bool followProxy = true) {
     if (host.starts_with("https://")) {
         host.remove_prefix(8);
-        conn = std::make_unique<HTTPConnectionHTTPS>();
         std::string proxy;
         if (followProxy) {
             if (auto p = std::getenv("https_proxy")) {
@@ -93,9 +115,11 @@ inline std::tuple<std::string, int> parseHostAndPort(std::string_view hostName, 
             // "h2",
             "http/1.1",
         };
-        auto sock = co_await SSLClientSocketStream::connect(h.c_str(), p, ta, protocols, proxy, timeout);
+        auto sock = std::make_unique<SSLClientSocketStream>(
+            co_await SSLClientSocketStream::connect(h.c_str(), p, gTrustAnchors,
+                                                    protocols, proxy, timeout));
         std::unique_ptr<HTTPProtocol> http;
-        if (sock.ssl_get_selected_protocol() == "h2") {
+        if (sock->ssl_get_selected_protocol() == "h2") {
             throw std::runtime_error("http/2 not implemented yet");
         } else {
             http = std::make_unique<HTTPProtocolVersion11>(std::move(sock));
@@ -110,23 +134,21 @@ inline std::tuple<std::string, int> parseHostAndPort(std::string_view hostName, 
             }
         }
         auto [h, p] = parseHostAndPort(host, 80);
-        auto sock = co_await SSLClientSocketStream::connect(h.c_str(), p, proxy, timeout);
+        auto sock = std::make_unique<SocketStream>(
+            co_await SocketStream::connect(h.c_str(), p, proxy, timeout));
         auto http = std::make_unique<HTTPProtocolVersion11>(std::move(sock));
         co_return HTTPConnection(std::move(http), host);
     } else {
         throw std::runtime_error(
             "invalid protocol, must be http:// or https://");
     }
-    co_return conn;
 }
-
-inline SSLClientTrustAnchor gTrustAnchors;
 
 /*[export]*/ inline Task<> https_load_ca_certificates() {
     auto path = make_path("/etc/ssl/certs/ca-certificates.crt");
     if (auto s = co_await fs_stat(path)) [[likely]] {
         if (s->is_readable()) [[likely]] {
-            mTrustAnchors.add(co_await file_read(path));
+            gTrustAnchors.add(co_await file_read(path));
         }
     }
 }

@@ -1,7 +1,8 @@
-#pragma once/*{export module co_async:iostream.stream_base;}*/
+#pragma once /*{export module co_async:iostream.stream_base;}*/
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>         /*{import std;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/awaiter/just.hpp>/*{import :awaiter.just;}*/
 
 namespace co_async {
 
@@ -13,15 +14,18 @@ protected:
 struct OStreamRaw {
 protected:
     virtual Task<std::size_t> raw_write(std::span<char const> buffer) = 0;
+
+    virtual Task<> raw_flush() {
+        return just_void();
+    }
 };
 
-struct IOStreamRaw : virtual IStreamRaw, virtual OStreamRaw {
-};
+struct IOStreamRaw : virtual IStreamRaw, virtual OStreamRaw {};
 
 struct IStream : virtual IStreamRaw {
     explicit IStream(std::size_t bufferSize = 8192)
-        :mBuffer(std::make_unique<char[]>(bufferSize)),
-        mBufSize(bufferSize) {}
+        : mBuffer(std::make_unique<char[]>(bufferSize)),
+          mBufSize(bufferSize) {}
 
     virtual ~IStream() = default;
 
@@ -223,7 +227,7 @@ struct IStream : virtual IStreamRaw {
         return {mBuffer.get() + mIndex, mEnd - mIndex};
     }
 
-    void rdbufadvance(std::size_t n) {
+    void rdbufadvance(std::size_t n) noexcept {
         mIndex += n;
     }
 
@@ -304,7 +308,7 @@ struct OStream : virtual OStreamRaw {
         return {mBuffer.get() + mIndex, mBufSize - mIndex};
     }
 
-    void wrbufadvance(std::size_t n) {
+    void wrbufadvance(std::size_t n) noexcept {
         mIndex += n;
     }
 
@@ -312,7 +316,7 @@ struct OStream : virtual OStreamRaw {
         if (mIndex) [[likely]] {
             auto buf = std::span(mBuffer.get(), mIndex);
             auto len = co_await raw_write(buf);
-            while (len != buf.size()) [[unlikely]] {
+            while (len > 0 && len != buf.size()) [[unlikely]] {
                 buf = buf.subspan(len);
                 len = co_await raw_write(buf);
             }
@@ -320,6 +324,7 @@ struct OStream : virtual OStreamRaw {
                 throw std::runtime_error("ostream shutdown while writing");
             }
             mIndex = 0;
+            co_await raw_flush();
         }
     }
 
@@ -344,7 +349,8 @@ struct [[nodiscard]] IOStreamImpl : IOStream, StreamRaw {
     template <class... Args>
         requires std::constructible_from<StreamRaw, Args...>
     explicit IOStreamImpl(Args &&...args)
-        : IOStream(), StreamRaw(std::forward<Args>(args)...) {}
+        : IOStream(),
+          StreamRaw(std::forward<Args>(args)...) {}
 
     IOStreamImpl() = default;
 };
@@ -354,7 +360,8 @@ struct [[nodiscard]] OStreamImpl : OStream, StreamRaw {
     template <class... Args>
         requires std::constructible_from<StreamRaw, Args...>
     explicit OStreamImpl(Args &&...args)
-        : OStream(), StreamRaw(std::forward<Args>(args)...) {}
+        : OStream(),
+          StreamRaw(std::forward<Args>(args)...) {}
 
     OStreamImpl() = default;
 };
@@ -364,7 +371,8 @@ struct [[nodiscard]] IStreamImpl : IStream, StreamRaw {
     template <class... Args>
         requires std::constructible_from<StreamRaw, Args...>
     explicit IStreamImpl(Args &&...args)
-        : IStream(), StreamRaw(std::forward<Args>(args)...) {}
+        : IStream(),
+          StreamRaw(std::forward<Args>(args)...) {}
 
     IStreamImpl() = default;
 };

@@ -28,11 +28,13 @@ struct HTTPServer {
 
         HTTPRequest request;
 
-        Task<std::string> body() {
+        Task<std::string> body() const {
+#if CO_ASYNC_DEBUG
             if (mBodyRead) [[unlikely]] {
                 throw std::runtime_error("body() may only be called once");
             }
             mBodyRead = true;
+#endif
             std::string body;
             if (!co_await mHttp->readBody(body)) {
                 throw std::runtime_error("failed to read request body");
@@ -40,26 +42,30 @@ struct HTTPServer {
             co_return body;
         }
 
-        Task<> body_stream(FileOStream &out) {
+        Task<> body_stream(OStream &out) const {
+#if CO_ASYNC_DEBUG
             if (mBodyRead) [[unlikely]] {
                 throw std::runtime_error("body() may only be called once");
             }
+#endif
             co_await mHttp->readBodyStream(out);
         }
 
-        Task<> response(HTTPResponse &resp, std::string_view body) const {
+        Task<> response(HTTPResponse const &resp, std::string_view body) const {
             co_await mHttp->writeResponse(resp);
             co_await mHttp->writeBody(body);
         }
 
-        Task<> response(HTTPResponse &resp, IStream &body) const {
+        Task<> response(HTTPResponse const &resp, IStream &body) const {
             co_await mHttp->writeResponse(resp);
             co_await mHttp->writeBodyStream(body);
         }
 
     private:
-        bool mBodyRead = false;
         HTTPProtocol *mHttp;
+#if CO_ASYNC_DEBUG
+        mutable bool mBodyRead = false;
+#endif
     };
 
     using HTTPHandler = std::function<Task<>(IO const &)>;

@@ -171,17 +171,7 @@ template <class T, class P>
         throw std::logic_error("not a worker thread");
     }
 #endif
-    return loop_enqueue_detach(*BasicLoop::tlsInstance, std::move(task));
-}
-
-template <class T, class P>
-/*[export]*/ inline Future<T> co_future(Task<T, P> task) {
-#if CO_ASYNC_DEBUG
-    if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
-        throw std::logic_error("not a worker thread");
-    }
-#endif
-    return loop_enqueue_future(*BasicLoop::tlsInstance, std::move(task));
+    return loop_enqueue_detached(*BasicLoop::tlsInstance, std::move(task));
 }
 
 template <class T, class P>
@@ -191,17 +181,7 @@ template <class T, class P>
         throw std::logic_error("not a worker thread");
     }
 #endif
-    return loop_enqueue_detach(globalSystemLoop.nthWorkerLoop(workerId), std::move(task));
-}
-
-template <class T, class P>
-/*[export]*/ inline Future<T> co_future(std::size_t workerId, Task<T, P> task) {
-#if CO_ASYNC_DEBUG
-    if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
-        throw std::logic_error("not a worker thread");
-    }
-#endif
-    return loop_enqueue_future(globalSystemLoop.nthWorkerLoop(workerId), std::move(task));
+    return loop_enqueue_detached(globalSystemLoop.nthWorkerLoop(workerId), std::move(task));
 }
 
 template <class T, class P>

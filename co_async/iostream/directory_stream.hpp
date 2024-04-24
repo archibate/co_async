@@ -11,7 +11,7 @@
 
 namespace co_async {
 
-struct DirectoryBuf {
+struct DirectoryStreamRaw : virtual IStreamRaw {
     Task<std::size_t> raw_read(std::span<char> buffer) {
         return fs_getdents(mFile, buffer);
     }
@@ -24,17 +24,17 @@ struct DirectoryBuf {
         return mFile;
     }
 
-    explicit DirectoryBuf(FileHandle file) : mFile(std::move(file)) {}
+    explicit DirectoryStreamRaw(FileHandle file) : mFile(std::move(file)) {}
 
 private:
     FileHandle mFile;
 };
 
-/*[export]*/ struct DirectoryStream : IStream<DirectoryBuf> {
-    using IStream<DirectoryBuf>::IStream;
+/*[export]*/ struct DirectoryStream : IStreamImpl<DirectoryStreamRaw> {
+    using IStreamImpl<DirectoryStreamRaw>::IStreamImpl;
 
     Task<std::optional<std::string>> getdirent() {
-        struct my_linux_dirent64 {
+        struct LinuxDirent64 {
             int64_t		d_ino;    /* 64-bit inode number */
             int64_t		d_off;    /* 64-bit offset to next structure */
             unsigned short	d_reclen; /* Size of this dirent */

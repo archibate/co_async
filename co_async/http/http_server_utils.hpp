@@ -31,7 +31,7 @@ namespace co_async {
     }
 
     static Task<>
-    make_ok_response(HTTPServer::IO const &io, std::string_view body,
+    make_ok_response(HTTPServer::IO &io, std::string_view body,
                      std::string contentType = "text/html;charset=utf-8") {
         HTTPResponse res{
             .status = 200,
@@ -43,7 +43,7 @@ namespace co_async {
         co_await io.response(res, body);
     }
 
-    static Task<> make_response_from_directory(HTTPServer::IO const &io, DirFilePath path) {
+    static Task<> make_response_from_directory(HTTPServer::IO &io, DirFilePath path) {
         auto dirPath = path.path().generic_string();
         std::string content = "<h1>Files in " + dirPath + ":</h1>";
         auto parentPath = path.path().parent_path().generic_string();
@@ -59,7 +59,7 @@ namespace co_async {
         co_await make_ok_response(io, content);
     }
 
-    static Task<> make_error_response(HTTPServer::IO const &io, int status) {
+    static Task<> make_error_response(HTTPServer::IO &io, int status) {
         auto error =
             to_string(status) + " " + std::string(getHTTPStatusName(status));
         HTTPResponse res{
@@ -76,7 +76,7 @@ namespace co_async {
     }
 
     static Task<>
-    make_response_from_file_or_directory(HTTPServer::IO const &io, DirFilePath path) {
+    make_response_from_file_or_directory(HTTPServer::IO &io, DirFilePath path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat) [[unlikely]] {
             co_return co_await make_error_response(io, 404);
@@ -101,7 +101,7 @@ namespace co_async {
     }
 
     static Task<>
-    make_response_from_path(HTTPServer::IO const &io, std::filesystem::path path) {
+    make_response_from_path(HTTPServer::IO &io, std::filesystem::path path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat) [[unlikely]] {
             co_return co_await make_error_response(io, 404);
@@ -128,7 +128,7 @@ namespace co_async {
         co_await f.close();
     }
 
-    static Task<> make_response_from_file(HTTPServer::IO const &io, DirFilePath path) {
+    static Task<> make_response_from_file(HTTPServer::IO &io, DirFilePath path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat || stat->is_directory()) [[unlikely]] {
             co_return co_await make_error_response(io, 404);
@@ -150,7 +150,7 @@ namespace co_async {
     }
 
     static Task<>
-    make_response_from_cgi_script(HTTPServer::IO const &io,
+    make_response_from_cgi_script(HTTPServer::IO &io,
                                   std::filesystem::path path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat || stat->is_directory()) [[unlikely]] {
@@ -196,7 +196,7 @@ namespace co_async {
         Pid pid = co_await proc.spawn();
         FileIStream reader(pipeOut.reader());
         FileOStream writer(pipeIn.writer());
-        co_await io.body_stream(writer);
+        co_await io.request_body_stream(writer);
         std::string line;
         while (true) {
             line.clear();

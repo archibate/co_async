@@ -28,13 +28,13 @@ struct HTTPServer {
 
         HTTPRequest request;
 
-        Task<std::string> body() const {
+        Task<std::string> request_body() {
 #if CO_ASYNC_DEBUG
             if (mBodyRead) [[unlikely]] {
-                throw std::runtime_error("body() may only be called once");
+                throw std::runtime_error("request_body() may only be called once");
             }
-            mBodyRead = true;
 #endif
+            mBodyRead = true;
             std::string body;
             if (!co_await mHttp->readBody(body)) {
                 throw std::runtime_error("failed to read request body");
@@ -42,35 +42,42 @@ struct HTTPServer {
             co_return body;
         }
 
-        Task<> body_stream(OStream &out) const {
+        Task<> request_body_stream(OStream &out) {
 #if CO_ASYNC_DEBUG
             if (mBodyRead) [[unlikely]] {
-                throw std::runtime_error("body() may only be called once");
+                throw std::runtime_error("request_body() may only be called once");
             }
 #endif
+            mBodyRead = true;
             co_await mHttp->readBodyStream(out);
         }
 
-        Task<> response(HTTPResponse const &resp, std::string_view body) const {
+        Task<> response(HTTPResponse const &resp, std::string_view content) {
+            if (!mBodyRead) {
+                co_await request_body();
+            }
             co_await mHttp->writeResponse(resp);
-            co_await mHttp->writeBody(body);
+            co_await mHttp->writeBody(content);
+            mBodyRead = false;
         }
 
-        Task<> response(HTTPResponse const &resp, IStream &body) const {
+        Task<> response(HTTPResponse const &resp, IStream &body) {
+            if (!mBodyRead) {
+                co_await request_body();
+            }
             co_await mHttp->writeResponse(resp);
             co_await mHttp->writeBodyStream(body);
+            mBodyRead = false;
         }
 
     private:
         HTTPProtocol *mHttp;
-#if CO_ASYNC_DEBUG
-        mutable bool mBodyRead = false;
-#endif
+        bool mBodyRead = false;
     };
 
-    using HTTPHandler = std::function<Task<>(IO const &)>;
+    using HTTPHandler = std::function<Task<>(IO &)>;
     using HTTPPrefixHandler =
-        std::function<Task<>(IO const &, std::string_view)>;
+        std::function<Task<>(IO &, std::string_view)>;
 
     explicit HTTPServer(SocketListener &listener) : mListener(listener) {}
 
@@ -103,7 +110,7 @@ struct HTTPServer {
     Task<std::unique_ptr<HTTPProtocol>> accept_https(SSLServerCertificate const &cert, SSLPrivateKey const &pkey, SSLSessionCache *cache = nullptr) const {
         auto sock = co_await SSLServerSocketStream::accept(mListener, cert, pkey, cache);
         if (sock.ssl_is_protocol_offered("h2")) {
-            /* co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SSLServerSocketStream>(std::move(sock))); // TODO */
+            /* co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SSLServerSocketStream>(std::move(sock))); todo: support http/2! */
         }
         co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SSLServerSocketStream>(std::move(sock)));
     }
@@ -116,11 +123,11 @@ struct HTTPServer {
     Task<> process_connection(std::unique_ptr<HTTPProtocol> http) const {
         IO io(http.get());
         while (co_await http->readRequest(io.request)) {
-            co_await handleRequest(io);
+            co_await doHandleRequest(io);
         }
     }
 
-    static Task<> make_error_response(IO const &io, int status) {
+    static Task<> make_error_response(IO &io, int status) {
         auto error =
             to_string(status) + " " + std::string(getHTTPStatusName(status));
         HTTPResponse res{
@@ -205,11 +212,11 @@ private:
     SocketListener &mListener;
     SimpleMap<std::string, Route> mRoutes;
     std::vector<std::pair<std::string, PrefixRoute>> mPrefixRoutes;
-    HTTPHandler mDefaultRoute = [](IO const &io) -> Task<> {
+    HTTPHandler mDefaultRoute = [](IO &io) -> Task<> {
         co_await make_error_response(io, 404);
     };
 
-    Task<> handleRequest(IO const &io) const {
+    Task<> doHandleRequest(IO &io) const {
         if (auto route = mRoutes.at(io.request.uri.path)) {
             if (!route->checkMethod(io.request.method)) [[unlikely]] {
                 co_await make_error_response(io, 405);

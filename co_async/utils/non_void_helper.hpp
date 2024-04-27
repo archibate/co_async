@@ -23,6 +23,14 @@ struct NonVoidHelper<void> {
     char const *repr() const noexcept {
         return "NonVoidHelper";
     }
+
+    static void *operator new(std::size_t) noexcept {
+        static char unused[sizeof(NonVoidHelper)];
+        return &unused;
+    }
+
+    static void operator delete(void *) noexcept {
+    }
 };
 
 } // namespace co_async

@@ -27,6 +27,27 @@ struct Uninitialized {
 #endif
     }
 
+    T const &refValue() const noexcept {
+        return mValue;
+    }
+
+    T &refValue() noexcept {
+        return mValue;
+    }
+
+    void destroyValue() {
+#if CO_ASYNC_DEBUG
+        if (!mHasValue) [[unlikely]] {
+            throw std::invalid_argument(
+                "Uninitialized::destroyValue called in an unvalued slot");
+        }
+#endif
+        mValue.~T();
+#if CO_ASYNC_DEBUG
+        mHasValue = false;
+#endif
+    }
+
     T moveValue() {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
@@ -42,7 +63,7 @@ struct Uninitialized {
         return ret;
     }
 
-    template <class... Ts>
+    template <class... Ts> requires std::constructible_from<T, Ts...>
     void putValue(Ts &&...args) {
 #if CO_ASYNC_DEBUG
         if (mHasValue) [[unlikely]] {
@@ -60,6 +81,12 @@ struct Uninitialized {
 
 template <>
 struct Uninitialized<void> {
+    void refValue() const noexcept {
+    }
+
+    void destroyValue() {
+    }
+
     auto moveValue() {
         return NonVoidHelper<>{};
     }
@@ -71,9 +98,33 @@ template <class T>
 struct Uninitialized<T const> : Uninitialized<T> {};
 
 template <class T>
-struct Uninitialized<T &> : Uninitialized<std::reference_wrapper<T>> {};
+struct Uninitialized<T &> : Uninitialized<std::reference_wrapper<T>> {
+private:
+    using Base = Uninitialized<std::reference_wrapper<T>>;
+
+public:
+    T const &refValue() const noexcept {
+        return Base::refValue().get();
+    }
+
+    T &refValue() noexcept {
+        return Base::refValue().get();
+    }
+
+    T &moveValue() {
+        return Base::moveValue().get();
+    }
+};
 
 template <class T>
-struct Uninitialized<T &&> : Uninitialized<T> {};
+struct Uninitialized<T &&> : Uninitialized<T &> {
+private:
+    using Base = Uninitialized<T &>;
+
+public:
+    T &&moveValue() {
+        return std::move(Base::moveValue().get());
+    }
+};
 
 } // namespace co_async

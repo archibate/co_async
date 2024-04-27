@@ -135,7 +135,7 @@ struct TaskAwaiter {
 };
 
 /*[export]*/ template <class T = void, class P = Promise<T>>
-struct [[nodiscard]] Task {
+struct [[nodiscard("did you forgot to co_await?")]] Task {
     using promise_type = P;
 
     /* Task(std::coroutine_handle<promise_type> coroutine) noexcept */

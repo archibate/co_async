@@ -27,7 +27,7 @@ namespace co_async {
     FileHandle reader() {
 #if CO_ASYNC_DEBUG
         if (!mReader) [[unlikely]] {
-            throw std::invalid_argument(
+            throw std::logic_error(
                 "PipeHandlePair::reader() can only be called once");
         }
 #endif
@@ -37,7 +37,7 @@ namespace co_async {
     FileHandle writer() {
 #if CO_ASYNC_DEBUG
         if (!mWriter) [[unlikely]] {
-            throw std::invalid_argument(
+            throw std::logic_error(
                 "PipeHandlePair::writer() can only be called once");
         }
 #endif

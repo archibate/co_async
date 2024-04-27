@@ -35,8 +35,8 @@ public:
                    std::string_view hostName)
         : mHttp(std::move(http)) {
         using namespace std::string_literals;
-        mDefaultHeaders.insert_or_assign("host", std::string(hostName));
-        mDefaultHeaders.insert_or_assign("user-agent", "co_async/0.0.1"s);
+        mDefaultHeaders.insert("host", std::string(hostName));
+        mDefaultHeaders.insert("user-agent", "co_async/0.0.1"s);
     }
 
     Task<> request(HTTPRequest req, std::string_view in,
@@ -75,12 +75,12 @@ public:
         co_await mHttp->readBodyStream(out);
     }
 
-    Task<> request(HTTPRequest req, IStream &in, FutureToken<HTTPResponse> res,
+    Task<> request(HTTPRequest req, IStream &in, FutureReference<HTTPResponse> const &res,
                    OStream &out) {
         updateHeaders(req);
         co_await mHttp->writeRequest(req);
         co_await mHttp->writeBodyStream(in);
-        co_await mHttp->readResponse(res.reference_writer());
+        co_await mHttp->readResponse(res);
         co_await mHttp->readBodyStream(out);
     }
 };

@@ -12,26 +12,43 @@ template <class T>
 struct FutureToken;
 
 template <class T>
+    requires(!std::is_reference_v<T>)
+struct FutureReference;
+
+template <class T>
 struct [[nodiscard]] FutureSource {
 private:
-    std::atomic<void *> mWaitingCoroutine{nullptr};
-    Uninitialized<T> mValue;
+    struct Impl {
+        std::atomic<void *> mWaitingCoroutine{nullptr};
+        Uninitialized<T> mValue;
 #if CO_ASYNC_EXCEPT
-    std::exception_ptr mException{nullptr};
+        std::exception_ptr mException{nullptr};
 #endif
+    };
 
-public:
-    FutureSource() = default;
-    FutureSource(FutureSource &&) = delete;
+    std::unique_ptr<Impl> mImpl = std::make_unique<Impl>();
 
     struct Awaiter {
         bool await_ready() const noexcept {
             return false;
         }
 
-        void await_suspend(std::coroutine_handle<> coroutine) const {
-            mThat->mWaitingCoroutine.store(coroutine.address(),
-                                           std::memory_order_release);
+        bool await_suspend(std::coroutine_handle<> coroutine) const {
+            void *coroPtr = nullptr;
+            if (!mImpl->mWaitingCoroutine.compare_exchange_strong(
+                    coroPtr, coroutine.address(), std::memory_order_acq_rel)) {
+                // coroPtr != nullptr
+#if CO_ASYNC_DEBUG
+                if (coroPtr != (void *)-1) [[unlikely]] {
+                    throw std::logic_error(
+                        "someone is already waiting on this future (" +
+                        std::to_string((std::uintptr_t)coroPtr) + ")");
+                }
+#endif
+                // -1 means future already done, don't suspend then
+                return false;
+            }
+            return true;
         }
 
         T await_resume() const noexcept {
@@ -40,17 +57,23 @@ public:
                 std::rethrow_exception(mThat->mException);
             }
 #endif
-            return mThat->mValue.moveValue();
+            return mImpl->mValue.moveValue();
         }
 
-        FutureSource<T> *mThat;
+        Impl *mImpl;
     };
 
-    Awaiter operator co_await() {
-        return Awaiter(this);
+public:
+    FutureSource() = default;
+    FutureSource(FutureSource &&) = default;
+    FutureSource &operator=(FutureSource &&) = default;
+
+    Awaiter operator co_await() const noexcept {
+        return Awaiter(mImpl.get());
     }
 
-    inline FutureToken<T> token() noexcept;
+    inline FutureToken<T> token() const noexcept;
+    inline FutureReference<T> reference() const noexcept;
 
     template <class>
     friend struct FutureToken;
@@ -58,67 +81,89 @@ public:
 
 template <class T>
 struct [[nodiscard]] FutureToken {
-    FutureToken(FutureSource<T> &that) noexcept : mThat(&that) {}
+    FutureToken(FutureSource<T> const &that) noexcept
+        : mImpl(that.mImpl.get()) {}
+
+    inline FutureReference<T> reference() const noexcept;
 
     void set_value(T &&value) {
-        auto coroPtr = mThat->mWaitingCoroutine.exchange(
-            nullptr, std::memory_order_acq_rel);
-        if (coroPtr) {
-            mThat->mValue.putValue(std::move(value));
-            auto coroutine = std::coroutine_handle<>::from_address(coroPtr);
-            coroutine.resume();
-        }
+        auto coroutine = setComplete();
+        mImpl->mValue.putValue(std::forward<T>(value));
+        coroutine.resume();
     }
 
 #if CO_ASYNC_EXCEPT
     void set_exception(std::exception_ptr e) {
-        auto coroPtr = mThat->mWaitingCoroutine.exchange(
-            nullptr, std::memory_order_acq_rel);
-        if (coroPtr) {
-            mThat->mException = e;
-            auto coroutine = std::coroutine_handle<>::from_address(coroPtr);
-            coroutine.resume();
-        } else {
-            std::rethrow_exception(e);
-        }
+        auto coroutine = setComplete();
+        mImpl->mException = e;
+        coroutine.resume();
     }
 #endif
 
-    struct ReferenceWriter {
-        ReferenceWriter(FutureToken<T> token) noexcept : mToken(token) {}
-
-        operator T &() noexcept {
-            return mValue;
-        }
-
-        ~ReferenceWriter() {
-            if (auto e = std::current_exception()) [[unlikely]] {
-                mToken.set_exception(e);
-            } else {
-                mToken.set_value(std::move(mValue));
-            }
-        }
-
-    private:
-        T mValue;
-        FutureToken<T> mToken;
-    };
-
-    [[nodiscard]] ReferenceWriter reference_writer() const {
-        return ReferenceWriter(*this);
-    }
-
-    FutureSource<T>::Awaiter operator co_await() {
-        return mThat->operator co_await();
+    auto operator co_await() const noexcept {
+        return typename FutureSource<T>::Awaiter(mImpl);
     }
 
 private:
-    FutureSource<T> *mThat;
+    typename FutureSource<T>::Impl *mImpl;
+
+    std::coroutine_handle<> setComplete() {
+        void *coroPtr = nullptr;
+        if (!mImpl->mWaitingCoroutine.compare_exchange_strong(
+                coroPtr, (void *)-1, std::memory_order_acq_rel)) {
+            // coroPtr != nullptr
+#if CO_ASYNC_DEBUG
+            if (coroPtr == (void *)-1) [[unlikely]] {
+                throw std::logic_error("future seems already set complete");
+            }
+#endif
+            return std::coroutine_handle<>::from_address(coroPtr);
+        }
+        return std::noop_coroutine();
+    }
 };
 
 template <class T>
-inline FutureToken<T> FutureSource<T>::token() noexcept {
-    return FutureToken<T>(this);
+    requires(!std::is_reference_v<T>)
+struct [[nodiscard]] FutureReference {
+    FutureReference(FutureToken<T> token) noexcept : mToken(token) {}
+
+    operator T &() const noexcept {
+        return mValue;
+    }
+
+    FutureReference(FutureReference &&) = delete;
+
+    ~FutureReference() {
+#if CO_ASYNC_EXCEPT
+        if (auto e = std::current_exception()) [[unlikely]] {
+            mToken.set_exception(e);
+        } else {
+#endif
+            mToken.set_value(std::move(mValue));
+#if CO_ASYNC_EXCEPT
+        }
+#endif
+    }
+
+private:
+    mutable T mValue;
+    FutureToken<T> mToken;
+};
+
+template <class T>
+inline FutureToken<T> FutureSource<T>::token() const noexcept {
+    return FutureToken<T>(*this);
+}
+
+template <class T>
+inline FutureReference<T> FutureToken<T>::reference() const noexcept {
+    return FutureReference<T>(*this);
+}
+
+template <class T>
+inline FutureReference<T> FutureSource<T>::reference() const noexcept {
+    return token().reference();
 }
 
 template <class T>

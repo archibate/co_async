@@ -16,22 +16,22 @@
 namespace co_async {
 
 template <class BaseStream>
-struct ZlibDecompressBuf {
+struct ZlibDecompressStreamRaw {
 protected:
     z_stream zs;
     BaseStream &base;
 
 public:
-    explicit ZlibDecompressBuf(BaseStream &base) : base(base) {
+    explicit ZlibDecompressStreamRaw(BaseStream &base) : base(base) {
         int ret = deflateInit(&zs, Z_DEFAULT_COMPRESSION);
         if (ret != Z_OK) {
             throw std::runtime_error("deflateInit failed with error code " + to_string(ret));
         }
     }
 
-    ZlibDecompressBuf(ZlibDecompressBuf &&) = delete;
+    ZlibDecompressStreamRaw(ZlibDecompressStreamRaw &&) = delete;
 
-    ~ZlibDecompressBuf() {
+    ~ZlibDecompressStreamRaw() {
         deflateEnd(&zs);
     }
 

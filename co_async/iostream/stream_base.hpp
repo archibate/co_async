@@ -3,6 +3,7 @@
 #include <co_async/std.hpp>         /*{import std;}*/
 #include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
 #include <co_async/awaiter/just.hpp>/*{import :awaiter.just;}*/
+// #include <co_async/utils/expected.hpp>/*{import :utils.expected;}*/
 
 namespace co_async {
 
@@ -257,15 +258,18 @@ struct OStream : virtual OStreamRaw {
     OStream(OStream &&) = default;
     OStream &operator=(OStream &&) = default;
 
-    Task<> putchar(char c) {
+    Task<bool> putchar(char c) {
         if (buffull()) {
-            co_await flush();
+            if (!co_await flush()) [[unlikely]] {
+                co_return false;
+            }
         }
         mBuffer[mIndex] = c;
         ++mIndex;
+        co_return true;
     }
 
-    Task<> putspan(std::span<char const> s) {
+    Task<bool> putspan(std::span<char const> s) {
         auto p = s.data();
         auto const pe = s.data() + s.size();
     again:
@@ -282,26 +286,29 @@ struct OStream : virtual OStreamRaw {
             while (b < be) {
                 *b++ = *p++;
             }
-            co_await flush();
+            if (!co_await flush()) [[unlikely]] {
+                co_return false;
+            }
             mIndex = 0;
             goto again;
         }
+        co_return true;
     }
 
-    Task<> puts(std::string_view s) {
+    Task<bool> puts(std::string_view s) {
         return putspan(std::span<char const>(s.data(), s.size()));
     }
 
     template <class T>
-    Task<> putstruct(T const &s) {
+    Task<bool> putstruct(T const &s) {
         return putspan(
             std::span<char const>((char const *)std::addressof(s), sizeof(T)));
     }
 
-    Task<> putline(std::string_view s) {
-        co_await puts(s);
-        co_await putchar('\n');
-        co_await flush();
+    Task<bool> putline(std::string_view s) {
+        if (!co_await puts(s)) [[unlikely]] co_return false;
+        if (!co_await putchar('\n')) [[unlikely]] co_return false;
+        co_return co_await flush();
     }
 
     std::span<char> wrbuf() const noexcept {
@@ -312,7 +319,7 @@ struct OStream : virtual OStreamRaw {
         mIndex += n;
     }
 
-    Task<> flush() {
+    Task<bool> flush() {
         if (mIndex) [[likely]] {
             auto buf = std::span(mBuffer.get(), mIndex);
             auto len = co_await raw_write(buf);
@@ -321,11 +328,13 @@ struct OStream : virtual OStreamRaw {
                 len = co_await raw_write(buf);
             }
             if (len == 0) [[unlikely]] {
-                throw std::runtime_error("ostream shutdown while writing");
+                /* throw std::runtime_error("ostream shutdown while writing"); */
+                co_return false;
             }
             mIndex = 0;
             co_await raw_flush();
         }
+        co_return true;
     }
 
     bool buffull() const noexcept {

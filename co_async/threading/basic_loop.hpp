@@ -51,7 +51,7 @@ loopEnqueueDetachStarter(Task<T, P> task) {
 }
 
 template <class T, class P>
-inline void loop_enqueue_detached(BasicLoop &loop, Task<T, P> task) {
+inline void loopEnqueueDetached(BasicLoop &loop, Task<T, P> task) {
     auto wrapped = loopEnqueueDetachStarter(std::move(task));
     auto coroutine = wrapped.get();
     loop.enqueue(coroutine);
@@ -59,10 +59,12 @@ inline void loop_enqueue_detached(BasicLoop &loop, Task<T, P> task) {
 }
 
 template <class T, class P>
-inline Task<> loopEnqueueSyncStarter(Task<T, P> task, std::condition_variable &cv, Uninitialized<T> &result
+inline Task<> loopEnqueueSyncStarter(Task<T, P> task,
+                                     std::condition_variable &cv,
+                                     Uninitialized<T> &result
 #if CO_ASYNC_EXCEPT
-                                ,
-                                std::exception_ptr exception
+                                     ,
+                                     std::exception_ptr exception
 #endif
 ) {
 #if CO_ASYNC_EXCEPT
@@ -78,19 +80,19 @@ inline Task<> loopEnqueueSyncStarter(Task<T, P> task, std::condition_variable &c
 }
 
 template <class T, class P>
-inline T loop_enqueue_synchronized(BasicLoop &loop, Task<T, P> task) {
+inline T loopEnqueueSynchronized(BasicLoop &loop, Task<T, P> task) {
     std::condition_variable cv;
     std::mutex mtx;
     Uninitialized<T> result;
 #if CO_ASYNC_EXCEPT
     std::exception_ptr exception;
 #endif
-    loop_enqueue_detached(loop, loopEnqueueSyncStarter(std::move(task), cv, result
+    loopEnqueueDetached(loop, loopEnqueueSyncStarter(std::move(task), cv, result
 #if CO_ASYNC_EXCEPT
-                                                       ,
-                                                       exception
+                                                     ,
+                                                     exception
 #endif
-                                                       ));
+                                                     ));
     std::unique_lock lck(mtx);
     cv.wait(lck);
     lck.unlock();

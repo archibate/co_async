@@ -7,7 +7,7 @@ using namespace std::literals;
 Task<> amain() {
     co_await https_load_ca_certificates();
 
-    auto conn = co_await http_connect("https://api.openai.com");
+    auto conn = co_await http_connect("https://man7.org");
     for (int i = 0; i < 4; i++) {
         HTTPRequest req = {
             .method = "GET",

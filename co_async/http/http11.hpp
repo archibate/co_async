@@ -75,7 +75,8 @@ public:
 /*[export]*/ struct HTTPProtocol {
     std::unique_ptr<IOStream> sock;
 
-    explicit HTTPProtocol(std::unique_ptr<IOStream> sock) : sock(std::move(sock)) {}
+    explicit HTTPProtocol(std::unique_ptr<IOStream> sock)
+        : sock(std::move(sock)) {}
 
     virtual ~HTTPProtocol() = default;
 
@@ -100,9 +101,10 @@ private:
 
     void checkPhase(int from, int to) {
         if (mPhase != from) [[unlikely]] {
-            throw std::runtime_error(
-                "function calling order wrong (" + to_string(mPhase) + ", " +
-                to_string(from) + ", " + to_string(to) + ")");
+            throw std::logic_error(
+                "HTTPProtocol member function calling order wrong (phase = " +
+                to_string(mPhase) + ", from = " + to_string(from) +
+                ", to = " + to_string(to) + ")");
         }
         mPhase = to;
     }
@@ -148,18 +150,23 @@ public:
         } break;
         case HTTPTransferEncoding::Gzip:
             co_await sock->puts("content-encoding: gzip\r\n\r\n"sv);
+            throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Compress:
             co_await sock->puts("content-encoding: compress\r\n\r\n"sv);
+            throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Deflate:
             co_await sock->puts("content-encoding: deflate\r\n\r\n"sv);
+            throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Br:
             co_await sock->puts("content-encoding: br\r\n\r\n"sv);
+            throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Zstd:
             co_await sock->puts("content-encoding: zstd\r\n\r\n"sv);
+            throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Identity: {
             auto content = co_await body.getall();
@@ -260,8 +267,9 @@ public:
         case HTTPTransferEncoding::Deflate: [[fallthrough]];
         case HTTPTransferEncoding::Br: [[fallthrough]];
         case HTTPTransferEncoding::Zstd: {
-            std::string content = co_await sock->getall();
-            co_await body.puts(content);
+            throw std::runtime_error("compress encoding not supported yet");
+            /* std::string content = co_await sock->getall(); */
+            /* co_await body.puts(content); */
         } break;
         }
         co_await body.flush();
@@ -341,7 +349,8 @@ public:
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP request:\n\t[" + line + "]\n";
 #endif
-            throw std::invalid_argument("invalid http request: version");
+            /* throw std::invalid_argument("invalid http request: version"); */
+            co_return false;
         }
         req.method = line.substr(0, pos);
         auto pos2 = line.find(' ', pos + 1);
@@ -349,7 +358,8 @@ public:
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP request:\n\t[" + line + "]\n";
 #endif
-            throw std::invalid_argument("invalid http request: method");
+            /* throw std::invalid_argument("invalid http request: method"); */
+            co_return false;
         }
         req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
         while (true) {
@@ -367,7 +377,8 @@ public:
                 std::cerr << "WARNING: invalid HTTP request:\n\t[" + line +
                                  "]\n";
 #endif
-                throw std::invalid_argument("invalid http request: header");
+                /* throw std::invalid_argument("invalid http request: header"); */
+                co_return false;
             }
             auto key = line.substr(0, pos);
             for (auto &c: key) {
@@ -392,16 +403,20 @@ public:
             req.headers.erase("content-length"sv);
             encoding.contentLength() = len;
         }
-        if (auto acceptEnc = req.headers.get("accept-encoding"sv)) {
-            for (std::string_view encName: split_string(*acceptEnc, ", "sv)) {
-                if (auto i = encName.find(';'); i != encName.npos) {
-                    encName = encName.substr(0, i);
-                }
-                auto enc = encodingByName(encName);
-                (void)enc; // TODO
-            }
-            req.headers.erase("accept-encoding"sv);
-        }
+        /* if (auto acceptEnc = req.headers.get("accept-encoding"sv)) { */
+        /*     for (std::string_view encName: split_string(*acceptEnc, ", "sv)) { */
+        /*         if (auto i = encName.find(';'); i != encName.npos) { */
+        /*             encName = encName.substr(0, i); */
+        /*         } */
+        /*         auto enc = encodingByName(encName); */
+        /*         if (enc != HTTPTransferEncoding::Identity) [[likely]] { */
+        /*             encoding = enc; */
+        /*             break; */
+        /*         } */
+        /*     } */
+        /*     req.headers.erase("accept-encoding"sv); */
+        /* } */
+        req.headers.erase("accept-encoding"sv);
         req.headers.erase("connection"sv);
         co_return true;
     }
@@ -439,7 +454,8 @@ public:
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
 #endif
-            throw std::invalid_argument("invalid http response: version");
+            /* throw std::invalid_argument("invalid http response: version"); */
+            co_return false;
         }
         if (auto statusOpt = from_string<int>(line.substr(9, 3))) [[likely]] {
             res.status = *statusOpt;
@@ -447,7 +463,8 @@ public:
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
 #endif
-            throw std::invalid_argument("invalid http response: status");
+            /* throw std::invalid_argument("invalid http response: status"); */
+            co_return false;
         }
         while (true) {
             line.clear();
@@ -464,7 +481,8 @@ public:
                 std::cerr << "WARNING: invalid HTTP response:\n\t[" + line +
                                  "]\n";
 #endif
-                throw std::invalid_argument("invalid http response: header");
+                /* throw std::invalid_argument("invalid http response: header"); */
+                co_return false;
             }
             auto key = line.substr(0, pos);
             for (auto &c: key) {

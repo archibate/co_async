@@ -171,7 +171,7 @@ template <class T, class P>
         throw std::logic_error("not a worker thread");
     }
 #endif
-    return loop_enqueue_detached(*BasicLoop::tlsInstance, std::move(task));
+    return loopEnqueueDetached(*BasicLoop::tlsInstance, std::move(task));
 }
 
 template <class T, class P>
@@ -181,7 +181,7 @@ template <class T, class P>
         throw std::logic_error("not a worker thread");
     }
 #endif
-    return loop_enqueue_detached(globalSystemLoop.nthWorkerLoop(workerId), std::move(task));
+    return loopEnqueueDetached(globalSystemLoop.nthWorkerLoop(workerId), std::move(task));
 }
 
 template <class T, class P>
@@ -193,7 +193,7 @@ template <class T, class P>
 #endif
     if (!globalSystemLoop.is_started())
         globalSystemLoop.start();
-    return loop_enqueue_synchronized(globalSystemLoop.getAnyWorkingLoop(), std::move(task));
+    return loopEnqueueSynchronized(globalSystemLoop.getAnyWorkingLoop(), std::move(task));
 }
 
 template <class F, class... Args>

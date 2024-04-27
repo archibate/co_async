@@ -1,11 +1,11 @@
-#pragma once/*{export module co_async:awaiter.when_any;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/utils/uninitialized.hpp>/*{import :utils.uninitialized;}*/
-#include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/awaiter/details/return_previous.hpp>/*{import :awaiter.details.return_previous;}*/
-#include <co_async/awaiter/concepts.hpp>/*{import :awaiter.concepts;}*/
+#include <co_async/std.hpp>
+#include <co_async/utils/uninitialized.hpp>
+#include <co_async/utils/non_void_helper.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/awaiter/details/return_previous.hpp>
+#include <co_async/awaiter/concepts.hpp>
 
 namespace co_async {
 
@@ -82,14 +82,14 @@ whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
     co_return varResult.moveValue();
 }
 
-/*[export]*/ template <Awaitable... Ts>
+template <Awaitable... Ts>
     requires(sizeof...(Ts) != 0)
 auto when_any(Ts &&...ts) {
     return whenAnyImpl(std::make_index_sequence<sizeof...(Ts)>{},
                        std::forward<Ts>(ts)...);
 }
 
-/*[export]*/ template <Awaitable T, class Alloc = std::allocator<T>>
+template <Awaitable T, class Alloc = std::allocator<T>>
 Task<typename AwaitableTraits<T>::RetType>
 when_any(std::vector<T, Alloc> const &tasks) {
     WhenAnyCtlBlock control{tasks.size()};

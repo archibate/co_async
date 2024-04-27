@@ -1,7 +1,7 @@
-#pragma once/*{export module co_async:utils.uninitialized;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
+#include <co_async/std.hpp>
+#include <co_async/utils/non_void_helper.hpp>
 
 namespace co_async {
 
@@ -63,7 +63,8 @@ struct Uninitialized {
         return ret;
     }
 
-    template <class... Ts> requires std::constructible_from<T, Ts...>
+    template <class... Ts>
+        requires std::constructible_from<T, Ts...>
     void putValue(Ts &&...args) {
 #if CO_ASYNC_DEBUG
         if (mHasValue) [[unlikely]] {
@@ -81,11 +82,9 @@ struct Uninitialized {
 
 template <>
 struct Uninitialized<void> {
-    void refValue() const noexcept {
-    }
+    void refValue() const noexcept {}
 
-    void destroyValue() {
-    }
+    void destroyValue() {}
 
     auto moveValue() {
         return NonVoidHelper<>{};

@@ -1,21 +1,21 @@
-/*{module;}*/
+
 
 #include <bearssl.h>
 
-#pragma once /*{export module co_async:ssl.ssl_socket;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 #ifdef __linux__
-#include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/system/socket.hpp>        /*{import :system.socket;}*/
-#include <co_async/system/socket_proxy.hpp>  /*{import :system.socket_proxy;}*/
-#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
-#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
-#include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
+#include <co_async/system/error_handling.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/system/socket.hpp>
+#include <co_async/system/socket_proxy.hpp>
+#include <co_async/system/system_loop.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/utils/string_utils.hpp>
+#include <co_async/iostream/socket_stream.hpp>
+#include <co_async/iostream/stream_base.hpp>
 
 namespace co_async {
 
@@ -369,7 +369,7 @@ public:
     }
 };
 
-/*[export]*/ struct SSLPrivateKey {
+struct SSLPrivateKey {
 private:
     std::unique_ptr<br_skey_decoder_context> skeyDec =
         std::make_unique<br_skey_decoder_context>();
@@ -466,8 +466,7 @@ private:
         std::make_unique<char[]>(BR_SSL_BUFSIZE_BIDI);
 
 public:
-    explicit SSLSocketStreamRaw(SocketHandle file)
-        : raw(std::move(file)) {}
+    explicit SSLSocketStreamRaw(SocketHandle file) : raw(std::move(file)) {}
 
 protected:
     void setEngine(br_ssl_engine_context *eng_) {
@@ -498,8 +497,7 @@ protected:
 #if CO_ASYNC_EXCEPT
                 try {
 #endif
-                    wlen = co_await raw.raw_write(
-                        {(char const *)buf, len});
+                    wlen = co_await raw.raw_write({(char const *)buf, len});
 #if CO_ASYNC_EXCEPT
                 } catch (...) {
                     if (!eng->shutdown_recv) {
@@ -538,8 +536,7 @@ protected:
 #if CO_ASYNC_EXCEPT
                 try {
 #endif
-                    rlen =
-                        co_await raw.raw_read({(char *)buf, len});
+                    rlen = co_await raw.raw_read({(char *)buf, len});
 #if CO_ASYNC_EXCEPT
                 } catch (...) {
                     if (!eng->shutdown_recv) {
@@ -605,10 +602,10 @@ public:
 
     void ssl_close() {
 #if CO_ASYNC_DEBUG
-        if (br_ssl_engine_current_state(eng) != BR_SSL_CLOSED)
-            [[unlikely]] {
-                std::cerr << "SSL closed improperly\n" << br_ssl_engine_current_state(eng);
-            }
+        if (br_ssl_engine_current_state(eng) != BR_SSL_CLOSED) [[unlikely]] {
+            std::cerr << "SSL closed improperly\n"
+                      << br_ssl_engine_current_state(eng);
+        }
 #endif
         br_ssl_engine_close(eng);
     }
@@ -700,8 +697,7 @@ public:
     }
 };
 
-/*[export]*/ struct SSLClientSocketStream
-    : IOStreamImpl<SSLClientSocketStreamRaw> {
+struct SSLClientSocketStream : IOStreamImpl<SSLClientSocketStreamRaw> {
     using IOStreamImpl<SSLClientSocketStreamRaw>::IOStreamImpl;
 
     static Task<SSLClientSocketStream>
@@ -714,8 +710,7 @@ public:
     }
 };
 
-/*[export]*/ struct SSLServerSocketStream
-    : IOStreamImpl<SSLServerSocketStreamRaw> {
+struct SSLServerSocketStream : IOStreamImpl<SSLServerSocketStreamRaw> {
     using IOStreamImpl<SSLServerSocketStreamRaw>::IOStreamImpl;
 
     static Task<SSLServerSocketStream>

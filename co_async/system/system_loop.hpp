@@ -1,9 +1,9 @@
-#pragma once/*{export module co_async:system.system_loop;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/system/uring_loop.hpp>/*{import :system.uring_loop;}*/
-#include <co_async/threading/basic_loop.hpp>/*{import :threading.basic_loop;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/std.hpp>
+#include <co_async/system/uring_loop.hpp>
+#include <co_async/threading/basic_loop.hpp>
+#include <co_async/awaiter/task.hpp>
 #if defined(__linux__) && defined(_GLIBCXX_HAS_GTHREADS)
 #include <pthread.h>
 #elif defined(_WIN32) && defined(_EXPORT_STD)
@@ -29,8 +29,7 @@ struct SystemLoop {
         return mNumWorkers;
     }
 
-    void start(std::size_t numWorkers = 0,
-               std::size_t numBatchWait = 1,
+    void start(std::size_t numWorkers = 0, std::size_t numBatchWait = 1,
                std::chrono::system_clock::duration batchTimeout =
                    std::chrono::milliseconds(15),
                std::chrono::system_clock::duration batchTimeoutDelta =
@@ -48,9 +47,9 @@ struct SystemLoop {
         mUringLoops = std::make_unique<UringLoop[]>(numWorkers);
         mNumWorkers = numWorkers;
         for (std::size_t i = 0; i < numWorkers; ++i) {
-            mThreads[i] = std::thread(&SystemLoop::threadEntry, this, i,
-                                      numWorkers, numBatchWait,
-                                      batchTimeout, batchTimeoutDelta);
+            mThreads[i] =
+                std::thread(&SystemLoop::threadEntry, this, i, numWorkers,
+                            numBatchWait, batchTimeout, batchTimeoutDelta);
 #if defined(__linux__) && defined(_GLIBCXX_HAS_GTHREADS)
             if (setAffinity) {
                 pthread_t h = mThreads[i].native_handle();
@@ -67,7 +66,8 @@ struct SystemLoop {
         }
     }
 
-    void threadEntry(std::size_t i, std::size_t numWorkers, std::size_t numBatchWait,
+    void threadEntry(std::size_t i, std::size_t numWorkers,
+                     std::size_t numBatchWait,
                      std::chrono::system_clock::duration batchTimeout,
                      std::chrono::system_clock::duration batchTimeoutDelta) {
         auto &thisBasicLoop = mBasicLoops[i];
@@ -162,10 +162,10 @@ private:
     std::stop_source mStop;
 };
 
-/*[export]*/ inline SystemLoop globalSystemLoop;
+inline SystemLoop globalSystemLoop;
 
 template <class T, class P>
-/*[export]*/ inline void co_spawn(Task<T, P> &&task) {
+inline void co_spawn(Task<T, P> &&task) {
 #if CO_ASYNC_DEBUG
     if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
         throw std::logic_error("not a worker thread");
@@ -175,17 +175,18 @@ template <class T, class P>
 }
 
 template <class T, class P>
-/*[export]*/ inline void co_spawn(std::size_t workerId, Task<T, P> task) {
+inline void co_spawn(std::size_t workerId, Task<T, P> task) {
 #if CO_ASYNC_DEBUG
     if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
         throw std::logic_error("not a worker thread");
     }
 #endif
-    return loopEnqueueDetached(globalSystemLoop.nthWorkerLoop(workerId), std::move(task));
+    return loopEnqueueDetached(globalSystemLoop.nthWorkerLoop(workerId),
+                               std::move(task));
 }
 
 template <class T, class P>
-/*[export]*/ inline auto co_synchronize(Task<T, P> task) {
+inline auto co_synchronize(Task<T, P> task) {
 #if CO_ASYNC_DEBUG
     if (globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
         throw std::logic_error("cannot be called on a worker thread");
@@ -193,12 +194,13 @@ template <class T, class P>
 #endif
     if (!globalSystemLoop.is_started())
         globalSystemLoop.start();
-    return loopEnqueueSynchronized(globalSystemLoop.getAnyWorkingLoop(), std::move(task));
+    return loopEnqueueSynchronized(globalSystemLoop.getAnyWorkingLoop(),
+                                   std::move(task));
 }
 
 template <class F, class... Args>
     requires std::is_invocable_r_v<Task<>, F, Args...>
-/*[export]*/ inline Task<> co_bind(F &&f, Args &&...args) {
+inline Task<> co_bind(F &&f, Args &&...args) {
     Task<> task = [](auto f) mutable -> Task<> {
         co_await std::move(f)();
     }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));

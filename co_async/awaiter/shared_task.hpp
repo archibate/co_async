@@ -1,14 +1,14 @@
-#pragma once/*{export module co_async:awaiter.unique_task;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/utils/uninitialized.hpp>/*{import :utils.uninitialized;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/awaiter/concepts.hpp>/*{import :awaiter.concepts;}*/
-#include <co_async/awaiter/just.hpp>/*{import :awaiter.just;}*/
+#include <co_async/std.hpp>
+#include <co_async/utils/uninitialized.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/awaiter/concepts.hpp>
+#include <co_async/awaiter/just.hpp>
 
 namespace co_async {
 
-/*[export]*/ template <class T = void, class P = Promise<T>>
+template <class T = void, class P = Promise<T>>
 struct [[nodiscard]] SharedTask {
     using promise_type = P;
 

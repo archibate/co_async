@@ -1,7 +1,7 @@
-#pragma once /*{export module co_async:utils.expected;}*/
+#pragma once
 
-#include <co_async/std.hpp>                /*{import std;}*/
-#include <co_async/utils/uninitialized.hpp>/*{import :utils.uninitialized;}*/
+#include <co_async/std.hpp>
+#include <co_async/utils/uninitialized.hpp>
 
 namespace co_async {
 
@@ -36,15 +36,16 @@ private:
         ExpectedErrorTraits<E>::throws(*mErrorPtr);
     }
 
-    explicit Unexpected(std::nullptr_t) noexcept : mErrorPtr(nullptr) {
-    }
+    explicit Unexpected(std::nullptr_t) noexcept : mErrorPtr(nullptr) {}
 
 public:
     explicit Unexpected(Error error) {
         mErrorPtr = new E(std::move(error));
     }
 
-    explicit Unexpected() requires (std::same_as<void, E>) {
+    explicit Unexpected()
+        requires(std::same_as<void, E>)
+    {
         mErrorPtr = new NonVoidHelper<E>;
     }
 
@@ -96,12 +97,13 @@ public:
         mValue.putValue(std::forward<T>(value));
     }
 
-    Expected() requires (std::same_as<void, T>) {
+    Expected()
+        requires(std::same_as<void, T>)
+    {
         mValue.putValue(NonVoidHelper<>());
     }
 
-    Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {
-    }
+    Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {}
 
     Expected(Expected &&that) noexcept : mError(std::move(that.mError)) {
         if (has_value()) {
@@ -153,7 +155,8 @@ public:
     T operator*() {
 #if CO_ASYNC_DEBUG
         if (!mError) [[unlikely]] {
-            throw std::logic_error("Expected: has error but operator*() is called");
+            throw std::logic_error(
+                "Expected: has error but operator*() is called");
         }
 #endif
         return mValue.refValue();
@@ -162,7 +165,8 @@ public:
     T *operator->() {
 #if CO_ASYNC_DEBUG
         if (!mError) [[unlikely]] {
-            throw std::logic_error("Expected: has error but operator->() is called");
+            throw std::logic_error(
+                "Expected: has error but operator->() is called");
         }
 #endif
         return mValue.refValue();

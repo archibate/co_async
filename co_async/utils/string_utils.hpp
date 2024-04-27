@@ -1,6 +1,6 @@
-#pragma once/*{export module co_async:utils.string_utils;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 namespace co_async {
 
@@ -55,7 +55,7 @@ struct from_string_t<T> {
     }
 };
 
-/*[export]*/ template <class T>
+template <class T>
 inline constexpr from_string_t<T> from_string;
 
 template <class T = void>
@@ -116,9 +116,9 @@ struct to_string_t<T> {
     }
 };
 
-/*[export]*/ inline constexpr to_string_t<> to_string;
+inline constexpr to_string_t<> to_string;
 
-/*[export]*/ inline std::string lower_string(std::string_view s) {
+inline std::string lower_string(std::string_view s) {
     std::string ret;
     ret.resize(s.size());
     std::transform(s.begin(), s.end(), ret.begin(), [](char c) {
@@ -130,7 +130,7 @@ struct to_string_t<T> {
     return ret;
 }
 
-/*[export]*/ inline std::string upper_string(std::string_view s) {
+inline std::string upper_string(std::string_view s) {
     std::string ret;
     ret.resize(s.size());
     std::transform(s.begin(), s.end(), ret.begin(), [](char c) {
@@ -142,7 +142,8 @@ struct to_string_t<T> {
     return ret;
 }
 
-/*[export]*/ inline std::string trim_string(std::string_view s, std::string_view trims = {" \t\r\n", 4}) {
+inline std::string trim_string(std::string_view s,
+                               std::string_view trims = {" \t\r\n", 4}) {
     auto pos = s.find_first_not_of(trims);
     if (pos == std::string_view::npos) {
         return {};
@@ -153,7 +154,9 @@ struct to_string_t<T> {
 
 template <class Delim>
 struct SplitString {
-    SplitString(std::string_view s, Delim delimiter) : s(s), delimiter(delimiter) {}
+    SplitString(std::string_view s, Delim delimiter)
+        : s(s),
+          delimiter(delimiter) {}
 
     struct sentinel {
         explicit sentinel() = default;
@@ -161,26 +164,37 @@ struct SplitString {
 
     struct iterator {
         explicit iterator(std::string_view s, Delim delimiter) noexcept
-            : s(s), delimiter(delimiter), ended(false), toBeEnded(false) {
+            : s(s),
+              delimiter(delimiter),
+              ended(false),
+              toBeEnded(false) {
             find_next();
         }
 
-        std::string_view operator*() const noexcept { return current; }
+        std::string_view operator*() const noexcept {
+            return current;
+        }
 
         iterator &operator++() {
             find_next();
             return *this;
         }
 
-        bool operator!=(sentinel) const noexcept { return !ended; }
+        bool operator!=(sentinel) const noexcept {
+            return !ended;
+        }
 
-        bool operator==(sentinel) const noexcept { return ended; }
+        bool operator==(sentinel) const noexcept {
+            return ended;
+        }
 
-        friend bool operator==(sentinel const &lhs, iterator const &rhs) noexcept {
+        friend bool operator==(sentinel const &lhs,
+                               iterator const &rhs) noexcept {
             return rhs == lhs;
         }
 
-        friend bool operator!=(sentinel const &lhs, iterator const &rhs) noexcept {
+        friend bool operator!=(sentinel const &lhs,
+                               iterator const &rhs) noexcept {
             return rhs != lhs;
         }
 
@@ -211,12 +225,17 @@ struct SplitString {
         bool toBeEnded;
     };
 
-    iterator begin() const noexcept { return iterator(s, delimiter); }
-    sentinel end() const noexcept { return sentinel(); }
+    iterator begin() const noexcept {
+        return iterator(s, delimiter);
+    }
+
+    sentinel end() const noexcept {
+        return sentinel();
+    }
 
     std::vector<std::string> collect() const {
         std::vector<std::string> result;
-        for (auto &&part : *this) {
+        for (auto &&part: *this) {
             result.emplace_back(part);
         }
         return result;
@@ -227,13 +246,12 @@ private:
     Delim delimiter;
 };
 
-/*[export]*/ inline SplitString<std::string_view> split_string(
-    std::string_view s, std::string_view delimiter) {
+inline SplitString<std::string_view> split_string(std::string_view s,
+                                                  std::string_view delimiter) {
     return {s, delimiter};
 }
 
-/*[export]*/ inline SplitString<char> split_string(
-    std::string_view s, char delimiter) {
+inline SplitString<char> split_string(std::string_view s, char delimiter) {
     return {s, delimiter};
 }
 

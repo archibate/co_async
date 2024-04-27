@@ -1,7 +1,7 @@
-#pragma once/*{export module co_async:awaiter.details.return_previous;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/std.hpp>
+#include <co_async/awaiter/task.hpp>
 
 namespace co_async {
 

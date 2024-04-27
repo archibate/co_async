@@ -1,4 +1,4 @@
-/*{module;}*/
+
 
 #ifdef __linux__
 #include <errno.h>
@@ -8,19 +8,19 @@
 #include <dirent.h>
 #endif
 
-#pragma once /*{export module co_async:system.fs;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 #ifdef __linux__
 
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
-#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
-#include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
+#include <co_async/awaiter/task.hpp>
+#include <co_async/system/system_loop.hpp>
+#include <co_async/system/error_handling.hpp>
 
 namespace co_async {
 
-/*[export]*/ struct [[nodiscard]] FileHandle {
+struct [[nodiscard]] FileHandle {
     FileHandle() noexcept : mFileNo(-1) {}
 
     explicit FileHandle(int fileNo) noexcept : mFileNo(fileNo) {}
@@ -55,7 +55,7 @@ protected:
     int mFileNo;
 };
 
-/*[export]*/ struct [[nodiscard]] DirFilePath {
+struct [[nodiscard]] DirFilePath {
     DirFilePath(std::filesystem::path path) : mPath(path), mDirFd(AT_FDCWD) {}
 
     explicit DirFilePath(std::filesystem::path path, FileHandle const &dir)
@@ -79,7 +79,7 @@ private:
     int mDirFd;
 };
 
-/*[export]*/ struct FileStat {
+struct FileStat {
     struct statx *getNativeStatx() {
         return &mStatx;
     }
@@ -155,7 +155,7 @@ private:
     }
 };
 
-/*[export]*/ enum class OpenMode : int {
+enum class OpenMode : int {
     Read = O_RDONLY | O_LARGEFILE | O_CLOEXEC,
     Write = O_WRONLY | O_TRUNC | O_CREAT | O_LARGEFILE | O_CLOEXEC,
     ReadWrite = O_RDWR | O_CREAT | O_LARGEFILE | O_CLOEXEC,
@@ -163,18 +163,18 @@ private:
     Directory = O_RDONLY | O_DIRECTORY | O_LARGEFILE | O_CLOEXEC,
 };
 
-/*[export]*/ inline std::filesystem::path make_path(std::string_view path) {
+inline std::filesystem::path make_path(std::string_view path) {
     return std::filesystem::path((char8_t const *)std::string(path).c_str());
 }
 
 template <std::convertible_to<std::string_view>... Ts>
     requires(sizeof...(Ts) >= 2)
-/*[export]*/ inline std::filesystem::path make_path(Ts &&...chunks) {
+inline std::filesystem::path make_path(Ts &&...chunks) {
     return (make_path(chunks) / ...);
 }
 
-/*[export]*/ inline Task<FileHandle> fs_open(DirFilePath path, OpenMode mode,
-                                             mode_t access = 0644) {
+inline Task<FileHandle> fs_open(DirFilePath path, OpenMode mode,
+                                mode_t access = 0644) {
     int oflags = (int)mode;
     int fd = checkErrorReturn(
         co_await uring_openat(path.dir_file(), path.c_str(), oflags, access));
@@ -182,38 +182,37 @@ template <std::convertible_to<std::string_view>... Ts>
     co_return file;
 }
 
-/*[export]*/ inline Task<> fs_close(FileHandle file) {
+inline Task<> fs_close(FileHandle file) {
     checkErrorReturn(co_await uring_close(file.fileNo()));
     file.releaseFile();
 }
 
-/*[export]*/ inline Task<> fs_mkdir(DirFilePath path, mode_t access = 0755) {
+inline Task<> fs_mkdir(DirFilePath path, mode_t access = 0755) {
     checkErrorReturn(
         co_await uring_mkdirat(path.dir_file(), path.c_str(), access));
 }
 
-/*[export]*/ inline Task<> fs_link(DirFilePath oldpath, DirFilePath newpath) {
+inline Task<> fs_link(DirFilePath oldpath, DirFilePath newpath) {
     checkErrorReturn(co_await uring_linkat(oldpath.dir_file(), oldpath.c_str(),
                                            newpath.dir_file(), newpath.c_str(),
                                            0));
 }
 
-/*[export]*/ inline Task<> fs_symlink(DirFilePath target,
-                                      DirFilePath linkpath) {
+inline Task<> fs_symlink(DirFilePath target, DirFilePath linkpath) {
     checkErrorReturn(co_await uring_symlinkat(
         target.c_str(), linkpath.dir_file(), linkpath.c_str()));
 }
 
-/*[export]*/ inline Task<> fs_unlink(DirFilePath path) {
+inline Task<> fs_unlink(DirFilePath path) {
     checkErrorReturn(co_await uring_unlinkat(path.dir_file(), path.c_str(), 0));
 }
 
-/*[export]*/ inline Task<> fs_rmdir(DirFilePath path) {
+inline Task<> fs_rmdir(DirFilePath path) {
     checkErrorReturn(
         co_await uring_unlinkat(path.dir_file(), path.c_str(), AT_REMOVEDIR));
 }
 
-/*[export]*/ inline Task<std::optional<FileStat>>
+inline Task<std::optional<FileStat>>
 fs_stat(DirFilePath path, int mask = STATX_BASIC_STATS | STATX_BTIME) {
     FileStat ret;
     int res = co_await uring_statx(path.dir_file(), path.c_str(), 0, mask,
@@ -230,50 +229,51 @@ fs_stat(DirFilePath path, int mask = STATX_BASIC_STATS | STATX_BTIME) {
     co_return ret;
 }
 
-/*[export]*/ inline Task<std::uint64_t> fs_stat_size(DirFilePath path) {
+inline Task<std::uint64_t> fs_stat_size(DirFilePath path) {
     FileStat ret;
     checkErrorReturn(co_await uring_statx(path.dir_file(), path.c_str(), 0,
                                           STATX_SIZE, ret.getNativeStatx()));
     co_return ret.size();
 }
 
-/*[export]*/ inline Task<std::size_t>
-fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = -1) {
+inline Task<std::size_t> fs_read(FileHandle &file, std::span<char> buffer,
+                                 std::uint64_t offset = -1) {
     co_return checkErrorReturn(
         co_await uring_read(file.fileNo(), buffer, offset));
 }
 
-/*[export]*/ inline Task<std::size_t> fs_write(FileHandle &file,
-                                               std::span<char const> buffer,
-                                               std::uint64_t offset = -1) {
+inline Task<std::size_t> fs_write(FileHandle &file,
+                                  std::span<char const> buffer,
+                                  std::uint64_t offset = -1) {
     co_return checkErrorReturn(
         co_await uring_write(file.fileNo(), buffer, offset));
 }
 
-/*[export]*/ inline Task<> fs_truncate(FileHandle &file,
-                                       std::uint64_t size = 0) {
+inline Task<> fs_truncate(FileHandle &file, std::uint64_t size = 0) {
     checkErrorReturn(co_await uring_ftruncate(file.fileNo(), size));
 }
 
-/*[export]*/ inline Task<std::size_t>
-fs_splice(FileHandle &fileIn, FileHandle &fileOut, std::size_t size,
-          std::uint64_t offsetIn = -1, std::uint64_t offsetOut = -1) {
+inline Task<std::size_t> fs_splice(FileHandle &fileIn, FileHandle &fileOut,
+                                   std::size_t size,
+                                   std::uint64_t offsetIn = -1,
+                                   std::uint64_t offsetOut = -1) {
     co_return checkErrorReturn(co_await uring_splice(
         fileIn.fileNo(), offsetIn, fileOut.fileNo(), offsetOut, size, 0));
 }
 
-/*[export]*/ inline Task<std::size_t> fs_getdents(FileHandle &dirFile,
-                                                  std::span<char> buffer) {
+inline Task<std::size_t> fs_getdents(FileHandle &dirFile,
+                                     std::span<char> buffer) {
     co_return checkError(
         getdents64(dirFile.fileNo(), buffer.data(), buffer.size()));
 }
 
-/*[export]*/ inline Task<int> fs_nop() {
+inline Task<int> fs_nop() {
     co_return co_await uring_nop();
 }
 
-/*[export]*/ inline Task<int> fs_cancel_fd(FileHandle &file) {
-    co_return co_await uring_cancel_fd(file.fileNo(), IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_ALL);
+inline Task<int> fs_cancel_fd(FileHandle &file) {
+    co_return co_await uring_cancel_fd(
+        file.fileNo(), IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_ALL);
 }
 
 } // namespace co_async

@@ -1,12 +1,12 @@
-/*{module;}*/
+
 
 #if defined(__unix__) && __has_include(<cxxabi.h>)
 #include <cxxabi.h>
 #endif
 
-#pragma once/*{export module co_async:awaiter.details.ignore_return_promise;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 namespace co_async {
 
@@ -22,7 +22,7 @@ struct IgnoreReturnPromise {
 
     void unhandled_exception() noexcept {
 #if CO_ASYNC_EXCEPT
-/* #if CO_ASYNC_DEBUG */
+        /* #if CO_ASYNC_DEBUG */
         try {
             throw;
         } catch (std::exception const &e) {
@@ -36,10 +36,11 @@ struct IgnoreReturnPromise {
             std::string s = name;
 #endif
             std::cerr
-                << "co_spawn coroutine terminated after thrown exception '" + s + "'\n  e.what(): "
-                + std::string(e.what()) + "\n";
+                << "co_spawn coroutine terminated after thrown exception '" +
+                       s + "'\n  e.what(): " + std::string(e.what()) + "\n";
         } catch (...) {
-            std::cerr << "co_spawn coroutine terminated after thrown exception\n";
+            std::cerr
+                << "co_spawn coroutine terminated after thrown exception\n";
         }
 /* #endif */
 #else
@@ -60,7 +61,8 @@ struct IgnoreReturnPromise {
 #if CO_ASYNC_PERF
     Perf mPerf;
 
-    IgnoreReturnPromise(std::source_location loc = std::source_location::current())
+    IgnoreReturnPromise(
+        std::source_location loc = std::source_location::current())
         : mPerf(loc) {}
 #endif
 };

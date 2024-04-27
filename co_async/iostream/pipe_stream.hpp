@@ -1,10 +1,10 @@
-#pragma once/*{export module co_async:iostream.file_stream;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
-#include <co_async/system/pipe.hpp>/*{import :system.pipe;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
+#include <co_async/std.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/system/pipe.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/iostream/stream_base.hpp>
 
 namespace co_async {
 
@@ -54,15 +54,15 @@ private:
     FileHandle mFile;
 };
 
-/*[export]*/ struct PipeIStream : IStreamImpl<PipeIStreamRaw> {
+struct PipeIStream : IStreamImpl<PipeIStreamRaw> {
     using IStreamImpl<PipeIStreamRaw>::IStreamImpl;
 };
 
-/*[export]*/ struct PipeOStream : OStreamImpl<PipeOStreamRaw> {
+struct PipeOStream : OStreamImpl<PipeOStreamRaw> {
     using OStreamImpl<PipeOStreamRaw>::OStreamImpl;
 };
 
-/*[export]*/ inline Task<std::tuple<PipeIStream, PipeOStream>> pipe_stream() {
+inline Task<std::tuple<PipeIStream, PipeOStream>> pipe_stream() {
     auto [r, w] = co_await fs_pipe();
     co_return {PipeIStream(std::move(r)), PipeOStream(std::move(w))};
 }

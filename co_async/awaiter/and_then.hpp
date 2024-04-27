@@ -1,12 +1,12 @@
-#pragma once/*{export module co_async:awaiter.and_then;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/awaiter/concepts.hpp>/*{import :awaiter.concepts;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/std.hpp>
+#include <co_async/awaiter/concepts.hpp>
+#include <co_async/awaiter/task.hpp>
 
 namespace co_async {
 
-/*[export]*/ template <Awaitable A, Awaitable F>
+template <Awaitable A, Awaitable F>
     requires(!std::is_invocable_v<F> &&
              !std::is_invocable_v<F, typename AwaitableTraits<A>::RetType>)
 Task<typename AwaitableTraits<F>::RetType> and_then(A a, F f) {

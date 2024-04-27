@@ -1,4 +1,4 @@
-/*{module;}*/
+
 
 #ifdef __linux__
 #include <sys/types.h>
@@ -9,22 +9,22 @@
 #include <errno.h>
 #endif
 
-#pragma once/*{export module co_async:system.socket;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 #ifdef __linux__
-#include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
-#include <co_async/system/system_loop.hpp>/*{import :system.system_loop;}*/
-#include <co_async/utils/string_utils.hpp>/*{import :utils.string_utils;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
+#include <co_async/system/error_handling.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/system/system_loop.hpp>
+#include <co_async/utils/string_utils.hpp>
+#include <co_async/awaiter/task.hpp>
 
 namespace co_async {
 
-/*[export]*/ using Pid = pid_t;
+using Pid = pid_t;
 
-/*[export]*/ struct WaitProcessResult {
+struct WaitProcessResult {
     Pid pid;
     int status;
 
@@ -39,12 +39,12 @@ namespace co_async {
     } exitType;
 };
 
-/*[export]*/ inline Task<> kill_process(Pid pid, int sig = SIGKILL) {
+inline Task<> kill_process(Pid pid, int sig = SIGKILL) {
     checkError(kill(pid, sig));
     co_return;
 }
 
-/*[export]*/ inline Task<WaitProcessResult> wait_process(Pid pid, int options = WEXITED) {
+inline Task<WaitProcessResult> wait_process(Pid pid, int options = WEXITED) {
     siginfo_t info{};
     checkErrorReturn(co_await uring_waitid(P_PID, pid, &info, options, 0));
     co_return WaitProcessResult{
@@ -54,10 +54,13 @@ namespace co_async {
     };
 }
 
-/*[export]*/ inline Task<std::optional<WaitProcessResult>> wait_process(Pid pid, std::chrono::nanoseconds timeout, int options = WEXITED) {
+inline Task<std::optional<WaitProcessResult>>
+wait_process(Pid pid, std::chrono::nanoseconds timeout, int options = WEXITED) {
     siginfo_t info{};
     auto ts = durationToKernelTimespec(timeout);
-    int ret = co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0), uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME));
+    int ret =
+        co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0),
+                            uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME));
     if (ret == -ECANCELED) {
         co_return std::nullopt;
     }
@@ -69,7 +72,7 @@ namespace co_async {
     };
 }
 
-/*[export]*/ struct ProcessBuilder {
+struct ProcessBuilder {
     ProcessBuilder() {
         mAbsolutePath = false;
         mEnvInherited = false;
@@ -167,7 +170,8 @@ namespace co_async {
             &pid, mPath.c_str(), &mFileActions, &mAttr, argv.data(),
             mEnvpStore.empty() ? environ : envp.data());
         if (status != 0) [[unlikely]] {
-            throw std::system_error(errno, std::system_category(), "posix_spawn");
+            throw std::system_error(errno, std::system_category(),
+                                    "posix_spawn");
         }
         mPath.clear();
         mArgvStore.clear();

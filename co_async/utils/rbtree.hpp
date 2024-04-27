@@ -1,6 +1,6 @@
-#pragma once/*{export module co_async:utils.rbtree;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 namespace co_async {
 
@@ -336,8 +336,8 @@ public:
     }
 
     template <class Visitor, class V>
-    std::pair<RbNode *, RbNode *> traverseEqualRange(Visitor &&visitor, V &&value) {
-    }
+    std::pair<RbNode *, RbNode *> traverseEqualRange(Visitor &&visitor,
+                                                     V &&value) {}
 
     template <class Visitor>
     void traverseInorder(Visitor &&visitor) {

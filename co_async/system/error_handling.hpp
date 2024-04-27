@@ -1,12 +1,12 @@
-/*{module;}*/
+
 
 #ifdef __linux__
 #include <errno.h>
 #endif
 
-#pragma once/*{export module co_async:system.error_handling;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 namespace co_async {
 
@@ -31,7 +31,9 @@ auto checkErrorReturn(
     return res;
 }
 
-auto checkErrorReturnCanceled(auto res, int cancelres = 0, int cancelerr = -ECANCELED, std::source_location loc = std::source_location::current()) {
+auto checkErrorReturnCanceled(
+    auto res, int cancelres = 0, int cancelerr = -ECANCELED,
+    std::source_location loc = std::source_location::current()) {
     if (res == cancelerr) {
         return cancelres;
     }
@@ -71,7 +73,8 @@ auto checkErrorReturn(auto res) {
     return res;
 }
 
-auto checkErrorReturnCanceled(auto res, int cancelres = 0, int cancelerr = -ECANCELED) {
+auto checkErrorReturnCanceled(auto res, int cancelres = 0,
+                              int cancelerr = -ECANCELED) {
     if (res == cancelerr) {
         return cancelres;
     }

@@ -1,12 +1,12 @@
-#pragma once /*{export module co_async:threading.basic_loop;}*/
+#pragma once
 
-#include <co_async/std.hpp>             /*{import std;}*/
-#include <co_async/awaiter/concepts.hpp>/*{import :awaiter.concepts;}*/
-#include <co_async/awaiter/task.hpp>    /*{import :awaiter.task;}*/
-#include <co_async/awaiter/details/ignore_return_promise.hpp>/*{import :awaiter.details.ignore_return_promise;}*/
-#include <co_async/utils/uninitialized.hpp>  /*{import :utils.uninitialized;}*/
-#include <co_async/utils/non_void_helper.hpp>/*{import :utils.non_void_helper;}*/
-#include <co_async/threading/concurrent_queue.hpp>/*{import :threading.concurrent_queue;}*/
+#include <co_async/std.hpp>
+#include <co_async/awaiter/concepts.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/awaiter/details/ignore_return_promise.hpp>
+#include <co_async/utils/uninitialized.hpp>
+#include <co_async/utils/non_void_helper.hpp>
+#include <co_async/threading/concurrent_queue.hpp>
 
 namespace co_async {
 

@@ -1,8 +1,8 @@
-#pragma once/*{export module co_async:http.http_status_code;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/iostream/file_stream.hpp>/*{import :iostream.file_stream;}*/
+#include <co_async/std.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/iostream/file_stream.hpp>
 
 namespace co_async {
 

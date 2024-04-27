@@ -1,10 +1,10 @@
-#pragma once/*{export module co_async:awaiter.when_all;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/utils/uninitialized.hpp>/*{import :utils.uninitialized;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/awaiter/details/return_previous.hpp>/*{import :awaiter.details.return_previous;}*/
-#include <co_async/awaiter/concepts.hpp>/*{import :awaiter.concepts;}*/
+#include <co_async/std.hpp>
+#include <co_async/utils/uninitialized.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/awaiter/details/return_previous.hpp>
+#include <co_async/awaiter/concepts.hpp>
 
 namespace co_async {
 
@@ -95,14 +95,14 @@ whenAllImpl(std::index_sequence<Is...>, Ts &&...ts) {
         std::get<Is>(result).moveValue()...);
 }
 
-/*[export]*/ template <Awaitable... Ts>
+template <Awaitable... Ts>
     requires(sizeof...(Ts) != 0)
 auto when_all(Ts &&...ts) {
     return whenAllImpl(std::make_index_sequence<sizeof...(Ts)>{},
                        std::forward<Ts>(ts)...);
 }
 
-/*[export]*/ template <Awaitable T, class Alloc = std::allocator<T>>
+template <Awaitable T, class Alloc = std::allocator<T>>
 Task<std::conditional_t<
     std::is_void_v<typename AwaitableTraits<T>::RetType>,
     std::vector<typename AwaitableTraits<T>::RetType, Alloc>, void>>

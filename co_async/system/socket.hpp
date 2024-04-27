@@ -1,4 +1,4 @@
-/*{module;}*/
+
 
 #ifdef __linux__
 #include <sys/types.h>
@@ -12,20 +12,20 @@
 #include <sys/un.h>
 #endif
 
-#pragma once /*{export module co_async:system.socket;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 #ifdef __linux__
-#include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
-#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/system/error_handling.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/system/system_loop.hpp>
+#include <co_async/utils/string_utils.hpp>
+#include <co_async/awaiter/task.hpp>
 
 namespace co_async {
 
-/*[export]*/ struct IpAddress {
+struct IpAddress {
     explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
 
     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
@@ -75,7 +75,7 @@ namespace co_async {
     std::variant<struct in_addr, struct in6_addr> mAddr;
 };
 
-/*[export]*/ struct SocketAddress {
+struct SocketAddress {
     SocketAddress() = default;
 
     SocketAddress(IpAddress ip, int port) {
@@ -143,11 +143,11 @@ private:
     }
 };
 
-/*[export]*/ struct [[nodiscard]] SocketHandle : FileHandle {
+struct [[nodiscard]] SocketHandle : FileHandle {
     using FileHandle::FileHandle;
 };
 
-/*[export]*/ struct [[nodiscard]] SocketListener : SocketHandle {
+struct [[nodiscard]] SocketListener : SocketHandle {
     using SocketHandle::SocketHandle;
 
     SocketAddress mAddr;
@@ -157,14 +157,14 @@ private:
     }
 };
 
-/*[export]*/ inline SocketAddress get_socket_address(SocketHandle &sock) {
+inline SocketAddress get_socket_address(SocketHandle &sock) {
     SocketAddress sa;
     sa.mAddrLen = sizeof(sa.mAddrIpv6);
     checkError(getsockname(sock.fileNo(), (sockaddr *)&sa.mAddr, &sa.mAddrLen));
     return sa;
 }
 
-/*[export]*/ inline SocketAddress get_socket_peer_address(SocketHandle &sock) {
+inline SocketAddress get_socket_peer_address(SocketHandle &sock) {
     SocketAddress sa;
     sa.mAddrLen = sizeof(sa.mAddrIpv6);
     checkError(getpeername(sock.fileNo(), (sockaddr *)&sa.mAddr, &sa.mAddrLen));
@@ -191,16 +191,15 @@ inline Task<SocketHandle> createSocket(int family, int type) {
     co_return sock;
 }
 
-/*[export]*/ inline Task<SocketHandle>
-socket_connect(SocketAddress const &addr) {
+inline Task<SocketHandle> socket_connect(SocketAddress const &addr) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     checkErrorReturn(co_await uring_connect(
         sock.fileNo(), (const struct sockaddr *)&addr.mAddr, addr.mAddrLen));
     co_return sock;
 }
 
-/*[export]*/ inline Task<SocketHandle>
-socket_connect(SocketAddress const &addr, std::chrono::nanoseconds timeout) {
+inline Task<SocketHandle> socket_connect(SocketAddress const &addr,
+                                         std::chrono::nanoseconds timeout) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     auto ts = durationToKernelTimespec(timeout);
     checkErrorReturn(co_await uring_join(
@@ -210,8 +209,8 @@ socket_connect(SocketAddress const &addr, std::chrono::nanoseconds timeout) {
     co_return sock;
 }
 
-/*[export]*/ inline Task<SocketListener>
-listener_bind(SocketAddress const &addr, int backlog = SOMAXCONN) {
+inline Task<SocketListener> listener_bind(SocketAddress const &addr,
+                                          int backlog = SOMAXCONN) {
     SocketHandle sock = co_await createSocket(addr.family(), SOCK_STREAM);
     socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
     /* socketSetOption(sock, IPPROTO_TCP, TCP_CORK, 1); */
@@ -223,8 +222,7 @@ listener_bind(SocketAddress const &addr, int backlog = SOMAXCONN) {
     co_return serv;
 }
 
-/*[export]*/ inline Task<SocketHandle>
-listener_accept(SocketListener &listener) {
+inline Task<SocketHandle> listener_accept(SocketListener &listener) {
     int fd = checkErrorReturn(co_await uring_accept(
         listener.fileNo(), (struct sockaddr *)&listener.mAddr.mAddr,
         &listener.mAddr.mAddrLen, 0));
@@ -232,34 +230,33 @@ listener_accept(SocketListener &listener) {
     co_return sock;
 }
 
-/*[export]*/ inline Task<std::size_t> socket_write(SocketHandle &sock,
-                                                   std::span<char const> buf) {
+inline Task<std::size_t> socket_write(SocketHandle &sock,
+                                      std::span<char const> buf) {
     co_return checkErrorReturn(co_await uring_send(sock.fileNo(), buf, 0));
 }
 
-/*[export]*/ inline Task<std::size_t> socket_read(SocketHandle &sock,
-                                                  std::span<char> buf) {
+inline Task<std::size_t> socket_read(SocketHandle &sock, std::span<char> buf) {
     co_return checkErrorReturn(co_await uring_recv(sock.fileNo(), buf, 0));
 }
 
-/*[export]*/ inline Task<std::size_t>
-socket_write(SocketHandle &sock, std::span<char const> buf,
-             std::chrono::nanoseconds timeout) {
+inline Task<std::size_t> socket_write(SocketHandle &sock,
+                                      std::span<char const> buf,
+                                      std::chrono::nanoseconds timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return checkErrorReturnCanceled(co_await uring_join(
-        uring_send(sock.fileNo(), buf, 0), uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+    co_return checkErrorReturnCanceled(
+        co_await uring_join(uring_send(sock.fileNo(), buf, 0),
+                            uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
 }
 
-/*[export]*/ inline Task<std::size_t>
-socket_read(SocketHandle &sock, std::span<char> buf,
-            std::chrono::nanoseconds timeout) {
+inline Task<std::size_t> socket_read(SocketHandle &sock, std::span<char> buf,
+                                     std::chrono::nanoseconds timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return checkErrorReturnCanceled(co_await uring_join(
-        uring_recv(sock.fileNo(), buf, 0), uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+    co_return checkErrorReturnCanceled(
+        co_await uring_join(uring_recv(sock.fileNo(), buf, 0),
+                            uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
 }
 
-/*[export]*/ inline Task<> socket_shutdown(SocketHandle &sock,
-                                           int how = SHUT_RDWR) {
+inline Task<> socket_shutdown(SocketHandle &sock, int how = SHUT_RDWR) {
     (co_await uring_shutdown(sock.fileNo(), how));
 }
 

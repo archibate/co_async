@@ -1,22 +1,22 @@
-/*{module;}*/
+
 
 #ifdef __linux__
 #include <unistd.h>
 #endif
 
-#pragma once/*{export module co_async:system.socket;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 #ifdef __linux__
-#include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/iostream/file_stream.hpp>/*{import :iostream.file_stream;}*/
+#include <co_async/system/error_handling.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/iostream/file_stream.hpp>
 
 namespace co_async {
 
-/*[export]*/ struct PipeHandlePair {
+struct PipeHandlePair {
     FileHandle mReader;
     FileHandle mWriter;
 
@@ -45,13 +45,13 @@ namespace co_async {
     }
 };
 
-/*[export]*/ inline Task<PipeHandlePair> fs_pipe() {
+inline Task<PipeHandlePair> fs_pipe() {
     int p[2];
     checkError(pipe2(p, 0));
     co_return {FileHandle(p[0]), FileHandle(p[1])};
 }
 
-/*[export]*/ inline Task<> send_file(FileHandle &sock, FileHandle &&file) {
+inline Task<> send_file(FileHandle &sock, FileHandle &&file) {
     auto [readPipe, writePipe] = co_await fs_pipe();
     while (auto n = co_await fs_splice(file, writePipe, 65536)) {
         std::size_t m;
@@ -64,7 +64,7 @@ namespace co_async {
     co_await fs_close(std::move(writePipe));
 }
 
-/*[export]*/ inline Task<> recv_file(FileHandle &sock, FileHandle &&file) {
+inline Task<> recv_file(FileHandle &sock, FileHandle &&file) {
     auto [readPipe, writePipe] = co_await fs_pipe();
     while (auto n = co_await fs_splice(sock, writePipe, 65536)) {
         std::size_t m;
@@ -77,5 +77,5 @@ namespace co_async {
     co_await fs_close(std::move(writePipe));
 }
 
-}
+} // namespace co_async
 #endif

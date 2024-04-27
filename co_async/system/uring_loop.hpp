@@ -1,4 +1,4 @@
-/*{module;}*/
+
 
 #ifdef __linux__
 #include <liburing.h>
@@ -9,14 +9,14 @@
 #include <fcntl.h>
 #endif
 
-#pragma once /*{export module co_async:system.uring_loop;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 #ifdef __linux__
-#include <co_async/threading/basic_loop.hpp> /*{import :threading.basic_loop;}*/
-#include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
+#include <co_async/threading/basic_loop.hpp>
+#include <co_async/system/error_handling.hpp>
+#include <co_async/awaiter/task.hpp>
 
 namespace co_async {
 
@@ -180,6 +180,7 @@ struct UringOp {
 
 private:
     std::coroutine_handle<> mPrevious;
+
     union {
         int mRes;
         io_uring_sqe *mSqe;
@@ -425,10 +426,9 @@ inline UringOp uring_timeout(struct __kernel_timespec *ts, unsigned int count,
 }
 
 inline UringOp uring_link_timeout(struct __kernel_timespec *ts,
-                             unsigned int flags) {
-    return UringOp([&](io_uring_sqe *sqe) {
-        io_uring_prep_link_timeout(sqe, ts, flags);
-    });
+                                  unsigned int flags) {
+    return UringOp(
+        [&](io_uring_sqe *sqe) { io_uring_prep_link_timeout(sqe, ts, flags); });
 }
 
 inline UringOp uring_timeout_update(UringOp *op, struct __kernel_timespec *ts,

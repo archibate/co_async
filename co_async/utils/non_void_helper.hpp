@@ -1,10 +1,10 @@
-#pragma once/*{export module co_async:utils.non_void_helper;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/std.hpp>
 
 namespace co_async {
 
-/*[export]*/ template <class T = void>
+template <class T = void>
 struct NonVoidHelper {
     using Type = T;
 };
@@ -29,8 +29,7 @@ struct NonVoidHelper<void> {
         return &unused;
     }
 
-    static void operator delete(void *) noexcept {
-    }
+    static void operator delete(void *) noexcept {}
 };
 
 } // namespace co_async

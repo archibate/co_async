@@ -1,22 +1,22 @@
-#pragma once /*{export module co_async:http.http11;}*/
+#pragma once
 
-#include <co_async/std.hpp>                    /*{import std;}*/
-#include <co_async/awaiter/task.hpp>           /*{import :awaiter.task;}*/
-#include <co_async/utils/simple_map.hpp>       /*{import :utils.simple_map;}*/
-#include <co_async/iostream/string_stream.hpp> /*{import :iostream.string_stream;}*/
-#include <co_async/iostream/zlib_stream.hpp> /*{import :iostream/zlib_stream;}*/
-#include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
-#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
+#include <co_async/std.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/utils/simple_map.hpp>
+#include <co_async/iostream/string_stream.hpp>
+#include <co_async/iostream/zlib_stream.hpp>
+#include <co_async/http/http_status_code.hpp>
+#include <co_async/utils/string_utils.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/http/uri.hpp>
 
 namespace co_async {
 
-/*[export]*/ struct HTTPHeaders : SimpleMap<std::string, std::string> {
+struct HTTPHeaders : SimpleMap<std::string, std::string> {
     using SimpleMap<std::string, std::string>::SimpleMap;
 };
 
-/*[export]*/ struct HTTPTransferEncoding {
+struct HTTPTransferEncoding {
     enum Type {
         Identity = 0,
         Chunked,
@@ -53,7 +53,7 @@ public:
     }
 };
 
-/*[export]*/ struct HTTPRequest {
+struct HTTPRequest {
     std::string method;
     URI uri;
     HTTPHeaders headers;
@@ -63,7 +63,7 @@ public:
     }
 };
 
-/*[export]*/ struct HTTPResponse {
+struct HTTPResponse {
     int status;
     HTTPHeaders headers;
 
@@ -72,7 +72,7 @@ public:
     }
 };
 
-/*[export]*/ struct HTTPProtocol {
+struct HTTPProtocol {
     std::unique_ptr<IOStream> sock;
 
     explicit HTTPProtocol(std::unique_ptr<IOStream> sock)
@@ -90,7 +90,7 @@ public:
     virtual Task<bool> readResponse(HTTPResponse &res) = 0;
 };
 
-/*[export]*/ struct HTTPProtocolVersion11 : HTTPProtocol {
+struct HTTPProtocolVersion11 : HTTPProtocol {
     using HTTPProtocol::HTTPProtocol;
 
     HTTPTransferEncoding encoding;

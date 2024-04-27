@@ -1,8 +1,8 @@
-#pragma once/*{export module co_async:http.uri;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/utils/simple_map.hpp>/*{import :utils.simple_map;}*/
-#include <co_async/utils/string_utils.hpp>/*{import :utils.string_utils;}*/
+#include <co_async/std.hpp>
+#include <co_async/utils/simple_map.hpp>
+#include <co_async/utils/string_utils.hpp>
 
 namespace co_async {
 

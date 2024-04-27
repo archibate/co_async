@@ -1,7 +1,7 @@
-#pragma once/*{export module co_async:threading.condition_variable;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/threading/concurrent_queue.hpp>/*{import :threading.concurrent_queue;}*/
+#include <co_async/std.hpp>
+#include <co_async/threading/concurrent_queue.hpp>
 
 namespace co_async {
 
@@ -17,8 +17,7 @@ struct MultishotConditionVariable {
             mThat->mWaitingList.push(coroutine);
         }
 
-        void await_resume() const noexcept {
-        }
+        void await_resume() const noexcept {}
 
         MultishotConditionVariable *mThat;
     };
@@ -49,11 +48,11 @@ struct ConditionVariable {
         }
 
         void await_suspend(std::coroutine_handle<> coroutine) const {
-            mThat->mWaitingCoroutine.store(coroutine.address(), std::memory_order_release);
+            mThat->mWaitingCoroutine.store(coroutine.address(),
+                                           std::memory_order_release);
         }
 
-        void await_resume() const noexcept {
-        }
+        void await_resume() const noexcept {}
 
         ConditionVariable *mThat;
     };
@@ -63,7 +62,8 @@ struct ConditionVariable {
     }
 
     void notify() {
-        auto coroPtr = mWaitingCoroutine.exchange(nullptr, std::memory_order_acq_rel);
+        auto coroPtr =
+            mWaitingCoroutine.exchange(nullptr, std::memory_order_acq_rel);
         if (coroPtr) {
             auto coroutine = std::coroutine_handle<>::from_address(coroPtr);
             coroutine.resume();

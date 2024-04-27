@@ -1,17 +1,17 @@
-/*{module;}*/
+
 
 #include <zlib.h>
 
-#pragma once /*{export module co_async:iostream.zlib_stream;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/system/error_handling.hpp>/*{import :system.error_handling;}*/
-#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/system/socket.hpp>        /*{import :system.socket;}*/
-#include <co_async/system/system_loop.hpp>   /*{import :system.system_loop;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
-#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
+#include <co_async/std.hpp>
+#include <co_async/system/error_handling.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/system/socket.hpp>
+#include <co_async/system/system_loop.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/utils/string_utils.hpp>
+#include <co_async/iostream/stream_base.hpp>
 
 namespace co_async {
 
@@ -25,7 +25,8 @@ public:
     explicit ZlibDecompressStreamRaw(BaseStream &base) : base(base) {
         int ret = deflateInit(&zs, Z_DEFAULT_COMPRESSION);
         if (ret != Z_OK) {
-            throw std::runtime_error("deflateInit failed with error code " + to_string(ret));
+            throw std::runtime_error("deflateInit failed with error code " +
+                                     to_string(ret));
         }
     }
 
@@ -52,7 +53,8 @@ public:
             int ret = deflate(&zs, flush);
             if (ret == Z_STREAM_ERROR) {
 #if CO_ASYNC_DEBUG
-                std::cerr << "deflate failed with error: " + to_string(zs.msg) + "\n";
+                std::cerr << "deflate failed with error: " + to_string(zs.msg) +
+                                 "\n";
 #endif
                 co_return 0;
             }
@@ -66,9 +68,10 @@ public:
     Task<> reset() {
         int ret = deflateReset(&zs);
         if (ret != Z_OK) {
-            throw std::runtime_error("deflateReset failed with error code " + to_string(ret));
+            throw std::runtime_error("deflateReset failed with error code " +
+                                     to_string(ret));
         }
     }
 };
 
-}
+} // namespace co_async

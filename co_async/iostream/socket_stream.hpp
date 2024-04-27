@@ -1,10 +1,10 @@
-#pragma once/*{export module co_async:iostream.socket_stream;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/system/socket.hpp>/*{import :system.socket;}*/
-#include <co_async/system/socket_proxy.hpp>/*{import :system.socket_proxy;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
+#include <co_async/std.hpp>
+#include <co_async/system/socket.hpp>
+#include <co_async/system/socket_proxy.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/iostream/stream_base.hpp>
 
 namespace co_async {
 
@@ -40,10 +40,12 @@ private:
     std::chrono::nanoseconds mTimeout = std::chrono::seconds(5);
 };
 
-/*[export]*/ struct SocketStream : IOStreamImpl<SocketStreamRaw> {
+struct SocketStream : IOStreamImpl<SocketStreamRaw> {
     using IOStreamImpl<SocketStreamRaw>::IOStreamImpl;
 
-    static Task<SocketStream> connect(const char *host, int port, std::string_view proxy, std::chrono::nanoseconds timeout) {
+    static Task<SocketStream> connect(char const *host, int port,
+                                      std::string_view proxy,
+                                      std::chrono::nanoseconds timeout) {
         auto conn = co_await socket_proxy_connect(host, port, proxy, timeout);
         SocketStream sock(std::move(conn));
         co_return sock;
@@ -55,6 +57,5 @@ private:
         co_return sock;
     }
 };
-
 
 } // namespace co_async

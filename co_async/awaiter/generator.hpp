@@ -1,8 +1,8 @@
-#pragma once/*{export module co_async:awaiter.generator;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/utils/uninitialized.hpp>/*{import :utils.uninitialized;}*/
-#include <co_async/awaiter/details/previous_awaiter.hpp>/*{import :awaiter.details.previous_awaiter;}*/
+#include <co_async/std.hpp>
+#include <co_async/utils/uninitialized.hpp>
+#include <co_async/awaiter/details/previous_awaiter.hpp>
 
 namespace co_async {
 

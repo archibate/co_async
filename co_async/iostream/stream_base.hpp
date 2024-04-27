@@ -1,9 +1,10 @@
-#pragma once /*{export module co_async:iostream.stream_base;}*/
+#pragma once
 
-#include <co_async/std.hpp>         /*{import std;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/awaiter/just.hpp>/*{import :awaiter.just;}*/
-// #include <co_async/utils/expected.hpp>/*{import :utils.expected;}*/
+#include <co_async/std.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/awaiter/just.hpp>
+
+// #include <co_async/utils/expected.hpp>
 
 namespace co_async {
 
@@ -306,8 +307,10 @@ struct OStream : virtual OStreamRaw {
     }
 
     Task<bool> putline(std::string_view s) {
-        if (!co_await puts(s)) [[unlikely]] co_return false;
-        if (!co_await putchar('\n')) [[unlikely]] co_return false;
+        if (!co_await puts(s)) [[unlikely]]
+            co_return false;
+        if (!co_await putchar('\n')) [[unlikely]]
+            co_return false;
         co_return co_await flush();
     }
 
@@ -353,7 +356,7 @@ struct IOStream : IStream, OStream {
           OStream(bufferSize) {}
 };
 
-/*[export]*/ template <std::derived_from<IOStreamRaw> StreamRaw>
+template <std::derived_from<IOStreamRaw> StreamRaw>
 struct [[nodiscard]] IOStreamImpl : IOStream, StreamRaw {
     template <class... Args>
         requires std::constructible_from<StreamRaw, Args...>
@@ -364,7 +367,7 @@ struct [[nodiscard]] IOStreamImpl : IOStream, StreamRaw {
     IOStreamImpl() = default;
 };
 
-/*[export]*/ template <std::derived_from<OStreamRaw> StreamRaw>
+template <std::derived_from<OStreamRaw> StreamRaw>
 struct [[nodiscard]] OStreamImpl : OStream, StreamRaw {
     template <class... Args>
         requires std::constructible_from<StreamRaw, Args...>
@@ -375,7 +378,7 @@ struct [[nodiscard]] OStreamImpl : OStream, StreamRaw {
     OStreamImpl() = default;
 };
 
-/*[export]*/ template <std::derived_from<IStreamRaw> StreamRaw>
+template <std::derived_from<IStreamRaw> StreamRaw>
 struct [[nodiscard]] IStreamImpl : IStream, StreamRaw {
     template <class... Args>
         requires std::constructible_from<StreamRaw, Args...>

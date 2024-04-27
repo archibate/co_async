@@ -1,5 +1,5 @@
-#include <co_async/co_async.hpp>/*{import co_async;}*/
-#include <co_async/std.hpp>/*{import std;}*/
+#include <co_async/co_async.hpp>
+#include <co_async/std.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
 #include "stb_image.h"

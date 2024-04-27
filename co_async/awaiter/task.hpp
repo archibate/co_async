@@ -1,11 +1,11 @@
-#pragma once/*{export module co_async:awaiter.task;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/utils/uninitialized.hpp>/*{import :utils.uninitialized;}*/
+#include <co_async/std.hpp>
+#include <co_async/utils/uninitialized.hpp>
 #if CO_ASYNC_PERF
-#include <co_async/utils/perf.hpp>/*{import :utils.perf;}*/
+#include <co_async/utils/perf.hpp>
 #endif
-#include <co_async/awaiter/details/previous_awaiter.hpp>/*{import :awaiter.details.previous_awaiter;}*/
+#include <co_async/awaiter/details/previous_awaiter.hpp>
 
 namespace co_async {
 
@@ -134,7 +134,7 @@ struct TaskAwaiter {
     std::coroutine_handle<P> mCoroutine;
 };
 
-/*[export]*/ template <class T = void, class P = Promise<T>>
+template <class T = void, class P = Promise<T>>
 struct [[nodiscard("did you forgot to co_await?")]] Task {
     using promise_type = P;
 

@@ -1,16 +1,16 @@
-/*{module;}*/
+
 
 #ifdef __linux__
 #include <unistd.h>
 #include <termios.h>
 #endif
 
-#pragma once/*{export module co_async:iostream.stdio_stream;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
+#include <co_async/std.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/iostream/stream_base.hpp>
 
 namespace co_async {
 
@@ -50,7 +50,7 @@ private:
     FileHandle &mFileOut;
 };
 
-/*[export]*/ using StdioStream = IOStreamImpl<StdioStreamRaw>;
+using StdioStream = IOStreamImpl<StdioStreamRaw>;
 
 template <int fileNo>
 inline FileHandle &stdHandle() {
@@ -58,7 +58,7 @@ inline FileHandle &stdHandle() {
     return h;
 }
 
-/*[export]*/ inline StdioStream &stdio() {
+inline StdioStream &stdio() {
     static thread_local StdioStream s(stdHandle<STDIN_FILENO>(),
                                       stdHandle<STDOUT_FILENO>());
     return s;

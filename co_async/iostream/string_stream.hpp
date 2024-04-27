@@ -1,9 +1,9 @@
-#pragma once/*{export module co_async:iostream.string_stream;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
+#include <co_async/std.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/iostream/stream_base.hpp>
 
 namespace co_async {
 
@@ -38,7 +38,8 @@ private:
 struct StringWriteStreamRaw : virtual OStreamRaw {
     StringWriteStreamRaw() noexcept {}
 
-    StringWriteStreamRaw(std::string &&str) noexcept : mString(std::move(str)) {}
+    StringWriteStreamRaw(std::string &&str) noexcept
+        : mString(std::move(str)) {}
 
     StringWriteStreamRaw(std::string_view str) : mString(str) {}
 
@@ -59,7 +60,7 @@ private:
     std::string mString;
 };
 
-/*[export]*/ using StringIStream = IStreamImpl<StringReadStreamRaw>;
-/*[export]*/ using StringOStream = OStreamImpl<StringWriteStreamRaw>;
+using StringIStream = IStreamImpl<StringReadStreamRaw>;
+using StringOStream = OStreamImpl<StringWriteStreamRaw>;
 
 } // namespace co_async

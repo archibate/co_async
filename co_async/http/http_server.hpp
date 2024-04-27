@@ -1,22 +1,22 @@
-#pragma once /*{export module co_async:http.http_server;}*/
+#pragma once
 
-#include <co_async/std.hpp>                  /*{import std;}*/
-#include <co_async/awaiter/task.hpp>         /*{import :awaiter.task;}*/
-#include <co_async/http/http11.hpp>          /*{import :http.http11;}*/
-#include <co_async/http/http_status_code.hpp>/*{import :http.http_status_code;}*/
-#include <co_async/utils/string_utils.hpp>   /*{import :utils.string_utils;}*/
-#include <co_async/utils/simple_map.hpp>     /*{import :utils.simple_map;}*/
-#include <co_async/system/socket.hpp>        /*{import :system.socket;}*/
-#include <co_async/system/fs.hpp>            /*{import :system.fs;}*/
-#include <co_async/system/pipe.hpp>          /*{import :system.pipe;}*/
-#include <co_async/http/uri.hpp>             /*{import :http.uri;}*/
-#include <co_async/http/http11.hpp>          /*{import :http.http11;}*/
-#include <co_async/iostream/socket_stream.hpp>/*{import :iostream.socket_stream;}*/
-#include <co_async/iostream/ssl_socket_stream.hpp>/*{import :iostream.ssl_socket_stream;}*/
+#include <co_async/std.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/http/http11.hpp>
+#include <co_async/http/http_status_code.hpp>
+#include <co_async/utils/string_utils.hpp>
+#include <co_async/utils/simple_map.hpp>
+#include <co_async/system/socket.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/system/pipe.hpp>
+#include <co_async/http/uri.hpp>
+#include <co_async/http/http11.hpp>
+#include <co_async/iostream/socket_stream.hpp>
+#include <co_async/iostream/ssl_socket_stream.hpp>
 
 namespace co_async {
 
-/*[export]*/ enum class HTTPRouteMode {
+enum class HTTPRouteMode {
     SuffixAny = 0, // "/a-9\\*g./.."
     SuffixName,    // "/a"
     SuffixPath,    // "/a/b/c"
@@ -31,7 +31,8 @@ struct HTTPServer {
         Task<std::string> request_body() {
 #if CO_ASYNC_DEBUG
             if (mBodyRead) [[unlikely]] {
-                throw std::runtime_error("request_body() may only be called once");
+                throw std::runtime_error(
+                    "request_body() may only be called once");
             }
 #endif
             mBodyRead = true;
@@ -45,7 +46,8 @@ struct HTTPServer {
         Task<> request_body_stream(OStream &out) {
 #if CO_ASYNC_DEBUG
             if (mBodyRead) [[unlikely]] {
-                throw std::runtime_error("request_body() may only be called once");
+                throw std::runtime_error(
+                    "request_body() may only be called once");
             }
 #endif
             mBodyRead = true;
@@ -76,8 +78,7 @@ struct HTTPServer {
     };
 
     using HTTPHandler = std::function<Task<>(IO &)>;
-    using HTTPPrefixHandler =
-        std::function<Task<>(IO &, std::string_view)>;
+    using HTTPPrefixHandler = std::function<Task<>(IO &, std::string_view)>;
 
     explicit HTTPServer(SocketListener &listener) : mListener(listener) {}
 
@@ -107,17 +108,22 @@ struct HTTPServer {
         mDefaultRoute = handler;
     }
 
-    Task<std::unique_ptr<HTTPProtocol>> accept_https(SSLServerCertificate const &cert, SSLPrivateKey const &pkey, SSLSessionCache *cache = nullptr) const {
-        auto sock = co_await SSLServerSocketStream::accept(mListener, cert, pkey, cache);
+    Task<std::unique_ptr<HTTPProtocol>>
+    accept_https(SSLServerCertificate const &cert, SSLPrivateKey const &pkey,
+                 SSLSessionCache *cache = nullptr) const {
+        auto sock = co_await SSLServerSocketStream::accept(mListener, cert,
+                                                           pkey, cache);
         if (sock.ssl_is_protocol_offered("h2")) {
             /* co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SSLServerSocketStream>(std::move(sock))); todo: support http/2! */
         }
-        co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SSLServerSocketStream>(std::move(sock)));
+        co_return std::make_unique<HTTPProtocolVersion11>(
+            std::make_unique<SSLServerSocketStream>(std::move(sock)));
     }
 
     Task<std::unique_ptr<HTTPProtocol>> accept_http() const {
         auto sock = co_await SocketStream::accept(mListener);
-        co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SocketStream>(std::move(sock)));
+        co_return std::make_unique<HTTPProtocolVersion11>(
+            std::make_unique<SocketStream>(std::move(sock)));
     }
 
     Task<> process_connection(std::unique_ptr<HTTPProtocol> http) const {
@@ -137,8 +143,9 @@ struct HTTPServer {
                     {"content-type", "text/html;charset=utf-8"},
                 },
         };
-        co_await io.response(res,
-                "<html><head><title>" + error +
+        co_await io.response(
+            res,
+            "<html><head><title>" + error +
                 "</title></head><body><center><h1>" + error +
                 "</h1></center><hr><center>co_async</center></body></html>");
     }

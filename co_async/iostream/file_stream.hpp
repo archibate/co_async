@@ -1,9 +1,9 @@
-#pragma once/*{export module co_async:iostream.file_stream;}*/
+#pragma once
 
-#include <co_async/std.hpp>/*{import std;}*/
-#include <co_async/system/fs.hpp>/*{import :system.fs;}*/
-#include <co_async/awaiter/task.hpp>/*{import :awaiter.task;}*/
-#include <co_async/iostream/stream_base.hpp>/*{import :iostream.stream_base;}*/
+#include <co_async/std.hpp>
+#include <co_async/system/fs.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/iostream/stream_base.hpp>
 
 namespace co_async {
 
@@ -34,7 +34,7 @@ private:
     FileHandle mFile;
 };
 
-/*[export]*/ struct FileIStream : IStreamImpl<FileStreamRaw> {
+struct FileIStream : IStreamImpl<FileStreamRaw> {
     using IStreamImpl<FileStreamRaw>::IStreamImpl;
 
     static Task<FileIStream> open(DirFilePath path) {
@@ -42,15 +42,16 @@ private:
     }
 };
 
-/*[export]*/ struct FileOStream : OStreamImpl<FileStreamRaw> {
+struct FileOStream : OStreamImpl<FileStreamRaw> {
     using OStreamImpl<FileStreamRaw>::OStreamImpl;
 
     static Task<FileOStream> open(DirFilePath path, bool append = false) {
-        co_return FileOStream(co_await fs_open(path, append ? OpenMode::Append : OpenMode::Write));
+        co_return FileOStream(co_await fs_open(path, append ? OpenMode::Append
+                                                            : OpenMode::Write));
     }
 };
 
-/*[export]*/ struct FileStream : IOStreamImpl<FileStreamRaw> {
+struct FileStream : IOStreamImpl<FileStreamRaw> {
     using IOStreamImpl<FileStreamRaw>::IOStreamImpl;
 
     static Task<FileStream> open(DirFilePath path) {
@@ -58,18 +59,18 @@ private:
     }
 };
 
-/*[export]*/ inline Task<std::string> file_read(DirFilePath path) {
+inline Task<std::string> file_read(DirFilePath path) {
     auto file = co_await FileIStream::open(path);
     co_return co_await file.getall();
 }
 
-/*[export]*/ inline Task<> file_write(DirFilePath path, std::string_view content) {
+inline Task<> file_write(DirFilePath path, std::string_view content) {
     auto file = co_await FileOStream::open(path, false);
     co_await file.puts(content);
     co_await file.flush();
 }
 
-/*[export]*/ inline Task<> file_append(DirFilePath path, std::string_view content) {
+inline Task<> file_append(DirFilePath path, std::string_view content) {
     auto file = co_await FileOStream::open(path, true);
     co_await file.puts(content);
     co_await file.flush();

@@ -10,7 +10,7 @@ struct NonVoidHelper {
 };
 
 template <>
-struct NonVoidHelper<void> {
+struct NonVoidHelper<void> final {
     using Type = NonVoidHelper;
 
     explicit NonVoidHelper() = default;

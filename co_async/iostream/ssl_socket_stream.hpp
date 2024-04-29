@@ -712,14 +712,6 @@ struct SSLClientSocketStream : IOStreamImpl<SSLClientSocketStreamRaw> {
 
 struct SSLServerSocketStream : IOStreamImpl<SSLServerSocketStreamRaw> {
     using IOStreamImpl<SSLServerSocketStreamRaw>::IOStreamImpl;
-
-    static Task<SSLServerSocketStream>
-    accept(SocketListener &listener, SSLServerCertificate const &cert,
-           SSLPrivateKey const &skey, SSLSessionCache *cache = nullptr) {
-        auto conn = co_await listener_accept(listener);
-        SSLServerSocketStream sock(std::move(conn), cert, skey, cache);
-        co_return sock;
-    }
 };
 
 } // namespace co_async

@@ -2,10 +2,12 @@
 
 #include <co_async/std.hpp>
 #include <co_async/utils/uninitialized.hpp>
+#include <co_async/utils/expected.hpp>
 #if CO_ASYNC_PERF
 #include <co_async/utils/perf.hpp>
 #endif
 #include <co_async/awaiter/details/previous_awaiter.hpp>
+#include <co_async/awaiter/details/value_awaiter.hpp>
 
 namespace co_async {
 
@@ -47,12 +49,11 @@ struct PromiseBase {
     PromiseBase &operator=(PromiseBase &&) = delete;
 
 protected:
+    std::coroutine_handle<> mPrevious;
+
 #if CO_ASYNC_EXCEPT
     std::exception_ptr mException{};
 #endif
-
-private:
-    std::coroutine_handle<> mPrevious;
 };
 
 template <class T>
@@ -107,6 +108,75 @@ struct Promise<void> : PromiseBase {
     }
 
 #if CO_ASYNC_PERF
+    Perf mPerf;
+
+    Promise(std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
+};
+
+template <class T, class E>
+struct Promise<Expected<T, E>> : PromiseBase {
+    void return_value(Expected<T, E> &&ret) {
+        mResult.putValue(std::move(ret));
+    }
+
+    void return_value(Expected<T, E> const &ret) {
+        mResult.putValue(ret);
+    }
+
+    /* void return_value(T &&ret) requires (!std::is_void_v<T>) { */
+    /*     mResult.putValue(std::move(ret)); */
+    /* } */
+    /*  */
+    /* void return_value(T const &ret) requires (!std::is_void_v<T>) { */
+    /*     mResult.putValue(ret); */
+    /* } */
+    /*  */
+    /* void return_void() requires (std::is_void_v<T>) { */
+    /*     mResult.putValue(); */
+    /* } */
+
+    Expected<T, E> result() {
+#if CO_ASYNC_EXCEPT
+        if (mException) [[unlikely]] {
+            std::rethrow_exception(mException);
+        }
+#endif
+        return mResult.moveValue();
+    }
+
+    auto get_return_object() {
+        return std::coroutine_handle<Promise>::from_promise(*this);
+    }
+
+    template <class T2, class E2>
+    ValueAwaiter<T2> await_transform(Expected<T2, E2> e) noexcept {
+        if (e.has_error()) [[unlikely]] {
+            if constexpr (std::is_void_v<E>)
+                mResult.putValue(Unexpected<>(std::in_place_type<void>));
+            else if constexpr (std::is_void_v<E2>)
+                mResult.putValue(Unexpected<E>(E()));
+            else
+                mResult.putValue(Unexpected<E>(std::move(e.error())));
+            return ValueAwaiter<T2>(mPrevious);
+        }
+        if constexpr (std::is_void_v<T2>)
+            return ValueAwaiter<void>(std::in_place);
+        else
+            return ValueAwaiter<T2>(std::in_place, std::move(*e));
+    }
+
+    template <class U>
+    U &&await_transform(U &&u) noexcept {
+        return std::forward<U>(u);
+    }
+
+private:
+    Uninitialized<Expected<T, E>> mResult;
+
+#if CO_ASYNC_PERF
+public:
     Perf mPerf;
 
     Promise(std::source_location loc = std::source_location::current())

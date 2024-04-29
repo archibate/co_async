@@ -3,8 +3,7 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/just.hpp>
-
-// #include <co_async/utils/expected.hpp>
+#include <co_async/utils/expected.hpp>
 
 namespace co_async {
 
@@ -34,61 +33,50 @@ struct IStream : virtual IStreamRaw {
     IStream(IStream &&) = default;
     IStream &operator=(IStream &&) = default;
 
-    Task<std::optional<char>> getchar() {
+    Task<Expected<char>> getchar() {
         if (bufempty()) {
-            if (!co_await fillbuf()) {
-                co_return std::nullopt;
-            }
+            co_await co_await fillbuf();
         }
         char c = mBuffer[mIndex];
         ++mIndex;
         co_return c;
     }
 
-    Task<bool> getline(std::string &s, char eol) {
+    Task<Expected<>> getline(std::string &s, char eol) {
         std::size_t start = mIndex;
         while (true) {
             for (std::size_t i = start; i < mEnd; ++i) {
                 if (mBuffer[i] == eol) {
                     s.append(mBuffer.get() + start, i - start);
                     mIndex = i + 1;
-                    co_return true;
+                    co_return {};
                 }
             }
-            if (!co_await fillbuf()) {
-                co_return false;
-            }
+            co_await co_await fillbuf();
             start = 0;
         }
     }
 
-    Task<bool> dropline(char eol) {
+    Task<Expected<>> dropline(char eol) {
         std::size_t start = mIndex;
         while (true) {
             for (std::size_t i = start; i < mEnd; ++i) {
                 if (mBuffer[i] == eol) {
                     mIndex = i + 1;
-                    co_return true;
+                    co_return {};
                 }
             }
-            if (!co_await fillbuf()) {
-                co_return false;
-            }
+            co_await co_await fillbuf();
             start = 0;
         }
     }
 
-    Task<bool> getline(std::string &s, std::string_view eol) {
-        while (true) {
+    Task<Expected<>> getline(std::string &s, std::string_view eol) {
         again:
-            if (!co_await getline(s, eol.front())) {
-                co_return false;
-            }
+            co_await co_await getline(s, eol.front());
             for (std::size_t i = 1; i < eol.size(); ++i) {
                 if (bufempty()) {
-                    if (!co_await fillbuf()) {
-                        co_return false;
-                    }
+                    co_await co_await fillbuf();
                 }
                 char c = mBuffer[mIndex];
                 if (eol[i] == c) [[likely]] {
@@ -98,46 +86,40 @@ struct IStream : virtual IStreamRaw {
                     goto again;
                 }
             }
-            co_return true;
-        }
+            co_return {};
     }
 
-    Task<bool> dropline(std::string_view eol) {
-        while (true) {
+    Task<Expected<>> dropline(std::string_view eol) {
         again:
-            if (!co_await dropline(eol.front())) {
-                co_return false;
+            co_await co_await dropline(eol.front());
+        for (std::size_t i = 1; i < eol.size(); ++i) {
+            if (bufempty()) {
+                co_await co_await fillbuf();
             }
-            for (std::size_t i = 1; i < eol.size(); ++i) {
-                if (bufempty()) {
-                    if (!co_await fillbuf()) {
-                        co_return false;
-                    }
-                }
-                char c = mBuffer[mIndex];
-                if (eol[i] == c) [[likely]] {
-                    ++mIndex;
-                } else {
+            char c = mBuffer[mIndex];
+            if (eol[i] == c) [[likely]] {
+                ++mIndex;
+            } else {
                     goto again;
                 }
-            }
-            co_return true;
         }
+        co_return {};
+
     }
 
-    Task<std::string> getline(char eol) {
+    Task<Expected<std::string>> getline(char eol) {
         std::string s;
-        co_await getline(s, eol);
+        co_await co_await getline(s, eol);
         co_return s;
     }
 
-    Task<std::string> getline(std::string_view eol) {
+    Task<Expected<std::string>> getline(std::string_view eol) {
         std::string s;
-        co_await getline(s, eol);
+        co_await co_await getline(s, eol);
         co_return s;
     }
 
-    Task<bool> getspan(std::span<char> s) {
+    Task<Expected<>> getspan(std::span<char> s) {
         auto p = s.data();
         auto n = s.size();
         std::size_t start = mIndex;
@@ -146,52 +128,44 @@ struct IStream : virtual IStreamRaw {
             if (end <= mEnd) {
                 p = std::copy(mBuffer.get() + start, mBuffer.get() + end, p);
                 mIndex = end;
-                co_return true;
+                co_return {};
             }
             p = std::copy(mBuffer.get() + start, mBuffer.get() + mEnd, p);
-            if (!co_await fillbuf()) {
-                co_return false;
-            }
+            co_await co_await fillbuf();
             start = 0;
         }
     }
 
-    Task<bool> dropn(std::size_t n) {
-        if (!n)
-            co_return true;
+    Task<Expected<>> dropn(std::size_t n) {
         std::size_t start = mIndex;
         while (true) {
             auto end = start + n;
             if (end <= mEnd) {
                 mIndex = end;
-                co_return true;
+                co_return {};
             }
-            if (!co_await fillbuf()) {
-                co_return false;
-            }
+            co_await co_await fillbuf();
             start = 0;
         }
     }
 
-    Task<bool> getn(std::string &s, std::size_t n) {
+    Task<Expected<>> getn(std::string &s, std::size_t n) {
         while (true) {
             if (mIndex + n <= mEnd) {
                 s.append(mBuffer.get() + mIndex, n);
                 mIndex += n;
-                co_return true;
+                co_return {};
             }
             s.append(mBuffer.get() + mIndex, mEnd - mIndex);
             n -= mEnd - mIndex;
-            if (!co_await fillbuf()) {
-                co_return false;
-            }
+            co_await co_await fillbuf();
         }
     }
 
-    Task<std::string> getn(std::size_t n) {
+    Task<Expected<std::string>> getn(std::size_t n) {
         std::string s;
         s.reserve(n);
-        co_await getn(s, n);
+        co_await co_await getn(s, n);
         co_return s;
     }
 
@@ -211,17 +185,15 @@ struct IStream : virtual IStreamRaw {
 
     template <class T>
         requires std::is_trivial_v<T>
-    Task<bool> getstruct(T &ret) {
+    Task<Expected<>> getstruct(T &ret) {
         return getspan(std::span<char>((char *)&ret, sizeof(T)));
     }
 
     template <class T>
         requires std::is_trivial_v<T>
-    Task<T> getstruct() {
+    Task<Expected<T>> getstruct() {
         T ret;
-        if (!co_await getstruct(ret)) [[unlikely]] {
-            throw std::runtime_error("EOF while reading struct");
-        }
+        co_await co_await getstruct(ret);
         co_return ret;
     }
 
@@ -233,10 +205,13 @@ struct IStream : virtual IStreamRaw {
         mIndex += n;
     }
 
-    Task<bool> fillbuf() {
+    Task<Expected<>> fillbuf() {
         mEnd = co_await raw_read(std::span(mBuffer.get(), mBufSize));
         mIndex = 0;
-        co_return mEnd != 0;
+        if (mEnd == 0) [[unlikely]] {
+            co_return Unexpected{};
+        }
+        co_return {};
     }
 
     bool bufempty() const noexcept {
@@ -259,18 +234,16 @@ struct OStream : virtual OStreamRaw {
     OStream(OStream &&) = default;
     OStream &operator=(OStream &&) = default;
 
-    Task<bool> putchar(char c) {
+    Task<Expected<>> putchar(char c) {
         if (buffull()) {
-            if (!co_await flush()) [[unlikely]] {
-                co_return false;
-            }
+            co_await co_await flush();
         }
         mBuffer[mIndex] = c;
         ++mIndex;
-        co_return true;
+        co_return {};
     }
 
-    Task<bool> putspan(std::span<char const> s) {
+    Task<Expected<>> putspan(std::span<char const> s) {
         auto p = s.data();
         auto const pe = s.data() + s.size();
     again:
@@ -287,30 +260,26 @@ struct OStream : virtual OStreamRaw {
             while (b < be) {
                 *b++ = *p++;
             }
-            if (!co_await flush()) [[unlikely]] {
-                co_return false;
-            }
+            co_await co_await flush();
             mIndex = 0;
             goto again;
         }
-        co_return true;
+        co_return {};
     }
 
-    Task<bool> puts(std::string_view s) {
+    Task<Expected<>> puts(std::string_view s) {
         return putspan(std::span<char const>(s.data(), s.size()));
     }
 
     template <class T>
-    Task<bool> putstruct(T const &s) {
+    Task<Expected<>> putstruct(T const &s) {
         return putspan(
             std::span<char const>((char const *)std::addressof(s), sizeof(T)));
     }
 
-    Task<bool> putline(std::string_view s) {
-        if (!co_await puts(s)) [[unlikely]]
-            co_return false;
-        if (!co_await putchar('\n')) [[unlikely]]
-            co_return false;
+    Task<Expected<>> putline(std::string_view s) {
+        co_await co_await puts(s);
+        co_await co_await putchar('\n');
         co_return co_await flush();
     }
 
@@ -322,7 +291,7 @@ struct OStream : virtual OStreamRaw {
         mIndex += n;
     }
 
-    Task<bool> flush() {
+    Task<Expected<>> flush() {
         if (mIndex) [[likely]] {
             auto buf = std::span(mBuffer.get(), mIndex);
             auto len = co_await raw_write(buf);
@@ -331,13 +300,12 @@ struct OStream : virtual OStreamRaw {
                 len = co_await raw_write(buf);
             }
             if (len == 0) [[unlikely]] {
-                /* throw std::runtime_error("ostream shutdown while writing"); */
-                co_return false;
+                co_return Unexpected{};
             }
             mIndex = 0;
             co_await raw_flush();
         }
-        co_return true;
+        co_return {};
     }
 
     bool buffull() const noexcept {

@@ -30,7 +30,7 @@ struct HTTPServerUtils {
         return res;
     }
 
-    static Task<>
+    static Task<Expected<>>
     make_ok_response(HTTPServer::IO &io, std::string_view body,
                      std::string contentType = "text/html;charset=utf-8") {
         HTTPResponse res{
@@ -40,10 +40,11 @@ struct HTTPServerUtils {
                     {"content-type", std::move(contentType)},
                 },
         };
-        co_await io.response(res, body);
+        co_await co_await io.response(res, body);
+        co_return {};
     }
 
-    static Task<> make_response_from_directory(HTTPServer::IO &io,
+    static Task<Expected<>> make_response_from_directory(HTTPServer::IO &io,
                                                DirFilePath path) {
         auto dirPath = path.path().generic_string();
         std::string content = "<h1>Files in " + dirPath + ":</h1>";
@@ -52,17 +53,18 @@ struct HTTPServerUtils {
             "<a href=\"/" + URI::url_encode_path(parentPath) + "\">..</a><br>";
         DirectoryStream dir(co_await fs_open(path, OpenMode::Directory));
         while (auto entry = co_await dir.getdirent()) {
-            if (entry == ".." || entry == ".")
+            if (*entry == ".." || *entry == ".")
                 continue;
             content += "<a href=\"/" +
                        URI::url_encode_path(
                            make_path(dirPath, *entry).generic_string()) +
                        "\">" + html_encode(*entry) + "</a><br>";
         }
-        co_await make_ok_response(io, content);
+        co_await co_await make_ok_response(io, content);
+        co_return {};
     }
 
-    static Task<> make_error_response(HTTPServer::IO &io, int status) {
+    static Task<Expected<>> make_error_response(HTTPServer::IO &io, int status) {
         auto error =
             to_string(status) + " " + std::string(getHTTPStatusName(status));
         HTTPResponse res{
@@ -72,14 +74,15 @@ struct HTTPServerUtils {
                     {"content-type", "text/html;charset=utf-8"},
                 },
         };
-        co_await io.response(
+        co_await co_await io.response(
             res,
             "<html><head><title>" + error +
                 "</title></head><body><center><h1>" + error +
                 "</h1></center><hr><center>co_async</center></body></html>");
+        co_return {};
     }
 
-    static Task<> make_response_from_file_or_directory(HTTPServer::IO &io,
+    static Task<Expected<>> make_response_from_file_or_directory(HTTPServer::IO &io,
                                                        DirFilePath path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat) [[unlikely]] {
@@ -101,11 +104,12 @@ struct HTTPServerUtils {
                 },
         };
         auto f = co_await FileIStream::open(path);
-        co_await io.response(res, f);
+        co_await co_await io.response(res, f);
         co_await f.close();
+        co_return {};
     }
 
-    static Task<> make_response_from_path(HTTPServer::IO &io,
+    static Task<Expected<>> make_response_from_path(HTTPServer::IO &io,
                                           std::filesystem::path path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat) [[unlikely]] {
@@ -129,11 +133,12 @@ struct HTTPServerUtils {
                 },
         };
         auto f = co_await FileIStream::open(path);
-        co_await io.response(res, f);
+        co_await co_await io.response(res, f);
         co_await f.close();
+        co_return {};
     }
 
-    static Task<> make_response_from_file(HTTPServer::IO &io,
+    static Task<Expected<>> make_response_from_file(HTTPServer::IO &io,
                                           DirFilePath path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat || stat->is_directory()) [[unlikely]] {
@@ -151,11 +156,12 @@ struct HTTPServerUtils {
                 },
         };
         auto f = co_await FileIStream::open(path);
-        co_await io.response(res, f);
+        co_await co_await io.response(res, f);
         co_await f.close();
+        co_return {};
     }
 
-    static Task<> make_response_from_cgi_script(HTTPServer::IO &io,
+    static Task<Expected<>> make_response_from_cgi_script(HTTPServer::IO &io,
                                                 std::filesystem::path path) {
         auto stat = co_await fs_stat(path, STATX_MODE);
         if (!stat || stat->is_directory()) [[unlikely]] {
@@ -201,7 +207,7 @@ struct HTTPServerUtils {
         Pid pid = co_await proc.spawn();
         FileIStream reader(pipeOut.reader());
         FileOStream writer(pipeIn.writer());
-        co_await io.request_body_stream(writer);
+        co_await co_await io.request_body_stream(writer);
         std::string line;
         while (true) {
             line.clear();
@@ -242,7 +248,8 @@ struct HTTPServerUtils {
             .status = status,
             .headers = std::move(headers),
         };
-        co_await io.response(res, content);
+        co_await co_await io.response(res, content);
+        co_return {};
     }
 };
 

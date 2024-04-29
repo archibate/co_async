@@ -28,7 +28,11 @@ struct HTTPServer {
 
         HTTPRequest request;
 
-        Task<std::string> request_body() {
+        Task<Expected<>> readHTTPRequest() {
+            return mHttp->readRequest(request);
+        }
+
+        Task<Expected<std::string>> request_body() {
 #if CO_ASYNC_DEBUG
             if (mBodyRead) [[unlikely]] {
                 throw std::runtime_error(
@@ -37,13 +41,11 @@ struct HTTPServer {
 #endif
             mBodyRead = true;
             std::string body;
-            if (!co_await mHttp->readBody(body)) {
-                throw std::runtime_error("failed to read request body");
-            }
+            co_await co_await mHttp->readBody(body);
             co_return body;
         }
 
-        Task<> request_body_stream(OStream &out) {
+        Task<Expected<>> request_body_stream(OStream &out) {
 #if CO_ASYNC_DEBUG
             if (mBodyRead) [[unlikely]] {
                 throw std::runtime_error(
@@ -51,25 +53,28 @@ struct HTTPServer {
             }
 #endif
             mBodyRead = true;
-            co_await mHttp->readBodyStream(out);
+            co_await co_await mHttp->readBodyStream(out);
+            co_return {};
         }
 
-        Task<> response(HTTPResponse const &resp, std::string_view content) {
+        Task<Expected<>> response(HTTPResponse const &resp, std::string_view content) {
             if (!mBodyRead) {
-                co_await request_body();
+                co_await co_await request_body();
             }
-            co_await mHttp->writeResponse(resp);
-            co_await mHttp->writeBody(content);
+            co_await co_await mHttp->writeResponse(resp);
+            co_await co_await mHttp->writeBody(content);
             mBodyRead = false;
+            co_return {};
         }
 
-        Task<> response(HTTPResponse const &resp, IStream &body) {
+        Task<Expected<>> response(HTTPResponse const &resp, IStream &body) {
             if (!mBodyRead) {
-                co_await request_body();
+                co_await co_await request_body();
             }
-            co_await mHttp->writeResponse(resp);
-            co_await mHttp->writeBodyStream(body);
+            co_await co_await mHttp->writeResponse(resp);
+            co_await co_await mHttp->writeBodyStream(body);
             mBodyRead = false;
+            co_return {};
         }
 
     private:
@@ -77,11 +82,10 @@ struct HTTPServer {
         bool mBodyRead = false;
     };
 
-    using HTTPHandler = std::function<Task<>(IO &)>;
-    using HTTPPrefixHandler = std::function<Task<>(IO &, std::string_view)>;
+    using HTTPHandler = std::function<Task<Expected<>>(IO &)>;
+    using HTTPPrefixHandler = std::function<Task<Expected<>>(IO &, std::string_view)>;
 
-    explicit HTTPServer(SocketListener &listener) : mListener(listener) {}
-
+    HTTPServer() = default;
     HTTPServer(HTTPServer &&) = delete;
 
     void route(std::string_view methods, std::string_view path,
@@ -109,10 +113,10 @@ struct HTTPServer {
     }
 
     Task<std::unique_ptr<HTTPProtocol>>
-    accept_https(SSLServerCertificate const &cert, SSLPrivateKey const &pkey,
+    prepareHTTPS(SocketHandle handle,
+                 SSLServerCertificate const &cert, SSLPrivateKey const &skey,
                  SSLSessionCache *cache = nullptr) const {
-        auto sock = co_await SSLServerSocketStream::accept(mListener, cert,
-                                                           pkey, cache);
+        SSLServerSocketStream sock(std::move(handle), cert, skey, cache);
         if (sock.ssl_is_protocol_offered("h2")) {
             /* co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SSLServerSocketStream>(std::move(sock))); todo: support http/2! */
         }
@@ -120,20 +124,54 @@ struct HTTPServer {
             std::make_unique<SSLServerSocketStream>(std::move(sock)));
     }
 
-    Task<std::unique_ptr<HTTPProtocol>> accept_http() const {
-        auto sock = co_await SocketStream::accept(mListener);
+    Task<std::unique_ptr<HTTPProtocol>> prepareHTTP(SocketHandle handle) const {
+        SocketStream sock(std::move(handle));
         co_return std::make_unique<HTTPProtocolVersion11>(
             std::make_unique<SocketStream>(std::move(sock)));
     }
 
-    Task<> process_connection(std::unique_ptr<HTTPProtocol> http) const {
+    Task<Expected<>> handle_http(SocketHandle handle) const {
+        co_await co_await doHandleConnection(co_await prepareHTTP(std::move(handle)));
+        co_return {};
+    }
+
+    Task<Expected<>> handle_http_redirect_to_https(SocketHandle handle) const {
+        using namespace std::string_literals;
+        auto http = co_await prepareHTTP(std::move(handle));
         IO io(http.get());
-        while (co_await http->readRequest(io.request)) {
-            co_await doHandleRequest(io);
+        while (co_await io.readHTTPRequest()) {
+            if (auto host = io.request.headers.get("host")) {
+                auto location = "https://"s + *host + io.request.uri.dump();
+                HTTPResponse res = {
+                    .status = 302,
+                    .headers = {
+                        {"location", location},
+                        {"content-type", "text/plain"},
+                    },
+                };
+                co_await co_await io.response(res, location);
+            } else {
+                co_await co_await make_error_response(io, 403);
+            }
         }
     }
 
-    static Task<> make_error_response(IO &io, int status) {
+    Task<Expected<>> handle_https(SocketHandle handle,
+                 SSLServerCertificate const &cert, SSLPrivateKey const &skey,
+                 SSLSessionCache *cache = nullptr) const {
+        co_await co_await doHandleConnection(co_await prepareHTTPS(std::move(handle), cert, skey, cache));
+        co_return {};
+    }
+
+    Task<Expected<>> doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
+        IO io(http.get());
+        while (co_await io.readHTTPRequest()) {
+            co_await co_await doHandleRequest(io);
+        }
+        co_return {};
+    }
+
+    static Task<Expected<>> make_error_response(IO &io, int status) {
         auto error =
             to_string(status) + " " + std::string(getHTTPStatusName(status));
         HTTPResponse res{
@@ -143,11 +181,12 @@ struct HTTPServer {
                     {"content-type", "text/html;charset=utf-8"},
                 },
         };
-        co_await io.response(
+        co_await co_await io.response(
             res,
             "<html><head><title>" + error +
                 "</title></head><body><center><h1>" + error +
                 "</h1></center><hr><center>co_async</center></body></html>");
+        co_return {};
     }
 
 private:
@@ -216,36 +255,36 @@ private:
         }
     };
 
-    SocketListener &mListener;
     SimpleMap<std::string, Route> mRoutes;
     std::vector<std::pair<std::string, PrefixRoute>> mPrefixRoutes;
-    HTTPHandler mDefaultRoute = [](IO &io) -> Task<> {
-        co_await make_error_response(io, 404);
+    HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
+        co_return co_await make_error_response(io, 404);
     };
 
-    Task<> doHandleRequest(IO &io) const {
+    Task<Expected<>> doHandleRequest(IO &io) const {
         if (auto route = mRoutes.at(io.request.uri.path)) {
             if (!route->checkMethod(io.request.method)) [[unlikely]] {
-                co_await make_error_response(io, 405);
+                co_await co_await make_error_response(io, 405);
             }
-            co_await route->mHandler(io);
+            co_await co_await route->mHandler(io);
         }
         for (auto const &[prefix, route]: mPrefixRoutes) {
             if (io.request.uri.path.starts_with(prefix)) {
                 if (!route.checkMethod(io.request.method)) [[unlikely]] {
-                    co_await make_error_response(io, 405);
-                    co_return;
+                    co_await co_await make_error_response(io, 405);
+                    co_return {};
                 }
                 auto suffix = std::string_view(io.request.uri.path);
                 suffix.remove_prefix(prefix.size());
                 if (!route.checkSuffix(suffix)) [[unlikely]] {
-                    co_await make_error_response(io, 405);
-                    co_return;
+                    co_await co_await make_error_response(io, 405);
+                    co_return {};
                 }
-                co_await route.mHandler(io, suffix);
+                co_await co_await route.mHandler(io, suffix);
             }
         }
-        co_await mDefaultRoute(io);
+        co_await co_await mDefaultRoute(io);
+        co_return {};
     }
 };
 

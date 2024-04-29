@@ -50,12 +50,6 @@ struct SocketStream : IOStreamImpl<SocketStreamRaw> {
         SocketStream sock(std::move(conn));
         co_return sock;
     }
-
-    static Task<SocketStream> accept(SocketListener &listener) {
-        auto conn = co_await listener_accept(listener);
-        SocketStream sock(std::move(conn));
-        co_return sock;
-    }
 };
 
 } // namespace co_async

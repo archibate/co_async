@@ -33,7 +33,7 @@ private:
 struct DirectoryStream : IStreamImpl<DirectoryStreamRaw> {
     using IStreamImpl<DirectoryStreamRaw>::IStreamImpl;
 
-    Task<std::optional<std::string>> getdirent() {
+    Task<Expected<std::string>> getdirent() {
         struct LinuxDirent64 {
             int64_t d_ino;           /* 64-bit inode number */
             int64_t d_off;           /* 64-bit offset to next structure */
@@ -41,13 +41,11 @@ struct DirectoryStream : IStreamImpl<DirectoryStreamRaw> {
             unsigned char d_type;    /* File type */
         } dent;
 
-        if (!co_await getspan(std::span<char>((char *)&dent, 19))) {
-            co_return std::nullopt;
-        }
+        co_await co_await getspan(std::span<char>((char *)&dent, 19));
         std::string rest;
         rest.reserve(dent.d_reclen - 19);
-        co_await getn(rest, dent.d_reclen - 19);
-        co_return rest.data();
+        co_await co_await getn(rest, dent.d_reclen - 19);
+        co_return std::string(rest.data());
     }
 };
 

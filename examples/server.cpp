@@ -6,14 +6,15 @@ using namespace std::literals;
 
 Task<> amain() {
     auto listener = co_await listener_bind({"127.0.0.1", 8080});
-    HTTPServer server(listener);
-    server.route("GET", "/", HTTPRouteMode::SuffixPath, [](HTTPServer::IO &io, std::string_view suffix) -> Task<> {
-        co_await HTTPServerUtils::make_response_from_path(io, make_path(".", suffix));
+    HTTPServer server;
+    server.route("GET", "/", HTTPRouteMode::SuffixPath, [](HTTPServer::IO &io, std::string_view suffix) -> Task<Expected<>> {
+        co_await co_await HTTPServerUtils::make_response_from_path(io, make_path(".", suffix));
+        co_return {};
     });
 
     while (1) {
-        auto conn = co_await server.accept_http();
-        co_spawn(server.process_connection(std::move(conn)));
+        auto income = co_await listener_accept(listener);
+        co_spawn(server.handle_http(std::move(income)));
     }
 }
 

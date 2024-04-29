@@ -37,51 +37,58 @@ public:
         using namespace std::string_literals;
         mDefaultHeaders.insert("host", std::string(hostName));
         mDefaultHeaders.insert("user-agent", "co_async/0.0.1"s);
+        mDefaultHeaders.insert("accept", "*/*");
+        /* mDefaultHeaders.insert("accept-encoding", "chunked, gzip, compress, deflate, br, zstd"); */
     }
 
-    Task<> request(HTTPRequest req, std::string_view in, HTTPResponse &res,
+    Task<Expected<>> request(HTTPRequest req, std::string_view in, HTTPResponse &res,
                    std::string &out) {
         updateHeaders(req);
-        co_await mHttp->writeRequest(req);
-        co_await mHttp->writeBody(in);
-        co_await mHttp->readResponse(res);
-        co_await mHttp->readBody(out);
+        co_await co_await mHttp->writeRequest(req);
+        co_await co_await mHttp->writeBody(in);
+        co_await co_await mHttp->readResponse(res);
+        co_await co_await mHttp->readBody(out);
+        co_return {};
     }
 
-    Task<> request(HTTPRequest req, std::string_view in, HTTPResponse &res,
+    Task<Expected<>> request(HTTPRequest req, std::string_view in, HTTPResponse &res,
                    OStream &out) {
         updateHeaders(req);
-        co_await mHttp->writeRequest(req);
-        co_await mHttp->writeBody(in);
-        co_await mHttp->readResponse(res);
-        co_await mHttp->readBodyStream(out);
+        co_await co_await mHttp->writeRequest(req);
+        co_await co_await mHttp->writeBody(in);
+        co_await co_await mHttp->readResponse(res);
+        co_await co_await mHttp->readBodyStream(out);
+        co_return {};
     }
 
-    Task<> request(HTTPRequest req, IStream &in, HTTPResponse &res,
+    Task<Expected<>> request(HTTPRequest req, IStream &in, HTTPResponse &res,
                    std::string &out) {
         updateHeaders(req);
-        co_await mHttp->writeRequest(req);
-        co_await mHttp->writeBodyStream(in);
-        co_await mHttp->readResponse(res);
-        co_await mHttp->readBody(out);
+        co_await co_await mHttp->writeRequest(req);
+        co_await co_await mHttp->writeBodyStream(in);
+        co_await co_await mHttp->readResponse(res);
+        co_await co_await mHttp->readBody(out);
+        co_return {};
     }
 
-    Task<> request(HTTPRequest req, IStream &in, HTTPResponse &res,
+    Task<Expected<>> request(HTTPRequest req, IStream &in, HTTPResponse &res,
                    OStream &out) {
         updateHeaders(req);
-        co_await mHttp->writeRequest(req);
-        co_await mHttp->writeBodyStream(in);
-        co_await mHttp->readResponse(res);
-        co_await mHttp->readBodyStream(out);
+        co_await co_await mHttp->writeRequest(req);
+        co_await co_await mHttp->writeBodyStream(in);
+        co_await co_await mHttp->readResponse(res);
+        co_await co_await mHttp->readBodyStream(out);
+        co_return {};
     }
 
-    Task<> request(HTTPRequest req, IStream &in,
+    Task<Expected<>> request(HTTPRequest req, IStream &in,
                    FutureReference<HTTPResponse> const &res, OStream &out) {
         updateHeaders(req);
-        co_await mHttp->writeRequest(req);
-        co_await mHttp->writeBodyStream(in);
-        co_await mHttp->readResponse(res);
-        co_await mHttp->readBodyStream(out);
+        co_await co_await mHttp->writeRequest(req);
+        co_await co_await mHttp->writeBodyStream(in);
+        co_await co_await mHttp->readResponse(res);
+        co_await co_await mHttp->readBodyStream(out);
+        co_return {};
     }
 };
 
@@ -98,7 +105,7 @@ inline std::tuple<std::string, int> parseHostAndPort(std::string_view hostName,
     return {std::string(host), port};
 }
 
-inline Task<HTTPConnection>
+inline Task<Expected<HTTPConnection, std::errc>>
 http_connect(std::string_view host,
              std::chrono::nanoseconds timeout = std::chrono::seconds(5),
              bool followProxy = true) {

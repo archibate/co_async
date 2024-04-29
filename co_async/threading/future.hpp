@@ -53,8 +53,8 @@ private:
 
         T await_resume() const noexcept {
 #if CO_ASYNC_EXCEPT
-            if (mThat->mException) [[unlikely]] {
-                std::rethrow_exception(mThat->mException);
+            if (mImpl->mException) [[unlikely]] {
+                std::rethrow_exception(mImpl->mException);
             }
 #endif
             return mImpl->mValue.moveValue();

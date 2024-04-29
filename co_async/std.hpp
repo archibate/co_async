@@ -149,3 +149,7 @@
 #include <stdatomic.h>
 #endif
 #endif
+
+#if CO_ASYNC_DEBUG
+#include <co_async/utils/debug.hpp>
+#endif

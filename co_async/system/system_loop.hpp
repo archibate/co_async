@@ -175,13 +175,13 @@ inline void co_spawn(Task<T, P> &&task) {
 }
 
 template <class T, class P>
-inline void co_spawn(std::size_t workerId, Task<T, P> task) {
+inline void co_spawn(std::size_t hintWorkerId, Task<T, P> task) {
 #if CO_ASYNC_DEBUG
     if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
         throw std::logic_error("not a worker thread");
     }
 #endif
-    return loopEnqueueDetached(globalSystemLoop.nthWorkerLoop(workerId),
+    return loopEnqueueDetached(globalSystemLoop.nthWorkerLoop(hintWorkerId),
                                std::move(task));
 }
 
@@ -199,12 +199,11 @@ inline auto co_synchronize(Task<T, P> task) {
 }
 
 template <class F, class... Args>
-    requires std::is_invocable_r_v<Task<>, F, Args...>
-inline Task<> co_bind(F &&f, Args &&...args) {
-    Task<> task = [](auto f) mutable -> Task<> {
-        co_await std::move(f)();
+    requires (Awaitable<std::invoke_result_t<F, Args...>>)
+inline auto co_bind(F &&f, Args &&...args) {
+    return [](auto f) mutable -> std::invoke_result_t<F, Args...> {
+        co_return co_await std::move(f)();
     }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-    return task;
 }
 
 } // namespace co_async

@@ -37,12 +37,12 @@ struct FileWatch : FileIStream {
         OnReadFinished = IN_CLOSE_NOWRITE,
     };
 
-    FileWatch() : FileIStream(FileHandle(checkError(inotify_init1(0)))) {}
+    FileWatch() : FileIStream(FileHandle(throwingError(inotify_init1(0)))) {}
 
     FileWatch &watch(std::filesystem::path path, FileEvent event,
                      bool recursive = false) {
         int wd =
-            checkError(inotify_add_watch(get().fileNo(), path.c_str(), event));
+            throwingError(inotify_add_watch(get().fileNo(), path.c_str(), event));
         mWatches.emplace(wd, path);
         if (recursive && std::filesystem::is_directory(path)) {
             for (auto const &entry:
@@ -62,19 +62,19 @@ struct FileWatch : FileIStream {
         FileEvent event;
     };
 
-    Task<WaitFileResult> wait() {
+    Task<Expected<WaitFileResult>> wait() {
         if (!co_await getstruct(*mEventBuffer)) [[unlikely]] {
             throw std::runtime_error("EOF while reading struct");
         }
         std::string name;
         name.reserve(mEventBuffer->len);
-        co_await getn(name, mEventBuffer->len);
+        co_await co_await getn(name, mEventBuffer->len);
         name = name.c_str();
         auto path = mWatches.at(mEventBuffer->wd);
         if (!name.empty()) {
             path /= make_path(name);
         }
-        co_return {
+        co_return WaitFileResult{
             .path = std::move(path),
             .event = (FileEvent)mEventBuffer->mask,
         };

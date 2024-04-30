@@ -173,107 +173,106 @@ inline std::filesystem::path make_path(Ts &&...chunks) {
     return (make_path(chunks) / ...);
 }
 
-inline Task<FileHandle> fs_open(DirFilePath path, OpenMode mode,
+inline Task<Expected<FileHandle, std::errc>> fs_open(DirFilePath path, OpenMode mode,
                                 mode_t access = 0644) {
     int oflags = (int)mode;
-    int fd = checkErrorReturn(
+    int fd = co_await expectError(
         co_await uring_openat(path.dir_file(), path.c_str(), oflags, access));
     FileHandle file(fd);
     co_return file;
 }
 
-inline Task<> fs_close(FileHandle file) {
-    checkErrorReturn(co_await uring_close(file.fileNo()));
+inline Task<Expected<void, std::errc>> fs_close(FileHandle file) {
+    co_await expectError(co_await uring_close(file.fileNo()));
     file.releaseFile();
+    co_return {};
 }
 
-inline Task<> fs_mkdir(DirFilePath path, mode_t access = 0755) {
-    checkErrorReturn(
+inline Task<Expected<void, std::errc>> fs_mkdir(DirFilePath path, mode_t access = 0755) {
+    co_await expectError(
         co_await uring_mkdirat(path.dir_file(), path.c_str(), access));
+    co_return {};
 }
 
-inline Task<> fs_link(DirFilePath oldpath, DirFilePath newpath) {
-    checkErrorReturn(co_await uring_linkat(oldpath.dir_file(), oldpath.c_str(),
+inline Task<Expected<void, std::errc>> fs_link(DirFilePath oldpath, DirFilePath newpath) {
+    co_await expectError(co_await uring_linkat(oldpath.dir_file(), oldpath.c_str(),
                                            newpath.dir_file(), newpath.c_str(),
                                            0));
+    co_return {};
 }
 
-inline Task<> fs_symlink(DirFilePath target, DirFilePath linkpath) {
-    checkErrorReturn(co_await uring_symlinkat(
+inline Task<Expected<void, std::errc>> fs_symlink(DirFilePath target, DirFilePath linkpath) {
+    co_await expectError(co_await uring_symlinkat(
         target.c_str(), linkpath.dir_file(), linkpath.c_str()));
+    co_return {};
 }
 
-inline Task<> fs_unlink(DirFilePath path) {
-    checkErrorReturn(co_await uring_unlinkat(path.dir_file(), path.c_str(), 0));
+inline Task<Expected<void, std::errc>> fs_unlink(DirFilePath path) {
+    co_await expectError(co_await uring_unlinkat(path.dir_file(), path.c_str(), 0));
+    co_return {};
 }
 
-inline Task<> fs_rmdir(DirFilePath path) {
-    checkErrorReturn(
-        co_await uring_unlinkat(path.dir_file(), path.c_str(), AT_REMOVEDIR));
+inline Task<Expected<void, std::errc>> fs_rmdir(DirFilePath path) {
+    co_await expectError(co_await uring_unlinkat(path.dir_file(), path.c_str(), AT_REMOVEDIR));
+    co_return {};
 }
 
-inline Task<std::optional<FileStat>>
+inline Task<Expected<FileStat, std::errc>>
 fs_stat(DirFilePath path, int mask = STATX_BASIC_STATS | STATX_BTIME) {
     FileStat ret;
-    int res = co_await uring_statx(path.dir_file(), path.c_str(), 0, mask,
-                                   ret.getNativeStatx());
-    int const allowed[] = {ENOENT, ENOTDIR, ENAMETOOLONG, ELOOP, EACCES};
-    if (res < 0) {
-        res = -res;
-        for (auto e: allowed) {
-            if (res == e) {
-                co_return std::nullopt;
-            }
-        }
-    }
+    co_await expectError(co_await uring_statx(path.dir_file(), path.c_str(), 0, mask, ret.getNativeStatx()));
     co_return ret;
 }
 
-inline Task<std::uint64_t> fs_stat_size(DirFilePath path) {
+inline Task<Expected<std::uint64_t, std::errc>> fs_stat_size(DirFilePath path) {
     FileStat ret;
-    checkErrorReturn(co_await uring_statx(path.dir_file(), path.c_str(), 0,
-                                          STATX_SIZE, ret.getNativeStatx()));
+    co_await expectError(co_await uring_statx(path.dir_file(), path.c_str(), 0, STATX_SIZE, ret.getNativeStatx()));
     co_return ret.size();
 }
 
-inline Task<std::size_t> fs_read(FileHandle &file, std::span<char> buffer,
+inline Task<Expected<std::size_t>> fs_read(FileHandle &file, std::span<char> buffer,
                                  std::uint64_t offset = -1) {
-    co_return checkErrorReturn(
+    co_return co_await expectError(
         co_await uring_read(file.fileNo(), buffer, offset));
 }
 
-inline Task<std::size_t> fs_write(FileHandle &file,
+inline Task<Expected<std::size_t, std::errc>> fs_write(FileHandle &file,
                                   std::span<char const> buffer,
                                   std::uint64_t offset = -1) {
-    co_return checkErrorReturn(
+    co_return co_await expectError(
         co_await uring_write(file.fileNo(), buffer, offset));
 }
 
-inline Task<> fs_truncate(FileHandle &file, std::uint64_t size = 0) {
-    checkErrorReturn(co_await uring_ftruncate(file.fileNo(), size));
+inline Task<Expected<void, std::errc>> fs_truncate(FileHandle &file, std::uint64_t size = 0) {
+    co_await expectError(co_await uring_ftruncate(file.fileNo(), size));
+    co_return {};
 }
 
-inline Task<std::size_t> fs_splice(FileHandle &fileIn, FileHandle &fileOut,
+inline Task<Expected<std::size_t, std::errc>> fs_splice(FileHandle &fileIn, FileHandle &fileOut,
                                    std::size_t size,
                                    std::uint64_t offsetIn = -1,
                                    std::uint64_t offsetOut = -1) {
-    co_return checkErrorReturn(co_await uring_splice(
+    co_return co_await expectError(co_await uring_splice(
         fileIn.fileNo(), offsetIn, fileOut.fileNo(), offsetOut, size, 0));
 }
 
-inline Task<std::size_t> fs_getdents(FileHandle &dirFile,
+inline Task<Expected<std::size_t, std::errc>> fs_getdents(FileHandle &dirFile,
                                      std::span<char> buffer) {
-    co_return checkError(
-        getdents64(dirFile.fileNo(), buffer.data(), buffer.size()));
+    int res = getdents64(dirFile.fileNo(), buffer.data(), buffer.size());
+    if (res < 0) [[unlikely]] {
+        res = -errno;
+    }
+    co_return co_await expectError(res);
 }
 
 inline Task<int> fs_nop() {
     co_return co_await uring_nop();
 }
 
-inline Task<int> fs_cancel_fd(FileHandle &file) {
-    co_return co_await uring_cancel_fd(
-        file.fileNo(), IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_ALL);
+inline Task<Expected<void, std::errc>> fs_cancel_fd(FileHandle &file) {
+    co_await expectError(co_await uring_cancel_fd(
+        file.fileNo(), IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_ALL));
+    co_return {};
 }
 
 } // namespace co_async

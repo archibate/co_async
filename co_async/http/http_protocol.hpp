@@ -74,8 +74,13 @@ struct HTTPResponse {
 };
 
 struct HTTPProtocol {
+public:
     std::unique_ptr<IOStream> sock;
 
+protected:
+    HTTPTransferEncoding mEncoding;
+
+public:
     explicit HTTPProtocol(std::unique_ptr<IOStream> sock)
         : sock(std::move(sock)) {}
 
@@ -93,8 +98,6 @@ struct HTTPProtocol {
 
 struct HTTPProtocolVersion11 : HTTPProtocol {
     using HTTPProtocol::HTTPProtocol;
-
-    HTTPTransferEncoding encoding;
 
 #if CO_ASYNC_DEBUG
 private:
@@ -118,7 +121,7 @@ public:
         checkPhase(1, 0);
 #endif
         using namespace std::string_view_literals;
-        switch (encoding) {
+        switch (mEncoding) {
         case HTTPTransferEncoding::Chunked: {
             bool hadHeader = false;
             do {
@@ -190,7 +193,7 @@ public:
             using namespace std::string_view_literals;
             co_await co_await sock->puts("\r\n"sv);
         } else {
-            switch (encoding) {
+            switch (mEncoding) {
             case HTTPTransferEncoding::Identity: {
 #if CO_ASYNC_DEBUG
                 checkPhase(1, 0);
@@ -235,9 +238,9 @@ public:
         checkPhase(-1, 0);
 #endif
         using namespace std::string_view_literals;
-        switch (encoding) {
+        switch (mEncoding) {
         case HTTPTransferEncoding::Identity: {
-            if (auto n = encoding.contentLength(); n > 0) {
+            if (auto n = mEncoding.contentLength(); n > 0) {
                 std::string line;
                 co_await co_await sock->getn(line, n);
                 co_await co_await body.puts(line);
@@ -279,12 +282,12 @@ public:
 
     Task<Expected<>> readBody(std::string &body) override {
         using namespace std::string_view_literals;
-        switch (encoding) {
+        switch (mEncoding) {
         case HTTPTransferEncoding::Identity: {
 #if CO_ASYNC_DEBUG
             checkPhase(-1, 0);
 #endif
-            if (auto n = encoding.contentLength(); n > 0) {
+            if (auto n = mEncoding.contentLength(); n > 0) {
                 co_await co_await sock->getn(body, n);
             }
         } break;
@@ -330,7 +333,7 @@ public:
             co_await co_await sock->puts("\r\n"sv);
         }
         co_await co_await sock->puts("connection: keep-alive\r\n"sv);
-        encoding = HTTPTransferEncoding::Chunked;
+        mEncoding = HTTPTransferEncoding::Chunked;
         co_return {};
     }
 
@@ -341,22 +344,22 @@ public:
         using namespace std::string_literals;
         using namespace std::string_view_literals;
         std::string line;
-        co_await co_await sock->getline(line, "\r\n"sv);
+        if (!co_await sock->getline(line, "\r\n"sv) || line.empty()) {
+            co_return Unexpected{};
+        }
         auto pos = line.find(' ');
         if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP request:\n\t[" + line + "]\n";
 #endif
-            /* throw std::invalid_argument("invalid http request: version"); */
             co_return Unexpected{};
         }
         req.method = line.substr(0, pos);
         auto pos2 = line.find(' ', pos + 1);
         if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: invalid HTTP request:\n\t[" + line + "]\n";
+            std::cerr << "WARNING: invalid HTTP request (method):\n\t[" + line + "]\n";
 #endif
-            /* throw std::invalid_argument("invalid http request: method"); */
             co_return Unexpected{};
         }
         req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
@@ -370,10 +373,9 @@ public:
             if (pos == line.npos || pos == line.size() - 1 ||
                 line[pos + 1] != ' ') [[unlikely]] {
 #if CO_ASYNC_DEBUG
-                std::cerr << "WARNING: invalid HTTP request:\n\t[" + line +
+                std::cerr << "WARNING: invalid HTTP request (header):\n\t[" + line +
                                  "]\n";
 #endif
-                /* throw std::invalid_argument("invalid http request: header"); */
                 co_return Unexpected{};
             }
             auto key = line.substr(0, pos);
@@ -386,35 +388,38 @@ public:
         }
 
         if (auto transEnc = req.headers.get("transfer-encoding"sv)) {
-            encoding = encodingByName(*transEnc);
+            mEncoding = encodingByName(*transEnc);
             req.headers.erase("transfer-encoding"sv);
         } else if (auto contEnc = req.headers.get("content-encoding"sv)) {
-            encoding = encodingByName(*contEnc);
+            mEncoding = encodingByName(*contEnc);
             req.headers.erase("content-encoding"sv);
         }
-        if (encoding == HTTPTransferEncoding::Identity) {
+        if (mEncoding == HTTPTransferEncoding::Identity) {
             std::size_t len =
                 req.headers.get("content-length"sv, from_string<std::size_t>)
                     .value_or(0);
             req.headers.erase("content-length"sv);
-            encoding.contentLength() = len;
+            mEncoding.contentLength() = len;
         }
-        /* if (auto acceptEnc = req.headers.get("accept-encoding"sv)) { */
-        /*     for (std::string_view encName: split_string(*acceptEnc, ", "sv)) { */
-        /*         if (auto i = encName.find(';'); i != encName.npos) { */
-        /*             encName = encName.substr(0, i); */
-        /*         } */
-        /*         auto enc = encodingByName(encName); */
-        /*         if (enc != HTTPTransferEncoding::Identity) [[likely]] { */
-        /*             encoding = enc; */
-        /*             break; */
-        /*         } */
-        /*     } */
-        /*     req.headers.erase("accept-encoding"sv); */
-        /* } */
+#if CO_ASYNC_ZLIB
+        if (auto acceptEnc = req.headers.get("accept-encoding"sv)) {
+            for (std::string_view encName: split_string(*acceptEnc, ", "sv)) {
+                if (auto i = encName.find(';'); i != encName.npos) {
+                    encName = encName.substr(0, i);
+                }
+                auto enc = encodingByName(encName);
+                if (enc != HTTPTransferEncoding::Identity) [[likely]] {
+                    encoding = enc;
+                    break;
+                }
+            }
+            req.headers.erase("accept-encoding"sv);
+        }
+#else
         req.headers.erase("accept-encoding"sv);
+#endif
         req.headers.erase("connection"sv);
-        co_return {};
+        co_return Expected{true};
     }
 
     Task<Expected<>> writeResponse(HTTPResponse const &res) override {
@@ -434,7 +439,7 @@ public:
             co_await co_await sock->puts("\r\n"sv);
         }
         co_await co_await sock->puts("connection: keep-alive\r\n"sv);
-        encoding = HTTPTransferEncoding::Chunked;
+        mEncoding = HTTPTransferEncoding::Chunked;
         co_return {};
     }
 
@@ -451,7 +456,6 @@ public:
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
 #endif
-            /* throw std::invalid_argument("invalid http response: version"); */
             co_return Unexpected{};
         }
         if (auto statusOpt = from_string<int>(line.substr(9, 3))) [[likely]] {
@@ -460,7 +464,6 @@ public:
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
 #endif
-            /* throw std::invalid_argument("invalid http response: status"); */
             co_return Unexpected{};
         }
         while (true) {
@@ -476,7 +479,6 @@ public:
                 std::cerr << "WARNING: invalid HTTP response:\n\t[" + line +
                                  "]\n";
 #endif
-                /* throw std::invalid_argument("invalid http response: header"); */
                 co_return Unexpected{};
             }
             auto key = line.substr(0, pos);
@@ -488,20 +490,20 @@ public:
             res.headers.insert_or_assign(std::move(key), line.substr(pos + 2));
         }
 
-        encoding = HTTPTransferEncoding::Identity;
+        mEncoding = HTTPTransferEncoding::Identity;
         if (auto transEnc = res.headers.get("transfer-encoding"sv)) {
-            encoding = encodingByName(*transEnc);
+            mEncoding = encodingByName(*transEnc);
             res.headers.erase("transfer-encoding"sv);
         } else if (auto contEnc = res.headers.get("content-encoding"sv)) {
-            encoding = encodingByName(*contEnc);
+            mEncoding = encodingByName(*contEnc);
             res.headers.erase("content-encoding"sv);
         }
-        if (encoding == HTTPTransferEncoding::Identity) {
+        if (mEncoding == HTTPTransferEncoding::Identity) {
             std::size_t len =
                 res.headers.get("content-length"sv, from_string<std::size_t>)
                     .value_or(0);
             res.headers.erase("content-length"sv);
-            encoding.contentLength() = len;
+            mEncoding.contentLength() = len;
         }
         res.headers.erase("connection");
         co_return {};
@@ -525,6 +527,85 @@ public:
             }
         }
         return HTTPTransferEncoding::Identity;
+    }
+};
+
+struct HTTPProtocolVersion2 : HTTPProtocol {
+    using HTTPProtocol::HTTPProtocol;
+
+    HTTPTransferEncoding mEncoding;
+
+#if CO_ASYNC_DEBUG
+private:
+    int mPhase = 0;
+
+    void checkPhase(int from, int to) {
+        if (mPhase != from) [[unlikely]] {
+            throw std::logic_error(
+                "HTTPProtocol member function calling order wrong (phase = " +
+                to_string(mPhase) + ", from = " + to_string(from) +
+                ", to = " + to_string(to) + ")");
+        }
+        mPhase = to;
+    }
+
+public:
+#endif
+
+    Task<Expected<>> writeBodyStream(IStream &body) override {
+#if CO_ASYNC_DEBUG
+        checkPhase(1, 0);
+#endif
+        throw std::runtime_error("HTTP/2 not implemented yet");
+    }
+
+    Task<Expected<>> readBodyStream(OStream &body) override {
+#if CO_ASYNC_DEBUG
+        checkPhase(-1, 0);
+#endif
+        throw std::runtime_error("HTTP/2 not implemented yet");
+    }
+
+    Task<Expected<>> writeBody(std::string_view body) override {
+#if CO_ASYNC_DEBUG
+        checkPhase(1, 0);
+#endif
+        throw std::runtime_error("HTTP/2 not implemented yet");
+    }
+
+    Task<Expected<>> readBody(std::string &body) override {
+#if CO_ASYNC_DEBUG
+        checkPhase(-1, 0);
+#endif
+        throw std::runtime_error("HTTP/2 not implemented yet");
+    }
+
+    Task<Expected<>> writeRequest(HTTPRequest const &req) override {
+#if CO_ASYNC_DEBUG
+        checkPhase(0, 1);
+#endif
+        throw std::runtime_error("HTTP/2 not implemented yet");
+    }
+
+    Task<Expected<>> readRequest(HTTPRequest &req) override {
+#if CO_ASYNC_DEBUG
+        checkPhase(0, -1);
+#endif
+        throw std::runtime_error("HTTP/2 not implemented yet");
+    }
+
+    Task<Expected<>> writeResponse(HTTPResponse const &res) override {
+#if CO_ASYNC_DEBUG
+        checkPhase(0, 1);
+#endif
+        throw std::runtime_error("HTTP/2 not implemented yet");
+    }
+
+    Task<Expected<>> readResponse(HTTPResponse &res) override {
+#if CO_ASYNC_DEBUG
+        checkPhase(0, -1);
+#endif
+        throw std::runtime_error("HTTP/2 not implemented yet");
     }
 };
 

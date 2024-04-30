@@ -2,7 +2,6 @@
 
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/http/http11.hpp>
 #include <co_async/http/http_status_code.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <co_async/utils/simple_map.hpp>
@@ -10,9 +9,10 @@
 #include <co_async/system/fs.hpp>
 #include <co_async/system/pipe.hpp>
 #include <co_async/http/uri.hpp>
-#include <co_async/http/http11.hpp>
+#include <co_async/http/http_protocol.hpp>
 #include <co_async/iostream/socket_stream.hpp>
 #include <co_async/iostream/ssl_socket_stream.hpp>
+#include <co_async/http/http_date_time.hpp>
 
 namespace co_async {
 
@@ -57,20 +57,28 @@ struct HTTPServer {
             co_return {};
         }
 
-        Task<Expected<>> response(HTTPResponse const &resp, std::string_view content) {
+        Task<Expected<>> response(HTTPResponse resp, std::string_view content) {
+#if CO_ASYNC_DEBUG
+            mResponseSavedForDebug = resp;
+#endif
             if (!mBodyRead) {
                 co_await co_await request_body();
             }
+            builtinHeaders(resp);
             co_await co_await mHttp->writeResponse(resp);
             co_await co_await mHttp->writeBody(content);
             mBodyRead = false;
             co_return {};
         }
 
-        Task<Expected<>> response(HTTPResponse const &resp, IStream &body) {
+        Task<Expected<>> response(HTTPResponse resp, IStream &body) {
+#if CO_ASYNC_DEBUG
+            mResponseSavedForDebug = resp;
+#endif
             if (!mBodyRead) {
                 co_await co_await request_body();
             }
+            builtinHeaders(resp);
             co_await co_await mHttp->writeResponse(resp);
             co_await co_await mHttp->writeBodyStream(body);
             mBodyRead = false;
@@ -80,10 +88,23 @@ struct HTTPServer {
     private:
         HTTPProtocol *mHttp;
         bool mBodyRead = false;
+#if CO_ASYNC_DEBUG
+        HTTPResponse mResponseSavedForDebug{};
+        friend HTTPServer;
+#endif
+
+        void builtinHeaders(HTTPResponse &res) {
+            using namespace std::string_literals;
+            res.headers.insert("server"s, "co_async/0.0.1"s);
+            res.headers.insert("accept"s, "*/*"s);
+            res.headers.insert("accept-ranges"s, "bytes"s);
+            res.headers.insert("date"s, httpDateNow());
+        }
     };
 
     using HTTPHandler = std::function<Task<Expected<>>(IO &)>;
-    using HTTPPrefixHandler = std::function<Task<Expected<>>(IO &, std::string_view)>;
+    using HTTPPrefixHandler =
+        std::function<Task<Expected<>>(IO &, std::string_view)>;
 
     HTTPServer() = default;
     HTTPServer(HTTPServer &&) = delete;
@@ -113,15 +134,20 @@ struct HTTPServer {
     }
 
     Task<std::unique_ptr<HTTPProtocol>>
-    prepareHTTPS(SocketHandle handle,
-                 SSLServerCertificate const &cert, SSLPrivateKey const &skey,
+    prepareHTTPS(SocketHandle handle, SSLServerCertificate const &cert,
+                 SSLPrivateKey const &skey,
                  SSLSessionCache *cache = nullptr) const {
-        SSLServerSocketStream sock(std::move(handle), cert, skey, cache);
-        if (sock.ssl_is_protocol_offered("h2")) {
-            /* co_return std::make_unique<HTTPProtocolVersion11>(std::make_unique<SSLServerSocketStream>(std::move(sock))); todo: support http/2! */
+        using namespace std::string_view_literals;
+        static char const *const protocols[] = {
+            "h2",
+            "http/1.1",
+        };
+        SSLServerSocketStream sock(std::move(handle), cert, skey, protocols, cache);
+        auto stream = std::make_unique<SSLServerSocketStream>(std::move(sock));
+        if (auto peek = co_await stream->peekn(2); peek && *peek == "h2"sv) {
+            co_return std::make_unique<HTTPProtocolVersion2>(std::move(stream));
         }
-        co_return std::make_unique<HTTPProtocolVersion11>(
-            std::make_unique<SSLServerSocketStream>(std::move(sock)));
+        co_return std::make_unique<HTTPProtocolVersion11>(std::move(stream));
     }
 
     Task<std::unique_ptr<HTTPProtocol>> prepareHTTP(SocketHandle handle) const {
@@ -131,42 +157,83 @@ struct HTTPServer {
     }
 
     Task<Expected<>> handle_http(SocketHandle handle) const {
-        co_await co_await doHandleConnection(co_await prepareHTTP(std::move(handle)));
-        co_return {};
+        co_return co_await doHandleConnection(
+            co_await prepareHTTP(std::move(handle)));
     }
 
     Task<Expected<>> handle_http_redirect_to_https(SocketHandle handle) const {
         using namespace std::string_literals;
         auto http = co_await prepareHTTP(std::move(handle));
-        IO io(http.get());
-        while (co_await io.readHTTPRequest()) {
+        while (true) {
+            IO io(http.get());
+            if (!co_await io.readHTTPRequest())
+                break;
             if (auto host = io.request.headers.get("host")) {
                 auto location = "https://"s + *host + io.request.uri.dump();
                 HTTPResponse res = {
                     .status = 302,
-                    .headers = {
-                        {"location", location},
-                        {"content-type", "text/plain"},
-                    },
+                    .headers =
+                        {
+                            {"location", location},
+                            {"content-type", "text/plain"},
+                        },
                 };
                 co_await co_await io.response(res, location);
             } else {
                 co_await co_await make_error_response(io, 403);
             }
         }
-    }
-
-    Task<Expected<>> handle_https(SocketHandle handle,
-                 SSLServerCertificate const &cert, SSLPrivateKey const &skey,
-                 SSLSessionCache *cache = nullptr) const {
-        co_await co_await doHandleConnection(co_await prepareHTTPS(std::move(handle), cert, skey, cache));
         co_return {};
     }
 
-    Task<Expected<>> doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
-        IO io(http.get());
-        while (co_await io.readHTTPRequest()) {
+    Task<Expected<>> handle_https(SocketHandle handle,
+                                  SSLServerCertificate const &cert,
+                                  SSLPrivateKey const &skey,
+                                  SSLSessionCache *cache = nullptr) const {
+        co_return co_await doHandleConnection(
+            co_await prepareHTTPS(std::move(handle), cert, skey, cache));
+    }
+
+    Task<Expected<>>
+    doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
+        /* auto uuid = std::random_device()(); */
+        while (true) {
+            IO io(http.get());
+            if (!co_await io.readHTTPRequest())
+                break;
+#if CO_ASYNC_DEBUG
+            std::clog << io.request.method + ' ' + io.request.uri.dump() + '\n';
+            for (auto [k, v]: io.request.headers) {
+                if (k == "cookie" || k == "set-cookie") {
+                    v = "***";
+                }
+                std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
+                                 '\n';
+            }
+            auto t0 = std::chrono::high_resolution_clock::now();
+#endif
+            /* debug(), uuid, io.request.method, io.request.uri.dump(), io.request.headers; */
             co_await co_await doHandleRequest(io);
+#if CO_ASYNC_DEBUG
+            auto dt = std::chrono::high_resolution_clock::now() - t0;
+            std::clog << io.request.method + ' ' + io.request.uri.dump() + ' ' +
+                             std::to_string(io.mResponseSavedForDebug.status) +
+                             ' ' +
+                             std::string(getHTTPStatusName(
+                                 io.mResponseSavedForDebug.status)) +
+                             ' ' +
+                             std::to_string(std::chrono::duration_cast<
+                                                std::chrono::milliseconds>(dt)
+                                                .count()) +
+                             "ms\n";
+            for (auto [k, v]: io.mResponseSavedForDebug.headers) {
+                if (k == "cookie" || k == "set-cookie") {
+                    v = "***";
+                }
+                std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
+                                 '\n';
+            }
+#endif
         }
         co_return {};
     }

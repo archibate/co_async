@@ -1,6 +1,6 @@
 #pragma once
 
-#include <co_async/http/http11.hpp>
+#include <co_async/http/http_protocol.hpp>
 #include <co_async/http/http_server.hpp>
 #include <co_async/http/http_server_utils.hpp>
 #include <co_async/http/http_client.hpp>

@@ -18,7 +18,8 @@ Task<> amain() {
     co_await http.write_nobody(req);
     HTTPResponse res;
     co_await http.readResponse(res);
-    debug(), co_await http.readBody(res.encoding);
+    auto body = co_await http.readBody(res.encoding);
+    debug(), body;
 }
 
 int main() {

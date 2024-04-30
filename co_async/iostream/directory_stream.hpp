@@ -13,7 +13,7 @@ namespace co_async {
 
 struct DirectoryStreamRaw : virtual IStreamRaw {
     Task<std::size_t> raw_read(std::span<char> buffer) {
-        return fs_getdents(mFile, buffer);
+        co_return (co_await fs_getdents(mFile, buffer)).value_or(0);
     }
 
     FileHandle release() noexcept {

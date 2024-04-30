@@ -10,11 +10,11 @@ namespace co_async {
 
 struct PipeIStreamRaw : virtual IStreamRaw {
     Task<std::size_t> raw_read(std::span<char> buffer) override {
-        return fs_read(mFile, buffer);
+        co_return (co_await fs_read(mFile, buffer)).value_or(0);
     }
 
     Task<> close() {
-        co_await fs_close(std::move(mFile));
+        (co_await fs_close(std::move(mFile))).value_or();
     }
 
     FileHandle release() noexcept {
@@ -33,11 +33,11 @@ private:
 
 struct PipeOStreamRaw : virtual OStreamRaw {
     Task<std::size_t> raw_write(std::span<char const> buffer) override {
-        return fs_write(mFile, buffer);
+        co_return (co_await fs_write(mFile, buffer)).value_or(0);
     }
 
     Task<> close() {
-        co_await fs_close(std::move(mFile));
+        (co_await fs_close(std::move(mFile))).value_or();
     }
 
     FileHandle release() noexcept {
@@ -63,7 +63,7 @@ struct PipeOStream : OStreamImpl<PipeOStreamRaw> {
 };
 
 inline Task<std::tuple<PipeIStream, PipeOStream>> pipe_stream() {
-    auto [r, w] = co_await fs_pipe();
+    auto [r, w] = (co_await fs_pipe()).value();
     co_return {PipeIStream(std::move(r)), PipeOStream(std::move(w))};
 }
 

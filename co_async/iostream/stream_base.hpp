@@ -205,9 +205,23 @@ struct IStream : virtual IStreamRaw {
         mIndex += n;
     }
 
+    Task<Expected<>> peekn(std::string &s, std::size_t n) {
+        while (mEnd - mIndex < n) {
+            co_await co_await fillbuf();
+        }
+        s.append(mBuffer.get(), n);
+        co_return {};
+    }
+
+    Task<Expected<std::string>> peekn(std::size_t n) {
+        std::string s;
+        co_await co_await peekn(s, n);
+        co_return s;
+    }
+
     Task<Expected<>> fillbuf() {
-        mEnd = co_await raw_read(std::span(mBuffer.get(), mBufSize));
         mIndex = 0;
+        mEnd = co_await raw_read(std::span(mBuffer.get(), mBufSize));
         if (mEnd == 0) [[unlikely]] {
             co_return Unexpected{};
         }

@@ -10,11 +10,11 @@ namespace co_async {
 
 struct SocketStreamRaw : virtual IOStreamRaw {
     Task<std::size_t> raw_read(std::span<char> buffer) override {
-        return socket_read(mFile, buffer, mTimeout);
+        co_return (co_await socket_read(mFile, buffer, mTimeout)).value_or(0);
     }
 
     Task<std::size_t> raw_write(std::span<char const> buffer) override {
-        return socket_write(mFile, buffer, mTimeout);
+        co_return (co_await socket_write(mFile, buffer, mTimeout)).value_or(0);
     }
 
     SocketHandle release() noexcept {
@@ -43,11 +43,12 @@ private:
 struct SocketStream : IOStreamImpl<SocketStreamRaw> {
     using IOStreamImpl<SocketStreamRaw>::IOStreamImpl;
 
-    static Task<SocketStream> connect(char const *host, int port,
+    static Task<Expected<SocketStream, std::errc>> connect(char const *host, int port,
                                       std::string_view proxy,
                                       std::chrono::nanoseconds timeout) {
-        auto conn = co_await socket_proxy_connect(host, port, proxy, timeout);
+        auto conn = co_await co_await socket_proxy_connect(host, port, proxy, timeout);
         SocketStream sock(std::move(conn));
+        sock.timeout(timeout);
         co_return sock;
     }
 };

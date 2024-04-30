@@ -30,11 +30,11 @@ struct StdioStreamRaw : virtual IOStreamRaw {
           mFileOut(fileOut) {}
 
     Task<std::size_t> raw_read(std::span<char> buffer) override {
-        return fs_read(mFileIn, buffer);
+        co_return (co_await fs_read(mFileIn, buffer)).value_or(0);
     }
 
     Task<std::size_t> raw_write(std::span<char const> buffer) override {
-        return fs_write(mFileOut, buffer);
+        co_return (co_await fs_write(mFileOut, buffer)).value_or(0);
     }
 
     FileHandle &in() const noexcept {

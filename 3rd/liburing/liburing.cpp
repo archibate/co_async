@@ -1,3 +1,7 @@
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic ignored "-Wextra"
+
 #ifndef IOURINGEXTERN
 #ifdef __cplusplus
 #define IOURINGEXTERN extern "C"
@@ -2421,3 +2425,5 @@ int io_uring_free_buf_ring(struct io_uring *ring, struct io_uring_buf_ring *br,
 	__sys_munmap(br, nentries * sizeof(struct io_uring_buf));
 	return 0;
 }
+
+#pragma GCC diagnostic pop

@@ -2,7 +2,7 @@
 
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/http/http11.hpp>
+#include <co_async/http/http_protocol.hpp>
 #include <co_async/http/http_server.hpp>
 #include <co_async/iostream/directory_stream.hpp>
 #include <co_async/system/socket.hpp>
@@ -51,7 +51,7 @@ struct HTTPServerUtils {
         auto parentPath = path.path().parent_path().generic_string();
         content +=
             "<a href=\"/" + URI::url_encode_path(parentPath) + "\">..</a><br>";
-        DirectoryStream dir(co_await fs_open(path, OpenMode::Directory));
+        DirectoryStream dir(co_await co_await fs_open(path, OpenMode::Directory));
         while (auto entry = co_await dir.getdirent()) {
             if (*entry == ".." || *entry == ".")
                 continue;
@@ -103,7 +103,7 @@ struct HTTPServerUtils {
                                          path.path().extension().string())},
                 },
         };
-        auto f = co_await FileIStream::open(path);
+        auto f = co_await co_await FileIStream::open(path);
         co_await co_await io.response(res, f);
         co_await f.close();
         co_return {};
@@ -132,7 +132,7 @@ struct HTTPServerUtils {
                      guessContentTypeByExtension(path.extension().string())},
                 },
         };
-        auto f = co_await FileIStream::open(path);
+        auto f = co_await co_await FileIStream::open(path);
         co_await co_await io.response(res, f);
         co_await f.close();
         co_return {};
@@ -155,7 +155,7 @@ struct HTTPServerUtils {
                                          path.path().extension().string())},
                 },
         };
-        auto f = co_await FileIStream::open(path);
+        auto f = co_await co_await FileIStream::open(path);
         co_await co_await io.response(res, f);
         co_await f.close();
         co_return {};
@@ -199,12 +199,12 @@ struct HTTPServerUtils {
             proc.env("HTTP_HEADER_" + key, v);
         skip2:;
         }
-        auto pipeOut = co_await fs_pipe();
-        auto pipeIn = co_await fs_pipe();
+        auto pipeOut = co_await co_await fs_pipe();
+        auto pipeIn = co_await co_await fs_pipe();
         proc.open(0, pipeIn.reader());
         proc.open(1, pipeOut.writer());
         proc.open(2, 2);
-        Pid pid = co_await proc.spawn();
+        Pid pid = co_await co_await proc.spawn();
         FileIStream reader(pipeOut.reader());
         FileOStream writer(pipeIn.writer());
         co_await co_await io.request_body_stream(writer);
@@ -237,7 +237,7 @@ struct HTTPServerUtils {
             headers.erase("status");
         }
         co_await reader.getall(content);
-        auto exited = co_await wait_process(pid);
+        auto exited = co_await co_await wait_process(pid, std::chrono::seconds(10));
         if (exited.status != 0) [[unlikely]] {
 #if CO_ASYNC_DEBUG
             std::cerr << "cgi script exit failure\n";

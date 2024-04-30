@@ -43,6 +43,11 @@ struct PromiseBase {
     }
 
     void setPrevious(std::coroutine_handle<> previous) noexcept {
+#if CO_ASYNC_DEBUG
+        if (mPrevious) [[unlikely]] {
+            std::cerr << "WARNING: co_wait'ing twice on a single task\n";
+        }
+#endif
         mPrevious = previous;
     }
 
@@ -153,18 +158,20 @@ struct Promise<Expected<T, E>> : PromiseBase {
     template <class T2, class E2>
     ValueAwaiter<T2> await_transform(Expected<T2, E2> e) noexcept {
         if (e.has_error()) [[unlikely]] {
-            if constexpr (std::is_void_v<E>)
+            if constexpr (std::is_void_v<E>) {
                 mResult.putValue(Unexpected<>(std::in_place_type<void>));
-            else if constexpr (std::is_void_v<E2>)
-                mResult.putValue(Unexpected<E>(E()));
-            else
+            } else {
+                static_assert(std::same_as<E2, E>,
+                              "co_await'ing Expected's error type mismatch");
                 mResult.putValue(Unexpected<E>(std::move(e.error())));
+            }
             return ValueAwaiter<T2>(mPrevious);
         }
-        if constexpr (std::is_void_v<T2>)
+        if constexpr (std::is_void_v<T2>) {
             return ValueAwaiter<void>(std::in_place);
-        else
+        } else {
             return ValueAwaiter<T2>(std::in_place, std::move(*e));
+        }
     }
 
     template <class U>
@@ -197,11 +204,35 @@ struct TaskAwaiter {
         return mCoroutine;
     }
 
+#if CO_ASYNC_DEBUG
+    T await_resume() const {
+        auto coroutine = mCoroutine;
+        mCoroutine = nullptr;
+        return coroutine.promise().result();
+    }
+
+    explicit TaskAwaiter(std::coroutine_handle<P> coroutine) : mCoroutine(coroutine) {
+    }
+
+    TaskAwaiter(TaskAwaiter &&) = delete;
+
+    ~TaskAwaiter() noexcept {
+        if (mCoroutine && mCoroutine.done()) [[unlikely]] {
+            std::cerr << "WARNING: done coroutine return value ignored\n";
+            (void)mCoroutine.promise().result();
+        }
+    }
+
+private:
+    mutable std::coroutine_handle<P> mCoroutine;
+
+#else
     T await_resume() const {
         return mCoroutine.promise().result();
     }
 
     std::coroutine_handle<P> mCoroutine;
+#endif
 };
 
 template <class T = void, class P = Promise<T>>
@@ -228,17 +259,17 @@ struct [[nodiscard("did you forgot to co_await?")]] Task {
     ~Task() {
         if (!mCoroutine)
             return;
-#if CO_ASYNC_DEBUG
-        if (!mCoroutine.done()) [[unlikely]] {
-#if CO_ASYNC_PERF
-            auto &perf = mCoroutine.promise().mPerf;
-            std::cerr << "WARNING: task (" << perf.file << ":" << perf.line
-                      << ") destroyed undone\n";
-#else
-            std::cerr << "WARNING: task destroyed undone\n";
-#endif
-        }
-#endif
+//#if CO_ASYNC_DEBUG
+        //if (!mCoroutine.done()) [[unlikely]] {
+//#if CO_ASYNC_PERF
+            //auto &perf = mCoroutine.promise().mPerf;
+            //std::cerr << "warning: task (" << perf.file << ":" << perf.line
+                      //<< ") destroyed undone\n";
+//#else
+            //std::cerr << "warning: task destroyed undone\n";
+//#endif
+        //}
+//#endif
         mCoroutine.destroy();
     }
 

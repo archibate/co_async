@@ -5,7 +5,7 @@
 
 namespace co_async {
 
-struct MultishotConditionVariable {
+struct ConditionVariable {
     ConcurrentQueue<std::coroutine_handle<>> mWaitingList;
 
     struct Awaiter {
@@ -19,7 +19,7 @@ struct MultishotConditionVariable {
 
         void await_resume() const noexcept {}
 
-        MultishotConditionVariable *mThat;
+        ConditionVariable *mThat;
     };
 
     Awaiter operator co_await() {
@@ -39,7 +39,7 @@ struct MultishotConditionVariable {
     }
 };
 
-struct ConditionVariable {
+struct OneshotConditionVariable {
     std::atomic<void *> mWaitingCoroutine{nullptr};
 
     struct Awaiter {
@@ -52,9 +52,15 @@ struct ConditionVariable {
                                            std::memory_order_release);
         }
 
+        /* Awaiter &operator=(Awaiter &&) = delete; */
+        /*  */
+        /* ~Awaiter() { */
+        /*     mThat->mWaitingCoroutine.store(nullptr, std::memory_order_release); */
+        /* } */
+
         void await_resume() const noexcept {}
 
-        ConditionVariable *mThat;
+        OneshotConditionVariable *mThat;
     };
 
     Awaiter operator co_await() {

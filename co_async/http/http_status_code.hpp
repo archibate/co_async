@@ -170,4 +170,20 @@ inline std::string guessContentTypeByExtension(std::string_view ext) {
     }
 }
 
+inline std::string capitalizeHTTPHeader(std::string_view key) {
+    // e.g.: user-agent -> User-Agent
+    std::string result(key);
+    if (!result.empty()) [[likely]] {
+        if ('a' <= result[0] && result[0] <= 'z') [[likely]] {
+            result[0] -= 'a' - 'A';
+        }
+        for (std::size_t i = 1; i < result.size(); ++i) {
+            if (result[i - 1] == '-' && 'a' <= result[i] && result[i] <= 'z') [[likely]] {
+                result[i] -= 'a' - 'A';
+            }
+        }
+    }
+    return result;
+}
+
 } // namespace co_async

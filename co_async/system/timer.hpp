@@ -23,7 +23,7 @@ inline Task<> sleep_for(std::chrono::duration<Rep, Period> dur) {
     auto ts = durationToKernelTimespec(dur);
     int ret = co_await uring_timeout(&ts, 1, IORING_TIMEOUT_BOOTTIME);
     if (ret != -ETIME)
-        checkErrorReturn(ret);
+        throwingError(ret);
 }
 
 template <class Clk, class Dur>
@@ -32,7 +32,7 @@ inline Task<> sleep_until(std::chrono::time_point<Clk, Dur> tp) {
     int ret = co_await uring_timeout(
         &ts, 1, IORING_TIMEOUT_ABS | IORING_TIMEOUT_REALTIME);
     if (ret != -ETIME)
-        checkErrorReturn(ret);
+        throwingError(ret);
 }
 
 } // namespace co_async

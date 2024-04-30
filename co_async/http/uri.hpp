@@ -144,6 +144,10 @@ public:
         dump(r);
         return r;
     }
+
+    std::string repr() const {
+        return dump();
+    }
 };
 
 } // namespace co_async

@@ -47,7 +47,7 @@ private:
 template <class T, class P>
 inline Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>>
 loopEnqueueDetachStarter(Task<T, P> task) {
-    co_await task;
+    (void)co_await task;
 }
 
 template <class T, class P>
@@ -73,6 +73,9 @@ inline Task<> loopEnqueueSyncStarter(Task<T, P> task,
         result.putValue((co_await task, NonVoidHelper<>()));
 #if CO_ASYNC_EXCEPT
     } catch (...) {
+#if CO_ASYNC_DEBUG
+        std::cerr << "WARNING: exception occurred in co_synchronize\n";
+#endif
         exception = std::current_exception();
     }
 #endif

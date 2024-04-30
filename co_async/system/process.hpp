@@ -19,6 +19,7 @@
 #include <co_async/system/system_loop.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <co_async/awaiter/task.hpp>
+#include <co_async/utils/expected.hpp>
 
 namespace co_async {
 
@@ -39,14 +40,14 @@ struct WaitProcessResult {
     } exitType;
 };
 
-inline Task<> kill_process(Pid pid, int sig = SIGKILL) {
-    checkError(kill(pid, sig));
-    co_return;
+inline Task<Expected<void, std::errc>> kill_process(Pid pid, int sig = SIGKILL) {
+    co_await expectError(kill(pid, sig));
+    co_return {};
 }
 
-inline Task<WaitProcessResult> wait_process(Pid pid, int options = WEXITED) {
+inline Task<Expected<WaitProcessResult, std::errc>> wait_process(Pid pid, int options = WEXITED) {
     siginfo_t info{};
-    checkErrorReturn(co_await uring_waitid(P_PID, pid, &info, options, 0));
+    co_await expectError(co_await uring_waitid(P_PID, pid, &info, options, 0));
     co_return WaitProcessResult{
         .pid = info.si_pid,
         .status = info.si_status,
@@ -54,17 +55,16 @@ inline Task<WaitProcessResult> wait_process(Pid pid, int options = WEXITED) {
     };
 }
 
-inline Task<std::optional<WaitProcessResult>>
+inline Task<Expected<WaitProcessResult, std::errc>>
 wait_process(Pid pid, std::chrono::nanoseconds timeout, int options = WEXITED) {
     siginfo_t info{};
     auto ts = durationToKernelTimespec(timeout);
-    int ret =
-        co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0),
-                            uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME));
-    if (ret == -ECANCELED) {
-        co_return std::nullopt;
+    auto ret = expectError(co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0),
+                            uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+    if (ret.is_error(std::errc::operation_canceled)) {
+        co_return Unexpected{std::errc::timed_out};
     }
-    checkErrorReturn(ret);
+    co_await std::move(ret);
     co_return WaitProcessResult{
         .pid = info.si_pid,
         .status = info.si_status,
@@ -76,8 +76,8 @@ struct ProcessBuilder {
     ProcessBuilder() {
         mAbsolutePath = false;
         mEnvInherited = false;
-        checkError(posix_spawnattr_init(&mAttr));
-        checkError(posix_spawn_file_actions_init(&mFileActions));
+        throwingError(posix_spawnattr_init(&mAttr));
+        throwingError(posix_spawn_file_actions_init(&mFileActions));
     }
 
     ProcessBuilder(ProcessBuilder &&) = delete;
@@ -88,7 +88,7 @@ struct ProcessBuilder {
     }
 
     ProcessBuilder &chdir(std::filesystem::path path) {
-        checkError(
+        throwingError(
             posix_spawn_file_actions_addchdir_np(&mFileActions, path.c_str()));
         return *this;
     }
@@ -104,12 +104,12 @@ struct ProcessBuilder {
     }
 
     ProcessBuilder &open(int fd, int ourFd) {
-        checkError(posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd));
+        throwingError(posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd));
         return *this;
     }
 
     ProcessBuilder &close(int fd) {
-        checkError(posix_spawn_file_actions_addclose(&mFileActions, fd));
+        throwingError(posix_spawn_file_actions_addclose(&mFileActions, fd));
         return *this;
     }
 
@@ -145,7 +145,7 @@ struct ProcessBuilder {
         return *this;
     }
 
-    Task<Pid> spawn() {
+    Task<Expected<Pid, std::errc>> spawn() {
         Pid pid;
         std::vector<char *> argv;
         std::vector<char *> envp;
@@ -170,8 +170,7 @@ struct ProcessBuilder {
             &pid, mPath.c_str(), &mFileActions, &mAttr, argv.data(),
             mEnvpStore.empty() ? environ : envp.data());
         if (status != 0) [[unlikely]] {
-            throw std::system_error(errno, std::system_category(),
-                                    "posix_spawn");
+            co_return Unexpected{std::errc(errno)};
         }
         mPath.clear();
         mArgvStore.clear();

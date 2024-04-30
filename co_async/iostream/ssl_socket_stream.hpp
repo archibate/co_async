@@ -610,6 +610,10 @@ public:
         br_ssl_engine_close(eng);
     }
 
+    void timeout(std::chrono::nanoseconds timeout) {
+        raw.timeout(timeout);
+    }
+
     /* SSLSocketStreamRaw(SSLSocketStreamRaw &&that) noexcept */
     /*     : raw(std::move(that.raw)), */
     /*       eng(std::exchange(that.eng, nullptr)), */
@@ -638,6 +642,7 @@ public:
     explicit SSLServerSocketStreamRaw(SocketHandle file,
                                       SSLServerCertificate const &cert,
                                       SSLPrivateKey const &pkey,
+                                      std::span<char const *const> protocols,
                                       SSLSessionCache *cache = nullptr)
         : SSLSocketStreamRaw(std::move(file)) {
         if (auto rsa = pkey.getRSA()) {
@@ -654,11 +659,10 @@ public:
         if (cache) {
             br_ssl_server_set_cache(ctx.get(), &cache->mLru.vtable);
         }
+        br_ssl_engine_set_protocol_names(
+            &ctx->eng, const_cast<char const **>(protocols.data()),
+            protocols.size());
         br_ssl_server_reset(ctx.get());
-    }
-
-    bool ssl_is_protocol_offered(std::string_view protocol) {
-        return false; // TODO: bearssl how to check this on server side?
     }
 };
 
@@ -700,12 +704,13 @@ public:
 struct SSLClientSocketStream : IOStreamImpl<SSLClientSocketStreamRaw> {
     using IOStreamImpl<SSLClientSocketStreamRaw>::IOStreamImpl;
 
-    static Task<SSLClientSocketStream>
+    static Task<Expected<SSLClientSocketStream, std::errc>>
     connect(char const *host, int port, SSLClientTrustAnchor const &ta,
             std::span<char const *const> protocols, std::string_view proxy,
             std::chrono::nanoseconds timeout) {
-        auto conn = co_await socket_proxy_connect(host, port, proxy, timeout);
+        auto conn = co_await co_await socket_proxy_connect(host, port, proxy, timeout);
         SSLClientSocketStream sock(std::move(conn), ta, host, protocols);
+        sock.timeout(timeout);
         co_return sock;
     }
 };

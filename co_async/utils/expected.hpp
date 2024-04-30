@@ -64,51 +64,35 @@ struct [[nodiscard]] Unexpected {
 private:
     static_assert(!std::is_reference_v<E> && !std::is_void_v<E>);
 
-    E *mErrorPtr;
+    std::optional<E> mErrorOpt;
 
 public:
     bool has_error() const noexcept {
-        return mErrorPtr != nullptr;
+        return mErrorOpt != nullptr;
+    }
+
+    bool is_error(E const &e) const {
+        return has_error() && *mErrorOpt == e;
     }
 
     void throw_error() const {
-        UnexpectedTraits<E>::throw_error(*mErrorPtr);
+        UnexpectedTraits<E>::throw_error(*mErrorOpt);
     }
 
     E const &error() const noexcept {
-        return *mErrorPtr;
+        return *mErrorOpt;
     }
 
-    explicit Unexpected(std::in_place_type_t<void>) noexcept : mErrorPtr(nullptr) {}
+    explicit Unexpected(std::in_place_type_t<void>) noexcept : mErrorOpt() {}
 
     explicit Unexpected(E error) {
-        mErrorPtr = new E(std::move(error));
+        mErrorOpt.emplace(std::move(error));
     }
 
     template <class... Es>
         requires std::constructible_from<E, Es...>
     explicit Unexpected(std::in_place_t, Es &&...args) {
-        mErrorPtr = new E(std::forward<Es>(args)...);
-    }
-
-    Unexpected(Unexpected &&that) noexcept
-        : mErrorPtr(std::exchange(that.mErrorPtr, nullptr)) {}
-
-    Unexpected &operator=(Unexpected &&that) noexcept {
-        if (&that != this) [[likely]] {
-            if (mErrorPtr) {
-                delete mErrorPtr;
-                mErrorPtr = nullptr;
-            }
-            mErrorPtr = std::exchange(that.mErrorPtr, nullptr);
-        }
-        return *this;
-    }
-
-    ~Unexpected() {
-        if (mErrorPtr) {
-            delete mErrorPtr;
-        }
+        mErrorOpt.emplace(std::forward<Es>(args)...);
     }
 };
 
@@ -131,24 +115,8 @@ public:
 
     explicit Unexpected(std::in_place_type_t<void>) noexcept : mHasError(false) {}
 
-    explicit Unexpected() {
-        mHasError = true;
+    explicit Unexpected() noexcept : mHasError(true) {
     }
-
-    Unexpected(Unexpected &&that) noexcept
-        : mHasError(std::exchange(that.mHasError, false)) {}
-
-    Unexpected &operator=(Unexpected &&that) noexcept {
-        if (&that != this) [[likely]] {
-            if (mHasError) {
-                mHasError = false;
-            }
-            mHasError = std::exchange(that.mHasError, false);
-        }
-        return *this;
-    }
-
-    ~Unexpected() = default;
 };
 
 template <class E> requires (UnexpectedTraits<E>::inplace_storable::value)
@@ -159,6 +127,10 @@ private:
 public:
     bool has_error() const noexcept {
         return (bool)mError;
+    }
+
+    bool is_error(E const &e) const {
+        return has_error() && mError == e;
     }
 
     void throw_error() const {
@@ -173,28 +145,23 @@ public:
 
     explicit Unexpected(E error) {
         mError = E(std::move(error));
+#if CO_ASYNC_DEBUG
+        if (!has_error()) [[unlikely]] {
+            throw std::logic_error("Unexpected constructed with no error!");
+        }
+#endif
     }
 
     template <class... Es>
         requires std::constructible_from<E, Es...>
     explicit Unexpected(std::in_place_t, Es &&...args) {
         mError = E(std::forward<Es>(args)...);
-    }
-
-    Unexpected(Unexpected &&that) noexcept
-        : mError(std::exchange(that.mError, E())) {}
-
-    Unexpected &operator=(Unexpected &&that) noexcept {
-        if (&that != this) [[likely]] {
-            if (mError) {
-                mError = false;
-            }
-            mError = std::exchange(that.mError, E());
+#if CO_ASYNC_DEBUG
+        if (!has_error()) [[unlikely]] {
+            throw std::logic_error("Unexpected constructed with no error!");
         }
-        return *this;
+#endif
     }
-
-    ~Unexpected() = default;
 };
 
 template <class E>
@@ -210,14 +177,29 @@ private:
     Unexpected<E> mError;
     Uninitialized<T> mValue;
 
+    template <class, class>
+    friend struct Expected;
+
 public:
-    Expected(T &&value) : mError(std::in_place_type<void>) {
-        mValue.putValue(std::forward<T>(value));
+    template <std::convertible_to<T> U>
+    Expected(U &&value) : mError(std::in_place_type<void>) {
+        mValue.putValue(std::forward<U>(value));
+    }
+
+    Expected(T value) : mError(std::in_place_type<void>) {
+        mValue.putValue(std::move(value));
     }
 
     Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {}
 
-    Expected(Expected &&that) noexcept : mError(std::move(that.mError)) {
+    Expected(Expected &&that) noexcept : mError(that.mError) {
+        if (has_value()) {
+            mValue.putValue(std::move(that.mValue.refValue()));
+        }
+    }
+
+    template <class U> requires (!std::same_as<T, U> && (std::convertible_to<U, T> || std::constructible_from<T, U>))
+    explicit(!std::convertible_to<U, T>) Expected(Expected<U, E> that) noexcept : mError(that.mError) {
         if (has_value()) {
             mValue.putValue(std::move(that.mValue.refValue()));
         }
@@ -225,7 +207,10 @@ public:
 
     Expected &operator=(Expected &&that) noexcept {
         if (&that != this) [[likely]] {
-            mError = std::move(that.mError);
+            if (has_value()) {
+                mValue.destroyValue();
+            }
+            mError = that.mError;
             if (has_value()) {
                 mValue.putValue(std::move(that.mValue.refValue()));
             }
@@ -242,24 +227,35 @@ public:
         return mError.has_error();
     }
 
+    bool is_error(auto const &e) const {
+        return mError.is_error(e);
+    }
+
     bool has_value() const noexcept {
         return !mError.has_error();
     }
 
-    operator bool() const noexcept {
+    explicit operator bool() const noexcept {
         return has_value();
     }
 
-    T &value() {
+    T &&value() && {
         if (mError.has_error()) [[unlikely]] {
-            mError->throwError();
+            mError.throw_error();
+        }
+        return std::move(mValue.refValue());
+    }
+
+    T &value() & {
+        if (mError.has_error()) [[unlikely]] {
+            mError.throw_error();
         }
         return mValue.refValue();
     }
 
-    T const &value() const {
+    T const &value() const & {
         if (mError.has_error()) [[unlikely]] {
-            mError->throwError();
+            mError.throw_error();
         }
         return mValue.refValue();
     }
@@ -324,7 +320,7 @@ public:
             throw std::logic_error("Expected: no error but error() is called");
         }
 #endif
-        return *mError;
+        return mError.error();
     }
 };
 
@@ -335,18 +331,25 @@ private:
 
     Unexpected<E> mError;
 
+    template <class, class>
+    friend struct Expected;
+
 public:
     Expected() : mError(std::in_place_type<void>) {
     }
 
     Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {}
 
-    Expected(Expected &&that) noexcept : mError(std::move(that.mError)) {
+    Expected(Expected &&that) noexcept : mError(that.mError) {
+    }
+
+    template <class U> requires (!std::is_void_v<U>)
+    Expected(Expected<U, E> that) noexcept : mError(that.mError) {
     }
 
     Expected &operator=(Expected &&that) noexcept {
         if (&that != this) [[likely]] {
-            mError = std::move(that.mError);
+            mError = that.mError;
         }
     }
 
@@ -356,17 +359,21 @@ public:
         return mError.has_error();
     }
 
+    bool is_error(auto const &e) const {
+        return mError.is_error(e);
+    }
+
     bool has_value() const noexcept {
         return !mError.has_error();
     }
 
-    operator bool() const noexcept {
+    explicit operator bool() const noexcept {
         return has_value();
     }
 
     void value() const {
         if (mError.has_error()) [[unlikely]] {
-            mError->throwError();
+            mError.throw_error();
         }
     }
 
@@ -388,7 +395,7 @@ public:
             throw std::logic_error("Expected: no error but error() is called");
         }
 #endif
-        return *mError;
+        return mError.error();
     }
 };
 

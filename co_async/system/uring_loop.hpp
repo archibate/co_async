@@ -55,7 +55,7 @@ struct UringLoop {
     UringLoop &operator=(UringLoop &&) = delete;
 
     explicit UringLoop(std::size_t entries = 512) {
-        checkErrorReturn(io_uring_queue_init(entries, &mRing, 0));
+        throwingError(io_uring_queue_init(entries, &mRing, 0));
     }
 
     ~UringLoop() {
@@ -63,7 +63,7 @@ struct UringLoop {
     }
 
     void doSubmit() {
-        checkErrorReturn(io_uring_submit(&mRing));
+        throwingError(io_uring_submit(&mRing));
     }
 
     void reserveFixedBuffers(std::size_t numBufs, std::size_t bufSize = 8192) {
@@ -87,7 +87,7 @@ struct UringLoop {
         if (mFixedFiles.size() >= numFiles)
             return;
         mFixedFiles.resize(numFiles);
-        int null_fd = checkError(open("/dev/null", O_RDONLY));
+        int null_fd = throwingErrorErrno(open("/dev/null", O_RDONLY));
 
         struct Closer {
             int fd;
@@ -99,7 +99,7 @@ struct UringLoop {
 
         for (std::size_t i = mFixedFiles.size(); i < numFiles; ++i) {
             mFixedFiles[i] = null_fd;
-            null_fd = checkError(dup(null_fd));
+            null_fd = throwingErrorErrno(dup(null_fd));
         }
         io_uring_register_files(&mRing, mFixedFiles.data(), mFixedFiles.size());
     }
@@ -191,7 +191,7 @@ private:
 
 void UringLoop::runSingle() {
     io_uring_cqe *cqe;
-    checkErrorReturn(io_uring_wait_cqe(&mRing, &cqe));
+    throwingError(io_uring_wait_cqe(&mRing, &cqe));
     auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
     op->mRes = cqe->res;
     io_uring_cqe_seen(&mRing, cqe);
@@ -204,7 +204,7 @@ void UringLoop::runBatchedNoWait(std::size_t numBatch) {
     if (res == -EINTR) [[unlikely]] {
         return;
     }
-    checkErrorReturn(res);
+    throwingError(res);
     unsigned head, numGot = 0;
     io_uring_for_each_cqe(&mRing, head, cqe) {
         auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
@@ -225,7 +225,7 @@ bool UringLoop::runBatchedWait(std::size_t numBatch,
     if (res == -ETIME) {
         return false;
     }
-    checkErrorReturn(res);
+    throwingError(res);
     unsigned head, numGot = 0;
     io_uring_for_each_cqe(&mRing, head, cqe) {
         auto *op = reinterpret_cast<UringOp *>(cqe->user_data);

@@ -8,7 +8,7 @@
 
 namespace co_async {
 
-inline Task<SocketHandle>
+inline Task<Expected<SocketHandle, std::errc>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::nanoseconds timeout) {
     if (proxy.starts_with("http://")) {
@@ -24,7 +24,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         } else {
             proxyHost.assign(proxy);
         }
-        auto sock = co_await socket_connect({proxyHost.c_str(), proxyPort});
+        auto sock = co_await co_await socket_connect({proxyHost.c_str(), proxyPort});
         auto hostName = std::string(host) + ":" + to_string(port);
         std::string header = "CONNECT " + hostName +
                              " HTTP/1.1\r\nHost: " + hostName +
@@ -32,10 +32,9 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         std::span<char const> buf = header;
         std::size_t n = 0;
         do {
-            n = co_await socket_write(sock, buf, timeout);
+            n = co_await co_await socket_write(sock, buf, timeout);
             if (!n) [[unlikely]] {
-                throw std::runtime_error(
-                    "proxy server failed to establish connection");
+                co_return Unexpected{std::errc::connection_reset};
             }
             buf = buf.subspan(n);
         } while (buf.size() > 0);
@@ -44,19 +43,21 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         std::string response(39, '\0');
         std::span<char> outbuf = response;
         do {
-            n = co_await socket_read(sock, outbuf, timeout);
+            n = co_await co_await socket_read(sock, outbuf, timeout);
             if (!n) [[unlikely]] {
-                throw std::runtime_error(
-                    "proxy server failed to establish connection: [" +
-                    response.substr(response.size() - outbuf.size()) + "]");
+#if CO_ASYNC_DEBUG
+                std::cerr << "WARNING: proxy server failed to establish connection: [" + response.substr(0, response.size() - outbuf.size()) + "]";
+#endif
+                co_return Unexpected{std::errc::connection_reset};
             }
             outbuf = outbuf.subspan(n);
         } while (outbuf.size() > 0);
         if (std::string_view(response).substr(8) != desiredResponse.substr(8))
             [[unlikely]] {
-            throw std::runtime_error(
-                "proxy server failed to establish connection: [" + response +
-                "]");
+#if CO_ASYNC_DEBUG
+                std::cerr << "WARNING: proxy server seems failed to establish connection: [" + response + "]";
+#endif
+                co_return Unexpected{std::errc::connection_reset};
         }
         co_return sock;
     } else {

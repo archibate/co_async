@@ -556,7 +556,7 @@ protected:
                 continue;
             }
 
-            br_ssl_engine_flush(eng, 0); // TODO: really needed?
+            /* br_ssl_engine_flush(eng, 0); // todo: really needed? */
         }
     }
 
@@ -564,6 +564,7 @@ public:
     Task<> raw_flush() override {
         br_ssl_engine_flush(eng, 0);
         co_await bearSSLRunUntil(BR_SSL_SENDAPP | BR_SSL_RECVAPP);
+        co_return;
     }
 
     Task<std::size_t> raw_read(std::span<char> buffer) override {

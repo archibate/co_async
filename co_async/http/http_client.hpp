@@ -10,7 +10,7 @@
 #include <co_async/http/http_protocol.hpp>
 #include <co_async/iostream/socket_stream.hpp>
 #include <co_async/iostream/ssl_socket_stream.hpp>
-#include <co_async/iostream/pipe_stream.hpp>
+#include <co_async/iostream/cached_stream.hpp>
 #include <co_async/threading/future.hpp>
 #include <co_async/threading/concurrent_queue.hpp>
 #include <co_async/threading/condition_variable.hpp>
@@ -70,7 +70,8 @@ private:
                 co_await co_await SSLClientSocketStream::connect(
                     mHost.c_str(), mPort, gTrustAnchors, protocols, mProxy,
                     mTimeout));
-            if (sock->ssl_get_selected_protocol() == "h2") { // todo: seems always false?
+            if (sock->ssl_get_selected_protocol() ==
+                "h2") { // todo: seems always false?
                 co_return std::make_unique<HTTPProtocolVersion2>(
                     std::move(sock));
             } else {
@@ -130,7 +131,7 @@ private:
     }
 
     Task<Expected<void, std::errc>>
-    tryWriteRequest(HTTPRequest const &request) {
+    tryWriteRequestAndBody(HTTPRequest const &request, std::string_view body) {
         for (std::size_t n = 0; n < 3; ++n) {
             if (!mHttp) {
                 if (auto e = co_await mHttpFactory->createConnection())
@@ -141,9 +142,43 @@ private:
                     continue;
                 }
             }
-            if (co_await mHttp->writeRequest(request)) [[likely]] {
+            if (co_await mHttp->writeRequest(request)) {
+                if (co_await mHttp->writeBody(body)) {
+                    if (co_await mHttp->sock->peekchar()) {
+                        co_return {};
+                    }
+                }
+            }
+            /* if (co_await mHttp->writeRequest(request) && */
+            /*     co_await mHttp->writeBody(body) && */
+            /*     co_await mHttp->sock->peekchar()) [[likely]] { */
+            /*     co_return {}; */
+            /* } */
+            mHttp = nullptr;
+        }
+        co_return Unexpected{std::errc::connection_aborted};
+    }
+
+    Task<Expected<void, std::errc>>
+    tryWriteRequestAndBodyStream(HTTPRequest const &request,
+                                 IStream &bodyStream) {
+        CachedStream cachedStream(&bodyStream);
+        for (std::size_t n = 0; n < 3; ++n) {
+            if (!mHttp) {
+                if (auto e = co_await mHttpFactory->createConnection())
+                    [[likely]] {
+                    mHttp = std::move(*e);
+                    mHttp->initClientState();
+                } else {
+                    continue;
+                }
+            }
+            if (co_await mHttp->writeRequest(request) &&
+                co_await mHttp->writeBodyStream(cachedStream) &&
+                co_await mHttp->sock->peekchar()) [[likely]] {
                 co_return {};
             }
+            (void)cachedStream.raw_seek(0);
             mHttp = nullptr;
         }
         co_return Unexpected{std::errc::connection_aborted};
@@ -169,10 +204,9 @@ private:
     }
 
 public:
-    Expected<void, std::errc>
-    doConnect(std::string_view host,
-              std::chrono::nanoseconds timeout,
-              bool followProxy) {
+    Expected<void, std::errc> doConnect(std::string_view host,
+                                        std::chrono::nanoseconds timeout,
+                                        bool followProxy) {
         terminateLifetime();
         if (host.starts_with("https://")) {
             host.remove_prefix(8);
@@ -211,8 +245,7 @@ public:
                                             std::string &out) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
-        co_await co_await tryWriteRequest(req);
-        co_await co_await mHttp->writeBody(in);
+        co_await co_await tryWriteRequestAndBody(req, in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBody(out);
         reset.neverMind();
@@ -224,8 +257,7 @@ public:
                                             HTTPResponse &res, OStream &out) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
-        co_await co_await tryWriteRequest(req);
-        co_await co_await mHttp->writeBody(in);
+        co_await co_await tryWriteRequestAndBody(req, in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBodyStream(out);
         reset.neverMind();
@@ -235,8 +267,7 @@ public:
     Task<Expected<void, std::errc>>
     request(HTTPRequest req, IStream &in, HTTPResponse &res, std::string &out) {
         RAIIPointerResetter reset(&mHttp);
-        co_await co_await tryWriteRequest(req);
-        co_await co_await mHttp->writeBodyStream(in);
+        co_await co_await tryWriteRequestAndBodyStream(req, in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBody(out);
         reset.neverMind();
@@ -247,8 +278,7 @@ public:
                                             HTTPResponse &res, OStream &out) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
-        co_await co_await tryWriteRequest(req);
-        co_await co_await mHttp->writeBodyStream(in);
+        co_await co_await tryWriteRequestAndBodyStream(req, in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBodyStream(out);
         reset.neverMind();
@@ -260,8 +290,7 @@ public:
             FutureReference<HTTPResponse> const &res, OStream &out) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
-        co_await co_await tryWriteRequest(req);
-        co_await co_await mHttp->writeBodyStream(in);
+        co_await co_await tryWriteRequestAndBodyStream(req, in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBodyStream(out);
         reset.neverMind();
@@ -331,8 +360,8 @@ public:
 
     explicit HTTPConnectionPool(
         std::size_t poolSize = 256,
-        std::chrono::nanoseconds timeout = std::chrono::seconds(10),
-        std::chrono::nanoseconds keepAlive = std::chrono::seconds(60),
+        std::chrono::nanoseconds timeout = std::chrono::seconds(5),
+        std::chrono::nanoseconds keepAlive = std::chrono::minutes(3),
         bool followProxy = true)
         : mPool(poolSize),
           mTimeout(timeout),

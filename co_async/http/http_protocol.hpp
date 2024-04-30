@@ -396,6 +396,7 @@ public:
             req.headers.insert_or_assign(std::move(key), line.substr(pos + 2));
         }
 
+        mEncoding = HTTPTransferEncoding::Identity;
         if (auto transEnc = req.headers.get("transfer-encoding"sv)) {
             mEncoding = encodingByName(*transEnc);
             req.headers.erase("transfer-encoding"sv);

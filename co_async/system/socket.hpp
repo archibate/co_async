@@ -78,6 +78,20 @@ struct IpAddress {
 struct SocketAddress {
     SocketAddress() = default;
 
+    static SocketAddress parseCommaSeperated(std::string_view host, int defaultPort) {
+        auto pos = host.find(':');
+        std::string hostPart(host);
+        std::optional<int> port;
+        if (pos != std::string_view::npos) {
+            hostPart = host.substr(0, pos);
+            port = from_string<int>(host.substr(pos + 1));
+            if (port < 0 || port > 65535) [[unlikely]] {
+                port = std::nullopt;
+            }
+        }
+        return SocketAddress(IpAddress(hostPart.c_str()), port.value_or(defaultPort));
+    }
+
     SocketAddress(IpAddress ip, int port) {
         std::visit([&](auto const &addr) { initFromHostPort(addr, port); },
                    ip.mAddr);

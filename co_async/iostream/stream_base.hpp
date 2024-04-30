@@ -2,31 +2,34 @@
 
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/awaiter/just.hpp>
 #include <co_async/utils/expected.hpp>
 
 namespace co_async {
 
+inline constexpr std::size_t kStreamBufferSize = 8192;
+
 struct IStreamRaw {
-protected:
     virtual Task<std::size_t> raw_read(std::span<char> buffer) = 0;
 
     virtual void raw_timeout(std::chrono::nanoseconds timeout) {}
+
+    virtual Task<Expected<>> raw_seek(std::uint64_t pos) {
+        co_return Unexpected{};
+    }
 };
 
 struct OStreamRaw {
-protected:
     virtual Task<std::size_t> raw_write(std::span<char const> buffer) = 0;
 
     virtual Task<> raw_flush() {
-        return just_void();
+        co_return;
     }
 };
 
 struct IOStreamRaw : virtual IStreamRaw, virtual OStreamRaw {};
 
 struct IStream : virtual IStreamRaw {
-    explicit IStream(std::size_t bufferSize = 8192)
+    explicit IStream(std::size_t bufferSize = kStreamBufferSize)
         : mBuffer(std::make_unique<char[]>(bufferSize)),
           mBufSize(bufferSize) {}
 
@@ -208,11 +211,18 @@ struct IStream : virtual IStreamRaw {
         mIndex += n;
     }
 
+    Task<Expected<char, std::errc>> peekchar() {
+        if (bufempty()) {
+            co_await co_await fillbuf();
+        }
+        co_return mBuffer[mIndex];
+    }
+
     Task<Expected<void, std::errc>> peekn(std::string &s, std::size_t n) {
         while (mEnd - mIndex < n) {
             co_await co_await fillbuf();
         }
-        s.append(mBuffer.get(), n);
+        s.append(mBuffer.get() + mIndex, n);
         co_return {};
     }
 
@@ -225,7 +235,6 @@ struct IStream : virtual IStreamRaw {
     Task<Expected<void, std::errc>> fillbuf() {
         mIndex = 0;
         mEnd = co_await raw_read(std::span(mBuffer.get(), mBufSize));
-        /* debug(), std::string_view(mBuffer.get(), mEnd); */
         if (mEnd == 0) [[unlikely]] {
             co_return Unexpected{std::errc::broken_pipe};
         }
@@ -243,7 +252,7 @@ struct IStream : virtual IStreamRaw {
 };
 
 struct OStream : virtual OStreamRaw {
-    explicit OStream(std::size_t bufferSize = 8192)
+    explicit OStream(std::size_t bufferSize = kStreamBufferSize)
         : mBuffer(std::make_unique<char[]>(bufferSize)),
           mBufSize(bufferSize) {}
 
@@ -337,7 +346,7 @@ private:
 };
 
 struct IOStream : IStream, OStream {
-    explicit IOStream(std::size_t bufferSize = 8192)
+    explicit IOStream(std::size_t bufferSize = kStreamBufferSize)
         : IStream(bufferSize),
           OStream(bufferSize) {}
 };

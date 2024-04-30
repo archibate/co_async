@@ -8,7 +8,7 @@ Task<Expected<void, std::errc>> amain() {
     co_await https_load_ca_certificates();
     HTTPConnectionPool pool;
     std::vector<FutureSource<Expected<void, std::errc>>> res;
-    for (std::string path: {"style.css", "koru-icon.png", "mtk_2021_200.png"}) {
+    for (std::string path: {"index.html", "style.css", "koru-icon.png", "mtk_2021_200.png"}) {
         res.push_back(co_future(co_bind([&, path] () -> Task<Expected<void, std::errc>> {
             auto conn = co_await co_await pool.connect("https://man7.org");
             HTTPRequest req = {
@@ -24,6 +24,8 @@ Task<Expected<void, std::errc>> amain() {
             co_return {};
         })));
     }
+    co_await co_await res.back();
+    res.pop_back();
     for (auto &&r: res) {
         co_await co_await r;
     }

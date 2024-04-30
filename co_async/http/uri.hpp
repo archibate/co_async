@@ -108,8 +108,7 @@ public:
         auto path = uri;
         URIParams params;
 
-        auto i = uri.find('?');
-        if (i != std::string_view::npos) {
+        if (auto i = uri.find('?'); i != std::string_view::npos) {
             path = uri.substr(0, i);
             do {
                 uri.remove_prefix(i + 1);
@@ -124,7 +123,12 @@ public:
             } while (i != std::string_view::npos);
         }
 
-        return {std::string(path), std::move(params)};
+        std::string spath(path);
+        if (spath.empty() || spath.front() != '/') [[unlikely]] {
+            spath.insert(spath.begin(), '/');
+        }
+
+        return URI{spath, std::move(params)};
     }
 
     void dump(std::string &r) const {

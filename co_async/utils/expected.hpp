@@ -396,8 +396,10 @@ public:
 
     decltype(auto) error() const {
 #if CO_ASYNC_DEBUG
-        if (!mError.has_error()) [[unlikely]] {
-            throw std::logic_error("Expected: no error but error() is called");
+        if constexpr (!UnexpectedTraits<E>::inplace_storable::value) {
+            if (!mError.has_error()) [[unlikely]] {
+                throw std::logic_error("Expected: no error but error() is called");
+            }
         }
 #endif
         return mError.error();

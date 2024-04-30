@@ -169,8 +169,11 @@ struct HTTPServer {
     }
 
     Task<Expected<>> handle_http(SocketHandle handle) const {
-        co_return co_await doHandleConnection(
+        /* int h = handle.fileNo(); */
+        co_await co_await doHandleConnection(
             co_await prepareHTTP(std::move(handle)));
+        /* co_await uring_shutdown(h, SHUT_RDWR); */
+        co_return {};
     }
 
     Task<Expected<>> handle_http_redirect_to_https(SocketHandle handle) const {
@@ -198,14 +201,16 @@ struct HTTPServer {
         co_return {};
     }
 
-    Task<Expected<>> handle_https(SocketHandle handle, SSLServerState const &https) const {
-        co_return co_await doHandleConnection(
+    Task<Expected<>> handle_https(SocketHandle handle, SSLServerState &https) const {
+        /* int h = handle.fileNo(); */
+        co_await co_await doHandleConnection(
             co_await prepareHTTPS(std::move(handle), https));
+        /* co_await uring_shutdown(h, SHUT_RDWR); */
+        co_return {};
     }
 
     Task<Expected<>>
     doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
-        /* auto uuid = std::random_device()(); */
         while (true) {
             IO io(http.get());
             if (!co_await io.readRequestHeader())
@@ -340,7 +345,7 @@ private:
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
     };
-    std::chrono::nanoseconds mTimeout = std::chrono::seconds(10);
+    std::chrono::nanoseconds mTimeout = std::chrono::seconds(5);
 #if CO_ASYNC_DEBUG
     bool mLogRequests = false;
 #endif

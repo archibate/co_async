@@ -31,9 +31,9 @@ struct SystemLoop {
 
     void start(std::size_t numWorkers = 0, std::size_t numBatchWait = 1,
                std::chrono::system_clock::duration batchTimeout =
-                   std::chrono::milliseconds(1000),
+                   std::chrono::milliseconds(40),
                std::chrono::system_clock::duration batchTimeoutDelta =
-                   std::chrono::milliseconds(1000)) {
+                   std::chrono::milliseconds(20)) {
         if (mThreads) [[unlikely]] {
             throw std::runtime_error("loop already started");
         }

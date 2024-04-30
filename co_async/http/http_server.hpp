@@ -22,6 +22,12 @@ enum class HTTPRouteMode {
     SuffixPath,    // "/a/b/c"
 };
 
+struct SSLServerState {
+    SSLServerCertificate cert;
+    SSLPrivateKey skey;
+    SSLSessionCache cache;
+};
+
 struct HTTPServer {
     struct IO {
         explicit IO(HTTPProtocol *http) noexcept : mHttp(http) {}
@@ -111,6 +117,10 @@ struct HTTPServer {
     HTTPServer() = default;
     HTTPServer(HTTPServer &&) = delete;
 
+    void timeout(std::chrono::nanoseconds timeout) {
+        mTimeout = timeout;
+    }
+
     void route(std::string_view methods, std::string_view path,
                HTTPHandler handler) {
         mRoutes.insert_or_assign(
@@ -136,15 +146,14 @@ struct HTTPServer {
     }
 
     Task<std::unique_ptr<HTTPProtocol>>
-    prepareHTTPS(SocketHandle handle, SSLServerCertificate const &cert,
-                 SSLPrivateKey const &skey,
-                 SSLSessionCache *cache = nullptr) const {
+    prepareHTTPS(SocketHandle handle, SSLServerState &https) const {
         using namespace std::string_view_literals;
         static char const *const protocols[] = {
-            "h2",
+            /* "h2", */
             "http/1.1",
         };
-        SSLServerSocketStream sock(std::move(handle), cert, skey, protocols, cache);
+        SSLServerSocketStream sock(std::move(handle), https.cert, https.skey, protocols, &https.cache);
+        sock.raw_timeout(mTimeout);
         auto stream = std::make_unique<SSLServerSocketStream>(std::move(sock));
         if (auto peek = co_await stream->peekn(2); peek && *peek == "h2"sv) {
             co_return std::make_unique<HTTPProtocolVersion2>(std::move(stream));
@@ -154,6 +163,7 @@ struct HTTPServer {
 
     Task<std::unique_ptr<HTTPProtocol>> prepareHTTP(SocketHandle handle) const {
         SocketStream sock(std::move(handle));
+        sock.raw_timeout(mTimeout);
         co_return std::make_unique<HTTPProtocolVersion11>(
             std::make_unique<SocketStream>(std::move(sock)));
     }
@@ -188,12 +198,9 @@ struct HTTPServer {
         co_return {};
     }
 
-    Task<Expected<>> handle_https(SocketHandle handle,
-                                  SSLServerCertificate const &cert,
-                                  SSLPrivateKey const &skey,
-                                  SSLSessionCache *cache = nullptr) const {
+    Task<Expected<>> handle_https(SocketHandle handle, SSLServerState const &https) const {
         co_return co_await doHandleConnection(
-            co_await prepareHTTPS(std::move(handle), cert, skey, cache));
+            co_await prepareHTTPS(std::move(handle), https));
     }
 
     Task<Expected<>>
@@ -333,6 +340,7 @@ private:
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
     };
+    std::chrono::nanoseconds mTimeout = std::chrono::seconds(10);
 #if CO_ASYNC_DEBUG
     bool mLogRequests = false;
 #endif

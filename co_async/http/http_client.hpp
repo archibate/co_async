@@ -70,8 +70,9 @@ private:
                 co_await co_await SSLClientSocketStream::connect(
                     mHost.c_str(), mPort, gTrustAnchors, protocols, mProxy,
                     mTimeout));
-            if (sock->ssl_get_selected_protocol() == "h2") {
-                throw std::runtime_error("http/2 not implemented yet");
+            if (sock->ssl_get_selected_protocol() == "h2") { // todo: seems always false?
+                co_return std::make_unique<HTTPProtocolVersion2>(
+                    std::move(sock));
             } else {
                 co_return std::make_unique<HTTPProtocolVersion11>(
                     std::move(sock));
@@ -167,17 +168,12 @@ private:
         return {std::string(host), port};
     }
 
-    void
-    resetProtocolFactory(std::unique_ptr<HTTPProtocolFactory> httpFactory) {
-        terminateLifetime();
-        mHttpFactory = std::move(httpFactory);
-    }
-
 public:
     Expected<void, std::errc>
     doConnect(std::string_view host,
-              std::chrono::nanoseconds timeout = std::chrono::seconds(5),
-              bool followProxy = true) {
+              std::chrono::nanoseconds timeout,
+              bool followProxy) {
+        terminateLifetime();
         if (host.starts_with("https://")) {
             host.remove_prefix(8);
             std::string proxy;
@@ -187,8 +183,8 @@ public:
                 }
             }
             auto [h, p] = parseHostAndPort(host, 443);
-            resetProtocolFactory(std::make_unique<HTTPProtocolFactoryHTTPS>(
-                std::move(h), p, host, std::move(proxy), timeout));
+            mHttpFactory = std::make_unique<HTTPProtocolFactoryHTTPS>(
+                std::move(h), p, host, std::move(proxy), timeout);
             return {};
         } else if (host.starts_with("http://")) {
             host.remove_prefix(7);
@@ -199,8 +195,8 @@ public:
                 }
             }
             auto [h, p] = parseHostAndPort(host, 80);
-            resetProtocolFactory(std::make_unique<HTTPProtocolFactoryHTTP>(
-                std::move(h), p, host, std::move(proxy), timeout));
+            mHttpFactory = std::make_unique<HTTPProtocolFactoryHTTP>(
+                std::move(h), p, host, std::move(proxy), timeout);
             return {};
         } else [[unlikely]] {
             return Unexpected{std::errc::protocol_not_supported};
@@ -335,8 +331,8 @@ public:
 
     explicit HTTPConnectionPool(
         std::size_t poolSize = 256,
-        std::chrono::nanoseconds timeout = std::chrono::seconds(5),
-        std::chrono::nanoseconds keepAlive = std::chrono::seconds(10),
+        std::chrono::nanoseconds timeout = std::chrono::seconds(10),
+        std::chrono::nanoseconds keepAlive = std::chrono::seconds(60),
         bool followProxy = true)
         : mPool(poolSize),
           mTimeout(timeout),
@@ -345,7 +341,7 @@ public:
 
 private:
     Expected<Expected<HTTPConnectionPtr, std::errc>>
-    lookForFreeSlot(bool exactReuse, std::string_view host) {
+    lookForFreeSlot(bool exactReuse, std::string_view host) /* MT-safe */ {
         for (auto &entry: mPool) {
             bool expected = false;
             if (entry.mInuse.compare_exchange_strong(
@@ -387,7 +383,7 @@ private:
         return Unexpected{};
     }
 
-    void garbageCollect() {
+    void garbageCollect() /* MT-safe */ {
         auto now = std::chrono::high_resolution_clock::now();
         if ((now - mLastGC) * 2 > mKeepAlive) {
             for (auto &entry: mPool) {
@@ -408,7 +404,7 @@ private:
 
 public:
     Task<Expected<HTTPConnectionPtr, std::errc>>
-    connect(std::string_view host) {
+    connect(std::string_view host) /* MT-safe */ {
     again:
         garbageCollect();
         if (auto conn = lookForFreeSlot(true, host)) {

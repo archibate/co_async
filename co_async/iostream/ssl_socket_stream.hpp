@@ -610,8 +610,8 @@ public:
         br_ssl_engine_close(eng);
     }
 
-    void timeout(std::chrono::nanoseconds timeout) {
-        raw.timeout(timeout);
+    void raw_timeout(std::chrono::nanoseconds timeout) override {
+        raw.raw_timeout(timeout);
     }
 
     /* SSLSocketStreamRaw(SSLSocketStreamRaw &&that) noexcept */
@@ -710,7 +710,7 @@ struct SSLClientSocketStream : IOStreamImpl<SSLClientSocketStreamRaw> {
             std::chrono::nanoseconds timeout) {
         auto conn = co_await co_await socket_proxy_connect(host, port, proxy, timeout);
         SSLClientSocketStream sock(std::move(conn), ta, host, protocols);
-        sock.timeout(timeout);
+        sock.raw_timeout(timeout);
         co_return sock;
     }
 };

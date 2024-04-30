@@ -27,17 +27,13 @@ struct SocketStreamRaw : virtual IOStreamRaw {
 
     explicit SocketStreamRaw(SocketHandle file) : mFile(std::move(file)) {}
 
-    std::chrono::nanoseconds timeout() const {
-        return mTimeout;
-    }
-
-    void timeout(std::chrono::nanoseconds timeout) {
+    void raw_timeout(std::chrono::nanoseconds timeout) override {
         mTimeout = timeout;
     }
 
 private:
     SocketHandle mFile;
-    std::chrono::nanoseconds mTimeout = std::chrono::seconds(5);
+    std::chrono::nanoseconds mTimeout = std::chrono::seconds(10);
 };
 
 struct SocketStream : IOStreamImpl<SocketStreamRaw> {
@@ -48,7 +44,7 @@ struct SocketStream : IOStreamImpl<SocketStreamRaw> {
                                       std::chrono::nanoseconds timeout) {
         auto conn = co_await co_await socket_proxy_connect(host, port, proxy, timeout);
         SocketStream sock(std::move(conn));
-        sock.timeout(timeout);
+        sock.raw_timeout(timeout);
         co_return sock;
     }
 };

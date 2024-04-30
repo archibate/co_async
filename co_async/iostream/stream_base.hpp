@@ -10,6 +10,8 @@ namespace co_async {
 struct IStreamRaw {
 protected:
     virtual Task<std::size_t> raw_read(std::span<char> buffer) = 0;
+
+    virtual void raw_timeout(std::chrono::nanoseconds timeout) {}
 };
 
 struct OStreamRaw {

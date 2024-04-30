@@ -32,19 +32,6 @@ struct ReturnPreviousPromise {
     ReturnPreviousPromise &operator=(ReturnPreviousPromise &&) = delete;
 };
 
-struct [[nodiscard]] ReturnPreviousTask {
-    using promise_type = ReturnPreviousPromise;
-
-    ReturnPreviousTask(std::coroutine_handle<promise_type> coroutine) noexcept
-        : mCoroutine(coroutine) {}
-
-    ReturnPreviousTask(ReturnPreviousTask &&) = delete;
-
-    ~ReturnPreviousTask() {
-        mCoroutine.destroy();
-    }
-
-    std::coroutine_handle<promise_type> mCoroutine;
-};
+using ReturnPreviousTask = Task<void, ReturnPreviousPromise>;
 
 } // namespace co_async

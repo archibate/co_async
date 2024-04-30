@@ -86,14 +86,16 @@ public:
 
     virtual ~HTTPProtocol() = default;
 
-    virtual Task<Expected<>> writeBodyStream(IStream &body) = 0;
-    virtual Task<Expected<>> readBodyStream(OStream &body) = 0;
-    virtual Task<Expected<>> writeBody(std::string_view body) = 0;
-    virtual Task<Expected<>> readBody(std::string &body) = 0;
-    virtual Task<Expected<>> writeRequest(HTTPRequest const &req) = 0;
-    virtual Task<Expected<>> readRequest(HTTPRequest &req) = 0;
-    virtual Task<Expected<>> writeResponse(HTTPResponse const &res) = 0;
-    virtual Task<Expected<>> readResponse(HTTPResponse &res) = 0;
+    virtual void initServerState() = 0;
+    virtual void initClientState() = 0;
+    virtual Task<Expected<void, std::errc>> writeBodyStream(IStream &body) = 0;
+    virtual Task<Expected<void, std::errc>> readBodyStream(OStream &body) = 0;
+    virtual Task<Expected<void, std::errc>> writeBody(std::string_view body) = 0;
+    virtual Task<Expected<void, std::errc>> readBody(std::string &body) = 0;
+    virtual Task<Expected<void, std::errc>> writeRequest(HTTPRequest const &req) = 0;
+    virtual Task<Expected<void, std::errc>> readRequest(HTTPRequest &req) = 0;
+    virtual Task<Expected<void, std::errc>> writeResponse(HTTPResponse const &res) = 0;
+    virtual Task<Expected<void, std::errc>> readResponse(HTTPResponse &res) = 0;
 };
 
 struct HTTPProtocolVersion11 : HTTPProtocol {
@@ -104,6 +106,7 @@ private:
     int mPhase = 0;
 
     void checkPhase(int from, int to) {
+        // debug(), from, to, this;
         if (mPhase != from) [[unlikely]] {
             throw std::logic_error(
                 "HTTPProtocol member function calling order wrong (phase = " +
@@ -116,7 +119,7 @@ private:
 public:
 #endif
 
-    Task<Expected<>> writeBodyStream(IStream &body) override {
+    Task<Expected<void, std::errc>> writeBodyStream(IStream &body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(1, 0);
 #endif
@@ -184,7 +187,7 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> writeBody(std::string_view body) override {
+    Task<Expected<void, std::errc>> writeBody(std::string_view body) override {
         using namespace std::string_view_literals;
         if (body.empty()) {
 #if CO_ASYNC_DEBUG
@@ -233,7 +236,7 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> readBodyStream(OStream &body) override {
+    Task<Expected<void, std::errc>> readBodyStream(OStream &body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(-1, 0);
 #endif
@@ -253,17 +256,13 @@ public:
                 co_await co_await sock->getline(line, "\r\n"sv);
                 std::size_t n = std::strtoull(line.c_str(), nullptr, 16);
                 if (n <= 0) {
-                    if (co_await co_await sock->getn(2) != "\r\n"sv) [[unlikely]] {
-                        co_return Unexpected{};
-                    }
+                    co_await co_await sock->dropn(2);
                     break;
                 }
                 line.clear();
                 co_await co_await sock->getn(line, n);
                 co_await co_await body.puts(line);
-                if (co_await co_await sock->getn(2) != "\r\n"sv) [[unlikely]] {
-                    co_return Unexpected{};
-                }
+                co_await co_await sock->dropn(2);
             }
         } break;
         case HTTPTransferEncoding::Gzip: [[fallthrough]];
@@ -280,7 +279,7 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> readBody(std::string &body) override {
+    Task<Expected<void, std::errc>> readBody(std::string &body) override {
         using namespace std::string_view_literals;
         switch (mEncoding) {
         case HTTPTransferEncoding::Identity: {
@@ -304,9 +303,7 @@ public:
                     break;
                 }
                 co_await co_await sock->getn(body, n);
-                if (co_await co_await sock->getn(2) != "\r\n"sv) [[unlikely]] {
-                    co_return Unexpected{};
-                }
+                co_await co_await sock->dropn(2);
             }
         } break;
         default: {
@@ -317,7 +314,7 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> writeRequest(HTTPRequest const &req) override {
+    Task<Expected<void, std::errc>> writeRequest(HTTPRequest const &req) override {
 #if CO_ASYNC_DEBUG
         checkPhase(0, 1);
 #endif
@@ -337,7 +334,19 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> readRequest(HTTPRequest &req) override {
+    void initServerState() override {
+#if CO_ASYNC_DEBUG
+        mPhase = 0;
+#endif
+    }
+
+    void initClientState() override {
+#if CO_ASYNC_DEBUG
+        mPhase = 0;
+#endif
+    }
+
+    Task<Expected<void, std::errc>> readRequest(HTTPRequest &req) override {
 #if CO_ASYNC_DEBUG
         checkPhase(0, -1);
 #endif
@@ -345,14 +354,14 @@ public:
         using namespace std::string_view_literals;
         std::string line;
         if (!co_await sock->getline(line, "\r\n"sv) || line.empty()) {
-            co_return Unexpected{};
+            co_return Unexpected{std::errc::broken_pipe};
         }
         auto pos = line.find(' ');
         if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP request:\n\t[" + line + "]\n";
 #endif
-            co_return Unexpected{};
+            co_return Unexpected{std::errc::protocol_error};
         }
         req.method = line.substr(0, pos);
         auto pos2 = line.find(' ', pos + 1);
@@ -360,7 +369,7 @@ public:
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: invalid HTTP request (method):\n\t[" + line + "]\n";
 #endif
-            co_return Unexpected{};
+            co_return Unexpected{std::errc::protocol_error};
         }
         req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
         while (true) {
@@ -376,7 +385,7 @@ public:
                 std::cerr << "WARNING: invalid HTTP request (header):\n\t[" + line +
                                  "]\n";
 #endif
-                co_return Unexpected{};
+                co_return Unexpected{std::errc::protocol_error};
             }
             auto key = line.substr(0, pos);
             for (auto &c: key) {
@@ -419,10 +428,10 @@ public:
         req.headers.erase("accept-encoding"sv);
 #endif
         req.headers.erase("connection"sv);
-        co_return Expected{true};
+        co_return {};
     }
 
-    Task<Expected<>> writeResponse(HTTPResponse const &res) override {
+    Task<Expected<void, std::errc>> writeResponse(HTTPResponse const &res) override {
 #if CO_ASYNC_DEBUG
         checkPhase(0, 1);
 #endif
@@ -443,28 +452,26 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> readResponse(HTTPResponse &res) override {
+    Task<Expected<void, std::errc>> readResponse(HTTPResponse &res) override {
 #if CO_ASYNC_DEBUG
         checkPhase(0, -1);
 #endif
         using namespace std::string_view_literals;
         auto line = co_await co_await sock->getline("\r\n"sv);
-        if (line.empty())
-            co_return Unexpected{};
         if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv ||
             line[8] != ' ') [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
+            std::cerr << "WARNING: invalid HTTP response (version):\n\t[" + line + "]\n";
 #endif
-            co_return Unexpected{};
+            co_return Unexpected{std::errc::protocol_error};
         }
         if (auto statusOpt = from_string<int>(line.substr(9, 3))) [[likely]] {
             res.status = *statusOpt;
         } else [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: invalid HTTP response:\n\t[" + line + "]\n";
+            std::cerr << "WARNING: invalid HTTP response (status):\n\t[" + line + "]\n";
 #endif
-            co_return Unexpected{};
+            co_return Unexpected{std::errc::protocol_error};
         }
         while (true) {
             line.clear();
@@ -476,10 +483,10 @@ public:
             if (pos == line.npos || pos == line.size() - 1 ||
                 line[pos + 1] != ' ') [[unlikely]] {
 #if CO_ASYNC_DEBUG
-                std::cerr << "WARNING: invalid HTTP response:\n\t[" + line +
+                std::cerr << "WARNING: invalid HTTP response (header):\n\t[" + line +
                                  "]\n";
 #endif
-                co_return Unexpected{};
+                co_return Unexpected{std::errc::protocol_error};
             }
             auto key = line.substr(0, pos);
             for (auto &c: key) {
@@ -552,56 +559,68 @@ private:
 public:
 #endif
 
-    Task<Expected<>> writeBodyStream(IStream &body) override {
+    void initServerState() override {
+#if CO_ASYNC_DEBUG
+        mPhase = 0;
+#endif
+    }
+
+    void initClientState() override {
+#if CO_ASYNC_DEBUG
+        mPhase = 0;
+#endif
+    }
+
+    Task<Expected<void, std::errc>> writeBodyStream(IStream &body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(1, 0);
 #endif
         throw std::runtime_error("HTTP/2 not implemented yet");
     }
 
-    Task<Expected<>> readBodyStream(OStream &body) override {
+    Task<Expected<void, std::errc>> readBodyStream(OStream &body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(-1, 0);
 #endif
         throw std::runtime_error("HTTP/2 not implemented yet");
     }
 
-    Task<Expected<>> writeBody(std::string_view body) override {
+    Task<Expected<void, std::errc>> writeBody(std::string_view body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(1, 0);
 #endif
         throw std::runtime_error("HTTP/2 not implemented yet");
     }
 
-    Task<Expected<>> readBody(std::string &body) override {
+    Task<Expected<void, std::errc>> readBody(std::string &body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(-1, 0);
 #endif
         throw std::runtime_error("HTTP/2 not implemented yet");
     }
 
-    Task<Expected<>> writeRequest(HTTPRequest const &req) override {
+    Task<Expected<void, std::errc>> writeRequest(HTTPRequest const &req) override {
 #if CO_ASYNC_DEBUG
         checkPhase(0, 1);
 #endif
         throw std::runtime_error("HTTP/2 not implemented yet");
     }
 
-    Task<Expected<>> readRequest(HTTPRequest &req) override {
+    Task<Expected<void, std::errc>> readRequest(HTTPRequest &req) override {
 #if CO_ASYNC_DEBUG
         checkPhase(0, -1);
 #endif
         throw std::runtime_error("HTTP/2 not implemented yet");
     }
 
-    Task<Expected<>> writeResponse(HTTPResponse const &res) override {
+    Task<Expected<void, std::errc>> writeResponse(HTTPResponse const &res) override {
 #if CO_ASYNC_DEBUG
         checkPhase(0, 1);
 #endif
         throw std::runtime_error("HTTP/2 not implemented yet");
     }
 
-    Task<Expected<>> readResponse(HTTPResponse &res) override {
+    Task<Expected<void, std::errc>> readResponse(HTTPResponse &res) override {
 #if CO_ASYNC_DEBUG
         checkPhase(0, -1);
 #endif

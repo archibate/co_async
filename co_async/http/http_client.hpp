@@ -28,65 +28,69 @@ inline Task<> https_load_ca_certificates() {
     }
 }
 
-struct HTTPProtocolFactory {
-protected:
-    std::string mHost;
-    int mPort;
-    std::string mHostName;
-    std::string mProxy;
-    std::chrono::nanoseconds mTimeout;
-
-public:
-    HTTPProtocolFactory(std::string host, int port, std::string_view hostName,
-                        std::string proxy, std::chrono::nanoseconds timeout)
-        : mHost(std::move(host)),
-          mPort(port),
-          mHostName(hostName),
-          mProxy(std::move(proxy)),
-          mTimeout(timeout) {}
-
-    virtual Task<Expected<std::unique_ptr<HTTPProtocol>>>
-    createConnection() = 0;
-    virtual ~HTTPProtocolFactory() = default;
-
-    std::string const &hostName() const noexcept {
-        return mHostName;
-    }
-};
-
-struct HTTPProtocolFactoryHTTPS : HTTPProtocolFactory {
-    using HTTPProtocolFactory::HTTPProtocolFactory;
-
-    Task<Expected<std::unique_ptr<HTTPProtocol>>> createConnection() override {
-        static char const *const protocols[] = {
-            "h2",
-            "http/1.1",
-        };
-        auto sock = std::make_unique<SSLClientSocketStream>(
-            co_await co_await SSLClientSocketStream::connect(
-                mHost.c_str(), mPort, gTrustAnchors, protocols, mProxy,
-                mTimeout));
-        if (sock->ssl_get_selected_protocol() == "h2") {
-            throw std::runtime_error("http/2 not implemented yet");
-        } else {
-            co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
-        }
-    }
-};
-
-struct HTTPProtocolFactoryHTTP : HTTPProtocolFactory {
-    using HTTPProtocolFactory::HTTPProtocolFactory;
-
-    Task<Expected<std::unique_ptr<HTTPProtocol>>> createConnection() override {
-        auto sock = std::make_unique<SocketStream>(
-            co_await co_await SocketStream::connect(mHost.c_str(), mPort,
-                                                    mProxy, mTimeout));
-        co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
-    }
-};
-
 struct HTTPConnection {
 private:
+    struct HTTPProtocolFactory {
+    protected:
+        std::string mHost;
+        int mPort;
+        std::string mHostName;
+        std::string mProxy;
+        std::chrono::nanoseconds mTimeout;
+
+    public:
+        HTTPProtocolFactory(std::string host, int port,
+                            std::string_view hostName, std::string proxy,
+                            std::chrono::nanoseconds timeout)
+            : mHost(std::move(host)),
+              mPort(port),
+              mHostName(hostName),
+              mProxy(std::move(proxy)),
+              mTimeout(timeout) {}
+
+        virtual Task<Expected<std::unique_ptr<HTTPProtocol>>>
+        createConnection() = 0;
+        virtual ~HTTPProtocolFactory() = default;
+
+        std::string const &hostName() const noexcept {
+            return mHostName;
+        }
+    };
+
+    struct HTTPProtocolFactoryHTTPS : HTTPProtocolFactory {
+        using HTTPProtocolFactory::HTTPProtocolFactory;
+
+        Task<Expected<std::unique_ptr<HTTPProtocol>>>
+        createConnection() override {
+            static char const *const protocols[] = {
+                "h2",
+                "http/1.1",
+            };
+            auto sock = std::make_unique<SSLClientSocketStream>(
+                co_await co_await SSLClientSocketStream::connect(
+                    mHost.c_str(), mPort, gTrustAnchors, protocols, mProxy,
+                    mTimeout));
+            if (sock->ssl_get_selected_protocol() == "h2") {
+                throw std::runtime_error("http/2 not implemented yet");
+            } else {
+                co_return std::make_unique<HTTPProtocolVersion11>(
+                    std::move(sock));
+            }
+        }
+    };
+
+    struct HTTPProtocolFactoryHTTP : HTTPProtocolFactory {
+        using HTTPProtocolFactory::HTTPProtocolFactory;
+
+        Task<Expected<std::unique_ptr<HTTPProtocol>>>
+        createConnection() override {
+            auto sock = std::make_unique<SocketStream>(
+                co_await co_await SocketStream::connect(mHost.c_str(), mPort,
+                                                        mProxy, mTimeout));
+            co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
+        }
+    };
+
     std::unique_ptr<HTTPProtocol> mHttp;
     std::unique_ptr<HTTPProtocolFactory> mHttpFactory;
 
@@ -96,6 +100,22 @@ private:
         mHttp = nullptr;
         mHttpFactory = nullptr;
     }
+
+    struct RAIIPointerResetter {
+        std::unique_ptr<HTTPProtocol> *mHttp;
+
+        RAIIPointerResetter &operator=(RAIIPointerResetter &&) = delete;
+
+        void neverMind() {
+            mHttp = nullptr;
+        }
+
+        ~RAIIPointerResetter() {
+            if (mHttp) [[unlikely]] {
+                *mHttp = nullptr;
+            }
+        }
+    };
 
     void builtinHeaders(HTTPRequest &req) {
         using namespace std::string_literals;
@@ -108,12 +128,14 @@ private:
 #endif
     }
 
-    Task<Expected<>> tryWriteRequest(HTTPRequest const &request) {
+    Task<Expected<void, std::errc>>
+    tryWriteRequest(HTTPRequest const &request) {
         for (std::size_t n = 0; n < 3; ++n) {
             if (!mHttp) {
                 if (auto e = co_await mHttpFactory->createConnection())
                     [[likely]] {
                     mHttp = std::move(*e);
+                    mHttp->initClientState();
                 } else {
                     continue;
                 }
@@ -123,79 +145,133 @@ private:
             }
             mHttp = nullptr;
         }
-        co_return Unexpected{};
+        co_return Unexpected{std::errc::connection_aborted};
     }
 
     HTTPConnection(std::unique_ptr<HTTPProtocolFactory> httpFactory)
         : mHttp(nullptr),
           mHttpFactory(std::move(httpFactory)) {}
 
+private:
+    static std::tuple<std::string, int>
+    parseHostAndPort(std::string_view hostName, int defaultPort) {
+        int port = defaultPort;
+        auto host = hostName;
+        if (auto i = host.rfind(':'); i != host.npos) {
+            if (auto portOpt = from_string<int>(host.substr(i + 1)))
+                [[likely]] {
+                port = *portOpt;
+                host.remove_suffix(host.size() - i);
+            }
+        }
+        return {std::string(host), port};
+    }
+
+    void
+    resetProtocolFactory(std::unique_ptr<HTTPProtocolFactory> httpFactory) {
+        terminateLifetime();
+        mHttpFactory = std::move(httpFactory);
+    }
+
 public:
+    Expected<void, std::errc>
+    doConnect(std::string_view host,
+              std::chrono::nanoseconds timeout = std::chrono::seconds(5),
+              bool followProxy = true) {
+        if (host.starts_with("https://")) {
+            host.remove_prefix(8);
+            std::string proxy;
+            if (followProxy) [[likely]] {
+                if (auto p = std::getenv("https_proxy")) {
+                    proxy = p;
+                }
+            }
+            auto [h, p] = parseHostAndPort(host, 443);
+            resetProtocolFactory(std::make_unique<HTTPProtocolFactoryHTTPS>(
+                std::move(h), p, host, std::move(proxy), timeout));
+            return {};
+        } else if (host.starts_with("http://")) {
+            host.remove_prefix(7);
+            std::string proxy;
+            if (followProxy) {
+                if (auto p = std::getenv("http_proxy")) {
+                    proxy = p;
+                }
+            }
+            auto [h, p] = parseHostAndPort(host, 80);
+            resetProtocolFactory(std::make_unique<HTTPProtocolFactoryHTTP>(
+                std::move(h), p, host, std::move(proxy), timeout));
+            return {};
+        } else [[unlikely]] {
+            return Unexpected{std::errc::protocol_not_supported};
+        }
+    }
+
     HTTPConnection() = default;
 
-    Task<Expected<>> request(HTTPRequest req, std::string_view in,
-                             HTTPResponse &res, std::string &out) {
+    Task<Expected<void, std::errc>> request(HTTPRequest req,
+                                            std::string_view in,
+                                            HTTPResponse &res,
+                                            std::string &out) {
         builtinHeaders(req);
+        RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequest(req);
         co_await co_await mHttp->writeBody(in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBody(out);
+        reset.neverMind();
         co_return {};
     }
 
-    Task<Expected<>> request(HTTPRequest req, std::string_view in,
-                             HTTPResponse &res, OStream &out) {
+    Task<Expected<void, std::errc>> request(HTTPRequest req,
+                                            std::string_view in,
+                                            HTTPResponse &res, OStream &out) {
         builtinHeaders(req);
+        RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequest(req);
         co_await co_await mHttp->writeBody(in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBodyStream(out);
+        reset.neverMind();
         co_return {};
     }
 
-    Task<Expected<>> request(HTTPRequest req, IStream &in, HTTPResponse &res,
-                             std::string &out) {
+    Task<Expected<void, std::errc>>
+    request(HTTPRequest req, IStream &in, HTTPResponse &res, std::string &out) {
+        RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequest(req);
         co_await co_await mHttp->writeBodyStream(in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBody(out);
+        reset.neverMind();
         co_return {};
     }
 
-    Task<Expected<>> request(HTTPRequest req, IStream &in, HTTPResponse &res,
-                             OStream &out) {
+    Task<Expected<void, std::errc>> request(HTTPRequest req, IStream &in,
+                                            HTTPResponse &res, OStream &out) {
         builtinHeaders(req);
+        RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequest(req);
         co_await co_await mHttp->writeBodyStream(in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBodyStream(out);
+        reset.neverMind();
         co_return {};
     }
 
-    Task<Expected<>> request(HTTPRequest req, IStream &in,
-                             FutureReference<HTTPResponse> const &res,
-                             OStream &out) {
+    Task<Expected<void, std::errc>>
+    request(HTTPRequest req, IStream &in,
+            FutureReference<HTTPResponse> const &res, OStream &out) {
         builtinHeaders(req);
+        RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequest(req);
         co_await co_await mHttp->writeBodyStream(in);
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBodyStream(out);
+        reset.neverMind();
         co_return {};
     }
 };
-
-inline std::tuple<std::string, int> parseHostAndPort(std::string_view hostName,
-                                                     int defaultPort) {
-    int port = defaultPort;
-    auto host = hostName;
-    if (auto i = host.rfind(':'); i != host.npos) {
-        if (auto portOpt = from_string<int>(host.substr(i + 1))) [[likely]] {
-            port = *portOpt;
-            host.remove_suffix(host.size() - i);
-        }
-    }
-    return {std::string(host), port};
-}
 
 struct HTTPConnectionPool {
 private:
@@ -268,14 +344,18 @@ public:
           mFollowProxy(followProxy) {}
 
 private:
-    Expected<HTTPConnectionPtr> lookForFreeSlot(bool exactReuse,
-                                                std::string_view host) {
+    Expected<Expected<HTTPConnectionPtr, std::errc>>
+    lookForFreeSlot(bool exactReuse, std::string_view host) {
         for (auto &entry: mPool) {
             bool expected = false;
             if (entry.mInuse.compare_exchange_strong(
                     expected, true, std::memory_order_acq_rel)) {
                 if (!entry.mValid) {
-                    entry.mHttp = simpleConnect(host, mTimeout, mFollowProxy);
+                    if (auto e =
+                            entry.mHttp.doConnect(host, mTimeout, mFollowProxy);
+                        e.has_error()) [[unlikely]] {
+                        return Unexpected{e.error()};
+                    }
                     entry.mHostName = host;
                     entry.mLastAccess =
                         std::chrono::high_resolution_clock::now();
@@ -290,8 +370,11 @@ private:
                                                std::memory_order_release);
                             continue;
                         } else {
-                            entry.mHttp =
-                                simpleConnect(host, mTimeout, mFollowProxy);
+                            if (auto e = entry.mHttp.doConnect(host, mTimeout,
+                                                               mFollowProxy);
+                                e.has_error()) [[unlikely]] {
+                                return Unexpected{e.error()};
+                            }
                             entry.mHostName = host;
                             entry.mLastAccess =
                                 std::chrono::high_resolution_clock::now();
@@ -299,7 +382,6 @@ private:
                     }
                 }
                 return HTTPConnectionPtr(&entry, this);
-            } else {
             }
         }
         return Unexpected{};
@@ -325,7 +407,8 @@ private:
     }
 
 public:
-    Task<HTTPConnectionPtr> connect(std::string_view host) {
+    Task<Expected<HTTPConnectionPtr, std::errc>>
+    connect(std::string_view host) {
     again:
         garbageCollect();
         if (auto conn = lookForFreeSlot(true, host)) {
@@ -338,38 +421,6 @@ public:
 #endif
         co_await mFreeSlot;
         goto again;
-    }
-
-    static HTTPConnection
-    simpleConnect(std::string_view host,
-                  std::chrono::nanoseconds timeout = std::chrono::seconds(5),
-                  bool followProxy = true) {
-        if (host.starts_with("https://")) {
-            host.remove_prefix(8);
-            std::string proxy;
-            if (followProxy) [[likely]] {
-                if (auto p = std::getenv("https_proxy")) {
-                    proxy = p;
-                }
-            }
-            auto [h, p] = parseHostAndPort(host, 443);
-            return HTTPConnection(std::make_unique<HTTPProtocolFactoryHTTPS>(
-                std::move(h), p, host, std::move(proxy), timeout));
-        } else if (host.starts_with("http://")) {
-            host.remove_prefix(7);
-            std::string proxy;
-            if (followProxy) {
-                if (auto p = std::getenv("http_proxy")) {
-                    proxy = p;
-                }
-            }
-            auto [h, p] = parseHostAndPort(host, 80);
-            return HTTPConnection(std::make_unique<HTTPProtocolFactoryHTTP>(
-                std::move(h), p, host, std::move(proxy), timeout));
-        } else {
-            throw std::runtime_error(
-                "invalid protocol, must be http:// or https://");
-        }
     }
 };
 

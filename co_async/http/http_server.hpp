@@ -28,8 +28,10 @@ struct HTTPServer {
 
         HTTPRequest request;
 
-        Task<Expected<>> readHTTPRequest() {
-            return mHttp->readRequest(request);
+        Task<Expected<void, std::errc>> readRequestHeader() {
+            mHttp->initServerState();
+            co_await co_await mHttp->readRequest(request);
+            co_return {};
         }
 
         Task<Expected<std::string>> request_body() {
@@ -166,7 +168,7 @@ struct HTTPServer {
         auto http = co_await prepareHTTP(std::move(handle));
         while (true) {
             IO io(http.get());
-            if (!co_await io.readHTTPRequest())
+            if (!co_await io.readRequestHeader())
                 break;
             if (auto host = io.request.headers.get("host")) {
                 auto location = "https://"s + *host + io.request.uri.dump();
@@ -199,39 +201,43 @@ struct HTTPServer {
         /* auto uuid = std::random_device()(); */
         while (true) {
             IO io(http.get());
-            if (!co_await io.readHTTPRequest())
+            if (!co_await io.readRequestHeader())
                 break;
 #if CO_ASYNC_DEBUG
-            std::clog << io.request.method + ' ' + io.request.uri.dump() + '\n';
-            for (auto [k, v]: io.request.headers) {
-                if (k == "cookie" || k == "set-cookie") {
-                    v = "***";
+            std::chrono::high_resolution_clock::time_point t0;
+            if (mLogRequests) {
+                std::clog << io.request.method + ' ' + io.request.uri.dump() + '\n';
+                for (auto [k, v]: io.request.headers) {
+                    if (k == "cookie" || k == "set-cookie") {
+                        v = "***";
+                    }
+                    std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
+                        '\n';
                 }
-                std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
-                                 '\n';
+                t0 = std::chrono::high_resolution_clock::now();
             }
-            auto t0 = std::chrono::high_resolution_clock::now();
 #endif
-            /* debug(), uuid, io.request.method, io.request.uri.dump(), io.request.headers; */
             co_await co_await doHandleRequest(io);
 #if CO_ASYNC_DEBUG
-            auto dt = std::chrono::high_resolution_clock::now() - t0;
-            std::clog << io.request.method + ' ' + io.request.uri.dump() + ' ' +
-                             std::to_string(io.mResponseSavedForDebug.status) +
-                             ' ' +
-                             std::string(getHTTPStatusName(
-                                 io.mResponseSavedForDebug.status)) +
-                             ' ' +
-                             std::to_string(std::chrono::duration_cast<
-                                                std::chrono::milliseconds>(dt)
-                                                .count()) +
-                             "ms\n";
-            for (auto [k, v]: io.mResponseSavedForDebug.headers) {
-                if (k == "cookie" || k == "set-cookie") {
-                    v = "***";
+            if (mLogRequests) {
+                auto dt = std::chrono::high_resolution_clock::now() - t0;
+                std::clog << io.request.method + ' ' + io.request.uri.dump() + ' ' +
+                    std::to_string(io.mResponseSavedForDebug.status) +
+                    ' ' +
+                    std::string(getHTTPStatusName(
+                        io.mResponseSavedForDebug.status)) +
+                    ' ' +
+                    std::to_string(std::chrono::duration_cast<
+                                   std::chrono::milliseconds>(dt)
+                                   .count()) +
+                    "ms\n";
+                for (auto [k, v]: io.mResponseSavedForDebug.headers) {
+                    if (k == "cookie" || k == "set-cookie") {
+                        v = "***";
+                    }
+                    std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
+                        '\n';
                 }
-                std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
-                                 '\n';
             }
 #endif
         }
@@ -327,13 +333,18 @@ private:
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
     };
+#if CO_ASYNC_DEBUG
+    bool mLogRequests = false;
+#endif
 
     Task<Expected<>> doHandleRequest(IO &io) const {
         if (auto route = mRoutes.at(io.request.uri.path)) {
             if (!route->checkMethod(io.request.method)) [[unlikely]] {
                 co_await co_await make_error_response(io, 405);
+                co_return {};
             }
             co_await co_await route->mHandler(io);
+            co_return {};
         }
         for (auto const &[prefix, route]: mPrefixRoutes) {
             if (io.request.uri.path.starts_with(prefix)) {
@@ -348,6 +359,7 @@ private:
                     co_return {};
                 }
                 co_await co_await route.mHandler(io, suffix);
+                co_return {};
             }
         }
         co_await co_await mDefaultRoute(io);

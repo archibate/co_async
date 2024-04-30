@@ -30,8 +30,8 @@ struct WhenAnyAwaiter {
             return coroutine;
         mControl.mPrevious = coroutine;
         for (auto const &t: mTasks.subspan(0, mTasks.size() - 1))
-            t.mCoroutine.resume();
-        return mTasks.back().mCoroutine;
+            t.get().resume();
+        return mTasks.back().get();
     }
 
     void await_resume() const {
@@ -96,7 +96,7 @@ when_any(std::vector<T, Alloc> const &tasks) {
     Alloc alloc = tasks.get_allocator();
     Uninitialized<typename AwaitableTraits<T>::RetType> result;
     {
-        std::vector<ReturnPreviousTask, Alloc> taskArray(alloc);
+        std::vector<ReturnPreviousTask, typename std::allocator_traits<Alloc>::template rebind_alloc<ReturnPreviousTask>> taskArray(alloc);
         taskArray.reserve(tasks.size());
         for (auto &task: tasks) {
             taskArray.push_back(whenAllHelper(task, control, result));

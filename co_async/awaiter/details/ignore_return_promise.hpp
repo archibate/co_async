@@ -48,6 +48,8 @@ struct IgnoreReturnPromise {
 #endif
     }
 
+    void result() noexcept {}
+
     void return_void() noexcept {}
 
     auto get_return_object() {

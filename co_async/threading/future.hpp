@@ -86,9 +86,10 @@ struct [[nodiscard]] FutureToken {
 
     inline FutureReference<T> reference() const noexcept;
 
-    void set_value(T &&value) {
+    template <class ...Args>
+    void set_value(Args &&...args) {
         auto coroutine = setComplete();
-        mImpl->mValue.putValue(std::forward<T>(value));
+        mImpl->mValue.putValue(std::forward<Args>(args)...);
         coroutine.resume();
     }
 
@@ -171,7 +172,7 @@ FutureToken(FutureSource<T> &) -> FutureToken<T>;
 
 template <class T>
 inline Task<void, IgnoreReturnPromise<>>
-futureStartHelper(FutureToken<T> &future, Task<T> task) {
+futureStartHelper(FutureToken<T> future, Task<T> task) {
 #if CO_ASYNC_EXCEPT
     try {
 #endif

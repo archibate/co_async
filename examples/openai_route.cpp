@@ -7,7 +7,8 @@ using namespace std::literals;
 Task<Expected<>> amain() {
     co_await https_load_ca_certificates();
     /* auto host = "api.openai.com"s; */
-    auto host = "man7.org"s;
+    auto host = "www.baidu.com"s;
+    /* auto host = "man7.org"s; */
 
     auto listener = co_await co_await listener_bind({"127.0.0.1", 8080});
     HTTPConnectionPool pool;
@@ -21,8 +22,7 @@ Task<Expected<>> amain() {
                                  io, 404);
                          });
                      server.route([&](HTTPServer::IO &io) -> Task<Expected<>> {
-                         auto connection =
-                             co_await pool.connect("https://" + host);
+                         auto connection = co_await co_await pool.connect("https://" + host);
                          HTTPRequest request = {
                              .method = io.request.method,
                              .uri = io.request.uri,
@@ -79,7 +79,7 @@ Task<Expected<>> amain() {
 }
 
 int main() {
-    globalSystemLoop.start(1);
+    /* globalSystemLoop.start(1); */
     co_synchronize(amain()).value();
     return 0;
 }

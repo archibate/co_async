@@ -159,7 +159,7 @@ struct Promise<Expected<T, E>> : PromiseBase {
     ValueAwaiter<T2> await_transform(Expected<T2, E2> e) noexcept {
         if (e.has_error()) [[unlikely]] {
             if constexpr (std::is_void_v<E>) {
-                mResult.putValue(Unexpected<>(std::in_place_type<void>));
+                mResult.putValue(Unexpected<E>());
             } else {
                 static_assert(std::same_as<E2, E>,
                               "co_await'ing Expected's error type mismatch");

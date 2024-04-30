@@ -71,10 +71,6 @@ public:
         return mErrorOpt != nullptr;
     }
 
-    bool is_error(E const &e) const {
-        return has_error() && *mErrorOpt == e;
-    }
-
     void throw_error() const {
         UnexpectedTraits<E>::throw_error(*mErrorOpt);
     }
@@ -101,6 +97,11 @@ struct [[nodiscard]] Unexpected<void> {
 private:
     bool mHasError;
 
+    template <class, class>
+    friend struct Expected;
+
+    explicit Unexpected(std::in_place_type_t<void>) noexcept : mHasError(false) {}
+
 public:
     bool has_error() const noexcept {
         return mHasError;
@@ -113,8 +114,6 @@ public:
     void error() const noexcept {
     }
 
-    explicit Unexpected(std::in_place_type_t<void>) noexcept : mHasError(false) {}
-
     explicit Unexpected() noexcept : mHasError(true) {
     }
 };
@@ -124,13 +123,14 @@ struct [[nodiscard]] Unexpected<E> {
 private:
     E mError;
 
+    template <class, class>
+    friend struct Expected;
+
+    explicit Unexpected(std::in_place_type_t<void>) noexcept : mError() {}
+
 public:
     bool has_error() const noexcept {
         return (bool)mError;
-    }
-
-    bool is_error(E const &e) const {
-        return has_error() && mError == e;
     }
 
     void throw_error() const {
@@ -141,13 +141,11 @@ public:
         return mError;
     }
 
-    explicit Unexpected(std::in_place_type_t<void>) noexcept : mError() {}
-
     explicit Unexpected(E error) {
         mError = E(std::move(error));
 #if CO_ASYNC_DEBUG
         if (!has_error()) [[unlikely]] {
-            throw std::logic_error("Unexpected constructed with no error!");
+            throw std::logic_error("Unexpected constructed with no error");
         }
 #endif
     }
@@ -158,7 +156,7 @@ public:
         mError = E(std::forward<Es>(args)...);
 #if CO_ASYNC_DEBUG
         if (!has_error()) [[unlikely]] {
-            throw std::logic_error("Unexpected constructed with no error!");
+            throw std::logic_error("Unexpected constructed with no error");
         }
 #endif
     }
@@ -190,7 +188,8 @@ public:
         mValue.putValue(std::move(value));
     }
 
-    Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {}
+    Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {
+    }
 
     Expected(Expected &&that) noexcept : mError(that.mError) {
         if (has_value()) {
@@ -227,8 +226,14 @@ public:
         return mError.has_error();
     }
 
-    bool is_error(auto const &e) const {
-        return mError.is_error(e);
+    template <std::equality_comparable_with<E> U> requires (!std::equality_comparable_with<U, T>)
+    bool operator==(U const &e) const {
+        return mError.has_error() && mError.error() == e;
+    }
+
+    template <std::equality_comparable_with<T> U>
+    bool operator==(U const &v) const {
+        return !mError.has_error() && mValue.refValue() == v;
     }
 
     bool has_value() const noexcept {
@@ -401,6 +406,12 @@ public:
 
 template <class T>
 Expected(T) -> Expected<T>;
+
+template <class T, class E>
+Expected(Expected<T, E>) -> Expected<T, E>;
+
+template <class E>
+Expected(Unexpected<E>) -> Expected<void, E>;
 
 Expected() -> Expected<>;
 

@@ -61,7 +61,7 @@ wait_process(Pid pid, std::chrono::nanoseconds timeout, int options = WEXITED) {
     auto ts = durationToKernelTimespec(timeout);
     auto ret = expectError(co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0),
                             uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
-    if (ret.is_error(std::errc::operation_canceled)) {
+    if (ret == std::errc::operation_canceled) {
         co_return Unexpected{std::errc::timed_out};
     }
     co_await std::move(ret);

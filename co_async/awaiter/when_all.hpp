@@ -27,8 +27,8 @@ struct WhenAllAwaiter {
             return coroutine;
         mControl.mPrevious = coroutine;
         for (auto const &t: mTasks.subspan(0, mTasks.size() - 1))
-            t.mCoroutine.resume();
-        return mTasks.back().mCoroutine;
+            t.get().resume();
+        return mTasks.back().get();
     }
 
     void await_resume() const {
@@ -104,15 +104,23 @@ auto when_all(Ts &&...ts) {
 
 template <Awaitable T, class Alloc = std::allocator<T>>
 Task<std::conditional_t<
-    std::is_void_v<typename AwaitableTraits<T>::RetType>,
-    std::vector<typename AwaitableTraits<T>::RetType, Alloc>, void>>
+    !std::is_void_v<typename AwaitableTraits<T>::RetType>,
+    std::vector<typename AwaitableTraits<T>::RetType,
+                typename std::allocator_traits<Alloc>::template rebind_alloc<
+                    typename AwaitableTraits<T>::RetType>>,
+    void>>
 when_all(std::vector<T, Alloc> const &tasks) {
     WhenAllCtlBlock control{tasks.size()};
     Alloc alloc = tasks.get_allocator();
-    std::vector<Uninitialized<typename AwaitableTraits<T>::RetType>, Alloc>
+    std::vector<Uninitialized<typename AwaitableTraits<T>::RetType>,
+                typename std::allocator_traits<Alloc>::template rebind_alloc<
+                    Uninitialized<typename AwaitableTraits<T>::RetType>>>
         result(tasks.size(), alloc);
     {
-        std::vector<ReturnPreviousTask, Alloc> taskArray(alloc);
+        std::vector<ReturnPreviousTask,
+                    typename std::allocator_traits<
+                        Alloc>::template rebind_alloc<ReturnPreviousTask>>
+            taskArray(alloc);
         taskArray.reserve(tasks.size());
         for (std::size_t i = 0; i < tasks.size(); ++i) {
             taskArray.push_back(whenAllHelper(tasks[i], control, result[i]));
@@ -120,7 +128,11 @@ when_all(std::vector<T, Alloc> const &tasks) {
         co_await WhenAllAwaiter(control, taskArray);
     }
     if constexpr (!std::is_void_v<typename AwaitableTraits<T>::RetType>) {
-        std::vector<typename AwaitableTraits<T>::RetType, Alloc> res(alloc);
+        std::vector<
+            typename AwaitableTraits<T>::RetType,
+            typename std::allocator_traits<Alloc>::template rebind_alloc<
+                typename AwaitableTraits<T>::RetType>>
+            res(alloc);
         res.reserve(tasks.size());
         for (auto &r: result) {
             res.push_back(r.moveValue());

@@ -18,27 +18,38 @@ struct Uninitialized {
 
     Uninitialized(Uninitialized &&) = delete;
 
-    ~Uninitialized() noexcept {
+    ~Uninitialized() {
 #if CO_ASYNC_DEBUG
         if (mHasValue) [[unlikely]] {
-            std::cerr << "WARNING: Uninitialized destroyed with value\n";
-            mValue.~T();
+            throw std::logic_error("Uninitialized destroyed with value");
         }
 #endif
     }
 
     T const &refValue() const noexcept {
+#if CO_ASYNC_DEBUG
+        if (!mHasValue) [[unlikely]] {
+            throw std::logic_error(
+                "Uninitialized::refValue called in an unvalued slot");
+        }
+#endif
         return mValue;
     }
 
     T &refValue() noexcept {
+#if CO_ASYNC_DEBUG
+        if (!mHasValue) [[unlikely]] {
+            throw std::logic_error(
+                "Uninitialized::refValue called in an unvalued slot");
+        }
+#endif
         return mValue;
     }
 
     void destroyValue() {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
-            throw std::invalid_argument(
+            throw std::logic_error(
                 "Uninitialized::destroyValue called in an unvalued slot");
         }
 #endif
@@ -51,7 +62,7 @@ struct Uninitialized {
     T moveValue() {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
-            throw std::invalid_argument(
+            throw std::logic_error(
                 "Uninitialized::moveValue called in an unvalued slot");
         }
 #endif
@@ -68,9 +79,7 @@ struct Uninitialized {
     void putValue(Ts &&...args) {
 #if CO_ASYNC_DEBUG
         if (mHasValue) [[unlikely]] {
-            std::cerr << "WARNING: Uninitialized::putValue with value already "
-                         "exist\n";
-            mValue.~T();
+            throw std::logic_error("Uninitialized::putValue with value already exist");
         }
 #endif
         new (std::addressof(mValue)) T(std::forward<Ts>(args)...);
@@ -91,6 +100,8 @@ struct Uninitialized<void> {
     }
 
     void putValue(NonVoidHelper<>) {}
+
+    void putValue() {}
 };
 
 template <class T>

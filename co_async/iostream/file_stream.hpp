@@ -37,7 +37,7 @@ private:
 struct FileIStream : IStreamImpl<FileStreamRaw> {
     using IStreamImpl<FileStreamRaw>::IStreamImpl;
 
-    static Task<Expected<FileIStream>> open(DirFilePath path) {
+    static Task<Expected<FileIStream, std::errc>> open(DirFilePath path) {
         co_return FileIStream(co_await co_await fs_open(path, OpenMode::Read));
     }
 };
@@ -45,7 +45,7 @@ struct FileIStream : IStreamImpl<FileStreamRaw> {
 struct FileOStream : OStreamImpl<FileStreamRaw> {
     using OStreamImpl<FileStreamRaw>::OStreamImpl;
 
-    static Task<Expected<FileOStream>> open(DirFilePath path, bool append = false) {
+    static Task<Expected<FileOStream, std::errc>> open(DirFilePath path, bool append = false) {
         co_return FileOStream(co_await co_await fs_open(path, append ? OpenMode::Append
                                                             : OpenMode::Write));
     }
@@ -54,24 +54,24 @@ struct FileOStream : OStreamImpl<FileStreamRaw> {
 struct FileStream : IOStreamImpl<FileStreamRaw> {
     using IOStreamImpl<FileStreamRaw>::IOStreamImpl;
 
-    static Task<Expected<FileStream>> open(DirFilePath path) {
+    static Task<Expected<FileStream, std::errc>> open(DirFilePath path) {
         co_return FileStream(co_await co_await fs_open(path, OpenMode::ReadWrite));
     }
 };
 
-inline Task<Expected<std::string>> file_read(DirFilePath path) {
+inline Task<Expected<std::string, std::errc>> file_read(DirFilePath path) {
     auto file = co_await co_await FileIStream::open(path);
     co_return co_await file.getall();
 }
 
-inline Task<Expected<>> file_write(DirFilePath path, std::string_view content) {
+inline Task<Expected<void, std::errc>> file_write(DirFilePath path, std::string_view content) {
     auto file = co_await co_await FileOStream::open(path, false);
     co_await co_await file.puts(content);
     co_await co_await file.flush();
     co_return {};
 }
 
-inline Task<Expected<>> file_append(DirFilePath path, std::string_view content) {
+inline Task<Expected<void, std::errc>> file_append(DirFilePath path, std::string_view content) {
     auto file = co_await co_await FileOStream::open(path, true);
     co_await co_await file.puts(content);
     co_await co_await file.flush();

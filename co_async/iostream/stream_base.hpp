@@ -33,7 +33,7 @@ struct IStream : virtual IStreamRaw {
     IStream(IStream &&) = default;
     IStream &operator=(IStream &&) = default;
 
-    Task<Expected<char>> getchar() {
+    Task<Expected<char, std::errc>> getchar() {
         if (bufempty()) {
             co_await co_await fillbuf();
         }
@@ -42,7 +42,7 @@ struct IStream : virtual IStreamRaw {
         co_return c;
     }
 
-    Task<Expected<>> getline(std::string &s, char eol) {
+    Task<Expected<void, std::errc>> getline(std::string &s, char eol) {
         std::size_t start = mIndex;
         while (true) {
             for (std::size_t i = start; i < mEnd; ++i) {
@@ -52,12 +52,13 @@ struct IStream : virtual IStreamRaw {
                     co_return {};
                 }
             }
+            s.append(mBuffer.get() + start, mEnd - start);
             co_await co_await fillbuf();
             start = 0;
         }
     }
 
-    Task<Expected<>> dropline(char eol) {
+    Task<Expected<void, std::errc>> dropline(char eol) {
         std::size_t start = mIndex;
         while (true) {
             for (std::size_t i = start; i < mEnd; ++i) {
@@ -71,7 +72,7 @@ struct IStream : virtual IStreamRaw {
         }
     }
 
-    Task<Expected<>> getline(std::string &s, std::string_view eol) {
+    Task<Expected<void, std::errc>> getline(std::string &s, std::string_view eol) {
         again:
             co_await co_await getline(s, eol.front());
             for (std::size_t i = 1; i < eol.size(); ++i) {
@@ -89,7 +90,7 @@ struct IStream : virtual IStreamRaw {
             co_return {};
     }
 
-    Task<Expected<>> dropline(std::string_view eol) {
+    Task<Expected<void, std::errc>> dropline(std::string_view eol) {
         again:
             co_await co_await dropline(eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
@@ -107,19 +108,19 @@ struct IStream : virtual IStreamRaw {
 
     }
 
-    Task<Expected<std::string>> getline(char eol) {
+    Task<Expected<std::string, std::errc>> getline(char eol) {
         std::string s;
         co_await co_await getline(s, eol);
         co_return s;
     }
 
-    Task<Expected<std::string>> getline(std::string_view eol) {
+    Task<Expected<std::string, std::errc>> getline(std::string_view eol) {
         std::string s;
         co_await co_await getline(s, eol);
         co_return s;
     }
 
-    Task<Expected<>> getspan(std::span<char> s) {
+    Task<Expected<void, std::errc>> getspan(std::span<char> s) {
         auto p = s.data();
         auto n = s.size();
         std::size_t start = mIndex;
@@ -136,7 +137,7 @@ struct IStream : virtual IStreamRaw {
         }
     }
 
-    Task<Expected<>> dropn(std::size_t n) {
+    Task<Expected<void, std::errc>> dropn(std::size_t n) {
         std::size_t start = mIndex;
         while (true) {
             auto end = start + n;
@@ -149,7 +150,7 @@ struct IStream : virtual IStreamRaw {
         }
     }
 
-    Task<Expected<>> getn(std::string &s, std::size_t n) {
+    Task<Expected<void, std::errc>> getn(std::string &s, std::size_t n) {
         while (true) {
             if (mIndex + n <= mEnd) {
                 s.append(mBuffer.get() + mIndex, n);
@@ -162,7 +163,7 @@ struct IStream : virtual IStreamRaw {
         }
     }
 
-    Task<Expected<std::string>> getn(std::size_t n) {
+    Task<Expected<std::string, std::errc>> getn(std::size_t n) {
         std::string s;
         s.reserve(n);
         co_await co_await getn(s, n);
@@ -185,13 +186,13 @@ struct IStream : virtual IStreamRaw {
 
     template <class T>
         requires std::is_trivial_v<T>
-    Task<Expected<>> getstruct(T &ret) {
+    Task<Expected<void, std::errc>> getstruct(T &ret) {
         return getspan(std::span<char>((char *)&ret, sizeof(T)));
     }
 
     template <class T>
         requires std::is_trivial_v<T>
-    Task<Expected<T>> getstruct() {
+    Task<Expected<T, std::errc>> getstruct() {
         T ret;
         co_await co_await getstruct(ret);
         co_return ret;
@@ -205,7 +206,7 @@ struct IStream : virtual IStreamRaw {
         mIndex += n;
     }
 
-    Task<Expected<>> peekn(std::string &s, std::size_t n) {
+    Task<Expected<void, std::errc>> peekn(std::string &s, std::size_t n) {
         while (mEnd - mIndex < n) {
             co_await co_await fillbuf();
         }
@@ -213,17 +214,18 @@ struct IStream : virtual IStreamRaw {
         co_return {};
     }
 
-    Task<Expected<std::string>> peekn(std::size_t n) {
+    Task<Expected<std::string, std::errc>> peekn(std::size_t n) {
         std::string s;
         co_await co_await peekn(s, n);
         co_return s;
     }
 
-    Task<Expected<>> fillbuf() {
+    Task<Expected<void, std::errc>> fillbuf() {
         mIndex = 0;
         mEnd = co_await raw_read(std::span(mBuffer.get(), mBufSize));
+        /* debug(), std::string_view(mBuffer.get(), mEnd); */
         if (mEnd == 0) [[unlikely]] {
-            co_return Unexpected{};
+            co_return Unexpected{std::errc::broken_pipe};
         }
         co_return {};
     }
@@ -248,7 +250,7 @@ struct OStream : virtual OStreamRaw {
     OStream(OStream &&) = default;
     OStream &operator=(OStream &&) = default;
 
-    Task<Expected<>> putchar(char c) {
+    Task<Expected<void, std::errc>> putchar(char c) {
         if (buffull()) {
             co_await co_await flush();
         }
@@ -257,7 +259,7 @@ struct OStream : virtual OStreamRaw {
         co_return {};
     }
 
-    Task<Expected<>> putspan(std::span<char const> s) {
+    Task<Expected<void, std::errc>> putspan(std::span<char const> s) {
         auto p = s.data();
         auto const pe = s.data() + s.size();
     again:
@@ -281,17 +283,17 @@ struct OStream : virtual OStreamRaw {
         co_return {};
     }
 
-    Task<Expected<>> puts(std::string_view s) {
+    Task<Expected<void, std::errc>> puts(std::string_view s) {
         return putspan(std::span<char const>(s.data(), s.size()));
     }
 
     template <class T>
-    Task<Expected<>> putstruct(T const &s) {
+    Task<Expected<void, std::errc>> putstruct(T const &s) {
         return putspan(
             std::span<char const>((char const *)std::addressof(s), sizeof(T)));
     }
 
-    Task<Expected<>> putline(std::string_view s) {
+    Task<Expected<void, std::errc>> putline(std::string_view s) {
         co_await co_await puts(s);
         co_await co_await putchar('\n');
         co_return co_await flush();
@@ -305,7 +307,7 @@ struct OStream : virtual OStreamRaw {
         mIndex += n;
     }
 
-    Task<Expected<>> flush() {
+    Task<Expected<void, std::errc>> flush() {
         if (mIndex) [[likely]] {
             auto buf = std::span(mBuffer.get(), mIndex);
             auto len = co_await raw_write(buf);
@@ -314,7 +316,7 @@ struct OStream : virtual OStreamRaw {
                 len = co_await raw_write(buf);
             }
             if (len == 0) [[unlikely]] {
-                co_return Unexpected{};
+                co_return Unexpected{std::errc::broken_pipe};
             }
             mIndex = 0;
             co_await raw_flush();

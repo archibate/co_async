@@ -42,7 +42,7 @@ struct UringLoop {
     inline void runSingle();
     inline bool runBatchedWait(std::size_t numBatch,
                                struct __kernel_timespec *timeout);
-    inline void runBatchedNoWait(std::size_t numBatch);
+    inline bool runBatchedNoWait(std::size_t numBatch);
 
     std::size_t hasAnyEvent() const {
         return io_uring_cq_ready(&mRing);
@@ -198,11 +198,11 @@ void UringLoop::runSingle() {
     BasicLoop::tlsInstance->enqueue(op->mPrevious);
 }
 
-void UringLoop::runBatchedNoWait(std::size_t numBatch) {
+bool UringLoop::runBatchedNoWait(std::size_t numBatch) {
     io_uring_cqe *cqe;
     int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, nullptr, nullptr);
     if (res == -EINTR) [[unlikely]] {
-        return;
+        return false;
     }
     throwingError(res);
     unsigned head, numGot = 0;
@@ -213,6 +213,7 @@ void UringLoop::runBatchedNoWait(std::size_t numBatch) {
         ++numGot;
     }
     io_uring_cq_advance(&mRing, numGot);
+    return true;
 }
 
 bool UringLoop::runBatchedWait(std::size_t numBatch,

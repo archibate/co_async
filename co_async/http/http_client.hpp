@@ -63,7 +63,7 @@ private:
         Task<Expected<std::unique_ptr<HTTPProtocol>>>
         createConnection() override {
             static char const *const protocols[] = {
-                "h2",
+                /* "h2", */
                 "http/1.1",
             };
             auto sock = std::make_unique<SSLClientSocketStream>(

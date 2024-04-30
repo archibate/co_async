@@ -31,9 +31,9 @@ struct SystemLoop {
 
     void start(std::size_t numWorkers = 0, std::size_t numBatchWait = 1,
                std::chrono::system_clock::duration batchTimeout =
-                   std::chrono::milliseconds(15),
+                   std::chrono::milliseconds(1000),
                std::chrono::system_clock::duration batchTimeoutDelta =
-                   std::chrono::milliseconds(12)) {
+                   std::chrono::milliseconds(1000)) {
         if (mThreads) [[unlikely]] {
             throw std::runtime_error("loop already started");
         }
@@ -84,8 +84,8 @@ struct SystemLoop {
             return false;
         };
     compute:
-        thisBasicLoop.run();
-    event:
+        if (thisBasicLoop.run())
+            goto compute;
         if (auto n = thisUringLoop.hasAnyEvent()) {
             thisUringLoop.runBatchedNoWait(n);
             goto compute;
@@ -98,7 +98,7 @@ struct SystemLoop {
             if (thisUringLoop.runBatchedWait(numBatchWait, &ts))
                 goto compute;
             if (thisBasicLoop.run())
-                goto event;
+                goto compute;
             if (stealWork())
                 goto compute;
             timeout += batchTimeoutDelta;

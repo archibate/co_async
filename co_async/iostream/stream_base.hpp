@@ -323,8 +323,7 @@ struct BorrowedStream {
         if (mOutIndex) [[likely]] {
             auto buf = std::span(mOutBuffer.get(), mOutIndex);
             auto len = co_await mRaw->raw_write(buf);
-            while (len.has_value() && *len > 0 && *len != buf.size())
-                [[unlikely]] {
+            while (len.has_value() && *len > 0 && *len != buf.size()) {
                 buf = buf.subspan(*len);
                 len = co_await mRaw->raw_write(buf);
             }

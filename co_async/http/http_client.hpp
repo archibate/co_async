@@ -66,10 +66,9 @@ private:
                 /* "h2", */
                 "http/1.1",
             };
-            auto sock = make_stream<SSLClientSocketStreamRaw>(
-                co_await co_await ssl_connect(mHost.c_str(), mPort,
-                                              gTrustAnchors, protocols, mProxy,
-                                              mTimeout));
+            auto sock = co_await co_await ssl_connect(mHost.c_str(), mPort,
+                                                      gTrustAnchors, protocols,
+                                                      mProxy, mTimeout);
             if (sock.raw<SSLClientSocketStreamRaw>()
                     .ssl_get_selected_protocol() ==
                 "h2") { // todo: seems always false?

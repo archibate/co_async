@@ -48,14 +48,13 @@ struct HTTPServerUtils {
     static Task<Expected<>>
     make_response_from_directory(HTTPServer::IO &io,
                                  std::filesystem::path path) {
-        auto dirPath = path.path().generic_string();
+        auto dirPath = path.generic_string();
         std::string content = "<h1>Files in " + dirPath + ":</h1>";
-        auto parentPath = path.path().parent_path().generic_string();
+        auto parentPath = path.parent_path().generic_string();
         content +=
             "<a href=\"/" + URI::url_encode_path(parentPath) + "\">..</a><br>";
-        auto dir = make_stream<DirectoryStreamRaw>(
-            co_await co_await fs_open(path, OpenMode::Directory));
-        while (auto entry = co_await directory_stream_next(dir)) {
+        auto dir = co_await co_await dir_open(path);
+        while (auto entry = co_await dir.next()) {
             if (*entry == ".." || *entry == ".")
                 continue;
             content += "<a href=\"/" +
@@ -105,7 +104,7 @@ struct HTTPServerUtils {
             .headers =
                 {
                     {"content-type", guessContentTypeByExtension(
-                                         path.path().extension().string())},
+                                         path.extension().string())},
                 },
         };
         auto f = co_await co_await file_open(path, OpenMode::Read);
@@ -157,7 +156,7 @@ struct HTTPServerUtils {
             .headers =
                 {
                     {"content-type", guessContentTypeByExtension(
-                                         path.path().extension().string())},
+                                         path.extension().string())},
                 },
         };
         auto f = co_await co_await file_open(path, OpenMode::Read);

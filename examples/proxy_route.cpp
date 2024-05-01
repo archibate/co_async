@@ -72,7 +72,7 @@ Task<Expected<void, std::errc>> amain(std::string serveAt,
 #elif 1
                     auto in = co_await co_await io.request_body();
                     FutureSource<HTTPResponse> response;
-                    auto [r, w] = co_await pipe_stream();
+                    auto [r, w] = co_await co_await pipe_stream();
                     auto [t1, t2] = co_await when_all(
                         co_bind([&]() -> Task<Expected<>> {
                             HTTPResponse res = co_await response;

@@ -38,26 +38,31 @@ struct FileWatch {
     };
 
     FileWatch()
-        : mStream(make_stream<FileStreamRaw>(
-              FileHandle(throwingErrorErrno(inotify_init1(0))))) {}
+        : mFile(throwingErrorErrno(inotify_init1(0))), mStream(make_stream<FileStreamRaw>(FileHandle(mFile))) {}
 
-    FileWatch &watch(std::filesystem::path path, FileEvent event,
-                     bool recursive = false) {
-        int wd = throwingErrorErrno(inotify_add_watch(
-            mStream.raw<FileStreamRaw>().get().fileNo(), path.c_str(), event));
+    int add(std::filesystem::path const &path, FileEvent event) {
+        int wd = throwingErrorErrno(inotify_add_watch(mFile, path.c_str(), event));
         mWatches.emplace(wd, path);
+        return wd;
+    }
+
+    FileWatch &watch(std::filesystem::path const &path, FileEvent event,
+                     bool recursive = false) {
+        add(path, event);
         if (recursive && std::filesystem::is_directory(path)) {
             for (auto const &entry:
                  std::filesystem::recursive_directory_iterator(path)) {
-                watch(entry.path(), event, false);
+                add(entry.path(), event);
             }
         }
         return *this;
     }
 
-    /* FileWatch &unwatch(std::filesystem::path path) { */
-    /* checkError(inotify_rm_watch(get().fileNo(), wd)); */
-    /* } */
+    FileWatch &remove(int wd) {
+        throwingErrorErrno(inotify_rm_watch(mFile, wd));
+        mWatches.erase(wd);
+        return *this;
+    }
 
     struct WaitFileResult {
         std::filesystem::path path;
@@ -83,6 +88,7 @@ struct FileWatch {
     }
 
 private:
+    int mFile;
     OwningStream mStream;
     std::unique_ptr<struct inotify_event> mEventBuffer =
         std::make_unique<struct inotify_event>();

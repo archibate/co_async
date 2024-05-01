@@ -217,6 +217,7 @@ public:
                 mValue.putValue(std::move(that.mValue.refValue()));
             }
         }
+        return *this;
     }
 
     ~Expected() {

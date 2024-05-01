@@ -53,8 +53,7 @@ public:
             int ret = deflate(&mDeflate, flush);
             if (ret == Z_STREAM_ERROR) {
 #if CO_ASYNC_DEBUG
-                std::cerr << "WARNING: deflate failed with error: " +
-                                 to_string(mDeflate.msg) + "\n";
+                std::cerr << "WARNING: deflate failed with error: " + std::string(mDeflate.msg) + "\n";
 #endif
                 co_return 0;
             }

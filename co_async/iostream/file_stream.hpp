@@ -7,16 +7,16 @@
 
 namespace co_async {
 
-struct FileStreamRaw : virtual IOStreamRaw {
-    Task<std::size_t> raw_read(std::span<char> buffer) override {
-        co_return (co_await fs_read(mFile, buffer)).value_or(0);
+struct FileStreamRaw : StreamRaw {
+    Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) override {
+        co_return co_await fs_read(mFile, buffer);
     }
 
-    Task<std::size_t> raw_write(std::span<char const> buffer) override {
-        co_return (co_await fs_write(mFile, buffer)).value_or(0);
+    Task<Expected<std::size_t, std::errc>> raw_write(std::span<char const> buffer) override {
+        co_return co_await fs_write(mFile, buffer);
     }
 
-    Task<> close() {
+    Task<> raw_close() override {
         (co_await fs_close(std::move(mFile))).value_or();
     }
 
@@ -34,45 +34,24 @@ private:
     FileHandle mFile;
 };
 
-struct FileIStream : IStreamImpl<FileStreamRaw> {
-    using IStreamImpl<FileStreamRaw>::IStreamImpl;
+static Task<Expected<OwningStream, std::errc>> file_open(std::filesystem::path path, OpenMode mode) {
+    co_return make_stream<FileStreamRaw>(co_await co_await fs_open(path, mode));
+}
 
-    static Task<Expected<FileIStream, std::errc>> open(DirFilePath path) {
-        co_return FileIStream(co_await co_await fs_open(path, OpenMode::Read));
-    }
-};
-
-struct FileOStream : OStreamImpl<FileStreamRaw> {
-    using OStreamImpl<FileStreamRaw>::OStreamImpl;
-
-    static Task<Expected<FileOStream, std::errc>> open(DirFilePath path, bool append = false) {
-        co_return FileOStream(co_await co_await fs_open(path, append ? OpenMode::Append
-                                                            : OpenMode::Write));
-    }
-};
-
-struct FileStream : IOStreamImpl<FileStreamRaw> {
-    using IOStreamImpl<FileStreamRaw>::IOStreamImpl;
-
-    static Task<Expected<FileStream, std::errc>> open(DirFilePath path) {
-        co_return FileStream(co_await co_await fs_open(path, OpenMode::ReadWrite));
-    }
-};
-
-inline Task<Expected<std::string, std::errc>> file_read(DirFilePath path) {
-    auto file = co_await co_await FileIStream::open(path);
+inline Task<Expected<std::string, std::errc>> file_read(std::filesystem::path path) {
+    auto file = co_await co_await file_open(path, OpenMode::Read);
     co_return co_await file.getall();
 }
 
-inline Task<Expected<void, std::errc>> file_write(DirFilePath path, std::string_view content) {
-    auto file = co_await co_await FileOStream::open(path, false);
+inline Task<Expected<void, std::errc>> file_write(std::filesystem::path path, std::string_view content) {
+    auto file = co_await co_await file_open(path, OpenMode::Write);
     co_await co_await file.puts(content);
     co_await co_await file.flush();
     co_return {};
 }
 
-inline Task<Expected<void, std::errc>> file_append(DirFilePath path, std::string_view content) {
-    auto file = co_await co_await FileOStream::open(path, true);
+inline Task<Expected<void, std::errc>> file_append(std::filesystem::path path, std::string_view content) {
+    auto file = co_await co_await file_open(path, OpenMode::Append);
     co_await co_await file.puts(content);
     co_await co_await file.flush();
     co_return {};

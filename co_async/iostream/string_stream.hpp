@@ -7,14 +7,14 @@
 
 namespace co_async {
 
-struct StringReadStreamRaw : virtual IStreamRaw {
-    StringReadStreamRaw() noexcept : mPosition(0) {}
+struct IStringStreamRaw : StreamRaw {
+    IStringStreamRaw() noexcept : mPosition(0) {}
 
-    StringReadStreamRaw(std::string_view strView)
+    IStringStreamRaw(std::string_view strView)
         : mStringView(strView),
           mPosition(0) {}
 
-    Task<std::size_t> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) override {
         std::size_t size =
             std::min(buffer.size(), mStringView.size() - mPosition);
         std::copy_n(mStringView.begin() + mPosition, size, buffer.begin());
@@ -35,32 +35,25 @@ private:
     std::size_t mPosition;
 };
 
-struct StringWriteStreamRaw : virtual OStreamRaw {
-    StringWriteStreamRaw() noexcept {}
+struct OStringStreamRaw : StreamRaw {
+    OStringStreamRaw(std::string &output) noexcept
+        : mOutput(output) {}
 
-    StringWriteStreamRaw(std::string &&str) noexcept
-        : mString(std::move(str)) {}
-
-    StringWriteStreamRaw(std::string_view str) : mString(str) {}
-
-    Task<std::size_t> raw_write(std::span<char const> buffer) override {
-        mString.append(buffer.data(), buffer.size());
+    Task<Expected<std::size_t, std::errc>> raw_write(std::span<char const> buffer) override {
+        mOutput.append(buffer.data(), buffer.size());
         co_return buffer.size();
     }
 
-    std::string_view str() const noexcept {
-        return mString;
+    std::string &str() const noexcept {
+        return mOutput;
     }
 
     std::string release() noexcept {
-        return std::move(mString);
+        return std::move(mOutput);
     }
 
 private:
-    std::string mString;
+    std::string &mOutput;
 };
-
-using StringIStream = IStreamImpl<StringReadStreamRaw>;
-using StringOStream = OStreamImpl<StringWriteStreamRaw>;
 
 } // namespace co_async

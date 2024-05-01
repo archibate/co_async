@@ -53,7 +53,7 @@ struct HTTPServer {
             co_return body;
         }
 
-        Task<Expected<>> request_body_stream(OStream &out) {
+        Task<Expected<>> request_body_stream(OwningStream &out) {
 #if CO_ASYNC_DEBUG
             if (mBodyRead) [[unlikely]] {
                 throw std::runtime_error(
@@ -79,7 +79,7 @@ struct HTTPServer {
             co_return {};
         }
 
-        Task<Expected<>> response(HTTPResponse resp, IStream &body) {
+        Task<Expected<>> response(HTTPResponse resp, OwningStream &body) {
 #if CO_ASYNC_DEBUG
             mResponseSavedForDebug = resp;
 #endif
@@ -152,20 +152,18 @@ struct HTTPServer {
             /* "h2", */
             "http/1.1",
         };
-        SSLServerSocketStream sock(std::move(handle), https.cert, https.skey, protocols, &https.cache);
-        sock.raw_timeout(mTimeout);
-        auto stream = std::make_unique<SSLServerSocketStream>(std::move(sock));
-        if (auto peek = co_await stream->peekn(2); peek && *peek == "h2"sv) {
-            co_return std::make_unique<HTTPProtocolVersion2>(std::move(stream));
+        auto sock = make_stream<SSLServerSocketStreamRaw>(std::move(handle), https.cert, https.skey, protocols, &https.cache);
+        sock.timeout(mTimeout);
+        if (auto peek = co_await sock.peekn(2); peek && *peek == "h2"sv) {
+            co_return std::make_unique<HTTPProtocolVersion2>(std::move(sock));
         }
-        co_return std::make_unique<HTTPProtocolVersion11>(std::move(stream));
+        co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
     }
 
     Task<std::unique_ptr<HTTPProtocol>> prepareHTTP(SocketHandle handle) const {
-        SocketStream sock(std::move(handle));
-        sock.raw_timeout(mTimeout);
-        co_return std::make_unique<HTTPProtocolVersion11>(
-            std::make_unique<SocketStream>(std::move(sock)));
+        auto sock = make_stream<SocketStreamRaw>(std::move(handle));
+        sock.timeout(mTimeout);
+        co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
     }
 
     Task<Expected<>> handle_http(SocketHandle handle) const {

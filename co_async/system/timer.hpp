@@ -1,18 +1,13 @@
-
-
-#ifdef __linux__
-#include <errno.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#endif
-
 #pragma once
 
 #include <co_async/std.hpp>
 
 #ifdef __linux__
 
+#include <errno.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/system/system_loop.hpp>
 

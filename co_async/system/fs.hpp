@@ -1,19 +1,14 @@
-
-
-#ifdef __linux__
-#include <errno.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <dirent.h>
-#endif
-
 #pragma once
 
 #include <co_async/std.hpp>
 
 #ifdef __linux__
 
+#include <errno.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <dirent.h>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/system/system_loop.hpp>
 #include <co_async/system/error_handling.hpp>
@@ -230,7 +225,7 @@ inline Task<Expected<std::uint64_t, std::errc>> fs_stat_size(DirFilePath path) {
     co_return ret.size();
 }
 
-inline Task<Expected<std::size_t>> fs_read(FileHandle &file, std::span<char> buffer,
+inline Task<Expected<std::size_t, std::errc>> fs_read(FileHandle &file, std::span<char> buffer,
                                  std::uint64_t offset = -1) {
     co_return co_await expectError(
         co_await uring_read(file.fileNo(), buffer, offset));

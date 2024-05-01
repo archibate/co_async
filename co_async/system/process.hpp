@@ -1,4 +1,6 @@
+#pragma once
 
+#include <co_async/std.hpp>
 
 #ifdef __linux__
 #include <sys/types.h>
@@ -7,13 +9,6 @@
 #include <spawn.h>
 #include <signal.h>
 #include <errno.h>
-#endif
-
-#pragma once
-
-#include <co_async/std.hpp>
-
-#ifdef __linux__
 #include <co_async/system/error_handling.hpp>
 #include <co_async/system/fs.hpp>
 #include <co_async/system/system_loop.hpp>

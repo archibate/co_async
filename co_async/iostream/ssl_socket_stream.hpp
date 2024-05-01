@@ -1,5 +1,3 @@
-
-
 #include <bearssl.h>
 
 #pragma once
@@ -272,7 +270,7 @@ private:
     std::string objName;
     std::vector<std::pair<std::string, std::string>> objs;
 
-    static void pemResultAppender(void *self, void const *buf, size_t len) {
+    static void pemResultAppender(void *self, void const *buf, std::size_t len) {
         reinterpret_cast<SSLPemDecoder *>(self)->onResult(
             {reinterpret_cast<char const *>(buf), len});
     }
@@ -333,7 +331,7 @@ private:
         std::make_unique<br_x509_decoder_context>();
     std::string result;
 
-    static void x509ResultAppender(void *self, void const *buf, size_t len) {
+    static void x509ResultAppender(void *self, void const *buf, std::size_t len) {
         reinterpret_cast<SSLX509Decoder *>(self)->onResult(
             {reinterpret_cast<char const *>(buf), len});
     }
@@ -458,7 +456,7 @@ struct SSLSessionCache {
     }
 };
 
-struct SSLSocketStreamRaw : virtual IOStreamRaw {
+struct SSLSocketStreamRaw : StreamRaw {
 private:
     SocketStreamRaw raw;
     br_ssl_engine_context *eng = nullptr;
@@ -474,7 +472,7 @@ protected:
         br_ssl_engine_set_buffer(eng, iobuf.get(), BR_SSL_BUFSIZE_BIDI, 1);
     }
 
-    Task<> bearSSLRunUntil(unsigned target) {
+    Task<Expected<void, std::errc>> bearSSLRunUntil(unsigned target) {
         for (;;) {
             unsigned state = br_ssl_engine_current_state(eng);
             if (state & BR_SSL_CLOSED) {
@@ -483,42 +481,35 @@ protected:
 #if CO_ASYNC_DEBUG
                     std::cerr << "SSL error: " + bearSSLErrorName(err) + "\n";
 #endif
-                    throw std::runtime_error("SSL error: " +
-                                             bearSSLErrorName(err));
+                    co_return Unexpected{std::errc::io_error};
                 }
-                co_return;
+                co_return {};
             }
 
             if (state & BR_SSL_SENDREC) {
                 unsigned char *buf;
-                size_t len, wlen;
+                std::size_t len, wlen;
 
                 buf = br_ssl_engine_sendrec_buf(eng, &len);
-#if CO_ASYNC_EXCEPT
-                try {
-#endif
-                    wlen = co_await raw.raw_write({(char const *)buf, len});
-#if CO_ASYNC_EXCEPT
-                } catch (...) {
-                    if (!eng->shutdown_recv) {
+                if (auto e = co_await raw.raw_write({(char const *)buf, len}); e && *e != 0) {
+                    wlen = *e;
+                } else {
+                    if (!eng->shutdown_recv) [[unlikely]] {
                         if (eng->iomode != 0) {
                             eng->iomode = 0;
                             eng->err = BR_ERR_IO;
                         }
+                        co_return Unexpected{e.error()};
                     }
-                    throw;
+                    co_return {};
                 }
-#endif
-                if (wlen > 0) [[likely]] {
-                    br_ssl_engine_sendrec_ack(eng, wlen);
-                } else {
-                    co_return;
-                }
+
+                br_ssl_engine_sendrec_ack(eng, wlen);
                 continue;
             }
 
             if (state & target) {
-                co_return;
+                co_return {};
             }
 
             if (state & BR_SSL_RECVAPP) [[unlikely]] {
@@ -530,29 +521,23 @@ protected:
 
             if (state & BR_SSL_RECVREC) {
                 unsigned char *buf;
-                size_t len, rlen;
+                std::size_t len, rlen;
 
                 buf = br_ssl_engine_recvrec_buf(eng, &len);
-#if CO_ASYNC_EXCEPT
-                try {
-#endif
-                    rlen = co_await raw.raw_read({(char *)buf, len});
-#if CO_ASYNC_EXCEPT
-                } catch (...) {
-                    if (!eng->shutdown_recv) {
+                if (auto e = co_await raw.raw_read({(char *)buf, len}); e && *e != 0) {
+                    rlen = *e;
+                } else {
+                    if (!eng->shutdown_recv) [[unlikely]] {
                         if (eng->iomode != 0) {
                             eng->iomode = 0;
                             eng->err = BR_ERR_IO;
                         }
+                        co_return Unexpected{e.error()};
                     }
-                    throw;
+                    co_return {};
                 }
-#endif
-                if (rlen > 0) [[likely]] {
-                    br_ssl_engine_recvrec_ack(eng, rlen);
-                } else {
-                    co_return;
-                }
+
+                br_ssl_engine_recvrec_ack(eng, rlen);
                 continue;
             }
 
@@ -561,20 +546,21 @@ protected:
     }
 
 public:
-    Task<> raw_flush() override {
+    Task<Expected<void, std::errc>> raw_flush() override {
         br_ssl_engine_flush(eng, 0);
-        co_await bearSSLRunUntil(BR_SSL_SENDAPP | BR_SSL_RECVAPP);
-        co_return;
+        co_await co_await bearSSLRunUntil(BR_SSL_SENDAPP | BR_SSL_RECVAPP);
+        co_return {};
     }
 
-    Task<std::size_t> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_read(std::span<char> buffer) override {
         unsigned char *buf;
-        size_t alen;
+        std::size_t alen;
 
         if (buffer.empty()) [[unlikely]] {
             co_return 0;
         }
-        co_await bearSSLRunUntil(BR_SSL_RECVAPP);
+        co_await co_await bearSSLRunUntil(BR_SSL_RECVAPP);
         buf = br_ssl_engine_recvapp_buf(eng, &alen);
         if (alen > buffer.size()) {
             alen = buffer.size();
@@ -584,14 +570,15 @@ public:
         co_return alen;
     }
 
-    Task<std::size_t> raw_write(std::span<char const> buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_write(std::span<char const> buffer) override {
         unsigned char *buf;
-        size_t alen;
+        std::size_t alen;
 
         if (buffer.empty()) [[unlikely]] {
             co_return 0;
         }
-        co_await bearSSLRunUntil(BR_SSL_SENDAPP);
+        co_await co_await bearSSLRunUntil(BR_SSL_SENDAPP);
         buf = br_ssl_engine_sendapp_buf(eng, &alen);
         if (alen > buffer.size()) {
             alen = buffer.size();
@@ -601,7 +588,7 @@ public:
         co_return alen;
     }
 
-    void ssl_close() {
+    Task<> raw_close() override {
 #if CO_ASYNC_DEBUG
         if (br_ssl_engine_current_state(eng) != BR_SSL_CLOSED) [[unlikely]] {
             std::cerr << "SSL closed improperly\n"
@@ -609,24 +596,13 @@ public:
         }
 #endif
         br_ssl_engine_close(eng);
+        co_return;
     }
 
     void raw_timeout(std::chrono::nanoseconds timeout) override {
         raw.raw_timeout(timeout);
     }
 
-    /* SSLSocketStreamRaw(SSLSocketStreamRaw &&that) noexcept */
-    /*     : raw(std::move(that.raw)), */
-    /*       eng(std::exchange(that.eng, nullptr)), */
-    /*       iobuf(std::move(that.iobuf)) {} */
-    /*  */
-    /* SSLSocketStreamRaw &operator=(SSLSocketStreamRaw &&that) noexcept { */
-    /*     std::swap(raw, that.raw); */
-    /*     std::swap(eng, that.eng); */
-    /*     std::swap(iobuf, that.iobuf); */
-    /*     return *this; */
-    /* } */
-    /*  */
     /* ~SSLSocketStreamRaw() { */
     /*     if (eng) { */
     /*         br_ssl_engine_close(eng); */
@@ -702,23 +678,17 @@ public:
     }
 };
 
-struct SSLClientSocketStream : IOStreamImpl<SSLClientSocketStreamRaw> {
-    using IOStreamImpl<SSLClientSocketStreamRaw>::IOStreamImpl;
-
-    static Task<Expected<SSLClientSocketStream, std::errc>>
-    connect(char const *host, int port, SSLClientTrustAnchor const &ta,
+inline Task<Expected<OwningStream, std::errc>>
+ssl_connect(char const *host, int port, SSLClientTrustAnchor const &ta,
             std::span<char const *const> protocols, std::string_view proxy,
             std::chrono::nanoseconds timeout) {
-        auto conn = co_await co_await socket_proxy_connect(host, port, proxy, timeout);
-        SSLClientSocketStream sock(std::move(conn), ta, host, protocols);
-        sock.raw_timeout(timeout);
-        co_return sock;
-    }
-};
-
-struct SSLServerSocketStream : IOStreamImpl<SSLServerSocketStreamRaw> {
-    using IOStreamImpl<SSLServerSocketStreamRaw>::IOStreamImpl;
-};
+    auto conn =
+        co_await co_await socket_proxy_connect(host, port, proxy, timeout);
+    auto sock = make_stream<SSLClientSocketStreamRaw>(std::move(conn), ta, host,
+                                                      protocols);
+    sock.timeout(timeout);
+    co_return sock;
+}
 
 } // namespace co_async
 #endif

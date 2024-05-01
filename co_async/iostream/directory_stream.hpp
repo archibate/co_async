@@ -11,9 +11,9 @@
 
 namespace co_async {
 
-struct DirectoryStreamRaw : virtual IStreamRaw {
-    Task<std::size_t> raw_read(std::span<char> buffer) {
-        co_return (co_await fs_getdents(mFile, buffer)).value_or(0);
+struct DirectoryStreamRaw : StreamRaw {
+    Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) {
+        co_return co_await fs_getdents(mFile, buffer);
     }
 
     FileHandle release() noexcept {
@@ -30,23 +30,19 @@ private:
     FileHandle mFile;
 };
 
-struct DirectoryStream : IStreamImpl<DirectoryStreamRaw> {
-    using IStreamImpl<DirectoryStreamRaw>::IStreamImpl;
+inline Task<Expected<std::string, std::errc>> directory_stream_next(BorrowedStream &stream) {
+    struct LinuxDirent64 {
+        int64_t d_ino;           /* 64-bit inode number */
+        int64_t d_off;           /* 64-bit offset to next structure */
+        unsigned short d_reclen; /* Size of this dirent */
+        unsigned char d_type;    /* File type */
+    } dent;
 
-    Task<Expected<std::string>> getdirent() {
-        struct LinuxDirent64 {
-            int64_t d_ino;           /* 64-bit inode number */
-            int64_t d_off;           /* 64-bit offset to next structure */
-            unsigned short d_reclen; /* Size of this dirent */
-            unsigned char d_type;    /* File type */
-        } dent;
-
-        co_await co_await getspan(std::span<char>((char *)&dent, 19));
-        std::string rest;
-        rest.reserve(dent.d_reclen - 19);
-        co_await co_await getn(rest, dent.d_reclen - 19);
-        co_return std::string(rest.data());
-    }
-};
+    co_await co_await stream.getspan(std::span<char>((char *)&dent, 19));
+    std::string rest;
+    rest.reserve(dent.d_reclen - 19);
+    co_await co_await stream.getn(rest, dent.d_reclen - 19);
+    co_return std::string(rest.data());
+}
 
 } // namespace co_async

@@ -21,7 +21,7 @@
 
 namespace co_async {
 
-struct FileWatch : FileIStream {
+struct FileWatch {
     enum FileEvent : std::uint32_t {
         OnAccessed = IN_ACCESS,
         OnOpened = IN_OPEN,
@@ -37,12 +37,12 @@ struct FileWatch : FileIStream {
         OnReadFinished = IN_CLOSE_NOWRITE,
     };
 
-    FileWatch() : FileIStream(FileHandle(throwingError(inotify_init1(0)))) {}
+    FileWatch() : mStream(make_stream<FileStreamRaw>(FileHandle(throwingErrorErrno(inotify_init1(0))))) {}
 
     FileWatch &watch(std::filesystem::path path, FileEvent event,
                      bool recursive = false) {
         int wd =
-            throwingError(inotify_add_watch(get().fileNo(), path.c_str(), event));
+            throwingErrorErrno(inotify_add_watch(mStream.raw<FileStreamRaw>().get().fileNo(), path.c_str(), event));
         mWatches.emplace(wd, path);
         if (recursive && std::filesystem::is_directory(path)) {
             for (auto const &entry:
@@ -63,12 +63,12 @@ struct FileWatch : FileIStream {
     };
 
     Task<Expected<WaitFileResult>> wait() {
-        if (!co_await getstruct(*mEventBuffer)) [[unlikely]] {
+        if (!co_await mStream.getstruct(*mEventBuffer)) [[unlikely]] {
             throw std::runtime_error("EOF while reading struct");
         }
         std::string name;
         name.reserve(mEventBuffer->len);
-        co_await co_await getn(name, mEventBuffer->len);
+        co_await co_await mStream.getn(name, mEventBuffer->len);
         name = name.c_str();
         auto path = mWatches.at(mEventBuffer->wd);
         if (!name.empty()) {
@@ -81,8 +81,8 @@ struct FileWatch : FileIStream {
     }
 
 private:
-    std::unique_ptr<struct inotify_event> mEventBuffer =
-        std::make_unique<struct inotify_event>();
+    OwningStream mStream;
+    std::unique_ptr<struct inotify_event> mEventBuffer = std::make_unique<struct inotify_event>();
     std::map<int, std::filesystem::path> mWatches;
 };
 

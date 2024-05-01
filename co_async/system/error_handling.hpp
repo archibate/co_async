@@ -1,11 +1,6 @@
-
-
-#ifdef __linux__
-#include <errno.h>
-#endif
-
 #pragma once
 
+#include <errno.h>
 #include <co_async/std.hpp>
 #include <co_async/utils/expected.hpp>
 

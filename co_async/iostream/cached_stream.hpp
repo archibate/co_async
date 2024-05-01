@@ -7,46 +7,50 @@
 
 namespace co_async {
 
-struct CachedStreamRaw : virtual IStreamRaw {
-    Task<std::size_t> raw_read(std::span<char> buffer) override {
+struct CachedStreamRaw : StreamRaw {
+    explicit CachedStreamRaw(BorrowedStream &stream) : mStream(stream) {}
+
+    BorrowedStream &base() const noexcept {
+        return mStream;
+    }
+
+    Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) override {
         if (mPos != mCache.size()) {
             auto n = std::min(mCache.size() - mPos, buffer.size());
             std::memcpy(buffer.data(), mCache.data() + mPos, n);
             mPos += n;
             co_return n;
         }
-        auto n = co_await mStream->raw_read(buffer);
+        auto n = co_await co_await mStream.read(buffer);
         mCache.append(buffer.data(), n);
         co_return n;
     }
 
     void raw_timeout(std::chrono::nanoseconds timeout) override {
-        mStream->raw_timeout(timeout);
+        mStream.timeout(timeout);
     }
 
-    IStreamRaw *get() noexcept {
-        return mStream;
+    Task<> raw_close() override {
+        return mStream.close();
     }
 
-    explicit CachedStreamRaw(IStream *stream) : mStream(stream) {}
+    Task<Expected<void, std::errc>> raw_flush() override {
+        return mStream.flush();
+    }
 
-    Task<Expected<>> raw_seek(std::uint64_t pos) override {
+    Task<Expected<void, std::errc>> raw_seek(std::uint64_t pos) override {
         if (pos <= mCache.size()) {
             mPos = pos;
             co_return {};
         } else {
-            co_return Unexpected{};
+            co_return Unexpected{std::errc::invalid_seek};
         }
     }
 
 private:
-    IStream *mStream;
+    BorrowedStream &mStream;
     std::string mCache;
     std::size_t mPos = 0;
-};
-
-struct CachedStream : IStreamImpl<CachedStreamRaw> {
-    using IStreamImpl<CachedStreamRaw>::IStreamImpl;
 };
 
 } // namespace co_async

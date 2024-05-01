@@ -75,21 +75,21 @@ struct HTTPResponse {
 
 struct HTTPProtocol {
 public:
-    std::unique_ptr<IOStream> sock;
+    OwningStream sock;
 
 protected:
     HTTPTransferEncoding mEncoding;
 
 public:
-    explicit HTTPProtocol(std::unique_ptr<IOStream> sock)
+    explicit HTTPProtocol(OwningStream sock)
         : sock(std::move(sock)) {}
 
     virtual ~HTTPProtocol() = default;
 
     virtual void initServerState() = 0;
     virtual void initClientState() = 0;
-    virtual Task<Expected<void, std::errc>> writeBodyStream(IStream &body) = 0;
-    virtual Task<Expected<void, std::errc>> readBodyStream(OStream &body) = 0;
+    virtual Task<Expected<void, std::errc>> writeBodyStream(BorrowedStream &body) = 0;
+    virtual Task<Expected<void, std::errc>> readBodyStream(BorrowedStream &body) = 0;
     virtual Task<Expected<void, std::errc>> writeBody(std::string_view body) = 0;
     virtual Task<Expected<void, std::errc>> readBody(std::string &body) = 0;
     virtual Task<Expected<void, std::errc>> writeRequest(HTTPRequest const &req) = 0;
@@ -119,7 +119,7 @@ private:
 public:
 #endif
 
-    Task<Expected<void, std::errc>> writeBodyStream(IStream &body) override {
+    Task<Expected<void, std::errc>> writeBodyStream(BorrowedStream &body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(1, 0);
 #endif
@@ -128,7 +128,7 @@ public:
         case HTTPTransferEncoding::Chunked: {
             bool hadHeader = false;
             do {
-                auto bufSpan = body.rdbuf();
+                auto bufSpan = body.peekbuf();
                 auto n = bufSpan.size();
                 if (n > 0) {
                     char buf[sizeof(n) * 2 + 4] = {}, *ep = buf;
@@ -141,49 +141,49 @@ public:
                     *ep++ = '\r';
                     *ep++ = '\n';
                     if (!hadHeader) {
-                        co_await co_await sock->puts("transfer-encoding: chunked\r\n"sv);
+                        co_await co_await sock.puts("transfer-encoding: chunked\r\n"sv);
                         hadHeader = true;
                     }
-                    co_await co_await sock->puts(std::string_view{
+                    co_await co_await sock.puts(std::string_view{
                         buf, static_cast<std::size_t>(ep - buf)});
-                    co_await co_await sock->putspan(bufSpan);
+                    co_await co_await sock.putspan(bufSpan);
                 }
             } while (co_await body.fillbuf());
             if (!hadHeader) {
-                co_await co_await sock->puts("\r\n"sv);
+                co_await co_await sock.puts("\r\n"sv);
             } else {
-                co_await co_await sock->puts("\r\n0\r\n\r\n"sv);
+                co_await co_await sock.puts("\r\n0\r\n\r\n"sv);
             }
         } break;
         case HTTPTransferEncoding::Gzip:
-            co_await co_await sock->puts("content-encoding: gzip\r\n\r\n"sv);
+            co_await co_await sock.puts("content-encoding: gzip\r\n\r\n"sv);
             throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Compress:
-            co_await co_await sock->puts("content-encoding: compress\r\n\r\n"sv);
+            co_await co_await sock.puts("content-encoding: compress\r\n\r\n"sv);
             throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Deflate:
-            co_await co_await sock->puts("content-encoding: deflate\r\n\r\n"sv);
+            co_await co_await sock.puts("content-encoding: deflate\r\n\r\n"sv);
             throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Br:
-            co_await co_await sock->puts("content-encoding: br\r\n\r\n"sv);
+            co_await co_await sock.puts("content-encoding: br\r\n\r\n"sv);
             throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Zstd:
-            co_await co_await sock->puts("content-encoding: zstd\r\n\r\n"sv);
+            co_await co_await sock.puts("content-encoding: zstd\r\n\r\n"sv);
             throw std::runtime_error("compress encoding not supported yet");
             break;
         case HTTPTransferEncoding::Identity: {
             auto content = co_await body.getall();
-            co_await co_await sock->puts("content-length: "sv);
-            co_await co_await sock->puts(to_string(content.size()));
-            co_await co_await sock->puts("\r\n\r\n"sv);
-            co_await co_await sock->puts(content);
+            co_await co_await sock.puts("content-length: "sv);
+            co_await co_await sock.puts(to_string(content.size()));
+            co_await co_await sock.puts("\r\n\r\n"sv);
+            co_await co_await sock.puts(content);
         } break;
         }
-        co_await co_await sock->flush();
+        co_await co_await sock.flush();
         co_return {};
     }
 
@@ -194,23 +194,23 @@ public:
             checkPhase(1, 0);
 #endif
             using namespace std::string_view_literals;
-            co_await co_await sock->puts("\r\n"sv);
+            co_await co_await sock.puts("\r\n"sv);
         } else {
             switch (mEncoding) {
             case HTTPTransferEncoding::Identity: {
 #if CO_ASYNC_DEBUG
                 checkPhase(1, 0);
 #endif
-                co_await co_await sock->puts("content-length: "sv);
-                co_await co_await sock->puts(to_string(body.size()));
-                co_await co_await sock->puts("\r\n\r\n"sv);
-                co_await co_await sock->puts(body);
+                co_await co_await sock.puts("content-length: "sv);
+                co_await co_await sock.puts(to_string(body.size()));
+                co_await co_await sock.puts("\r\n\r\n"sv);
+                co_await co_await sock.puts(body);
             } break;
             case HTTPTransferEncoding::Chunked: {
 #if CO_ASYNC_DEBUG
                 checkPhase(1, 0);
 #endif
-                co_await co_await sock->puts("transfer-encoding: chunked\r\n"sv);
+                co_await co_await sock.puts("transfer-encoding: chunked\r\n"sv);
                 auto n = body.size();
                 char buf[sizeof(n) * 2 + 4] = {}, *ep = buf;
                 *ep++ = '\r';
@@ -221,22 +221,22 @@ public:
                 std::reverse(buf + 2, ep);
                 *ep++ = '\r';
                 *ep++ = '\n';
-                co_await co_await sock->puts(
+                co_await co_await sock.puts(
                     std::string_view{buf, static_cast<std::size_t>(ep - buf)});
-                co_await co_await sock->puts(body);
-                co_await co_await sock->puts("\r\n0\r\n\r\n"sv);
+                co_await co_await sock.puts(body);
+                co_await co_await sock.puts("\r\n0\r\n\r\n"sv);
             } break;
             default: {
-                StringIStream is(body);
+                auto is = make_stream<IStringStreamRaw>(body);
                 co_await co_await writeBodyStream(is);
             } break;
             }
         }
-        co_await co_await sock->flush();
+        co_await co_await sock.flush();
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> readBodyStream(OStream &body) override {
+    Task<Expected<void, std::errc>> readBodyStream(BorrowedStream &body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(-1, 0);
 #endif
@@ -245,7 +245,7 @@ public:
         case HTTPTransferEncoding::Identity: {
             if (auto n = mEncoding.contentLength(); n > 0) {
                 std::string line;
-                co_await co_await sock->getn(line, n);
+                co_await co_await sock.getn(line, n);
                 co_await co_await body.puts(line);
             }
         } break;
@@ -253,16 +253,16 @@ public:
             std::string line;
             while (true) {
                 line.clear();
-                co_await co_await sock->getline(line, "\r\n"sv);
+                co_await co_await sock.getline(line, "\r\n"sv);
                 std::size_t n = std::strtoull(line.c_str(), nullptr, 16);
                 if (n <= 0) {
-                    co_await co_await sock->dropn(2);
+                    co_await co_await sock.dropn(2);
                     break;
                 }
                 line.clear();
-                co_await co_await sock->getn(line, n);
+                co_await co_await sock.getn(line, n);
                 co_await co_await body.puts(line);
-                co_await co_await sock->dropn(2);
+                co_await co_await sock.dropn(2);
             }
         } break;
         case HTTPTransferEncoding::Gzip: [[fallthrough]];
@@ -271,7 +271,7 @@ public:
         case HTTPTransferEncoding::Br: [[fallthrough]];
         case HTTPTransferEncoding::Zstd: {
             throw std::runtime_error("compress encoding not supported yet");
-            /* std::string content = co_await sock->getall(); */
+            /* std::string content = co_await sock.getall(); */
             /* co_await body.puts(content); */
         } break;
         }
@@ -287,7 +287,7 @@ public:
             checkPhase(-1, 0);
 #endif
             if (auto n = mEncoding.contentLength(); n > 0) {
-                co_await co_await sock->getn(body, n);
+                co_await co_await sock.getn(body, n);
             }
         } break;
         case HTTPTransferEncoding::Chunked: {
@@ -297,17 +297,17 @@ public:
             std::string line;
             while (true) {
                 line.clear();
-                co_await co_await sock->getline(line, "\r\n"sv);
+                co_await co_await sock.getline(line, "\r\n"sv);
                 auto n = std::strtoul(line.c_str(), nullptr, 16);
                 if (n == 0) {
                     break;
                 }
-                co_await co_await sock->getn(body, n);
-                co_await co_await sock->dropn(2);
+                co_await co_await sock.getn(body, n);
+                co_await co_await sock.dropn(2);
             }
         } break;
         default: {
-            StringOStream os;
+            auto os = make_stream<OStringStreamRaw>(body);
             co_await co_await readBodyStream(os);
         } break;
         };
@@ -319,17 +319,17 @@ public:
         checkPhase(0, 1);
 #endif
         using namespace std::string_view_literals;
-        co_await co_await sock->puts(req.method);
-        co_await co_await sock->putchar(' ');
-        co_await co_await sock->puts(req.uri.dump());
-        co_await co_await sock->puts(" HTTP/1.1\r\n"sv);
+        co_await co_await sock.puts(req.method);
+        co_await co_await sock.putchar(' ');
+        co_await co_await sock.puts(req.uri.dump());
+        co_await co_await sock.puts(" HTTP/1.1\r\n"sv);
         for (auto const &[k, v]: req.headers) {
-            co_await co_await sock->puts(k);
-            co_await co_await sock->puts(": "sv);
-            co_await co_await sock->puts(v);
-            co_await co_await sock->puts("\r\n"sv);
+            co_await co_await sock.puts(k);
+            co_await co_await sock.puts(": "sv);
+            co_await co_await sock.puts(v);
+            co_await co_await sock.puts("\r\n"sv);
         }
-        co_await co_await sock->puts("connection: keep-alive\r\n"sv);
+        co_await co_await sock.puts("connection: keep-alive\r\n"sv);
         mEncoding = HTTPTransferEncoding::Chunked;
         co_return {};
     }
@@ -353,7 +353,7 @@ public:
         using namespace std::string_literals;
         using namespace std::string_view_literals;
         std::string line;
-        if (!co_await sock->getline(line, "\r\n"sv) || line.empty()) {
+        if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) {
             co_return Unexpected{std::errc::broken_pipe};
         }
         auto pos = line.find(' ');
@@ -374,7 +374,7 @@ public:
         req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
         while (true) {
             line.clear();
-            co_await co_await sock->getline(line, "\r\n"sv);
+            co_await co_await sock.getline(line, "\r\n"sv);
             if (line.empty()) {
                 break;
             }
@@ -437,18 +437,18 @@ public:
         checkPhase(0, 1);
 #endif
         using namespace std::string_view_literals;
-        co_await co_await sock->puts("HTTP/1.1 "sv);
-        co_await co_await sock->puts(to_string(res.status));
-        co_await co_await sock->putchar(' ');
-        co_await co_await sock->puts(getHTTPStatusName(res.status));
-        co_await co_await sock->puts("\r\n"sv);
+        co_await co_await sock.puts("HTTP/1.1 "sv);
+        co_await co_await sock.puts(to_string(res.status));
+        co_await co_await sock.putchar(' ');
+        co_await co_await sock.puts(getHTTPStatusName(res.status));
+        co_await co_await sock.puts("\r\n"sv);
         for (auto const &[k, v]: res.headers) {
-            co_await co_await sock->puts(k);
-            co_await co_await sock->puts(": "sv);
-            co_await co_await sock->puts(v);
-            co_await co_await sock->puts("\r\n"sv);
+            co_await co_await sock.puts(k);
+            co_await co_await sock.puts(": "sv);
+            co_await co_await sock.puts(v);
+            co_await co_await sock.puts("\r\n"sv);
         }
-        co_await co_await sock->puts("connection: keep-alive\r\n"sv);
+        co_await co_await sock.puts("connection: keep-alive\r\n"sv);
         mEncoding = HTTPTransferEncoding::Chunked;
         co_return {};
     }
@@ -458,7 +458,7 @@ public:
         checkPhase(0, -1);
 #endif
         using namespace std::string_view_literals;
-        auto line = co_await co_await sock->getline("\r\n"sv);
+        auto line = co_await co_await sock.getline("\r\n"sv);
         if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv ||
             line[8] != ' ') [[unlikely]] {
 #if CO_ASYNC_DEBUG
@@ -476,7 +476,7 @@ public:
         }
         while (true) {
             line.clear();
-            co_await co_await sock->getline(line, "\r\n"sv);
+            co_await co_await sock.getline(line, "\r\n"sv);
             if (line.empty()) {
                 break;
             }
@@ -572,14 +572,14 @@ public:
 #endif
     }
 
-    Task<Expected<void, std::errc>> writeBodyStream(IStream &body) override {
+    Task<Expected<void, std::errc>> writeBodyStream(BorrowedStream &body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(1, 0);
 #endif
         throw std::runtime_error("HTTP/2 not implemented yet");
     }
 
-    Task<Expected<void, std::errc>> readBodyStream(OStream &body) override {
+    Task<Expected<void, std::errc>> readBodyStream(BorrowedStream &body) override {
 #if CO_ASYNC_DEBUG
         checkPhase(-1, 0);
 #endif

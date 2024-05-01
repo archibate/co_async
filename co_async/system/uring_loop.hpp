@@ -1,4 +1,6 @@
+#pragma once
 
+#include <co_async/std.hpp>
 
 #ifdef __linux__
 #include <liburing.h>
@@ -7,13 +9,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
-#endif
-
-#pragma once
-
-#include <co_async/std.hpp>
-
-#ifdef __linux__
 #include <co_async/threading/basic_loop.hpp>
 #include <co_async/system/error_handling.hpp>
 #include <co_async/awaiter/task.hpp>

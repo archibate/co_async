@@ -1,5 +1,3 @@
-
-
 #ifdef __linux__
 #include <unistd.h>
 #include <termios.h>
@@ -14,27 +12,29 @@
 
 namespace co_async {
 
-inline void disableCanon(FileHandle &file) {
-    if (isatty(file.fileNo())) {
-        struct termios tc;
-        tcgetattr(file.fileNo(), &tc);
-        tc.c_lflag &= ~ICANON;
-        tc.c_lflag &= ~ECHO;
-        tcsetattr(file.fileNo(), TCSANOW, &tc);
+struct StdioStreamRaw : StreamRaw {
+    void disableTTYCanonAndEcho() {
+        if (isatty(mFileIn.fileNo())) {
+            struct termios tc;
+            tcgetattr(mFileIn.fileNo(), &tc);
+            tc.c_lflag &= ~ICANON;
+            tc.c_lflag &= ~ECHO;
+            tcsetattr(mFileIn.fileNo(), TCSANOW, &tc);
+        }
     }
-}
 
-struct StdioStreamRaw : virtual IOStreamRaw {
     explicit StdioStreamRaw(FileHandle &fileIn, FileHandle &fileOut)
         : mFileIn(fileIn),
           mFileOut(fileOut) {}
 
-    Task<std::size_t> raw_read(std::span<char> buffer) override {
-        co_return (co_await fs_read(mFileIn, buffer)).value_or(0);
+    Task<Expected<std::size_t, std::errc>>
+    raw_read(std::span<char> buffer) override {
+        co_return co_await fs_read(mFileIn, buffer);
     }
 
-    Task<std::size_t> raw_write(std::span<char const> buffer) override {
-        co_return (co_await fs_write(mFileOut, buffer)).value_or(0);
+    Task<Expected<std::size_t, std::errc>>
+    raw_write(std::span<char const> buffer) override {
+        co_return co_await fs_write(mFileOut, buffer);
     }
 
     FileHandle &in() const noexcept {
@@ -50,17 +50,15 @@ private:
     FileHandle &mFileOut;
 };
 
-using StdioStream = IOStreamImpl<StdioStreamRaw>;
-
 template <int fileNo>
-inline FileHandle &stdHandle() {
+inline FileHandle &stdFileHandle() {
     static FileHandle h(fileNo);
     return h;
 }
 
-inline StdioStream &stdio() {
-    static thread_local StdioStream s(stdHandle<STDIN_FILENO>(),
-                                      stdHandle<STDOUT_FILENO>());
+inline OwningStream &stdio() {
+    static thread_local OwningStream s = make_stream<StdioStreamRaw>(
+        stdFileHandle<STDIN_FILENO>(), stdFileHandle<STDOUT_FILENO>());
     return s;
 }
 

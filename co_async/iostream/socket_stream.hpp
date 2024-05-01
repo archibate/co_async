@@ -8,13 +8,15 @@
 
 namespace co_async {
 
-struct SocketStreamRaw : virtual IOStreamRaw {
-    Task<std::size_t> raw_read(std::span<char> buffer) override {
-        co_return (co_await socket_read(mFile, buffer, mTimeout)).value_or(0);
+struct SocketStreamRaw : StreamRaw {
+    Task<Expected<std::size_t, std::errc>>
+    raw_read(std::span<char> buffer) override {
+        co_return co_await socket_read(mFile, buffer, mTimeout);
     }
 
-    Task<std::size_t> raw_write(std::span<char const> buffer) override {
-        co_return (co_await socket_write(mFile, buffer, mTimeout)).value_or(0);
+    Task<Expected<std::size_t, std::errc>>
+    raw_write(std::span<char const> buffer) override {
+        co_return co_await socket_write(mFile, buffer, mTimeout);
     }
 
     SocketHandle release() noexcept {
@@ -36,17 +38,22 @@ private:
     std::chrono::nanoseconds mTimeout = std::chrono::seconds(10);
 };
 
-struct SocketStream : IOStreamImpl<SocketStreamRaw> {
-    using IOStreamImpl<SocketStreamRaw>::IOStreamImpl;
+inline Task<Expected<OwningStream, std::errc>>
+tcp_connect(char const *host, int port, std::string_view proxy,
+        std::chrono::nanoseconds timeout) {
+    auto handle =
+        co_await co_await socket_proxy_connect(host, port, proxy, timeout);
+    OwningStream sock = make_stream<SocketStreamRaw>(std::move(handle));
+    sock.timeout(timeout);
+    co_return sock;
+}
 
-    static Task<Expected<SocketStream, std::errc>> connect(char const *host, int port,
-                                      std::string_view proxy,
-                                      std::chrono::nanoseconds timeout) {
-        auto conn = co_await co_await socket_proxy_connect(host, port, proxy, timeout);
-        SocketStream sock(std::move(conn));
-        sock.raw_timeout(timeout);
-        co_return sock;
-    }
-};
+inline Task<Expected<OwningStream, std::errc>>
+tcp_accept(SocketListener &listener, std::chrono::nanoseconds timeout) {
+    auto handle = co_await co_await listener_accept(listener);
+    OwningStream sock = make_stream<SocketStreamRaw>(std::move(handle));
+    sock.timeout(timeout);
+    co_return sock;
+}
 
 } // namespace co_async

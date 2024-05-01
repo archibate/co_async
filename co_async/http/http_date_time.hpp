@@ -6,7 +6,8 @@
 namespace co_async {
 
 // format chrono time point into HTTP date format, e.g.: Tue, 30 Apr 2024 07:31:38 GMT
-inline std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
+inline std::string
+timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
     std::time_t time = std::chrono::system_clock::to_time_t(tp);
     std::tm tm = *std::gmtime(&time);
     std::ostringstream ss;
@@ -15,7 +16,8 @@ inline std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp)
     return ss.str();
 }
 
-inline Expected<std::chrono::system_clock::time_point> httpDateToTimePoint(std::string const &date) {
+inline Expected<std::chrono::system_clock::time_point>
+httpDateToTimePoint(std::string const &date) {
     std::tm tm = {};
     std::istringstream ss(date);
     ss.imbue(std::locale::classic());
@@ -36,5 +38,4 @@ inline std::string httpDateNow() {
     return ss.str();
 }
 
-
-}
+} // namespace co_async

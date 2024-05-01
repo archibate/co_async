@@ -8,11 +8,13 @@
 namespace co_async {
 
 struct FileStreamRaw : StreamRaw {
-    Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_read(std::span<char> buffer) override {
         co_return co_await fs_read(mFile, buffer);
     }
 
-    Task<Expected<std::size_t, std::errc>> raw_write(std::span<char const> buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_write(std::span<char const> buffer) override {
         co_return co_await fs_write(mFile, buffer);
     }
 
@@ -34,23 +36,27 @@ private:
     FileHandle mFile;
 };
 
-static Task<Expected<OwningStream, std::errc>> file_open(std::filesystem::path path, OpenMode mode) {
+static Task<Expected<OwningStream, std::errc>>
+file_open(std::filesystem::path path, OpenMode mode) {
     co_return make_stream<FileStreamRaw>(co_await co_await fs_open(path, mode));
 }
 
-inline Task<Expected<std::string, std::errc>> file_read(std::filesystem::path path) {
+inline Task<Expected<std::string, std::errc>>
+file_read(std::filesystem::path path) {
     auto file = co_await co_await file_open(path, OpenMode::Read);
     co_return co_await file.getall();
 }
 
-inline Task<Expected<void, std::errc>> file_write(std::filesystem::path path, std::string_view content) {
+inline Task<Expected<void, std::errc>> file_write(std::filesystem::path path,
+                                                  std::string_view content) {
     auto file = co_await co_await file_open(path, OpenMode::Write);
     co_await co_await file.puts(content);
     co_await co_await file.flush();
     co_return {};
 }
 
-inline Task<Expected<void, std::errc>> file_append(std::filesystem::path path, std::string_view content) {
+inline Task<Expected<void, std::errc>> file_append(std::filesystem::path path,
+                                                   std::string_view content) {
     auto file = co_await co_await file_open(path, OpenMode::Append);
     co_await co_await file.puts(content);
     co_await co_await file.flush();

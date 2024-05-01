@@ -67,10 +67,11 @@ private:
                 "http/1.1",
             };
             auto sock = make_stream<SSLClientSocketStreamRaw>(
-                co_await co_await ssl_connect(
-                    mHost.c_str(), mPort, gTrustAnchors, protocols, mProxy,
-                    mTimeout));
-            if (sock.raw<SSLClientSocketStreamRaw>().ssl_get_selected_protocol() ==
+                co_await co_await ssl_connect(mHost.c_str(), mPort,
+                                              gTrustAnchors, protocols, mProxy,
+                                              mTimeout));
+            if (sock.raw<SSLClientSocketStreamRaw>()
+                    .ssl_get_selected_protocol() ==
                 "h2") { // todo: seems always false?
                 co_return std::make_unique<HTTPProtocolVersion2>(
                     std::move(sock));
@@ -86,7 +87,8 @@ private:
 
         Task<Expected<std::unique_ptr<HTTPProtocol>>>
         createConnection() override {
-            auto sock = co_await co_await tcp_connect(mHost.c_str(), mPort, mProxy, mTimeout);
+            auto sock = co_await co_await tcp_connect(mHost.c_str(), mPort,
+                                                      mProxy, mTimeout);
             co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
         }
     };
@@ -252,7 +254,8 @@ public:
 
     Task<Expected<void, std::errc>> request(HTTPRequest req,
                                             std::string_view in,
-                                            HTTPResponse &res, BorrowedStream &out) {
+                                            HTTPResponse &res,
+                                            BorrowedStream &out) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
@@ -262,8 +265,9 @@ public:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>>
-    request(HTTPRequest req, BorrowedStream &in, HTTPResponse &res, std::string &out) {
+    Task<Expected<void, std::errc>> request(HTTPRequest req, BorrowedStream &in,
+                                            HTTPResponse &res,
+                                            std::string &out) {
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBodyStream(req, in);
         co_await co_await mHttp->readResponse(res);
@@ -273,7 +277,8 @@ public:
     }
 
     Task<Expected<void, std::errc>> request(HTTPRequest req, BorrowedStream &in,
-                                            HTTPResponse &res, BorrowedStream &out) {
+                                            HTTPResponse &res,
+                                            BorrowedStream &out) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBodyStream(req, in);

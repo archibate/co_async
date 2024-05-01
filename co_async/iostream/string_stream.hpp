@@ -14,7 +14,8 @@ struct IStringStreamRaw : StreamRaw {
         : mStringView(strView),
           mPosition(0) {}
 
-    Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_read(std::span<char> buffer) override {
         std::size_t size =
             std::min(buffer.size(), mStringView.size() - mPosition);
         std::copy_n(mStringView.begin() + mPosition, size, buffer.begin());
@@ -36,10 +37,10 @@ private:
 };
 
 struct OStringStreamRaw : StreamRaw {
-    OStringStreamRaw(std::string &output) noexcept
-        : mOutput(output) {}
+    OStringStreamRaw(std::string &output) noexcept : mOutput(output) {}
 
-    Task<Expected<std::size_t, std::errc>> raw_write(std::span<char const> buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_write(std::span<char const> buffer) override {
         mOutput.append(buffer.data(), buffer.size());
         co_return buffer.size();
     }

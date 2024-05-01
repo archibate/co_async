@@ -35,12 +35,14 @@ struct WaitProcessResult {
     } exitType;
 };
 
-inline Task<Expected<void, std::errc>> kill_process(Pid pid, int sig = SIGKILL) {
+inline Task<Expected<void, std::errc>> kill_process(Pid pid,
+                                                    int sig = SIGKILL) {
     co_await expectError(kill(pid, sig));
     co_return {};
 }
 
-inline Task<Expected<WaitProcessResult, std::errc>> wait_process(Pid pid, int options = WEXITED) {
+inline Task<Expected<WaitProcessResult, std::errc>>
+wait_process(Pid pid, int options = WEXITED) {
     siginfo_t info{};
     co_await expectError(co_await uring_waitid(P_PID, pid, &info, options, 0));
     co_return WaitProcessResult{
@@ -54,7 +56,8 @@ inline Task<Expected<WaitProcessResult, std::errc>>
 wait_process(Pid pid, std::chrono::nanoseconds timeout, int options = WEXITED) {
     siginfo_t info{};
     auto ts = durationToKernelTimespec(timeout);
-    auto ret = expectError(co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0),
+    auto ret = expectError(
+        co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0),
                             uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
     if (ret == std::errc::operation_canceled) {
         co_return Unexpected{std::errc::timed_out};
@@ -99,7 +102,8 @@ struct ProcessBuilder {
     }
 
     ProcessBuilder &open(int fd, int ourFd) {
-        throwingError(posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd));
+        throwingError(
+            posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd));
         return *this;
     }
 

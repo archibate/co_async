@@ -96,7 +96,10 @@ when_any(std::vector<T, Alloc> const &tasks) {
     Alloc alloc = tasks.get_allocator();
     Uninitialized<typename AwaitableTraits<T>::RetType> result;
     {
-        std::vector<ReturnPreviousTask, typename std::allocator_traits<Alloc>::template rebind_alloc<ReturnPreviousTask>> taskArray(alloc);
+        std::vector<ReturnPreviousTask,
+                    typename std::allocator_traits<
+                        Alloc>::template rebind_alloc<ReturnPreviousTask>>
+            taskArray(alloc);
         taskArray.reserve(tasks.size());
         for (auto &task: tasks) {
             taskArray.push_back(whenAllHelper(task, control, result));

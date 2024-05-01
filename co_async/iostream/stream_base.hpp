@@ -9,8 +9,7 @@ namespace co_async {
 inline constexpr std::size_t kStreamBufferSize = 8192;
 
 struct StreamRaw {
-    virtual void raw_timeout(std::chrono::nanoseconds timeout) {
-    }
+    virtual void raw_timeout(std::chrono::nanoseconds timeout) {}
 
     virtual Task<Expected<void, std::errc>> raw_seek(std::uint64_t pos) {
         co_return Unexpected{std::errc::invalid_seek};
@@ -24,11 +23,13 @@ struct StreamRaw {
         co_return;
     }
 
-    virtual Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) {
+    virtual Task<Expected<std::size_t, std::errc>>
+    raw_read(std::span<char> buffer) {
         co_return Unexpected{std::errc::not_supported};
     }
 
-    virtual Task<Expected<std::size_t, std::errc>> raw_write(std::span<char const> buffer) {
+    virtual Task<Expected<std::size_t, std::errc>>
+    raw_write(std::span<char const> buffer) {
         co_return Unexpected{std::errc::not_supported};
     }
 
@@ -39,6 +40,7 @@ struct StreamRaw {
 
 struct BorrowedStream {
     BorrowedStream() : mRaw() {}
+
     explicit BorrowedStream(StreamRaw *raw) : mRaw(raw) {}
 
     virtual ~BorrowedStream() = default;
@@ -85,27 +87,10 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<void, std::errc>> getline(std::string &s, std::string_view eol) {
-        again:
-            co_await co_await getline(s, eol.front());
-            for (std::size_t i = 1; i < eol.size(); ++i) {
-                if (bufempty()) {
-                    co_await co_await fillbuf();
-                }
-                char c = mInBuffer[mInIndex];
-                if (eol[i] == c) [[likely]] {
-                    ++mInIndex;
-                } else {
-                    s.append(eol.data(), i);
-                    goto again;
-                }
-            }
-            co_return {};
-    }
-
-    Task<Expected<void, std::errc>> dropline(std::string_view eol) {
-        again:
-            co_await co_await dropline(eol.front());
+    Task<Expected<void, std::errc>> getline(std::string &s,
+                                            std::string_view eol) {
+    again:
+        co_await co_await getline(s, eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
             if (bufempty()) {
                 co_await co_await fillbuf();
@@ -114,11 +99,28 @@ struct BorrowedStream {
             if (eol[i] == c) [[likely]] {
                 ++mInIndex;
             } else {
-                    goto again;
-                }
+                s.append(eol.data(), i);
+                goto again;
+            }
         }
         co_return {};
+    }
 
+    Task<Expected<void, std::errc>> dropline(std::string_view eol) {
+    again:
+        co_await co_await dropline(eol.front());
+        for (std::size_t i = 1; i < eol.size(); ++i) {
+            if (bufempty()) {
+                co_await co_await fillbuf();
+            }
+            char c = mInBuffer[mInIndex];
+            if (eol[i] == c) [[likely]] {
+                ++mInIndex;
+            } else {
+                goto again;
+            }
+        }
+        co_return {};
     }
 
     Task<Expected<std::string, std::errc>> getline(char eol) {
@@ -140,7 +142,8 @@ struct BorrowedStream {
         while (true) {
             auto end = start + n;
             if (end <= mInEnd) {
-                p = std::copy(mInBuffer.get() + start, mInBuffer.get() + end, p);
+                p = std::copy(mInBuffer.get() + start, mInBuffer.get() + end,
+                              p);
                 mInIndex = end;
                 co_return {};
             }
@@ -246,7 +249,8 @@ struct BorrowedStream {
             allocinbuf();
         }
         mInIndex = 0;
-        mInEnd = co_await co_await mRaw->raw_read(std::span(mInBuffer.get(), mInBufSize));
+        mInEnd = co_await co_await mRaw->raw_read(
+            std::span(mInBuffer.get(), mInBufSize));
         if (mInEnd == 0) [[unlikely]] {
             co_return Unexpected{std::errc::broken_pipe};
         }
@@ -319,7 +323,8 @@ struct BorrowedStream {
         if (mOutIndex) [[likely]] {
             auto buf = std::span(mOutBuffer.get(), mOutIndex);
             auto len = co_await mRaw->raw_write(buf);
-            while (len.has_value() && *len > 0 && *len != buf.size()) [[unlikely]] {
+            while (len.has_value() && *len > 0 && *len != buf.size())
+                [[unlikely]] {
                 buf = buf.subspan(*len);
                 len = co_await mRaw->raw_write(buf);
             }
@@ -395,11 +400,11 @@ private:
 };
 
 struct OwningStream : BorrowedStream {
-    explicit OwningStream()
-        : BorrowedStream(), mRawUnique() {}
+    explicit OwningStream() : BorrowedStream(), mRawUnique() {}
 
     explicit OwningStream(std::unique_ptr<StreamRaw> raw)
-        : BorrowedStream(raw.get()), mRawUnique(std::move(raw)) {}
+        : BorrowedStream(raw.get()),
+          mRawUnique(std::move(raw)) {}
 
     std::unique_ptr<StreamRaw> releaseraw() noexcept {
         return std::move(mRawUnique);
@@ -409,9 +414,10 @@ private:
     std::unique_ptr<StreamRaw> mRawUnique;
 };
 
-template <std::derived_from<StreamRaw> StreamRaw, class ...Args>
+template <std::derived_from<StreamRaw> StreamRaw, class... Args>
 OwningStream make_stream(Args &&...args) {
-    return OwningStream(std::make_unique<StreamRaw>(std::forward<Args>(args)...));
+    return OwningStream(
+        std::make_unique<StreamRaw>(std::forward<Args>(args)...));
 }
 
 } // namespace co_async

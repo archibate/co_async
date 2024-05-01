@@ -79,7 +79,8 @@ struct Uninitialized {
     void putValue(Ts &&...args) {
 #if CO_ASYNC_DEBUG
         if (mHasValue) [[unlikely]] {
-            throw std::logic_error("Uninitialized::putValue with value already exist");
+            throw std::logic_error(
+                "Uninitialized::putValue with value already exist");
         }
 #endif
         new (std::addressof(mValue)) T(std::forward<Ts>(args)...);

@@ -9,7 +9,8 @@
 namespace co_async {
 
 struct IPipeStreamRaw : StreamRaw {
-    Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_read(std::span<char> buffer) override {
         co_return co_await fs_read(mFile, buffer);
     }
 
@@ -32,7 +33,8 @@ private:
 };
 
 struct OPipeStreamRaw : StreamRaw {
-    Task<Expected<std::size_t, std::errc>> raw_write(std::span<char const> buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_write(std::span<char const> buffer) override {
         co_return co_await fs_write(mFile, buffer);
     }
 
@@ -56,7 +58,8 @@ private:
 
 inline Task<Expected<std::array<OwningStream, 2>, std::errc>> pipe_stream() {
     auto [r, w] = co_await co_await fs_pipe();
-    co_return std::array{make_stream<IPipeStreamRaw>(std::move(r)), make_stream<OPipeStreamRaw>(std::move(w))};
+    co_return std::array{make_stream<IPipeStreamRaw>(std::move(r)),
+                         make_stream<OPipeStreamRaw>(std::move(w))};
 }
 
 } // namespace co_async

@@ -199,7 +199,7 @@ inline auto co_synchronize(Task<T, P> task) {
 }
 
 template <class F, class... Args>
-    requires (Awaitable<std::invoke_result_t<F, Args...>>)
+    requires(Awaitable<std::invoke_result_t<F, Args...>>)
 inline auto co_bind(F &&f, Args &&...args) {
     return [](auto f) mutable -> std::invoke_result_t<F, Args...> {
         co_return co_await std::move(f)();

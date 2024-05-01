@@ -21,7 +21,8 @@ struct PipeHandlePair {
     FileHandle mWriter;
 
     std::array<OwningStream, 2> stream() {
-        return {make_stream<FileStreamRaw>(reader()), make_stream<FileStreamRaw>(writer())};
+        return {make_stream<FileStreamRaw>(reader()),
+                make_stream<FileStreamRaw>(writer())};
     }
 
     FileHandle reader() {
@@ -55,11 +56,13 @@ inline Task<Expected<PipeHandlePair, std::errc>> fs_pipe() {
     co_return PipeHandlePair{FileHandle(p[0]), FileHandle(p[1])};
 }
 
-inline Task<Expected<void, std::errc>> send_file(FileHandle &sock, FileHandle &&file) {
+inline Task<Expected<void, std::errc>> send_file(FileHandle &sock,
+                                                 FileHandle &&file) {
     auto [readPipe, writePipe] = co_await co_await fs_pipe();
     while (auto n = co_await co_await fs_splice(file, writePipe, 65536)) {
         std::size_t m;
-        while ((m = co_await co_await fs_splice(readPipe, sock, n)) < n) [[unlikely]] {
+        while ((m = co_await co_await fs_splice(readPipe, sock, n)) < n)
+            [[unlikely]] {
             n -= m;
         }
     }
@@ -69,11 +72,13 @@ inline Task<Expected<void, std::errc>> send_file(FileHandle &sock, FileHandle &&
     co_return {};
 }
 
-inline Task<Expected<void, std::errc>> recv_file(FileHandle &sock, FileHandle &&file) {
+inline Task<Expected<void, std::errc>> recv_file(FileHandle &sock,
+                                                 FileHandle &&file) {
     auto [readPipe, writePipe] = co_await co_await fs_pipe();
     while (auto n = co_await co_await fs_splice(sock, writePipe, 65536)) {
         std::size_t m;
-        while ((m = co_await co_await fs_splice(readPipe, file, n)) < n) [[unlikely]] {
+        while ((m = co_await co_await fs_splice(readPipe, file, n)) < n)
+            [[unlikely]] {
             n -= m;
         }
     }

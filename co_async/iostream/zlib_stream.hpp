@@ -32,7 +32,8 @@ public:
         deflateEnd(&mDeflate);
     }
 
-    Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> out_buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_read(std::span<char> out_buffer) override {
         if (mStream.bufempty()) {
             if (!co_await mStream.fillbuf()) [[unlikely]] {
                 co_return 0;
@@ -40,7 +41,8 @@ public:
         }
         auto bufSpan = mStream.peekbuf();
 
-        mDeflate.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(bufSpan.data()));
+        mDeflate.next_in =
+            reinterpret_cast<Bytef *>(const_cast<char *>(bufSpan.data()));
         mDeflate.avail_in = static_cast<unsigned int>(bufSpan.size());
 
         mDeflate.next_out = reinterpret_cast<Bytef *>(out_buffer.data());
@@ -51,8 +53,8 @@ public:
             int ret = deflate(&mDeflate, flush);
             if (ret == Z_STREAM_ERROR) {
 #if CO_ASYNC_DEBUG
-                std::cerr << "WARNING: deflate failed with error: " + to_string(mDeflate.msg) +
-                                 "\n";
+                std::cerr << "WARNING: deflate failed with error: " +
+                                 to_string(mDeflate.msg) + "\n";
 #endif
                 co_return 0;
             }

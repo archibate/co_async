@@ -178,7 +178,8 @@ inline std::string capitalizeHTTPHeader(std::string_view key) {
             result[0] -= 'a' - 'A';
         }
         for (std::size_t i = 1; i < result.size(); ++i) {
-            if (result[i - 1] == '-' && 'a' <= result[i] && result[i] <= 'z') [[likely]] {
+            if (result[i - 1] == '-' && 'a' <= result[i] && result[i] <= 'z')
+                [[likely]] {
                 result[i] -= 'a' - 'A';
             }
         }

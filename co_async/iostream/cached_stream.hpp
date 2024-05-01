@@ -14,7 +14,8 @@ struct CachedStreamRaw : StreamRaw {
         return mStream;
     }
 
-    Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t, std::errc>>
+    raw_read(std::span<char> buffer) override {
         if (mPos != mCache.size()) {
             auto n = std::min(mCache.size() - mPos, buffer.size());
             std::memcpy(buffer.data(), mCache.data() + mPos, n);

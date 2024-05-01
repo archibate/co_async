@@ -40,7 +40,7 @@ private:
 
 inline Task<Expected<OwningStream, std::errc>>
 tcp_connect(char const *host, int port, std::string_view proxy,
-        std::chrono::nanoseconds timeout) {
+            std::chrono::nanoseconds timeout) {
     auto handle =
         co_await co_await socket_proxy_connect(host, port, proxy, timeout);
     OwningStream sock = make_stream<SocketStreamRaw>(std::move(handle));

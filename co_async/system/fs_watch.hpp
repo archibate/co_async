@@ -37,12 +37,14 @@ struct FileWatch {
         OnReadFinished = IN_CLOSE_NOWRITE,
     };
 
-    FileWatch() : mStream(make_stream<FileStreamRaw>(FileHandle(throwingErrorErrno(inotify_init1(0))))) {}
+    FileWatch()
+        : mStream(make_stream<FileStreamRaw>(
+              FileHandle(throwingErrorErrno(inotify_init1(0))))) {}
 
     FileWatch &watch(std::filesystem::path path, FileEvent event,
                      bool recursive = false) {
-        int wd =
-            throwingErrorErrno(inotify_add_watch(mStream.raw<FileStreamRaw>().get().fileNo(), path.c_str(), event));
+        int wd = throwingErrorErrno(inotify_add_watch(
+            mStream.raw<FileStreamRaw>().get().fileNo(), path.c_str(), event));
         mWatches.emplace(wd, path);
         if (recursive && std::filesystem::is_directory(path)) {
             for (auto const &entry:
@@ -82,7 +84,8 @@ struct FileWatch {
 
 private:
     OwningStream mStream;
-    std::unique_ptr<struct inotify_event> mEventBuffer = std::make_unique<struct inotify_event>();
+    std::unique_ptr<struct inotify_event> mEventBuffer =
+        std::make_unique<struct inotify_event>();
     std::map<int, std::filesystem::path> mWatches;
 };
 

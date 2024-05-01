@@ -24,7 +24,8 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         } else {
             proxyHost.assign(proxy);
         }
-        auto sock = co_await co_await socket_connect({proxyHost.c_str(), proxyPort});
+        auto sock =
+            co_await co_await socket_connect({proxyHost.c_str(), proxyPort});
         auto hostName = std::string(host) + ":" + to_string(port);
         std::string header = "CONNECT " + hostName +
                              " HTTP/1.1\r\nHost: " + hostName +
@@ -46,7 +47,11 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
             n = co_await co_await socket_read(sock, outbuf, timeout);
             if (!n) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-                std::cerr << "WARNING: proxy server failed to establish connection: [" + response.substr(0, response.size() - outbuf.size()) + "]";
+                std::cerr << "WARNING: proxy server failed to establish "
+                             "connection: [" +
+                                 response.substr(0, response.size() -
+                                                        outbuf.size()) +
+                                 "]";
 #endif
                 co_return Unexpected{std::errc::connection_reset};
             }
@@ -55,9 +60,11 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         if (std::string_view(response).substr(8) != desiredResponse.substr(8))
             [[unlikely]] {
 #if CO_ASYNC_DEBUG
-                std::cerr << "WARNING: proxy server seems failed to establish connection: [" + response + "]";
+            std::cerr << "WARNING: proxy server seems failed to establish "
+                         "connection: [" +
+                             response + "]";
 #endif
-                co_return Unexpected{std::errc::connection_reset};
+            co_return Unexpected{std::errc::connection_reset};
         }
         co_return sock;
     } else {

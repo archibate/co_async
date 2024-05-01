@@ -86,7 +86,7 @@ struct [[nodiscard]] FutureToken {
 
     inline FutureReference<T> reference() const noexcept;
 
-    template <class ...Args>
+    template <class... Args>
     void set_value(Args &&...args) {
         auto coroutine = setComplete();
         mImpl->mValue.putValue(std::forward<Args>(args)...);

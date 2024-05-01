@@ -30,7 +30,8 @@ private:
     FileHandle mFile;
 };
 
-inline Task<Expected<std::string, std::errc>> directory_stream_next(BorrowedStream &stream) {
+inline Task<Expected<std::string, std::errc>>
+directory_stream_next(BorrowedStream &stream) {
     struct LinuxDirent64 {
         int64_t d_ino;           /* 64-bit inode number */
         int64_t d_off;           /* 64-bit offset to next structure */

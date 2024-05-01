@@ -270,7 +270,8 @@ private:
     std::string objName;
     std::vector<std::pair<std::string, std::string>> objs;
 
-    static void pemResultAppender(void *self, void const *buf, std::size_t len) {
+    static void pemResultAppender(void *self, void const *buf,
+                                  std::size_t len) {
         reinterpret_cast<SSLPemDecoder *>(self)->onResult(
             {reinterpret_cast<char const *>(buf), len});
     }
@@ -331,7 +332,8 @@ private:
         std::make_unique<br_x509_decoder_context>();
     std::string result;
 
-    static void x509ResultAppender(void *self, void const *buf, std::size_t len) {
+    static void x509ResultAppender(void *self, void const *buf,
+                                   std::size_t len) {
         reinterpret_cast<SSLX509Decoder *>(self)->onResult(
             {reinterpret_cast<char const *>(buf), len});
     }
@@ -491,7 +493,8 @@ protected:
                 std::size_t len, wlen;
 
                 buf = br_ssl_engine_sendrec_buf(eng, &len);
-                if (auto e = co_await raw.raw_write({(char const *)buf, len}); e && *e != 0) {
+                if (auto e = co_await raw.raw_write({(char const *)buf, len});
+                    e && *e != 0) {
                     wlen = *e;
                 } else {
                     if (!eng->shutdown_recv) [[unlikely]] {
@@ -524,7 +527,8 @@ protected:
                 std::size_t len, rlen;
 
                 buf = br_ssl_engine_recvrec_buf(eng, &len);
-                if (auto e = co_await raw.raw_read({(char *)buf, len}); e && *e != 0) {
+                if (auto e = co_await raw.raw_read({(char *)buf, len});
+                    e && *e != 0) {
                     rlen = *e;
                 } else {
                     if (!eng->shutdown_recv) [[unlikely]] {

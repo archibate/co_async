@@ -152,7 +152,8 @@ struct HTTPServer {
             /* "h2", */
             "http/1.1",
         };
-        auto sock = make_stream<SSLServerSocketStreamRaw>(std::move(handle), https.cert, https.skey, protocols, &https.cache);
+        auto sock = make_stream<SSLServerSocketStreamRaw>(
+            std::move(handle), https.cert, https.skey, protocols, &https.cache);
         sock.timeout(mTimeout);
         if (auto peek = co_await sock.peekn(2); peek && *peek == "h2"sv) {
             co_return std::make_unique<HTTPProtocolVersion2>(std::move(sock));
@@ -199,7 +200,8 @@ struct HTTPServer {
         co_return {};
     }
 
-    Task<Expected<>> handle_https(SocketHandle handle, SSLServerState &https) const {
+    Task<Expected<>> handle_https(SocketHandle handle,
+                                  SSLServerState &https) const {
         /* int h = handle.fileNo(); */
         co_await co_await doHandleConnection(
             co_await prepareHTTPS(std::move(handle), https));
@@ -216,13 +218,14 @@ struct HTTPServer {
 #if CO_ASYNC_DEBUG
             std::chrono::high_resolution_clock::time_point t0;
             if (mLogRequests) {
-                std::clog << io.request.method + ' ' + io.request.uri.dump() + '\n';
+                std::clog << io.request.method + ' ' + io.request.uri.dump() +
+                                 '\n';
                 for (auto [k, v]: io.request.headers) {
                     if (k == "cookie" || k == "set-cookie") {
                         v = "***";
                     }
-                    std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
-                        '\n';
+                    std::clog
+                        << "      " + capitalizeHTTPHeader(k) + ": " + v + '\n';
                 }
                 t0 = std::chrono::high_resolution_clock::now();
             }
@@ -231,22 +234,23 @@ struct HTTPServer {
 #if CO_ASYNC_DEBUG
             if (mLogRequests) {
                 auto dt = std::chrono::high_resolution_clock::now() - t0;
-                std::clog << io.request.method + ' ' + io.request.uri.dump() + ' ' +
-                    std::to_string(io.mResponseSavedForDebug.status) +
-                    ' ' +
-                    std::string(getHTTPStatusName(
-                        io.mResponseSavedForDebug.status)) +
-                    ' ' +
-                    std::to_string(std::chrono::duration_cast<
-                                   std::chrono::milliseconds>(dt)
-                                   .count()) +
-                    "ms\n";
+                std::clog
+                    << io.request.method + ' ' + io.request.uri.dump() + ' ' +
+                           std::to_string(io.mResponseSavedForDebug.status) +
+                           ' ' +
+                           std::string(getHTTPStatusName(
+                               io.mResponseSavedForDebug.status)) +
+                           ' ' +
+                           std::to_string(std::chrono::duration_cast<
+                                              std::chrono::milliseconds>(dt)
+                                              .count()) +
+                           "ms\n";
                 for (auto [k, v]: io.mResponseSavedForDebug.headers) {
                     if (k == "cookie" || k == "set-cookie") {
                         v = "***";
                     }
-                    std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
-                        '\n';
+                    std::clog
+                        << "      " + capitalizeHTTPHeader(k) + ": " + v + '\n';
                 }
             }
 #endif

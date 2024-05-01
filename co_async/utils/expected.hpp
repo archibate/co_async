@@ -26,7 +26,8 @@ struct UnexpectedTraits<bool> {
 template <>
 struct UnexpectedTraits<std::errc> {
     static void throw_error(std::errc const &error) {
-        throw std::system_error(static_cast<int>(error), std::system_category());
+        throw std::system_error(static_cast<int>(error),
+                                std::system_category());
     }
 
     using inplace_storable = std::true_type;
@@ -100,7 +101,8 @@ private:
     template <class, class>
     friend struct Expected;
 
-    explicit Unexpected(std::in_place_type_t<void>) noexcept : mHasError(false) {}
+    explicit Unexpected(std::in_place_type_t<void>) noexcept
+        : mHasError(false) {}
 
 public:
     bool has_error() const noexcept {
@@ -111,14 +113,13 @@ public:
         UnexpectedTraits<void>::throw_error();
     }
 
-    void error() const noexcept {
-    }
+    void error() const noexcept {}
 
-    explicit Unexpected() noexcept : mHasError(true) {
-    }
+    explicit Unexpected() noexcept : mHasError(true) {}
 };
 
-template <class E> requires (UnexpectedTraits<E>::inplace_storable::value)
+template <class E>
+    requires(UnexpectedTraits<E>::inplace_storable::value)
 struct [[nodiscard]] Unexpected<E> {
 private:
     E mError;
@@ -188,8 +189,7 @@ public:
         mValue.putValue(std::move(value));
     }
 
-    Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {
-    }
+    Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {}
 
     Expected(Expected &&that) noexcept : mError(that.mError) {
         if (has_value()) {
@@ -197,8 +197,11 @@ public:
         }
     }
 
-    template <class U> requires (!std::same_as<T, U> && (std::convertible_to<U, T> || std::constructible_from<T, U>))
-    explicit(!std::convertible_to<U, T>) Expected(Expected<U, E> that) noexcept : mError(that.mError) {
+    template <class U>
+        requires(!std::same_as<T, U> &&
+                 (std::convertible_to<U, T> || std::constructible_from<T, U>))
+    explicit(!std::convertible_to<U, T>) Expected(Expected<U, E> that) noexcept
+        : mError(that.mError) {
         if (has_value()) {
             mValue.putValue(std::move(that.mValue.refValue()));
         }
@@ -226,7 +229,8 @@ public:
         return mError.has_error();
     }
 
-    template <std::equality_comparable_with<E> U> requires (!std::equality_comparable_with<U, T>)
+    template <std::equality_comparable_with<E> U>
+        requires(!std::equality_comparable_with<U, T>)
     bool operator==(U const &e) const {
         return mError.has_error() && mError.error() == e;
     }
@@ -265,7 +269,8 @@ public:
         return mValue.refValue();
     }
 
-    template <class ...Ts> requires std::constructible_from<T, Ts...>
+    template <class... Ts>
+        requires std::constructible_from<T, Ts...>
     T value_or(Ts &&...ts) const & {
         if (mError.has_error()) {
             return T(std::forward<Ts>(ts)...);
@@ -273,7 +278,8 @@ public:
         return operator*();
     }
 
-    template <class ...Ts> requires std::constructible_from<T, Ts...>
+    template <class... Ts>
+        requires std::constructible_from<T, Ts...>
     T value_or(Ts &&...ts) && {
         if (mError.has_error()) {
             return T(std::forward<Ts>(ts)...);
@@ -340,17 +346,15 @@ private:
     friend struct Expected;
 
 public:
-    Expected() : mError(std::in_place_type<void>) {
-    }
+    Expected() : mError(std::in_place_type<void>) {}
 
     Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {}
 
-    Expected(Expected &&that) noexcept : mError(that.mError) {
-    }
+    Expected(Expected &&that) noexcept : mError(that.mError) {}
 
-    template <class U> requires (!std::is_void_v<U>)
-    Expected(Expected<U, E> that) noexcept : mError(that.mError) {
-    }
+    template <class U>
+        requires(!std::is_void_v<U>)
+    Expected(Expected<U, E> that) noexcept : mError(that.mError) {}
 
     Expected &operator=(Expected &&that) noexcept {
         if (&that != this) [[likely]] {
@@ -382,8 +386,7 @@ public:
         }
     }
 
-    void value_or() const {
-    }
+    void value_or() const {}
 
     void operator*() const {
 #if CO_ASYNC_DEBUG
@@ -398,7 +401,8 @@ public:
 #if CO_ASYNC_DEBUG
         if constexpr (!UnexpectedTraits<E>::inplace_storable::value) {
             if (!mError.has_error()) [[unlikely]] {
-                throw std::logic_error("Expected: no error but error() is called");
+                throw std::logic_error(
+                    "Expected: no error but error() is called");
             }
         }
 #endif

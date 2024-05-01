@@ -211,8 +211,8 @@ struct TaskAwaiter {
         return coroutine.promise().result();
     }
 
-    explicit TaskAwaiter(std::coroutine_handle<P> coroutine) : mCoroutine(coroutine) {
-    }
+    explicit TaskAwaiter(std::coroutine_handle<P> coroutine)
+        : mCoroutine(coroutine) {}
 
     TaskAwaiter(TaskAwaiter &&) = delete;
 
@@ -259,17 +259,17 @@ struct [[nodiscard("did you forgot to co_await?")]] Task {
     ~Task() {
         if (!mCoroutine)
             return;
-//#if CO_ASYNC_DEBUG
+        //#if CO_ASYNC_DEBUG
         //if (!mCoroutine.done()) [[unlikely]] {
-//#if CO_ASYNC_PERF
-            //auto &perf = mCoroutine.promise().mPerf;
-            //std::cerr << "warning: task (" << perf.file << ":" << perf.line
-                      //<< ") destroyed undone\n";
-//#else
-            //std::cerr << "warning: task destroyed undone\n";
-//#endif
+        //#if CO_ASYNC_PERF
+        //auto &perf = mCoroutine.promise().mPerf;
+        //std::cerr << "warning: task (" << perf.file << ":" << perf.line
+        //<< ") destroyed undone\n";
+        //#else
+        //std::cerr << "warning: task destroyed undone\n";
+        //#endif
         //}
-//#endif
+        //#endif
         mCoroutine.destroy();
     }
 

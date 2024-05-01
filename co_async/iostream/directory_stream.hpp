@@ -12,7 +12,7 @@
 
 namespace co_async {
 
-struct DirectoryStreamRaw : StreamRaw {
+struct DirectoryStream : Stream {
     Task<Expected<std::size_t, std::errc>> raw_read(std::span<char> buffer) {
         co_return co_await fs_getdents(mFile, buffer);
     }
@@ -25,14 +25,14 @@ struct DirectoryStreamRaw : StreamRaw {
         return mFile;
     }
 
-    explicit DirectoryStreamRaw(FileHandle file) : mFile(std::move(file)) {}
+    explicit DirectoryStream(FileHandle file) : mFile(std::move(file)) {}
 
 private:
     FileHandle mFile;
 };
 
 struct DirectoryWalker {
-    explicit DirectoryWalker(FileHandle file) : mStream(make_stream<DirectoryStreamRaw>(std::move(file))) {}
+    explicit DirectoryWalker(FileHandle file) : mStream(make_stream<DirectoryStream>(std::move(file))) {}
 
     Task<Expected<std::string, std::errc>> next() {
         struct LinuxDirent64 {

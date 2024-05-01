@@ -38,7 +38,7 @@ struct FileWatch {
     };
 
     FileWatch()
-        : mFile(throwingErrorErrno(inotify_init1(0))), mStream(make_stream<FileStreamRaw>(FileHandle(mFile))) {}
+        : mFile(throwingErrorErrno(inotify_init1(0))), mStream(make_stream<FileStream>(FileHandle(mFile))) {}
 
     int add(std::filesystem::path const &path, FileEvent event) {
         int wd = throwingErrorErrno(inotify_add_watch(mFile, path.c_str(), event));

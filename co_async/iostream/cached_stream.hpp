@@ -7,8 +7,8 @@
 
 namespace co_async {
 
-struct CachedStreamRaw : StreamRaw {
-    explicit CachedStreamRaw(BorrowedStream &stream) : mStream(stream) {}
+struct CachedStream : Stream {
+    explicit CachedStream(BorrowedStream &stream) : mStream(stream) {}
 
     BorrowedStream &base() const noexcept {
         return mStream;

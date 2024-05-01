@@ -152,7 +152,7 @@ struct HTTPServer {
             /* "h2", */
             "http/1.1",
         };
-        auto sock = make_stream<SSLServerSocketStreamRaw>(
+        auto sock = make_stream<SSLServerSocketStream>(
             std::move(handle), https.cert, https.skey, protocols, &https.cache);
         sock.timeout(mTimeout);
         if (auto peek = co_await sock.peekn(2); peek && *peek == "h2"sv) {
@@ -162,7 +162,7 @@ struct HTTPServer {
     }
 
     Task<std::unique_ptr<HTTPProtocol>> prepareHTTP(SocketHandle handle) const {
-        auto sock = make_stream<SocketStreamRaw>(std::move(handle));
+        auto sock = make_stream<SocketStream>(std::move(handle));
         sock.timeout(mTimeout);
         co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
     }

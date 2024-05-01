@@ -8,7 +8,7 @@ namespace co_async {
 
 inline constexpr std::size_t kStreamBufferSize = 8192;
 
-struct StreamRaw {
+struct Stream {
     virtual void raw_timeout(std::chrono::nanoseconds timeout) {}
 
     virtual Task<Expected<void, std::errc>> raw_seek(std::uint64_t pos) {
@@ -33,15 +33,15 @@ struct StreamRaw {
         co_return Unexpected{std::errc::not_supported};
     }
 
-    StreamRaw &operator=(StreamRaw &&) = delete;
+    Stream &operator=(Stream &&) = delete;
 
-    virtual ~StreamRaw() = default;
+    virtual ~Stream() = default;
 };
 
 struct BorrowedStream {
     BorrowedStream() : mRaw() {}
 
-    explicit BorrowedStream(StreamRaw *raw) : mRaw(raw) {}
+    explicit BorrowedStream(Stream *raw) : mRaw(raw) {}
 
     virtual ~BorrowedStream() = default;
 
@@ -343,13 +343,13 @@ struct BorrowedStream {
         return mOutIndex == mOutBufSize;
     }
 
-    StreamRaw &raw() const noexcept {
+    Stream &raw() const noexcept {
         return *mRaw;
     }
 
-    template <std::derived_from<StreamRaw> DerivedRaw>
-    DerivedRaw &raw() const {
-        return dynamic_cast<DerivedRaw &>(*mRaw);
+    template <std::derived_from<Stream> Derived>
+    Derived &raw() const {
+        return dynamic_cast<Derived &>(*mRaw);
     }
 
     Task<> close() {
@@ -395,28 +395,28 @@ private:
     std::unique_ptr<char[]> mOutBuffer;
     std::size_t mOutIndex = 0;
     std::size_t mOutBufSize = 0;
-    StreamRaw *mRaw;
+    Stream *mRaw;
 };
 
 struct OwningStream : BorrowedStream {
     explicit OwningStream() : BorrowedStream(), mRawUnique() {}
 
-    explicit OwningStream(std::unique_ptr<StreamRaw> raw)
+    explicit OwningStream(std::unique_ptr<Stream> raw)
         : BorrowedStream(raw.get()),
           mRawUnique(std::move(raw)) {}
 
-    std::unique_ptr<StreamRaw> releaseraw() noexcept {
+    std::unique_ptr<Stream> releaseraw() noexcept {
         return std::move(mRawUnique);
     }
 
 private:
-    std::unique_ptr<StreamRaw> mRawUnique;
+    std::unique_ptr<Stream> mRawUnique;
 };
 
-template <std::derived_from<StreamRaw> StreamRaw, class... Args>
+template <std::derived_from<Stream> Stream, class... Args>
 OwningStream make_stream(Args &&...args) {
     return OwningStream(
-        std::make_unique<StreamRaw>(std::forward<Args>(args)...));
+        std::make_unique<Stream>(std::forward<Args>(args)...));
 }
 
 } // namespace co_async

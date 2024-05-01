@@ -12,7 +12,7 @@
 
 namespace co_async {
 
-struct StdioStreamRaw : StreamRaw {
+struct StdioStream : Stream {
     void disableTTYCanonAndEcho() {
         if (isatty(mFileIn.fileNo())) {
             struct termios tc;
@@ -23,7 +23,7 @@ struct StdioStreamRaw : StreamRaw {
         }
     }
 
-    explicit StdioStreamRaw(FileHandle &fileIn, FileHandle &fileOut)
+    explicit StdioStream(FileHandle &fileIn, FileHandle &fileOut)
         : mFileIn(fileIn),
           mFileOut(fileOut) {}
 
@@ -57,7 +57,7 @@ inline FileHandle &stdFileHandle() {
 }
 
 inline OwningStream &stdio() {
-    static thread_local OwningStream s = make_stream<StdioStreamRaw>(
+    static thread_local OwningStream s = make_stream<StdioStream>(
         stdFileHandle<STDIN_FILENO>(), stdFileHandle<STDOUT_FILENO>());
     return s;
 }

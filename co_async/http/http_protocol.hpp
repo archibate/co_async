@@ -233,7 +233,7 @@ public:
                 co_await co_await sock.puts("\r\n0\r\n\r\n"sv);
             } break;
             default: {
-                auto is = make_stream<IStringStreamRaw>(body);
+                auto is = make_stream<IStringStream>(body);
                 co_await co_await writeBodyStream(is);
             } break;
             }
@@ -314,7 +314,7 @@ public:
             }
         } break;
         default: {
-            auto os = make_stream<OStringStreamRaw>(body);
+            auto os = make_stream<OStringStream>(body);
             co_await co_await readBodyStream(os);
         } break;
         };

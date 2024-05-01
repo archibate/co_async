@@ -8,7 +8,7 @@
 
 namespace co_async {
 
-struct SocketStreamRaw : StreamRaw {
+struct SocketStream : Stream {
     Task<Expected<std::size_t, std::errc>>
     raw_read(std::span<char> buffer) override {
         co_return co_await socket_read(mFile, buffer, mTimeout);
@@ -27,7 +27,7 @@ struct SocketStreamRaw : StreamRaw {
         return mFile;
     }
 
-    explicit SocketStreamRaw(SocketHandle file) : mFile(std::move(file)) {}
+    explicit SocketStream(SocketHandle file) : mFile(std::move(file)) {}
 
     void raw_timeout(std::chrono::nanoseconds timeout) override {
         mTimeout = timeout;
@@ -43,7 +43,7 @@ tcp_connect(char const *host, int port, std::string_view proxy,
             std::chrono::nanoseconds timeout) {
     auto handle =
         co_await co_await socket_proxy_connect(host, port, proxy, timeout);
-    OwningStream sock = make_stream<SocketStreamRaw>(std::move(handle));
+    OwningStream sock = make_stream<SocketStream>(std::move(handle));
     sock.timeout(timeout);
     co_return sock;
 }
@@ -51,7 +51,7 @@ tcp_connect(char const *host, int port, std::string_view proxy,
 inline Task<Expected<OwningStream, std::errc>>
 tcp_accept(SocketListener &listener, std::chrono::nanoseconds timeout) {
     auto handle = co_await co_await listener_accept(listener);
-    OwningStream sock = make_stream<SocketStreamRaw>(std::move(handle));
+    OwningStream sock = make_stream<SocketStream>(std::move(handle));
     sock.timeout(timeout);
     co_return sock;
 }

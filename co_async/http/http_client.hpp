@@ -69,7 +69,7 @@ private:
             auto sock = co_await co_await ssl_connect(mHost.c_str(), mPort,
                                                       gTrustAnchors, protocols,
                                                       mProxy, mTimeout);
-            if (sock.raw<SSLClientSocketStreamRaw>()
+            if (sock.raw<SSLClientSocketStream>()
                     .ssl_get_selected_protocol() ==
                 "h2") { // todo: seems always false?
                 co_return std::make_unique<HTTPProtocolVersion2>(
@@ -161,7 +161,7 @@ private:
     Task<Expected<void, std::errc>>
     tryWriteRequestAndBodyStream(HTTPRequest const &request,
                                  BorrowedStream &bodyStream) {
-        auto cachedStream = make_stream<CachedStreamRaw>(bodyStream);
+        auto cachedStream = make_stream<CachedStream>(bodyStream);
         for (std::size_t n = 0; n < 3; ++n) {
             if (!mHttp) {
                 if (auto e = co_await mHttpFactory->createConnection())

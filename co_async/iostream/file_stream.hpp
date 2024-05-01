@@ -7,7 +7,7 @@
 
 namespace co_async {
 
-struct FileStreamRaw : StreamRaw {
+struct FileStream : Stream {
     Task<Expected<std::size_t, std::errc>>
     raw_read(std::span<char> buffer) override {
         co_return co_await fs_read(mFile, buffer);
@@ -30,7 +30,7 @@ struct FileStreamRaw : StreamRaw {
         return mFile;
     }
 
-    explicit FileStreamRaw(FileHandle file) : mFile(std::move(file)) {}
+    explicit FileStream(FileHandle file) : mFile(std::move(file)) {}
 
 private:
     FileHandle mFile;
@@ -38,7 +38,7 @@ private:
 
 static Task<Expected<OwningStream, std::errc>>
 file_open(std::filesystem::path path, OpenMode mode) {
-    co_return make_stream<FileStreamRaw>(co_await co_await fs_open(path, mode));
+    co_return make_stream<FileStream>(co_await co_await fs_open(path, mode));
 }
 
 inline Task<Expected<std::string, std::errc>>

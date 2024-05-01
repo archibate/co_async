@@ -458,15 +458,15 @@ struct SSLSessionCache {
     }
 };
 
-struct SSLSocketStreamRaw : StreamRaw {
+struct SSLSocketStream : Stream {
 private:
-    SocketStreamRaw raw;
+    SocketStream raw;
     br_ssl_engine_context *eng = nullptr;
     std::unique_ptr<char[]> iobuf =
         std::make_unique<char[]>(BR_SSL_BUFSIZE_BIDI);
 
 public:
-    explicit SSLSocketStreamRaw(SocketHandle file) : raw(std::move(file)) {}
+    explicit SSLSocketStream(SocketHandle file) : raw(std::move(file)) {}
 
 protected:
     void setEngine(br_ssl_engine_context *eng_) {
@@ -545,7 +545,7 @@ protected:
                 continue;
             }
 
-            /* br_ssl_engine_flush(eng, 0); // todo: really needed? */
+            /* br_ssl_engine_flush(eng, 0); */
         }
     }
 
@@ -607,25 +607,25 @@ public:
         raw.raw_timeout(timeout);
     }
 
-    /* ~SSLSocketStreamRaw() { */
+    /* ~SSLSocketStream() { */
     /*     if (eng) { */
     /*         br_ssl_engine_close(eng); */
     /*     } */
     /* } */
 };
 
-struct SSLServerSocketStreamRaw : SSLSocketStreamRaw {
+struct SSLServerSocketStream : SSLSocketStream {
 private:
     std::unique_ptr<br_ssl_server_context> ctx =
         std::make_unique<br_ssl_server_context>();
 
 public:
-    explicit SSLServerSocketStreamRaw(SocketHandle file,
+    explicit SSLServerSocketStream(SocketHandle file,
                                       SSLServerCertificate const &cert,
                                       SSLPrivateKey const &pkey,
                                       std::span<char const *const> protocols,
                                       SSLSessionCache *cache = nullptr)
-        : SSLSocketStreamRaw(std::move(file)) {
+        : SSLSocketStream(std::move(file)) {
         if (auto rsa = pkey.getRSA()) {
             br_ssl_server_init_full_rsa(ctx.get(), std::data(cert.certificates),
                                         std::size(cert.certificates), rsa);
@@ -647,7 +647,7 @@ public:
     }
 };
 
-struct SSLClientSocketStreamRaw : SSLSocketStreamRaw {
+struct SSLClientSocketStream : SSLSocketStream {
 private:
     std::unique_ptr<br_ssl_client_context> ctx =
         std::make_unique<br_ssl_client_context>();
@@ -655,11 +655,11 @@ private:
         std::make_unique<br_x509_minimal_context>();
 
 public:
-    explicit SSLClientSocketStreamRaw(SocketHandle file,
+    explicit SSLClientSocketStream(SocketHandle file,
                                       SSLClientTrustAnchor const &ta,
                                       char const *host,
                                       std::span<char const *const> protocols)
-        : SSLSocketStreamRaw(std::move(file)) {
+        : SSLSocketStream(std::move(file)) {
         br_ssl_client_init_full(ctx.get(), x509Ctx.get(),
                                 std::data(ta.trustAnchors),
                                 std::size(ta.trustAnchors));
@@ -688,7 +688,7 @@ ssl_connect(char const *host, int port, SSLClientTrustAnchor const &ta,
             std::chrono::nanoseconds timeout) {
     auto conn =
         co_await co_await socket_proxy_connect(host, port, proxy, timeout);
-    auto sock = make_stream<SSLClientSocketStreamRaw>(std::move(conn), ta, host,
+    auto sock = make_stream<SSLClientSocketStream>(std::move(conn), ta, host,
                                                       protocols);
     sock.timeout(timeout);
     co_return sock;

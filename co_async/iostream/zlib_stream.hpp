@@ -12,9 +12,9 @@
 
 namespace co_async {
 
-struct ZlibDecompressStreamRaw : StreamRaw {
+struct ZlibDecompressStream : Stream {
 public:
-    explicit ZlibDecompressStreamRaw(BorrowedStream &stream) : mStream(stream) {
+    explicit ZlibDecompressStream(BorrowedStream &stream) : mStream(stream) {
         int ret = deflateInit(&mDeflate, Z_DEFAULT_COMPRESSION);
         if (ret != Z_OK) {
             throw std::runtime_error("deflateInit failed with error code " +
@@ -26,9 +26,9 @@ public:
         return mStream;
     }
 
-    ZlibDecompressStreamRaw(ZlibDecompressStreamRaw &&) = delete;
+    ZlibDecompressStream(ZlibDecompressStream &&) = delete;
 
-    ~ZlibDecompressStreamRaw() {
+    ~ZlibDecompressStream() {
         deflateEnd(&mDeflate);
     }
 

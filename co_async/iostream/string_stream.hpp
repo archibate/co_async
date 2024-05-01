@@ -7,10 +7,10 @@
 
 namespace co_async {
 
-struct IStringStreamRaw : StreamRaw {
-    IStringStreamRaw() noexcept : mPosition(0) {}
+struct IStringStream : Stream {
+    IStringStream() noexcept : mPosition(0) {}
 
-    IStringStreamRaw(std::string_view strView)
+    IStringStream(std::string_view strView)
         : mStringView(strView),
           mPosition(0) {}
 
@@ -36,8 +36,8 @@ private:
     std::size_t mPosition;
 };
 
-struct OStringStreamRaw : StreamRaw {
-    OStringStreamRaw(std::string &output) noexcept : mOutput(output) {}
+struct OStringStream : Stream {
+    OStringStream(std::string &output) noexcept : mOutput(output) {}
 
     Task<Expected<std::size_t, std::errc>>
     raw_write(std::span<char const> buffer) override {

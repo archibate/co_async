@@ -36,9 +36,14 @@ private:
     FileHandle mFile;
 };
 
-static Task<Expected<OwningStream, std::errc>>
+inline Task<Expected<OwningStream, std::errc>>
 file_open(std::filesystem::path path, OpenMode mode) {
     co_return make_stream<FileStream>(co_await co_await fs_open(path, mode));
+}
+
+inline Expected<OwningStream, std::errc>
+file_from_handle(FileHandle handle) {
+    return make_stream<FileStream>(std::move(handle));
 }
 
 inline Task<Expected<std::string, std::errc>>

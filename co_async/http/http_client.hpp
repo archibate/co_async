@@ -69,8 +69,7 @@ private:
             auto sock = co_await co_await ssl_connect(mHost.c_str(), mPort,
                                                       gTrustAnchors, protocols,
                                                       mProxy, mTimeout);
-            if (sock.raw<SSLClientSocketStream>()
-                    .ssl_get_selected_protocol() ==
+            if (sock.raw<SSLClientSocketStream>().ssl_get_selected_protocol() ==
                 "h2") { // todo: seems always false?
                 co_return std::make_unique<HTTPProtocolVersion2>(
                     std::move(sock));
@@ -124,8 +123,7 @@ private:
         req.headers.insert("user-agent"s, "co_async/0.0.1"s);
         req.headers.insert("accept"s, "*/*"s);
 #if CO_ASYNC_ZLIB
-        req.headers.insert("accept-encoding"s,
-                           "gzip, compress, deflate, br, zstd"s);
+        req.headers.insert("accept-encoding"s, "gzip, deflate"s);
 #endif
     }
 
@@ -141,18 +139,11 @@ private:
                     continue;
                 }
             }
-            if (co_await mHttp->writeRequest(request)) {
-                if (co_await mHttp->writeBody(body)) {
-                    if (co_await mHttp->sock.peekchar()) {
-                        co_return {};
-                    }
-                }
+            if (co_await mHttp->writeRequest(request) &&
+                co_await mHttp->writeBody(body) &&
+                co_await mHttp->sock.peekchar()) [[likely]] {
+                co_return {};
             }
-            /* if (co_await mHttp->writeRequest(request) && */
-            /*     co_await mHttp->writeBody(body) && */
-            /*     co_await mHttp->sock->peekchar()) [[likely]] { */
-            /*     co_return {}; */
-            /* } */
             mHttp = nullptr;
         }
         co_return Unexpected{std::errc::connection_aborted};
@@ -267,6 +258,7 @@ public:
     Task<Expected<void, std::errc>> request(HTTPRequest req, BorrowedStream &in,
                                             HTTPResponse &res,
                                             std::string &out) {
+        builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBodyStream(req, in);
         co_await co_await mHttp->readResponse(res);
@@ -371,7 +363,7 @@ public:
           mFollowProxy(followProxy) {}
 
 private:
-    Expected<Expected<HTTPConnectionPtr, std::errc>>
+    std::optional<Expected<HTTPConnectionPtr, std::errc>>
     lookForFreeSlot(bool exactReuse, std::string_view host) /* MT-safe */ {
         for (auto &entry: mPool) {
             bool expected = false;
@@ -411,7 +403,7 @@ private:
                 return HTTPConnectionPtr(&entry, this);
             }
         }
-        return Unexpected{};
+        return std::nullopt;
     }
 
     void garbageCollect() /* MT-safe */ {

@@ -22,6 +22,10 @@
 #include <co_async/iostream/socket_stream.hpp>
 #include <co_async/iostream/cached_stream.hpp>
 #include <co_async/iostream/pipe_stream.hpp>
+#include <co_async/iostream/zlib_stream.hpp>
 #include <co_async/iostream/ssl_socket_stream.hpp>
 #include <co_async/iostream/directory_stream.hpp>
 #include <co_async/iostream/stream_base.hpp>
+#include <co_async/threading/future.hpp>
+#include <co_async/threading/future_group.hpp>
+#include <co_async/threading/condition_variable.hpp>

@@ -157,7 +157,9 @@ private:
                 t);
             oss << '}';
         } else if constexpr (std::is_enum_v<T>) {
-            uni_format(oss, static_cast<std::underlying_type_t<T>>(t));
+            oss << uni_demangle(typeid(T).name()) << '(';
+            oss << static_cast<std::underlying_type_t<T>>(t);
+            oss << ')';
         } else if constexpr (std::is_same_v<T, std::type_info>) {
             oss << uni_demangle(t.name());
         } else if constexpr (requires(T0 &&t) { std::forward<T0>(t).repr(); }) {

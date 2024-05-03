@@ -218,6 +218,18 @@ struct BorrowedStream {
         return {mInBuffer.get() + mInIndex, mInEnd - mInIndex};
     }
 
+    void seenbuf(std::size_t n) noexcept {
+        mInIndex += n;
+    }
+
+    std::size_t tryread(std::span<char> buffer) {
+        auto peekBuf = peekbuf();
+        std::size_t n = std::min(buffer.size(), peekBuf.size());
+        std::memcpy(buffer.data(), peekBuf.data(), n);
+        seenbuf(n);
+        return n;
+    }
+
     Task<Expected<char, std::errc>> peekchar() {
         if (bufempty()) {
             co_await co_await fillbuf();
@@ -240,20 +252,24 @@ struct BorrowedStream {
     }
 
     void allocinbuf(std::size_t size = kStreamBufferSize) {
-        mInBuffer = std::make_unique<char[]>(size);
-        mInBufSize = size;
+        if (!mInBuffer) [[likely]] {
+            mInBuffer = std::make_unique<char[]>(size);
+            mInBufSize = size;
+            mInIndex = 0;
+            mInEnd = 0;
+        }
     }
 
     Task<Expected<void, std::errc>> fillbuf() {
         if (!mInBuffer) {
             allocinbuf();
         }
-        mInIndex = 0;
-        mInEnd = co_await co_await mRaw->raw_read(
-            std::span(mInBuffer.get(), mInBufSize));
-        if (mInEnd == 0) [[unlikely]] {
+        auto n = co_await co_await mRaw->raw_read(
+            std::span(mInBuffer.get() + mInIndex, mInBufSize - mInIndex));
+        if (n == 0) [[unlikely]] {
             co_return Unexpected{std::errc::broken_pipe};
         }
+        mInEnd = mInIndex + n;
         co_return {};
     }
 
@@ -294,6 +310,32 @@ struct BorrowedStream {
         co_return {};
     }
 
+    std::size_t trywrite(std::span<char const> s) {
+        if (!mOutBuffer) {
+            allocoutbuf();
+        }
+        auto p = s.data();
+        auto const pe = s.data() + s.size();
+        auto nMax = mOutBufSize - mOutIndex;
+        std::size_t n(pe - p);
+        if (n <= nMax) {
+            auto b = mOutBuffer.get() + mOutIndex;
+            mOutIndex += pe - p;
+            while (p < pe) {
+                *b++ = *p++;
+            }
+            return n;
+        } else {
+            auto b = mOutBuffer.get() + mOutIndex;
+            auto const be = mOutBuffer.get() + mOutBufSize;
+            mOutIndex = mOutBufSize;
+            while (b < be) {
+                *b++ = *p++;
+            }
+            return nMax;
+        }
+    }
+
     Task<Expected<void, std::errc>> puts(std::string_view s) {
         return putspan(std::span<char const>(s.data(), s.size()));
     }
@@ -311,8 +353,11 @@ struct BorrowedStream {
     }
 
     void allocoutbuf(std::size_t size = kStreamBufferSize) {
-        mOutBuffer = std::make_unique<char[]>(size);
-        mOutBufSize = size;
+        if (!mOutBuffer) [[likely]] {
+            mOutBuffer = std::make_unique<char[]>(size);
+            mOutBufSize = size;
+            mOutIndex = 0;
+        }
     }
 
     Task<Expected<void, std::errc>> flush() {
@@ -366,6 +411,14 @@ struct BorrowedStream {
         co_return co_await mRaw->raw_read(buffer);
     }
 
+    Task<Expected<std::size_t, std::errc>> read(void *buffer, std::size_t len) {
+        return read(std::span<char>((char *)buffer, len));
+    }
+
+    std::size_t tryread(void *buffer, std::size_t len) {
+        return tryread(std::span<char>((char *)buffer, len));
+    }
+
     Task<Expected<std::size_t, std::errc>> write(std::span<char const> buffer) {
         if (!buffull()) {
             auto n = std::min(mInBufSize - mInIndex, buffer.size());
@@ -373,6 +426,18 @@ struct BorrowedStream {
             co_return n;
         }
         co_return co_await mRaw->raw_write(buffer);
+    }
+
+    Task<Expected<std::size_t, std::errc>> write(void const *buffer, std::size_t len) {
+        return write(std::span<char const>((char const *)buffer, len));
+    }
+
+    Task<Expected<void, std::errc>> putspan(void const *buffer, std::size_t len) {
+        return putspan(std::span<char const>((char const *)buffer, len));
+    }
+
+    std::size_t trywrite(void const *buffer, std::size_t len) {
+        return trywrite(std::span<char const>((char const *)buffer, len));
     }
 
     void timeout(std::chrono::nanoseconds timeout) {

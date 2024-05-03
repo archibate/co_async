@@ -2,6 +2,7 @@
 set(CO_ASYNC_DEBUG ON)
 #set(CO_ASYNC_PERF ON)
 #set(CO_ASYNC_EXCEPT ON)
+set(CO_ASYNC_ZLIB ON)
 
 if (CO_ASYNC_MODULE)
     cmake_minimum_required(VERSION 3.28)
@@ -68,11 +69,14 @@ endif()
 if (CO_ASYNC_EXCEPT)
     target_compile_definitions(co_async PUBLIC CO_ASYNC_EXCEPT)
 endif()
+if (CO_ASYNC_ZLIB)
+    target_compile_definitions(co_async PUBLIC CO_ASYNC_ZLIB)
+endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     target_sources(co_async PRIVATE 3rd/liburing/liburing.cpp)
     target_include_directories(co_async PUBLIC 3rd/liburing/include)
-    target_link_libraries(co_async PUBLIC bearssl)
+    target_link_libraries(co_async PUBLIC bearssl z)
 endif()
 
 if (PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)

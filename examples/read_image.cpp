@@ -7,19 +7,20 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<> amain() {
-    auto path = make_path("/home/bate/Downloads/Screenshot_2024-04-04_19-24-13.png");
-    auto file = co_await fs_open(path, OpenMode::Read);
-    auto size = co_await fs_stat_size(path);
-    std::vector<char> buffer(size);
-    co_await fs_read(file, buffer);
+Task<Expected<void, std::errc>> amain() {
+    auto file = co_await co_await file_open("/home/bate/下载/5b1b42af22a09746f2a88345717599dbf698ad5c.jpg", OpenMode::Read);
+    std::string buffer = co_await file.getall();
     int nx, ny, comp;
-    stbi_uc *p = stbi_load_from_memory((stbi_uc const *)buffer.data(), buffer.size(), &nx, &ny, &comp, 0);
-    co_await stdio().putline("image size: " + to_string(nx) + "x" + to_string(ny) + "x" + to_string(comp));
-    stbi_image_free(p);
+    std::shared_ptr<stbi_uc[]> image(
+        stbi_load_from_memory((stbi_uc const *)buffer.data(), buffer.size(),
+                              &nx, &ny, &comp, 0),
+        stbi_image_free);
+    co_await co_await stdio().putline("image size: " + to_string(nx) + "x" +
+                                      to_string(ny) + "x" + to_string(comp));
+    co_return {};
 }
 
 int main() {
-    co_synchronize(amain());
+    co_synchronize(amain()).value();
     return 0;
 }

@@ -62,59 +62,24 @@ Task<Expected<void, std::errc>> amain(std::string serveAt,
                     request.headers.insert_or_assign(
                         "host"s,
                         std::string(host.substr(host.find("://"sv) + 3)));
-#if 0
-                         auto in = co_await co_await io.request_body();
-                         HTTPResponse res;
-                         std::string out;
-                         co_await co_await connection->request(request, in, res,
-                                                               out);
-                         co_await co_await io.response(res, out);
-#elif 1
                     auto in = co_await co_await io.request_body();
+                    #if 0
+                    std::string out;
+                    HTTPResponse response;
+                    co_await co_await connection->request(request, in, response, out);
+                    co_await co_await io.response(response, out);
+                    #else
+                    FutureGroup group;
                     FutureSource<HTTPResponse> response;
-                    auto [r, w] = co_await co_await pipe_stream();
-                    auto [t1, t2] = co_await when_all(
-                        co_bind([&]() -> Task<Expected<>> {
-                            HTTPResponse res = co_await response;
-                            co_await co_await io.response(res, r);
-                            co_await r.close();
+                    auto out = co_await co_await pipe_invoke(group, [&](OwningStream &out) -> Task<Expected<>> {
+                        co_await co_await connection->request(
+                            request, in, response.reference(), out);
+                            co_await out.close();
                             co_return {};
-                        }),
-                        co_bind([&]() -> Task<Expected<>> {
-                            co_await co_await connection->request(
-                                request, in, response.reference(), w);
-                            co_await w.close();
-                            co_return {};
-                        }));
-                    co_await std::move(t1);
-                    co_await std::move(t2);
-#else
-                    FutureSource<HTTPResponse> response;
-                    auto [r1, w1] = co_await pipe_stream();
-                    auto [r2, w2] = co_await pipe_stream();
-                    auto [t1, t2, t3] = co_await when_all(
-                        co_bind([&]() -> Task<Expected<>> {
-                            co_await co_await io.request_body_stream(w1);
-                            co_await w1.close();
-                            co_return {};
-                        }),
-                        co_bind([&]() -> Task<Expected<>> {
-                            HTTPResponse res = co_await response;
-                            co_await co_await io.response(res, r2);
-                            co_await r2.close();
-                            co_return {};
-                        }),
-                        co_bind([&]() -> Task<Expected<>> {
-                            co_await co_await connection->request(
-                                request, r1, response.reference(), w2);
-                            co_await r1.close();
-                            co_await w2.close();
-                            co_return {};
-                        }));
-                    co_await std::move(t1);
-                    co_await std::move(t2);
-                    co_await std::move(t3);
-#endif
+                        });
+                    co_await co_await io.response(co_await response, out);
+                    co_await co_await group.wait();
+                    #endif
                     co_return {};
                 });
                 while (1) {

@@ -8,14 +8,14 @@
 
 namespace co_async {
 
-template <class T>
-struct FutureToken;
+template <class T = void>
+struct [[nodiscard]] FutureToken;
 
 template <class T>
-    requires(!std::is_reference_v<T>)
+    requires(!std::is_reference_v<T> && !std::is_void_v<T>)
 struct FutureReference;
 
-template <class T>
+template <class T = void>
 struct [[nodiscard]] FutureSource {
 private:
     struct Impl {
@@ -57,7 +57,9 @@ private:
                 std::rethrow_exception(mImpl->mException);
             }
 #endif
-            return mImpl->mValue.moveValue();
+            if constexpr (!std::is_void_v<T>) {
+                return mImpl->mValue.moveValue();
+            }
         }
 
         Impl *mImpl;
@@ -80,7 +82,7 @@ public:
 };
 
 template <class T>
-struct [[nodiscard]] FutureToken {
+struct FutureToken {
     FutureToken(FutureSource<T> const &that) noexcept
         : mImpl(that.mImpl.get()) {}
 
@@ -125,7 +127,7 @@ private:
 };
 
 template <class T>
-    requires(!std::is_reference_v<T>)
+    requires(!std::is_reference_v<T> && !std::is_void_v<T>)
 struct [[nodiscard]] FutureReference {
     FutureReference(FutureToken<T> token) noexcept : mToken(token) {}
 
@@ -189,6 +191,14 @@ inline FutureSource<T> co_future(Task<T> task) {
     FutureSource<T> future;
     co_spawn(futureStartHelper(future.token(), std::move(task)));
     return future;
+}
+
+template <class F, class... Args>
+    requires(Awaitable<std::invoke_result_t<F, Args...>>)
+inline auto co_bind(F &&f, Args &&...args) {
+    return [](auto f) mutable -> std::invoke_result_t<F, Args...> {
+        co_return co_await std::move(f)();
+    }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 }
 
 } // namespace co_async

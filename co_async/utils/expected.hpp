@@ -54,7 +54,7 @@ struct UnexpectedTraits<std::exception_ptr> {
 template <>
 struct UnexpectedTraits<void> {
     static void throw_error() {
-        throw std::runtime_error("unexpected error");
+        throw std::runtime_error("unexpected unknown error");
     }
 
     using inplace_storable = std::false_type;
@@ -135,7 +135,7 @@ public:
     }
 
     void throw_error() const {
-        UnexpectedTraits<void>::throw_error();
+        UnexpectedTraits<E>::throw_error(mError);
     }
 
     E const &error() const noexcept {
@@ -168,7 +168,7 @@ Unexpected(E) -> Unexpected<E>;
 
 Unexpected() -> Unexpected<>;
 
-template <class T = void, class E = void>
+template <class T = void, class E = std::errc>
 struct [[nodiscard]] Expected {
 private:
     static_assert(!std::is_reference_v<T> && !std::is_reference_v<E>);

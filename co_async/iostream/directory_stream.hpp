@@ -32,7 +32,8 @@ private:
 };
 
 struct DirectoryWalker {
-    explicit DirectoryWalker(FileHandle file) : mStream(make_stream<DirectoryStream>(std::move(file))) {}
+    explicit DirectoryWalker(FileHandle file)
+        : mStream(make_stream<DirectoryStream>(std::move(file))) {}
 
     Task<Expected<std::string, std::errc>> next() {
         struct LinuxDirent64 {
@@ -53,7 +54,8 @@ private:
     OwningStream mStream;
 };
 
-inline Task<Expected<DirectoryWalker, std::errc>> dir_open(std::filesystem::path path) {
+inline Task<Expected<DirectoryWalker, std::errc>>
+dir_open(std::filesystem::path path) {
     auto handle = co_await co_await fs_open(path, OpenMode::Directory);
     co_return DirectoryWalker(std::move(handle));
 }

@@ -445,11 +445,13 @@ struct BorrowedStream {
         co_return co_await mRaw->raw_write(buffer);
     }
 
-    Task<Expected<std::size_t, std::errc>> write(void const *buffer, std::size_t len) {
+    Task<Expected<std::size_t, std::errc>> write(void const *buffer,
+                                                 std::size_t len) {
         return write(std::span<char const>((char const *)buffer, len));
     }
 
-    Task<Expected<void, std::errc>> putspan(void const *buffer, std::size_t len) {
+    Task<Expected<void, std::errc>> putspan(void const *buffer,
+                                            std::size_t len) {
         return putspan(std::span<char const>((char const *)buffer, len));
     }
 
@@ -497,8 +499,7 @@ private:
 
 template <std::derived_from<Stream> Stream, class... Args>
 OwningStream make_stream(Args &&...args) {
-    return OwningStream(
-        std::make_unique<Stream>(std::forward<Args>(args)...));
+    return OwningStream(std::make_unique<Stream>(std::forward<Args>(args)...));
 }
 
 } // namespace co_async

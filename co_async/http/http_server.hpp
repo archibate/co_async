@@ -221,7 +221,8 @@ struct HTTPServer {
                 std::clog << io.request.method + ' ' + io.request.uri.dump() +
                                  '\n';
                 for (auto [k, v]: io.request.headers) {
-                    if (k == "cookie" || k == "set-cookie" || k == "authorization") {
+                    if (k == "cookie" || k == "set-cookie" ||
+                        k == "authorization") {
                         v = "*****";
                     }
                     std::clog

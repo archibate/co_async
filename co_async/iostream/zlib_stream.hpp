@@ -14,7 +14,8 @@ namespace co_async {
 #if CO_ASYNC_ZLIB
 // borrowed from: https://github.com/intel/zlib/blob/master/examples/zpipe.c
 
-inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
+inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source,
+                                                    BorrowedStream &dest) {
     /* decompress */
     int ret;
     unsigned have;
@@ -37,9 +38,10 @@ inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source, Borr
     }
 
     do {
-        if (auto e = co_await source.read(std::span<char>((char *)in, chunk)); e.has_error()) [[unlikely]] {
+        if (auto e = co_await source.read(std::span<char>((char *)in, chunk));
+            e.has_error()) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << "WARNING: inflate source read failed with error\n";
+            std::cerr << "WARNING: inflate source read failed with error\n";
 #endif
             (void)inflateEnd(&strm);
             co_return Unexpected{e.error()};
@@ -56,19 +58,19 @@ inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source, Borr
             ret = inflate(&strm, Z_NO_FLUSH);
             assert(ret != Z_STREAM_ERROR);
             switch (ret) {
-            case Z_NEED_DICT:
-                [[fallthrough]];
-            case Z_DATA_ERROR:
-                [[fallthrough]];
-            case Z_MEM_ERROR:
-                (void)inflateEnd(&strm);
+            case Z_NEED_DICT: [[fallthrough]];
+            case Z_DATA_ERROR: [[fallthrough]];
+            case Z_MEM_ERROR: (void)inflateEnd(&strm);
 #if CO_ASYNC_DEBUG
-                std::cerr << "WARNING: inflate error: " + std::to_string(ret) + ": " + std::string(strm.msg) + "\n";
+                std::cerr << "WARNING: inflate error: " + std::to_string(ret) +
+                                 ": " + std::string(strm.msg) + "\n";
 #endif
                 co_return Unexpected{std::errc::io_error};
             }
             have = chunk - strm.avail_out;
-            if (auto e = co_await dest.putspan(std::span<char const>((char const *)out, have)); e.has_error()) [[unlikely]] {
+            if (auto e = co_await dest.putspan(
+                    std::span<char const>((char const *)out, have));
+                e.has_error()) [[unlikely]] {
 #if CO_ASYNC_DEBUG
                 std::cerr << "WARNING: inflate dest write failed with error\n";
 #endif
@@ -89,7 +91,8 @@ inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source, Borr
     co_return {};
 }
 
-inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
+inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source,
+                                                    BorrowedStream &dest) {
     /* compress */
     int ret, flush;
     unsigned have;
@@ -112,9 +115,10 @@ inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source, Borr
     }
 
     do {
-        if (auto e = co_await source.read(std::span<char>((char *)in, chunk)); e.has_error()) [[unlikely]] {
+        if (auto e = co_await source.read(std::span<char>((char *)in, chunk));
+            e.has_error()) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << "WARNING: deflate source read failed with error\n";
+            std::cerr << "WARNING: deflate source read failed with error\n";
 #endif
             (void)deflateEnd(&strm);
             co_return Unexpected{e.error()};
@@ -133,7 +137,9 @@ inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source, Borr
             ret = deflate(&strm, flush);
             assert(ret != Z_STREAM_ERROR);
             have = chunk - strm.avail_out;
-            if (auto e = co_await dest.putspan(std::span<char const>((char const *)out, have)); e.has_error()) [[unlikely]] {
+            if (auto e = co_await dest.putspan(
+                    std::span<char const>((char const *)out, have));
+                e.has_error()) [[unlikely]] {
 #if CO_ASYNC_DEBUG
                 std::cerr << "WARNING: deflate dest write failed with error\n";
 #endif
@@ -141,7 +147,7 @@ inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source, Borr
                 co_return Unexpected{e.error()};
             }
         } while (strm.avail_out == 0);
-        assert(strm.avail_in == 0);     /* all input will be used */
+        assert(strm.avail_in == 0); /* all input will be used */
 
     } while (flush != Z_FINISH);
 
@@ -149,11 +155,13 @@ inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source, Borr
     co_return {};
 }
 #else
-inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
+inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source,
+                                                    BorrowedStream &dest) {
     co_return Unexpected{std::errc::function_not_supported};
 }
 
-inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
+inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source,
+                                                    BorrowedStream &dest) {
     co_return Unexpected{std::errc::function_not_supported};
 }
 #endif

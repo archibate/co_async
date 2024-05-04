@@ -52,8 +52,7 @@ ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
 #if CO_ASYNC_EXCEPT
     try {
 #endif
-        result.putValue(
-            (co_await std::forward<decltype(t)>(t), Void()));
+        result.putValue((co_await std::forward<decltype(t)>(t), Void()));
 #if CO_ASYNC_EXCEPT
     } catch (...) {
         control.mException = std::current_exception();

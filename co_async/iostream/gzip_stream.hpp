@@ -78,8 +78,8 @@ namespace gzip_stream_details {
 #define local inline
 
 /* buffer constants */
-#define SIZE 32768U         /* input and output buffer sizes */
-#define PIECE 16384         /* limits i/o chunks for 16-bit int case */
+#define SIZE 32768U /* input and output buffer sizes */
+#define PIECE 16384 /* limits i/o chunks for 16-bit int case */
 
 /* structure for infback() to pass to input function in() -- it maintains the
    input file and a buffer of size SIZE */
@@ -91,8 +91,7 @@ struct Ind {
 /* Load input buffer, assumed to be empty, and return bytes loaded and a
    pointer to them.  read() is called until the buffer is full, or until it
    returns end-of-file or error.  Return 0 on error. */
-local Task<Expected<unsigned>> in(void *in_desc, z_const unsigned char **buf)
-{
+local Task<Expected<unsigned>> in(void *in_desc, z_const unsigned char **buf) {
     int ret;
     unsigned len;
     unsigned char *next;
@@ -119,7 +118,7 @@ local Task<Expected<unsigned>> in(void *in_desc, z_const unsigned char **buf)
    the output is greater than 4 GB.) */
 struct Outd {
     BorrowedStream *outfile;
-    int check;                  /* true if checking crc and total */
+    int check; /* true if checking crc and total */
     unsigned long crc;
     unsigned long total;
 };
@@ -129,8 +128,7 @@ struct Outd {
    On success out() returns 0.  For a write failure, out() returns 1.  If the
    output file descriptor is -1, then nothing is written.
  */
-local Task<Expected<>> out(void *out_desc, unsigned char *buf, unsigned len)
-{
+local Task<Expected<>> out(void *out_desc, unsigned char *buf, unsigned len) {
     int ret;
     struct Outd *me = (struct Outd *)out_desc;
 
@@ -150,7 +148,7 @@ local Task<Expected<>> out(void *out_desc, unsigned char *buf, unsigned len)
     co_return {};
 }
 
-local unsigned ib_in(void FAR *in_desc, z_const unsigned char FAR * FAR *buf) {
+local unsigned ib_in(void FAR *in_desc, z_const unsigned char FAR *FAR *buf) {
     int ret;
     unsigned len;
     unsigned char *next;
@@ -198,40 +196,41 @@ local int ib_out(void FAR *out_desc, unsigned char FAR *buf, unsigned len) {
 }
 
 /* next input byte macro for use inside lunpipe() and gunpipe() */
-#define NEXT() (have ? 0 : (have = ib_in(indp, &next)), \
-                last = have ? (have--, (int)(*next++)) : -1)
+#define NEXT()                               \
+    (have ? 0 : (have = ib_in(indp, &next)), \
+     last = have ? (have--, (int)(*next++)) : -1)
 
 /* memory for gunpipe() and lunpipe() --
    the first 256 entries of prefix[] and suffix[] are never used, could
    have offset the index, but it's faster to waste the memory */
-local unsigned char inbuf[SIZE];              /* input buffer */
-local unsigned char outbuf[SIZE];             /* output buffer */
-local unsigned short prefix[65536];           /* index to LZW prefix string */
-local unsigned char suffix[65536];            /* one-character LZW suffix */
-local unsigned char match[65280 + 2];         /* buffer for reversed match or gzip
+local unsigned char inbuf[SIZE];      /* input buffer */
+local unsigned char outbuf[SIZE];     /* output buffer */
+local unsigned short prefix[65536];   /* index to LZW prefix string */
+local unsigned char suffix[65536];    /* one-character LZW suffix */
+local unsigned char match[65280 + 2]; /* buffer for reversed match or gzip
                                            32K sliding window */
 
 /* throw out what's left in the current bits byte buffer (this is a vestigial
    aspect of the compressed data format derived from an implementation that
    made use of a special VAX machine instruction!) */
-#define FLUSHCODE() \
-    do { \
-        left = 0; \
-        rem = 0; \
-        if (chunk > have) { \
-            chunk -= have; \
-            have = 0; \
-            if (NEXT() == -1) \
-                break; \
-            chunk--; \
-            if (chunk > have) { \
+#define FLUSHCODE()               \
+    do {                          \
+        left = 0;                 \
+        rem = 0;                  \
+        if (chunk > have) {       \
+            chunk -= have;        \
+            have = 0;             \
+            if (NEXT() == -1)     \
+                break;            \
+            chunk--;              \
+            if (chunk > have) {   \
                 chunk = have = 0; \
-                break; \
-            } \
-        } \
-        have -= chunk; \
-        next += chunk; \
-        chunk = 0; \
+                break;            \
+            }                     \
+        }                         \
+        have -= chunk;            \
+        next += chunk;            \
+        chunk = 0;                \
     } while (0)
 
 /* Decompress a compress (LZW) file from indp to outfile.  The compress magic
@@ -243,25 +242,25 @@ local unsigned char match[65280 + 2];         /* buffer for reversed match or gz
    file, read error, or write error (a write error indicated by strm->next_in
    not equal to Z_NULL), or Z_DATA_ERROR for invalid input.
  */
-local Task<int> lunpipe(unsigned have, z_const unsigned char *next, struct Ind *indp,
-                  BorrowedStream *outfile, z_stream *strm)
-{
-    int last;                   /* last byte read by NEXT(), or -1 if EOF */
-    unsigned chunk;             /* bytes left in current chunk */
-    int left;                   /* bits left in rem */
-    unsigned rem;               /* unused bits from input */
-    int bits;                   /* current bits per code */
-    unsigned code;              /* code, table traversal index */
-    unsigned mask;              /* mask for current bits codes */
-    int max;                    /* maximum bits per code for this stream */
-    unsigned flags;             /* compress flags, then block compress flag */
-    unsigned end;               /* last valid entry in prefix/suffix tables */
-    unsigned temp;              /* current code */
-    unsigned prev;              /* previous code */
-    unsigned final;             /* last character written for previous code */
-    unsigned stack;             /* next position for reversed string */
-    unsigned outcnt;            /* bytes in output buffer */
-    struct Outd outd;           /* output structure */
+local Task<int> lunpipe(unsigned have, z_const unsigned char *next,
+                        struct Ind *indp, BorrowedStream *outfile,
+                        z_stream *strm) {
+    int last;         /* last byte read by NEXT(), or -1 if EOF */
+    unsigned chunk;   /* bytes left in current chunk */
+    int left;         /* bits left in rem */
+    unsigned rem;     /* unused bits from input */
+    int bits;         /* current bits per code */
+    unsigned code;    /* code, table traversal index */
+    unsigned mask;    /* mask for current bits codes */
+    int max;          /* maximum bits per code for this stream */
+    unsigned flags;   /* compress flags, then block compress flag */
+    unsigned end;     /* last valid entry in prefix/suffix tables */
+    unsigned temp;    /* current code */
+    unsigned prev;    /* previous code */
+    unsigned final;   /* last character written for previous code */
+    unsigned stack;   /* next position for reversed string */
+    unsigned outcnt;  /* bytes in output buffer */
+    struct Outd outd; /* output structure */
     unsigned char *p;
 
     /* set up output */
@@ -281,9 +280,9 @@ local Task<int> lunpipe(unsigned have, z_const unsigned char *next, struct Ind *
         strm->msg = (char *)"lzw bits out of range";
         co_return Z_DATA_ERROR;
     }
-    if (max == 9)                           /* 9 doesn't really mean 9 */
+    if (max == 9) /* 9 doesn't really mean 9 */
         max = 10;
-    flags &= 0x80;                          /* true if block compress */
+    flags &= 0x80; /* true if block compress */
 
     /* clear table */
     bits = 9;
@@ -292,19 +291,19 @@ local Task<int> lunpipe(unsigned have, z_const unsigned char *next, struct Ind *
 
     /* set up: get first 9-bit code, which is the first decompressed byte, but
        don't create a table entry until the next code */
-    if (NEXT() == -1)                       /* no compressed data is ok */
+    if (NEXT() == -1) /* no compressed data is ok */
         co_return Z_OK;
-    final = prev = (unsigned)last;          /* low 8 bits of code */
-    if (NEXT() == -1)                       /* missing a bit */
+    final = prev = (unsigned)last; /* low 8 bits of code */
+    if (NEXT() == -1)              /* missing a bit */
         co_return Z_BUF_ERROR;
-    if (last & 1) {                         /* code must be < 256 */
+    if (last & 1) { /* code must be < 256 */
         strm->msg = (char *)"invalid lzw code";
         co_return Z_DATA_ERROR;
     }
-    rem = (unsigned)last >> 1;              /* remaining 7 bits */
+    rem = (unsigned)last >> 1; /* remaining 7 bits */
     left = 7;
-    chunk = bits - 2;                       /* 7 bytes left in this chunk */
-    outbuf[0] = (unsigned char)final;       /* write first decompressed byte */
+    chunk = bits - 2;                  /* 7 bytes left in this chunk */
+    outbuf[0] = (unsigned char) final; /* write first decompressed byte */
     outcnt = 1;
 
     /* decode codes */
@@ -319,22 +318,22 @@ local Task<int> lunpipe(unsigned have, z_const unsigned char *next, struct Ind *
         }
 
         /* get a code of length bits */
-        if (chunk == 0)                     /* decrement chunk modulo bits */
+        if (chunk == 0) /* decrement chunk modulo bits */
             chunk = bits;
-        code = rem;                         /* low bits of code */
-        if (NEXT() == -1) {                 /* EOF is end of compressed data */
+        code = rem;         /* low bits of code */
+        if (NEXT() == -1) { /* EOF is end of compressed data */
             /* write remaining buffered output */
             if (outcnt && !ib_out(&outd, outbuf, outcnt)) {
-                strm->next_in = outbuf;     /* signal write error */
+                strm->next_in = outbuf; /* signal write error */
                 co_return Z_BUF_ERROR;
             }
             co_return Z_OK;
         }
-        code += (unsigned)last << left;     /* middle (or high) bits of code */
+        code += (unsigned)last << left; /* middle (or high) bits of code */
         left += 8;
         chunk--;
-        if (bits > left) {                  /* need more bits */
-            if (NEXT() == -1)               /* can't end in middle of code */
+        if (bits > left) {    /* need more bits */
+            if (NEXT() == -1) /* can't end in middle of code */
                 co_return Z_BUF_ERROR;
             code += (unsigned)last << left; /* high bits of code */
             left += 8;
@@ -347,14 +346,14 @@ local Task<int> lunpipe(unsigned have, z_const unsigned char *next, struct Ind *
         /* process clear code (256) */
         if (code == 256 && flags) {
             FLUSHCODE();
-            bits = 9;                       /* initialize bits and mask */
+            bits = 9; /* initialize bits and mask */
             mask = 0x1ff;
-            end = 255;                      /* empty table */
-            continue;                       /* get next code */
+            end = 255; /* empty table */
+            continue;  /* get next code */
         }
 
         /* special code to reuse last match */
-        temp = code;                        /* save the current code */
+        temp = code; /* save the current code */
         if (code > end) {
             /* Be picky on the allowed code here, and make sure that the code
                we drop through (prev) will be a valid index so that random
@@ -368,7 +367,7 @@ local Task<int> lunpipe(unsigned have, z_const unsigned char *next, struct Ind *
                 strm->msg = (char *)"invalid lzw code";
                 co_return Z_DATA_ERROR;
             }
-            match[stack++] = (unsigned char)final;
+            match[stack++] = (unsigned char) final;
             code = prev;
         }
 
@@ -386,7 +385,7 @@ local Task<int> lunpipe(unsigned have, z_const unsigned char *next, struct Ind *
         if (end < mask) {
             end++;
             prefix[end] = (unsigned short)prev;
-            suffix[end] = (unsigned char)final;
+            suffix[end] = (unsigned char) final;
         }
 
         /* set previous code for next iteration */
@@ -427,8 +426,8 @@ local Task<int> lunpipe(unsigned have, z_const unsigned char *next, struct Ind *
    prematurely or a write error occurs, or Z_ERRNO if junk (not a another gzip
    stream) follows a valid gzip stream.
  */
-local Task<int> gunpipe(z_stream *strm, BorrowedStream *infile, BorrowedStream *outfile)
-{
+local Task<int> gunpipe(z_stream *strm, BorrowedStream *infile,
+                        BorrowedStream *outfile) {
     infile->allocinbuf(SIZE);
     outfile->allocoutbuf(SIZE);
 
@@ -444,9 +443,9 @@ local Task<int> gunpipe(z_stream *strm, BorrowedStream *infile, BorrowedStream *
     indp = &ind;
 
     /* decompress concatenated gzip streams */
-    have = 0;                               /* no input data read in yet */
-    first = 1;                              /* looking for first gzip header */
-    strm->next_in = Z_NULL;                 /* so Z_BUF_ERROR means EOF */
+    have = 0;               /* no input data read in yet */
+    first = 1;              /* looking for first gzip header */
+    strm->next_in = Z_NULL; /* so Z_BUF_ERROR means EOF */
     for (;;) {
         if (infile->bufempty()) {
             debug(), "fillbuf";
@@ -456,14 +455,14 @@ local Task<int> gunpipe(z_stream *strm, BorrowedStream *infile, BorrowedStream *
         /* look for the two magic header bytes for a gzip stream */
         if (NEXT() == -1) {
             ret = Z_OK;
-            break;                          /* empty gzip stream is ok */
+            break; /* empty gzip stream is ok */
         }
         if (last != 31 || (NEXT() != 139 && last != 157)) {
             strm->msg = (char *)"incorrect header check";
             ret = first ? Z_DATA_ERROR : Z_ERRNO;
-            break;                          /* not a gzip or compress header */
+            break; /* not a gzip or compress header */
         }
-        first = 0;                          /* next non-header is junk */
+        first = 0; /* next non-header is junk */
 
         /* process a compress (LZW) file -- can't be concatenated after this */
         if (last == 157) {
@@ -473,50 +472,56 @@ local Task<int> gunpipe(z_stream *strm, BorrowedStream *infile, BorrowedStream *
 
         /* process remainder of gzip header */
         ret = Z_BUF_ERROR;
-        if (NEXT() != 8) {                  /* only deflate method allowed */
-            if (last == -1) break;
+        if (NEXT() != 8) { /* only deflate method allowed */
+            if (last == -1)
+                break;
             strm->msg = (char *)"unknown compression method";
             ret = Z_DATA_ERROR;
             break;
         }
-        flags = NEXT();                     /* header flags */
-        NEXT();                             /* discard mod time, xflgs, os */
+        flags = NEXT(); /* header flags */
+        NEXT();         /* discard mod time, xflgs, os */
         NEXT();
         NEXT();
         NEXT();
         NEXT();
         NEXT();
-        if (last == -1) break;
+        if (last == -1)
+            break;
         if (flags & 0xe0) {
             strm->msg = (char *)"unknown header flags set";
             ret = Z_DATA_ERROR;
             break;
         }
-        if (flags & 4) {                    /* extra field */
+        if (flags & 4) { /* extra field */
             len = NEXT();
             len += (unsigned)(NEXT()) << 8;
-            if (last == -1) break;
+            if (last == -1)
+                break;
             while (len > have) {
                 len -= have;
                 have = 0;
-                if (NEXT() == -1) break;
+                if (NEXT() == -1)
+                    break;
                 len--;
             }
-            if (last == -1) break;
+            if (last == -1)
+                break;
             have -= len;
             next += len;
         }
-        if (flags & 8)                      /* file name */
+        if (flags & 8) /* file name */
             while (NEXT() != 0 && last != -1)
                 ;
-        if (flags & 16)                     /* comment */
+        if (flags & 16) /* comment */
             while (NEXT() != 0 && last != -1)
                 ;
-        if (flags & 2) {                    /* header crc */
+        if (flags & 2) { /* header crc */
             NEXT();
             NEXT();
         }
-        if (last == -1) break;
+        if (last == -1)
+            break;
 
         /* set up output */
         outd.outfile = outfile;
@@ -528,10 +533,11 @@ local Task<int> gunpipe(z_stream *strm, BorrowedStream *infile, BorrowedStream *
         strm->next_in = next;
         strm->avail_in = have;
         ret = inflateBack(strm, ib_in, indp, ib_out, &outd);
-        if (ret != Z_STREAM_END) break;
+        if (ret != Z_STREAM_END)
+            break;
         next = strm->next_in;
         have = strm->avail_in;
-        strm->next_in = Z_NULL;             /* so Z_BUF_ERROR means EOF */
+        strm->next_in = Z_NULL; /* so Z_BUF_ERROR means EOF */
         (void)co_await outfile->flush();
 
         /* check trailer */
@@ -574,7 +580,7 @@ local Task<int> gunzip(BorrowedStream &infile, BorrowedStream &outfile) {
     z_stream strm;
 
     /* initialize inflateBack state for repeated use */
-    window = match;                         /* reuse LZW match buffer */
+    window = match; /* reuse LZW match buffer */
     strm.zalloc = Z_NULL;
     strm.zfree = Z_NULL;
     strm.opaque = Z_NULL;
@@ -587,7 +593,7 @@ local Task<int> gunzip(BorrowedStream &infile, BorrowedStream &outfile) {
     co_return res;
 }
 
-}
+} // namespace gzip_stream_details
 
 #undef NEXT
 #undef SIZE
@@ -595,25 +601,26 @@ local Task<int> gunzip(BorrowedStream &infile, BorrowedStream &outfile) {
 #undef local
 #undef FLUSHCODE
 
-inline Task<Expected<void, std::errc>> zlib_gunzip(BorrowedStream &infile, BorrowedStream &outfile) {
+inline Task<Expected<void, std::errc>> zlib_gunzip(BorrowedStream &infile,
+                                                   BorrowedStream &outfile) {
     int ret = co_await gzip_stream_details::gunzip(infile, outfile);
     if (ret != Z_OK) [[unlikely]] {
         switch (ret) {
-        case Z_MEM_ERROR:
-            co_return Unexpected{std::errc::not_enough_memory};
-        default:
-            co_return Unexpected{std::errc::io_error};
+        case Z_MEM_ERROR: co_return Unexpected{std::errc::not_enough_memory};
+        default: co_return Unexpected{std::errc::io_error};
         };
     }
     co_return {};
 }
 #else
-inline Task<Expected<void, std::errc>> zlib_gunzip(BorrowedStream &infile, BorrowedStream &outfile) {
+inline Task<Expected<void, std::errc>> zlib_gunzip(BorrowedStream &infile,
+                                                   BorrowedStream &outfile) {
     co_return Unexpected{std::errc::function_not_supported};
 }
 #endif
 
-inline Task<Expected<void, std::errc>> zlib_gzip(BorrowedStream &infile, BorrowedStream &outfile) {
+inline Task<Expected<void, std::errc>> zlib_gzip(BorrowedStream &infile,
+                                                 BorrowedStream &outfile) {
     // TODO: how to support gzip?
     co_return Unexpected{std::errc::function_not_supported};
 }

@@ -88,7 +88,9 @@ inline std::string_view getHTTPStatusName(int status) {
     }
 }
 
-inline std::string guessContentTypeByExtension(std::string_view ext, const char *defaultType = "text/plain;charset=utf-8") {
+inline std::string guessContentTypeByExtension(
+    std::string_view ext,
+    char const *defaultType = "text/plain;charset=utf-8") {
     using namespace std::string_view_literals;
     using namespace std::string_literals;
     if (ext == ".html"sv || ext == ".htm"sv) {

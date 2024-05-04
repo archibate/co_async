@@ -621,10 +621,10 @@ private:
 
 public:
     explicit SSLServerSocketStream(SocketHandle file,
-                                      SSLServerCertificate const &cert,
-                                      SSLPrivateKey const &pkey,
-                                      std::span<char const *const> protocols,
-                                      SSLSessionCache *cache = nullptr)
+                                   SSLServerCertificate const &cert,
+                                   SSLPrivateKey const &pkey,
+                                   std::span<char const *const> protocols,
+                                   SSLSessionCache *cache = nullptr)
         : SSLSocketStream(std::move(file)) {
         if (auto rsa = pkey.getRSA()) {
             br_ssl_server_init_full_rsa(ctx.get(), std::data(cert.certificates),
@@ -656,9 +656,9 @@ private:
 
 public:
     explicit SSLClientSocketStream(SocketHandle file,
-                                      SSLClientTrustAnchor const &ta,
-                                      char const *host,
-                                      std::span<char const *const> protocols)
+                                   SSLClientTrustAnchor const &ta,
+                                   char const *host,
+                                   std::span<char const *const> protocols)
         : SSLSocketStream(std::move(file)) {
         br_ssl_client_init_full(ctx.get(), x509Ctx.get(),
                                 std::data(ta.trustAnchors),
@@ -689,7 +689,7 @@ ssl_connect(char const *host, int port, SSLClientTrustAnchor const &ta,
     auto conn =
         co_await co_await socket_proxy_connect(host, port, proxy, timeout);
     auto sock = make_stream<SSLClientSocketStream>(std::move(conn), ta, host,
-                                                      protocols);
+                                                   protocols);
     sock.timeout(timeout);
     co_return sock;
 }

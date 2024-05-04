@@ -245,7 +245,8 @@ struct SplitString {
         return result;
     }
 
-    template <std::size_t N> requires (N > 0)
+    template <std::size_t N>
+        requires(N > 0)
     std::array<std::string, N> collect() const {
         std::array<std::string, N> result;
         std::size_t i = 0;

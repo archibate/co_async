@@ -288,7 +288,7 @@ protected:
         case HTTPContentEncoding::Deflate: {
             auto [r, w] = co_await co_await pipe_stream();
             FutureGroup group;
-            group.add([&body, w = std::move(w)] () mutable -> Task<Expected<>> {
+            group.add([&body, w = std::move(w)]() mutable -> Task<Expected<>> {
                 co_await co_await zlib_deflate(body, w);
                 co_await co_await w.flush();
                 co_await w.close();
@@ -338,8 +338,10 @@ protected:
         case HTTPContentEncoding::Deflate: {
             auto [r, w] = co_await co_await pipe_stream();
             FutureGroup group;
-            group.add(pipe_bind(std::move(w), &std::decay_t<decltype(*this)>::readChunked, this));
-            group.add([this, w = std::move(w)] () mutable -> Task<Expected<>> {
+            group.add(pipe_bind(std::move(w),
+                                &std::decay_t<decltype(*this)>::readChunked,
+                                this));
+            group.add([this, w = std::move(w)]() mutable -> Task<Expected<>> {
                 co_await co_await readChunked(w);
                 co_await co_await w.flush();
                 co_await w.close();
@@ -501,7 +503,8 @@ public:
         checkPhase(0, -1);
         using namespace std::string_view_literals;
         std::string line;
-        if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) [[unlikely]] {
+        if (!co_await sock.getline(line, "\r\n"sv) || line.empty())
+            [[unlikely]] {
             co_return Unexpected{std::errc::broken_pipe};
         }
         if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv ||

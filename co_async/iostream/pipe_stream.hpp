@@ -81,18 +81,17 @@ inline Task<Expected<void, std::errc>> pipe_forward(BorrowedStream &in,
     co_return {};
 }
 
-
 inline Task<Expected<std::string, std::errc>>
 pipe_invoke_string(std::invocable<BorrowedStream &> auto func) {
     auto [r, w] = co_await co_await pipe_stream();
     auto [a, b] = co_await when_all(
-        co_bind(
-            [func = std::move(func), w = std::move(w)]() mutable -> Task<Expected<void, std::errc>> {
-                co_await co_await std::invoke(func, w);
-                co_await co_await w.flush();
-                co_await w.close();
-                co_return {};
-            }),
+        co_bind([func = std::move(func), w = std::move(w)]() mutable
+                -> Task<Expected<void, std::errc>> {
+            co_await co_await std::invoke(func, w);
+            co_await co_await w.flush();
+            co_await w.close();
+            co_return {};
+        }),
         co_bind([r = std::move(
                      r)]() mutable -> Task<Expected<std::string, std::errc>> {
             auto out = co_await r.getall();
@@ -104,7 +103,7 @@ pipe_invoke_string(std::invocable<BorrowedStream &> auto func) {
 
 inline Task<Expected<std::string, std::errc>>
 pipe_invoke_string(std::invocable<BorrowedStream &, BorrowedStream &> auto func,
-            std::string_view in) {
+                   std::string_view in) {
     auto [r1, w1] = co_await co_await pipe_stream();
     auto [r2, w2] = co_await co_await pipe_stream();
     auto [a, b, c] = co_await when_all(
@@ -150,17 +149,22 @@ inline Task<Expected<OwningStream, std::errc>>
 pipe_invoke(FutureGroup &group,
             std::invocable<BorrowedStream &, BorrowedStream &> auto func,
             BorrowedStream &in) {
-    return pipe_invoke(group, std::bind(std::move(func), std::ref(in), std::placeholders::_1));
+    return pipe_invoke(
+        group, std::bind(std::move(func), std::ref(in), std::placeholders::_1));
 }
 
-inline Task<Expected<void, std::errc>>
-pipe_bind(OwningStream w, auto &&func, auto &&...args) {
-    return co_bind([func = std::forward<decltype(func)>(func), w = std::move(w)] (auto &&...args) mutable -> Task<Expected<void, std::errc>> {
-        co_await co_await std::invoke(func, std::forward<decltype(args)>(args)..., w);
-        co_await co_await w.flush();
-        co_await w.close();
-        co_return {};
-    }, std::forward<decltype(args)>(args)...);
+inline Task<Expected<void, std::errc>> pipe_bind(OwningStream w, auto &&func,
+                                                 auto &&...args) {
+    return co_bind(
+        [func = std::forward<decltype(func)>(func), w = std::move(w)](
+            auto &&...args) mutable -> Task<Expected<void, std::errc>> {
+            co_await co_await std::invoke(
+                func, std::forward<decltype(args)>(args)..., w);
+            co_await co_await w.flush();
+            co_await w.close();
+            co_return {};
+        },
+        std::forward<decltype(args)>(args)...);
 }
 
 } // namespace co_async

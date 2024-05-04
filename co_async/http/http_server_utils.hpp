@@ -103,8 +103,8 @@ struct HTTPServerUtils {
             .status = 200,
             .headers =
                 {
-                    {"content-type", guessContentTypeByExtension(
-                                         path.extension().string())},
+                    {"content-type",
+                     guessContentTypeByExtension(path.extension().string())},
                 },
         };
         auto f = co_await co_await file_open(path, OpenMode::Read);
@@ -155,8 +155,8 @@ struct HTTPServerUtils {
             .status = 200,
             .headers =
                 {
-                    {"content-type", guessContentTypeByExtension(
-                                         path.extension().string())},
+                    {"content-type",
+                     guessContentTypeByExtension(path.extension().string())},
                 },
         };
         auto f = co_await co_await file_open(path, OpenMode::Read);

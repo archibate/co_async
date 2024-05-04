@@ -17,8 +17,7 @@ struct Void final {
         return std::forward<T>(t);
     }
 
-    constexpr friend void operator|(Void, Void) {
-    }
+    constexpr friend void operator|(Void, Void) {}
 
     char const *repr() const noexcept {
         return "Void";

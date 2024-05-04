@@ -20,10 +20,12 @@ struct FutureGroup {
         return *this;
     }
 
-    template <class F, class ...Args>
-        requires(std::same_as<std::invoke_result_t<F, Args...>, Task<Expected<void, std::errc>>>)
+    template <class F, class... Args>
+        requires(std::same_as<std::invoke_result_t<F, Args...>,
+                              Task<Expected<void, std::errc>>>)
     FutureGroup &add(F &&f, Args &&...args) {
-        add(co_future(co_bind(std::forward<F>(f), std::forward<Args>(args)...)));
+        add(co_future(
+            co_bind(std::forward<F>(f), std::forward<Args>(args)...)));
         return *this;
     }
 

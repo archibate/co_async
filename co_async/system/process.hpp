@@ -11,9 +11,12 @@
 #include <errno.h>
 #include <co_async/system/error_handling.hpp>
 #include <co_async/system/fs.hpp>
+#include <co_async/system/pipe.hpp>
+#include <co_async/system/timer.hpp>
 #include <co_async/system/system_loop.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <co_async/awaiter/task.hpp>
+#include <co_async/threading/future_group.hpp>
 #include <co_async/utils/expected.hpp>
 
 namespace co_async {
@@ -74,8 +77,8 @@ struct ProcessBuilder {
     ProcessBuilder() {
         mAbsolutePath = false;
         mEnvInherited = false;
-        throwingError(posix_spawnattr_init(&mAttr));
-        throwingError(posix_spawn_file_actions_init(&mFileActions));
+        throwingErrorErrno(posix_spawnattr_init(&mAttr));
+        throwingErrorErrno(posix_spawn_file_actions_init(&mFileActions));
     }
 
     ProcessBuilder(ProcessBuilder &&) = delete;
@@ -86,7 +89,7 @@ struct ProcessBuilder {
     }
 
     ProcessBuilder &chdir(std::filesystem::path path) {
-        throwingError(
+        throwingErrorErrno(
             posix_spawn_file_actions_addchdir_np(&mFileActions, path.c_str()));
         return *this;
     }
@@ -102,13 +105,34 @@ struct ProcessBuilder {
     }
 
     ProcessBuilder &open(int fd, int ourFd) {
-        throwingError(
-            posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd));
+        if (fd != ourFd) {
+            throwingErrorErrno(posix_spawn_file_actions_adddup2(&mFileActions, ourFd, fd));
+        }
+        return *this;
+    }
+
+    ProcessBuilder &pipe_out(int fd, OwningStream &stream) {
+        int p[2];
+        throwingErrorErrno(pipe2(p, 0));
+        open(fd, FileHandle(p[1]));
+        stream = file_from_handle(FileHandle(p[0]));
+        close(p[0]);
+        close(p[1]);
+        return *this;
+    }
+
+    ProcessBuilder &pipe_in(int fd, OwningStream &stream) {
+        int p[2];
+        throwingErrorErrno(pipe2(p, 0));
+        open(fd, FileHandle(p[0]));
+        stream = file_from_handle(FileHandle(p[1]));
+        close(p[0]);
+        close(p[1]);
         return *this;
     }
 
     ProcessBuilder &close(int fd) {
-        throwingError(posix_spawn_file_actions_addclose(&mFileActions, fd));
+        throwingErrorErrno(posix_spawn_file_actions_addclose(&mFileActions, fd));
         return *this;
     }
 
@@ -188,6 +212,67 @@ private:
     std::vector<std::string> mEnvpStore;
     std::vector<FileHandle> mFileStore;
 };
+
+//inline Task<Expected<OwningStream, std::errc>>
+//pipe_capture(FutureGroup &group, ProcessBuilder &process) {
+    //auto pipe = co_await co_await fs_pipe();
+    //process.open(1, pipe.writer());
+    //Pid pid = co_await co_await process.spawn();
+    //group.add([pid]() mutable -> Task<Expected<void, std::errc>> {
+        ///* using namespace std::chrono_literals; */
+        ///* co_await sleep_for(300ms); */
+        //co_return co_await wait_process(pid);
+    //});
+    //auto reader = file_from_handle(pipe.reader());
+    //co_return {std::move(reader)};
+//}
+//
+//inline Task<Expected<OwningStream, std::errc>>
+//pipe_capture(FutureGroup &group, ProcessBuilder &process, BorrowedStream &in) {
+    //auto pipe = co_await co_await fs_pipe();
+    //process.open(0, pipe.reader());
+    //group.add([&in, writer = file_from_handle(pipe.writer())]() mutable -> Task<Expected<void, std::errc>> {
+        //while (true) {
+            //if (in.bufempty()) {
+                //if (!co_await in.fillbuf()) {
+                    //break;
+                //}
+            //}
+            //co_await co_await writer.write(in.peekbuf());
+        //}
+        //co_return {};
+    //});
+    //co_return co_await pipe_capture(group, process);
+//}
+//
+//inline Task<Expected<std::string, std::errc>>
+//pipe_capture_string(ProcessBuilder &process,
+            //std::string_view in) {
+    //FutureGroup group;
+    //auto pipe = co_await co_await fs_pipe();
+    //process.open(0, pipe.reader());
+    //group.add([in, writer = file_from_handle(pipe.writer())]() mutable -> Task<Expected<void, std::errc>> {
+        //co_await co_await writer.puts(in);
+        //co_await co_await writer.flush();
+        //co_await writer.close();
+        //co_return {};
+    //});
+    //auto out = co_await co_await pipe_capture(group, process);
+    //auto ret = co_await out.getall();
+    ///* auto f = file_from_handle(pipe.reader()); */
+    ///* auto ret = co_await f.getall(); */
+    //co_await co_await group.wait();
+    //co_return ret;
+//}
+//
+//inline Task<Expected<std::string, std::errc>>
+//pipe_capture_string(ProcessBuilder &process) {
+    //FutureGroup group;
+    //auto out = co_await co_await pipe_capture(group, process);
+    //auto ret = co_await out.getall();
+    //co_await co_await group.wait();
+    //co_return ret;
+//}
 
 } // namespace co_async
 #endif

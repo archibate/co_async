@@ -12,7 +12,7 @@ Task<Expected<void, std::errc>> amain() {
                    .path("cat")
                    .open(0, p.reader())
                    .spawn();
-    auto ws = co_await file_from_handle(p.writer());
+    auto ws = file_from_handle(p.writer());
     co_await co_await ws.putline("Hello, world!");
     co_await ws.close();
 

@@ -5,11 +5,10 @@
 #include <co_async/utils/simple_map.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/iostream/string_stream.hpp>
-#include <co_async/iostream/zlib_stream.hpp>
-#include <co_async/iostream/gzip_stream.hpp>
 #include <co_async/iostream/pipe_stream.hpp>
 #include <co_async/http/http_status_code.hpp>
 #include <co_async/utils/string_utils.hpp>
+#include <co_async/system/process.hpp>
 #include <co_async/system/fs.hpp>
 #include <co_async/http/uri.hpp>
 
@@ -29,7 +28,6 @@ struct HTTPHeaders : SimpleMap<std::string, std::string> {
 enum class HTTPContentEncoding {
     Identity = 0,
     Gzip,
-    Deflate,
 };
 
 struct HTTPRequest {
@@ -90,7 +88,6 @@ protected:
         static constexpr std::pair<std::string_view, HTTPContentEncoding>
             encodings[] = {
                 {"gzip"sv, HTTPContentEncoding::Gzip},
-                {"deflate"sv, HTTPContentEncoding::Deflate},
                 {"identity"sv, HTTPContentEncoding::Identity},
             };
         for (auto const &[k, v]: encodings) {
@@ -280,99 +277,83 @@ protected:
     }
 
     Task<Expected<void, std::errc>> writeEncoded(BorrowedStream &body) {
+        using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
             co_await co_await writeChunked(body);
         } break;
         case HTTPContentEncoding::Gzip: {
+            OwningStream pin, pout;
+            auto pid = co_await co_await ProcessBuilder()
+                           .path("gzip"sv)
+                           .arg("-"sv)
+                           .pipe_in(0, pin)
+                           .pipe_out(1, pout)
+                           .spawn();
             FutureGroup group;
-            auto zbody = co_await co_await pipe_invoke(group, body, zlib_gzip);
-            co_await co_await writeChunked(zbody);
+            group.add(pipe_forward(body, pin));
+            group.add(writeChunked(pout));
             co_await co_await group.wait();
-        } break;
-        case HTTPContentEncoding::Deflate: {
-            FutureGroup group;
-            auto zbody =
-                co_await co_await pipe_invoke(group, body, zlib_deflate);
-            co_await co_await writeChunked(zbody);
-            co_await co_await group.wait();
+            co_await co_await wait_process(pid);
         } break;
         };
         co_return {};
     }
 
     Task<Expected<void, std::errc>> writeEncoded(std::string_view body) {
+        using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
             co_await co_await writeChunked(body);
         } break;
-        case HTTPContentEncoding::Gzip: {
-            auto zbody = co_await co_await pipe_invoke(body, zlib_gzip);
-            co_await co_await writeChunked(zbody);
-        } break;
-        case HTTPContentEncoding::Deflate: {
-            auto zbody = co_await co_await pipe_invoke(body, zlib_deflate);
-            co_await co_await writeChunked(zbody);
+        default: {
+            auto is = make_stream<IStringStream>(body);
+            co_await co_await writeEncoded(is);
         } break;
         };
         co_return {};
     }
 
     Task<Expected<void, std::errc>> readEncoded(BorrowedStream &body) {
+        using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
             co_await co_await readChunked(body);
         } break;
         case HTTPContentEncoding::Gzip: {
+            OwningStream pin, pout;
+            auto pid = co_await co_await ProcessBuilder()
+                           .path("gzip"sv)
+                           .arg("-d"sv)
+                           .arg("-"sv)
+                           .pipe_in(0, pin)
+                           .pipe_out(1, pout)
+                           .spawn();
             FutureGroup group;
-            auto zbody = co_await co_await pipe_invoke(
-                group,
-                [this](BorrowedStream &tmp) { return readChunked(tmp); });
-            co_await co_await zlib_gunzip(zbody, body);
+            group.add(
+                [this, pin = std::move(pin)]() mutable -> Task<Expected<>> {
+                    co_await co_await readChunked(pin);
+                    co_await co_await pin.flush();
+                    co_await pin.close();
+                    co_return {};
+                });
+            group.add(pipe_forward(pout, body));
             co_await co_await group.wait();
-        } break;
-        case HTTPContentEncoding::Deflate: {
-            FutureGroup group;
-            auto zbody = co_await co_await pipe_invoke(
-                group,
-                [this](BorrowedStream &tmp) { return readChunked(tmp); });
-            co_await co_await zlib_inflate(zbody, body);
-            co_await co_await group.wait();
+            co_await co_await wait_process(pid);
         } break;
         };
         co_return {};
     }
 
     Task<Expected<void, std::errc>> readEncoded(std::string &body) {
+        using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
             co_await co_await readChunked(body);
         } break;
-        case HTTPContentEncoding::Gzip: {
-#if 1
-                std::string tmp;
-                co_await co_await readChunked(tmp);
-                body.append(co_await co_await pipe_invoke(tmp, zlib_gunzip));
-#else
-            FutureGroup group;
-            auto zbody = co_await co_await pipe_invoke(
-                group,
-                [this](BorrowedStream &tmp) { return readChunked(tmp); });
-            auto bodyStream =
-                co_await co_await pipe_invoke(group, zbody, zlib_gunzip);
-            co_await bodyStream.getall(body);
-            co_await co_await group.wait();
-#endif
-        } break;
-        case HTTPContentEncoding::Deflate: {
-            FutureGroup group;
-            auto zbody = co_await co_await pipe_invoke(
-                group,
-                [this](BorrowedStream &tmp) { return readChunked(tmp); });
-            auto bodyStream =
-                co_await co_await pipe_invoke(group, zbody, zlib_inflate);
-            co_await bodyStream.getall(body);
-            co_await co_await group.wait();
+        default: {
+            auto os = make_stream<OStringStream>(body);
+            co_await co_await readEncoded(os);
         } break;
         };
         co_return {};
@@ -416,7 +397,6 @@ public:
     readBodyStream(BorrowedStream &body) override {
         checkPhase(-1, 0);
         co_await co_await readEncoded(body);
-        co_await co_await body.flush();
         co_return {};
     }
 
@@ -492,7 +472,10 @@ public:
     Task<Expected<void, std::errc>> readResponse(HTTPResponse &res) override {
         checkPhase(0, -1);
         using namespace std::string_view_literals;
-        auto line = co_await co_await sock.getline("\r\n"sv);
+        std::string line;
+        if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) [[unlikely]] {
+            co_return Unexpected{std::errc::broken_pipe};
+        }
         if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv ||
             line[8] != ' ') [[unlikely]] {
             co_return Unexpected{std::errc::protocol_error};

@@ -68,6 +68,7 @@ struct BorrowedStream {
                 }
             }
             s.append(mInBuffer.get() + start, mInEnd - start);
+            mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
@@ -82,6 +83,7 @@ struct BorrowedStream {
                     co_return {};
                 }
             }
+            mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
@@ -148,34 +150,43 @@ struct BorrowedStream {
                 co_return {};
             }
             p = std::copy(mInBuffer.get() + start, mInBuffer.get() + mInEnd, p);
+            mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
     }
 
     Task<Expected<void, std::errc>> dropn(std::size_t n) {
-        std::size_t start = mInIndex;
+        auto start = mInIndex;
         while (true) {
             auto end = start + n;
             if (end <= mInEnd) {
                 mInIndex = end;
                 co_return {};
             }
+            auto m = mInEnd - mInIndex;
+            n -= m;
+            mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
     }
 
     Task<Expected<void, std::errc>> getn(std::string &s, std::size_t n) {
+        auto start = mInIndex;
         while (true) {
-            if (mInIndex + n <= mInEnd) {
+            auto end = start + n;
+            if (end <= mInEnd) {
                 s.append(mInBuffer.get() + mInIndex, n);
-                mInIndex += n;
+                mInIndex = end;
                 co_return {};
             }
-            s.append(mInBuffer.get() + mInIndex, mInEnd - mInIndex);
-            n -= mInEnd - mInIndex;
+            auto m = mInEnd - mInIndex;
+            n -= m;
+            s.append(mInBuffer.get() + mInIndex, m);
+            mInIndex = 0;
             co_await co_await fillbuf();
+            start = 0;
         }
     }
 
@@ -191,6 +202,7 @@ struct BorrowedStream {
         do {
             s.append(mInBuffer.get() + start, mInEnd - start);
             start = 0;
+            mInIndex = 0;
         } while (co_await fillbuf());
     }
 
@@ -398,6 +410,11 @@ struct BorrowedStream {
     }
 
     Task<> close() {
+#if CO_ASYNC_DEBUG
+        if (mOutIndex) [[unlikely]] {
+            std::cerr << "WARNING: stream closed with buffer not flushed\n";
+        }
+#endif
         return mRaw->raw_close();
     }
 

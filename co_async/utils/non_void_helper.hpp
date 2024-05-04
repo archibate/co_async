@@ -20,6 +20,14 @@ struct NonVoidHelper<void> final {
         return std::forward<T>(t);
     }
 
+    template <class T>
+    constexpr friend T &&operator|(NonVoidHelper, T &&t) {
+        return std::forward<T>(t);
+    }
+
+    constexpr friend void operator|(NonVoidHelper, NonVoidHelper) {
+    }
+
     char const *repr() const noexcept {
         return "NonVoidHelper";
     }

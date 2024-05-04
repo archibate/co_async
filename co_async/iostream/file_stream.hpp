@@ -41,8 +41,7 @@ file_open(std::filesystem::path path, OpenMode mode) {
     co_return make_stream<FileStream>(co_await co_await fs_open(path, mode));
 }
 
-inline Expected<OwningStream, std::errc>
-file_from_handle(FileHandle handle) {
+inline OwningStream file_from_handle(FileHandle handle) {
     return make_stream<FileStream>(std::move(handle));
 }
 

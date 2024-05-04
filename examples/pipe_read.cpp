@@ -13,7 +13,7 @@ Task<Expected<void, std::errc>> amain() {
                    .arg("CMakeLists.txt")
                    .open(1, p.writer())
                    .spawn();
-    auto rs = co_await file_from_handle(p.reader());
+    auto rs = file_from_handle(p.reader());
     std::string line;
     while (line.clear(), co_await rs.getline(line, '\n')) {
         co_await co_await stdio().putline("process output: " + line);

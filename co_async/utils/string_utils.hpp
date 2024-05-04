@@ -175,6 +175,10 @@ struct SplitString {
             return current;
         }
 
+        std::string_view rest() const noexcept {
+            return std::string_view{current.data(), current.size() + s.size()};
+        }
+
         iterator &operator++() {
             find_next();
             return *this;
@@ -237,6 +241,20 @@ struct SplitString {
         std::vector<std::string> result;
         for (auto &&part: *this) {
             result.emplace_back(part);
+        }
+        return result;
+    }
+
+    template <std::size_t N> requires (N > 0)
+    std::array<std::string, N> collect() const {
+        std::array<std::string, N> result;
+        std::size_t i = 0;
+        for (auto it = begin(); it != end(); ++it, ++i) {
+            if (i + 1 >= N) {
+                result[i] = std::string(it.rest());
+                break;
+            }
+            result[i] = std::string(*it);
         }
         return result;
     }

@@ -123,7 +123,7 @@ private:
         req.headers.insert("user-agent"s, "co_async/0.0.1"s);
         req.headers.insert("accept"s, "*/*"s);
 #if CO_ASYNC_ZLIB
-        req.headers.insert("accept-encoding"s, "gzip, deflate"s);
+        req.headers.insert("accept-encoding"s, "gzip"s);
 #endif
     }
 

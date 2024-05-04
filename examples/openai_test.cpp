@@ -20,6 +20,7 @@ Task<Expected<void, std::errc>> amain() {
         HTTPResponse res;
         std::string body;
         co_await co_await conn->request(req, {}, res, body);
+        debug(), body;
     }
     co_return {};
 }

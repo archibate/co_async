@@ -5,7 +5,7 @@ using namespace co_async;
 using namespace std::literals;
 
 Task<Expected<void, std::errc>> amain(std::string serveAt,
-                                      std::string targetHost) {
+                                      std::string targetHost, std::string headers) {
     co_await https_load_ca_certificates();
 
     co_await co_await stdio().putline("listening at: "s + serveAt);
@@ -59,9 +59,16 @@ Task<Expected<void, std::errc>> amain(std::string serveAt,
                         .uri = io.request.uri,
                         .headers = io.request.headers,
                     };
+                    debug(), request;
                     request.headers.insert_or_assign(
                         "host"s,
                         std::string(host.substr(host.find("://"sv) + 3)));
+                    for (auto header: split_string(headers, '\n')) {
+                        if (header.find(':') != header.npos) {
+                            auto [k, v] = split_string(header, ':').collect<2>();
+                            request.headers.insert_or_assign(trim_string(k), trim_string(v));
+                        }
+                    }
                     auto in = co_await co_await io.request_body();
                     #if 0
                     std::string out;
@@ -71,9 +78,10 @@ Task<Expected<void, std::errc>> amain(std::string serveAt,
                     #else
                     FutureGroup group;
                     FutureSource<HTTPResponse> response;
-                    auto out = co_await co_await pipe_invoke(group, [&](OwningStream &out) -> Task<Expected<>> {
+                    auto out = co_await co_await pipe_invoke(group, [&](BorrowedStream &out) -> Task<Expected<>> {
                         co_await co_await connection->request(
                             request, in, response.reference(), out);
+                            co_await co_await out.flush();
                             co_await out.close();
                             co_return {};
                         });
@@ -97,14 +105,18 @@ Task<Expected<void, std::errc>> amain(std::string serveAt,
 
 int main(int argc, char **argv) {
     std::string serveAt = "127.0.0.1:8080";
+    std::string headers;
     std::string targetHost;
     if (argc > 1) {
         serveAt = argv[1];
     }
     if (argc > 2) {
-        targetHost = argv[2];
+        headers = argv[2];
     }
-    if (int err = (int)co_synchronize(amain(serveAt, targetHost)).error()) {
+    if (argc > 3) {
+        targetHost = argv[3];
+    }
+    if (int err = (int)co_synchronize(amain(serveAt, targetHost, headers)).error()) {
         std::cerr << argv[0] << ": " << std::system_category().message(err)
                   << '\n';
         return err;

@@ -59,7 +59,7 @@ Task<Expected<void, std::errc>> amain(std::string serveAt,
                         .uri = io.request.uri,
                         .headers = io.request.headers,
                     };
-                    debug(), request;
+                    debug(), request.method, request.uri;
                     request.headers.insert_or_assign(
                         "host"s,
                         std::string(host.substr(host.find("://"sv) + 3)));

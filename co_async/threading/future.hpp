@@ -178,7 +178,7 @@ futureStartHelper(FutureToken<T> future, Task<T> task) {
 #if CO_ASYNC_EXCEPT
     try {
 #endif
-        future.set_value((co_await task, NonVoidHelper<>()));
+        future.set_value((co_await task, Void()));
 #if CO_ASYNC_EXCEPT
     } catch (...) {
         future.set_exception(std::current_exception());
@@ -198,9 +198,9 @@ template <class F, class... Args>
 inline auto co_bind(F &&f, Args &&...args) {
     return [](auto f) mutable -> std::invoke_result_t<F, Args...> {
         std::optional o(std::move(f));
-        decltype(auto) r = (co_await std::move(*o)(), NonVoidHelper<>());
+        decltype(auto) r = (co_await std::move(*o)(), Void());
         o.reset();
-        co_return NonVoidHelper<>() | std::forward<decltype(r)>(r);
+        co_return Void() | std::forward<decltype(r)>(r);
     }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 }
 

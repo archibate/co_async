@@ -96,14 +96,17 @@ struct Uninitialized<void> {
 
     void destroyValue() {}
 
-    auto moveValue() {
-        return NonVoidHelper<>{};
+    Void moveValue() {
+        return Void();
     }
 
-    void putValue(NonVoidHelper<>) {}
+    void putValue(Void) {}
 
     void putValue() {}
 };
+
+template <>
+struct Uninitialized<Void> : Uninitialized<void> {};
 
 template <class T>
 struct Uninitialized<T const> : Uninitialized<T> {};

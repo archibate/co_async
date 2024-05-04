@@ -153,4 +153,14 @@ pipe_invoke(FutureGroup &group,
     return pipe_invoke(group, std::bind(std::move(func), std::ref(in), std::placeholders::_1));
 }
 
+inline Task<Expected<void, std::errc>>
+pipe_bind(OwningStream w, auto &&func, auto &&...args) {
+    return co_bind([func = std::forward<decltype(func)>(func), w = std::move(w)] (auto &&...args) mutable -> Task<Expected<void, std::errc>> {
+        co_await co_await std::invoke(func, std::forward<decltype(args)>(args)..., w);
+        co_await co_await w.flush();
+        co_await w.close();
+        co_return {};
+    }, std::forward<decltype(args)>(args)...);
+}
+
 } // namespace co_async

@@ -334,6 +334,15 @@ public:
 #endif
         return mError.error();
     }
+
+#if CO_ASYNC_DEBUG
+    std::variant<Avoid<E>, Avoid<T>> repr() const {
+        if (has_error()) [[unlikely]] {
+            return error();
+        }
+        return value();
+    }
+#endif
 };
 
 template <class E>
@@ -409,6 +418,15 @@ public:
 #endif
         return mError.error();
     }
+
+#if CO_ASYNC_DEBUG
+    std::variant<Avoid<E>, Void> repr() const {
+        if (has_error()) [[unlikely]] {
+            return error();
+        }
+        return Void();
+    }
+#endif
 };
 
 template <class T>

@@ -18,7 +18,7 @@ struct ValueAwaiter {
     explicit ValueAwaiter(std::in_place_t)
         requires(std::is_void_v<T>)
     {
-        mValue.putValue(NonVoidHelper<>());
+        mValue.putValue(Void());
     }
 
     explicit ValueAwaiter(std::coroutine_handle<> previous)

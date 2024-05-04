@@ -53,7 +53,7 @@ ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
     try {
 #endif
         result.putValue(
-            (co_await std::forward<decltype(t)>(t), NonVoidHelper<>()));
+            (co_await std::forward<decltype(t)>(t), Void()));
 #if CO_ASYNC_EXCEPT
     } catch (...) {
         control.mException = std::current_exception();
@@ -65,14 +65,14 @@ ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
 }
 
 template <std::size_t... Is, class... Ts>
-Task<std::variant<typename AwaitableTraits<Ts>::NonVoidRetType...>>
+Task<std::variant<typename AwaitableTraits<Ts>::AvoidRetType...>>
 whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
     WhenAnyCtlBlock control{};
     std::tuple<Uninitialized<typename AwaitableTraits<Ts>::RetType>...> result;
     ReturnPreviousTask taskArray[]{
         whenAnyHelper(ts, control, std::get<Is>(result), Is)...};
     co_await WhenAnyAwaiter(control, taskArray);
-    Uninitialized<std::variant<typename AwaitableTraits<Ts>::NonVoidRetType...>>
+    Uninitialized<std::variant<typename AwaitableTraits<Ts>::AvoidRetType...>>
         varResult;
     ((control.mIndex == Is &&
       (varResult.putValue(std::in_place_index<Is>,

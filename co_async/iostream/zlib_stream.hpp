@@ -6,6 +6,7 @@
 #include <co_async/std.hpp>
 #include <co_async/system/system_loop.hpp>
 #include <co_async/awaiter/task.hpp>
+#include <co_async/utils/expected.hpp>
 #include <co_async/iostream/stream_base.hpp>
 
 namespace co_async {
@@ -13,7 +14,8 @@ namespace co_async {
 #if CO_ASYNC_ZLIB
 // borrowed from: https://github.com/intel/zlib/blob/master/examples/zpipe.c
 
-inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) { /* decompress */
+inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
+    /* decompress */
     int ret;
     unsigned have;
     z_stream strm;
@@ -87,7 +89,8 @@ inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source, Borr
     co_return {};
 }
 
-inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) { /* compress */
+inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
+    /* compress */
     int ret, flush;
     unsigned have;
     z_stream strm;

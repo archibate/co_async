@@ -6,6 +6,7 @@
 #include <co_async/utils/expected.hpp>
 #include <co_async/iostream/string_stream.hpp>
 #include <co_async/iostream/pipe_stream.hpp>
+#include <co_async/iostream/zlib_stream.hpp>
 #include <co_async/http/http_status_code.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <co_async/system/process.hpp>
@@ -28,6 +29,7 @@ struct HTTPHeaders : SimpleMap<std::string, std::string> {
 enum class HTTPContentEncoding {
     Identity = 0,
     Gzip,
+    Deflate,
 };
 
 struct HTTPRequest {
@@ -88,6 +90,7 @@ protected:
         static constexpr std::pair<std::string_view, HTTPContentEncoding>
             encodings[] = {
                 {"gzip"sv, HTTPContentEncoding::Gzip},
+                {"deflate"sv, HTTPContentEncoding::Deflate},
                 {"identity"sv, HTTPContentEncoding::Identity},
             };
         for (auto const &[k, v]: encodings) {
@@ -214,7 +217,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> writeChunked(std::string_view body) {
+    Task<Expected<void, std::errc>> writeChunkedString(std::string_view body) {
         using namespace std::string_view_literals;
         if (body.empty()) {
             co_await co_await sock.puts("\r\n"sv);
@@ -254,7 +257,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> readChunked(std::string &body) {
+    Task<Expected<void, std::errc>> readChunkedString(std::string &body) {
         using namespace std::string_view_literals;
         if (mContentLength) {
             if (auto n = *mContentLength; n > 0) {
@@ -282,6 +285,18 @@ protected:
         case HTTPContentEncoding::Identity: {
             co_await co_await writeChunked(body);
         } break;
+        case HTTPContentEncoding::Deflate: {
+            auto [r, w] = co_await co_await pipe_stream();
+            FutureGroup group;
+            group.add([&body, w = std::move(w)] () mutable -> Task<Expected<>> {
+                co_await co_await zlib_deflate(body, w);
+                co_await co_await w.flush();
+                co_await w.close();
+                co_return {};
+            });
+            group.add(writeChunked(r));
+            co_await co_await group.wait();
+        } break;
         case HTTPContentEncoding::Gzip: {
             OwningStream pin, pout;
             auto pid = co_await co_await ProcessBuilder()
@@ -304,7 +319,7 @@ protected:
         using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
-            co_await co_await writeChunked(body);
+            co_await co_await writeChunkedString(body);
         } break;
         default: {
             auto is = make_stream<IStringStream>(body);
@@ -319,6 +334,19 @@ protected:
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
             co_await co_await readChunked(body);
+        } break;
+        case HTTPContentEncoding::Deflate: {
+            auto [r, w] = co_await co_await pipe_stream();
+            FutureGroup group;
+            group.add(pipe_bind(std::move(w), &std::decay_t<decltype(*this)>::readChunked, this));
+            group.add([this, w = std::move(w)] () mutable -> Task<Expected<>> {
+                co_await co_await readChunked(w);
+                co_await co_await w.flush();
+                co_await w.close();
+                co_return {};
+            });
+            group.add(zlib_deflate(r, body));
+            co_await co_await group.wait();
         } break;
         case HTTPContentEncoding::Gzip: {
             OwningStream pin, pout;
@@ -349,7 +377,7 @@ protected:
         using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
-            co_await co_await readChunked(body);
+            co_await co_await readChunkedString(body);
         } break;
         default: {
             auto os = make_stream<OStringStream>(body);

@@ -70,7 +70,7 @@ inline Task<> loopEnqueueSyncStarter(Task<T, P> task,
 #if CO_ASYNC_EXCEPT
     try {
 #endif
-        result.putValue((co_await task, NonVoidHelper<>()));
+        result.putValue((co_await task, Void()));
 #if CO_ASYNC_EXCEPT
     } catch (...) {
 #if CO_ASYNC_DEBUG

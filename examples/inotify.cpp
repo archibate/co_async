@@ -4,13 +4,14 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<> amain() {
+Task<Expected<>> amain() {
     auto path = make_path(".");
-    auto w = co_await FileWatch().watch(path, FileWatch::OnWriteFinished, true).wait();
-    co_await stdio().putline(w.path.string());
+    auto w = co_await co_await FileWatch().watch(/*path=*/path, /*event=*/FileWatch::OnWriteFinished, /*recursive=*/true).wait();
+    co_await co_await stdio().putline(w.path.string());
+    co_return {};
 }
 
 int main() {
-    co_synchronize(amain());
+    co_synchronize(amain()).value();
     return 0;
 }

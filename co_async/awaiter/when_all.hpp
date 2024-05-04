@@ -84,14 +84,14 @@ ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
 }
 
 template <std::size_t... Is, class... Ts>
-Task<std::tuple<typename AwaitableTraits<Ts>::NonVoidRetType...>>
+Task<std::tuple<typename AwaitableTraits<Ts>::AvoidRetType...>>
 whenAllImpl(std::index_sequence<Is...>, Ts &&...ts) {
     WhenAllCtlBlock control{sizeof...(Ts)};
     std::tuple<Uninitialized<typename AwaitableTraits<Ts>::RetType>...> result;
     ReturnPreviousTask taskArray[]{
         whenAllHelper(ts, control, std::get<Is>(result))...};
     co_await WhenAllAwaiter(control, taskArray);
-    co_return std::tuple<typename AwaitableTraits<Ts>::NonVoidRetType...>(
+    co_return std::tuple<typename AwaitableTraits<Ts>::AvoidRetType...>(
         std::get<Is>(result).moveValue()...);
 }
 

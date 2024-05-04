@@ -12,9 +12,10 @@ Task<Expected<>> amain() {
         co_return {};
     });
 
-    while (1) {
-        auto income = co_await co_await listener_accept(listener);
-        co_spawn(server.handle_http(std::move(income)));
+    while (true) {
+        if (auto income = co_await listener_accept(listener)) {
+            co_spawn(server.handle_http(std::move(*income)));
+        }
     }
 }
 

@@ -14,34 +14,38 @@
 ## 使用案例
 
 ```cpp
-import co_async;
-import std;
+#include <co_async/co_async.hpp>
 
 using namespace co_async;
+using namespace std::literals;
 
-Task<> amain() {
-    auto listener = co_await listener_bind({"127.0.0.1", 8080});
-    HTTPServer server(listener);
-    server.route("GET", "/", [](HTTPServer::Protocol &http, HTTPRequest const &request) -> Task<> {
-        co_await http.read_body();
+Task<Expected<>> amain() {
+    // 第一下 co_await 等待 bind 操作完成，返回一个 Expected<T> 对象。
+    // Expected<T> 有两种状态：1. 正常返回 T 值；2. 返回非零错误码 std::errc
+    // 第二下 co_await 可以将 Expected<T> 的错误转化为当前函数的错误（没有错误照常返回 T）：
+    auto listener = co_await co_await listener_bind({"127.0.0.1", 8080});
+    HTTPServer server;
+    server.route("GET", "/", [](HTTPServer::IO &io) -> Task<Expected<>> {
         HTTPResponse res = {
             .status = 200,
             .headers = {
                 {"content-type", "text/html;charset=utf-8"},
             },
         };
-        co_await http.write_header(res);
-        co_await http.write_body("<h1>It works!</h1>");
+        std::string_view body = "<h1>It works!</h1>";
+        co_await io.response(res, body);
+        co_return {};
     });
 
-    while (1) {
-        auto conn = co_await server.accept();
-        co_spawn(server.process_connection(std::move(conn)));
+    while (true) {
+        if (auto income = co_await listener_accept(listener)) {
+            co_spawn(server.handle_http(std::move(*income)));
+        }
     }
 }
 
 int main() {
-    co_synchronize(amain());
+    co_synchronize(amain()).value();
     return 0;
 }
 ```
@@ -56,7 +60,7 @@ int main() {
 - GCC >= 10
 - Clang >= 16
 
-小彭老师推荐使用 Arch Linux 系统作为开发平台，Ubuntu 20.04 需要手动升级一下 gcc 版本：
+小彭老师推荐使用 Arch Linux 系统作为开发平台，Ubuntu 20.04 的话需要手动升级一下 gcc 版本：
 
 ```bash
 sudo apt install -y g++-10 libstdc++-10-dev
@@ -93,15 +97,15 @@ build/server  # 对应于 examples/server.cpp
 
 ## 安装与导入
 
-### 作为单个头文件导入
+### 作为纯头文件导入
 
-[点击此处](scripts/co_async.hpp) 下载 `co_async.hpp`，然后在你的项目中引入即可：
+将本项目下载到你的项目中作为子文件夹，引入即可：
 
 ```cpp
-#include "co_async.hpp"
+#include <co_async/co_async.hpp>
 ```
 
-编译选项：`g++ -std=c++20 你的项目.cpp -luring -lbearssl`
+编译选项：`g++ -std=c++20 你的项目.cpp -I 本项目根目录 -luring -lbearssl -lz`
 
 ### 作为普通库导入
 
@@ -118,30 +122,13 @@ target_link_libraries(你的名字 PRIVATE co_async)
 #include <co_async/co_async.hpp>
 ```
 
-### 作为 C++20 模块导入
-
-将本项目下载到你的项目中作为子文件夹，开启 CO_ASYNC_MODULE 选项后引入并链接：
-
-```cmake
-set(CO_ASYNC_MODULE ON)
-add_subdirectory(co_async)
-target_link_libraries(你的名字 PRIVATE co_async)
-```
-
-在你的代码中 import 即可：
-
-```cpp
-import co_async;
-```
-
-> 需要 GCC >= 11 或 Clang >= 17 或 MSVC >= 19，以及 CMake >= 3.28 且使用 `cmake -B build -G Ninja`。
-
 ### 额外 CMake 选项
 
 ```bash
 cmake -B build -DCO_ASYNC_DEBUG=ON  # 启用调试与安全性检测
 cmake -B build -DCO_ASYNC_EXCEPT=ON  # 启用异常（会影响协程函数性能）
 cmake -B build -DCO_ASYNC_PERF=ON  # 启用性能测试（程序结束时自动打印测时结果）
+cmake -B build -DCO_ASYNC_ZLIB=ON  # 启用压缩支持（需要链接 /usr/lib/libz.so）
 ```
 
 ## 性能测试

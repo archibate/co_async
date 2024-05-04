@@ -614,6 +614,7 @@ inline Task<Expected<void, std::errc>> zlib_gunzip(BorrowedStream &infile, Borro
 #endif
 
 inline Task<Expected<void, std::errc>> zlib_gzip(BorrowedStream &infile, BorrowedStream &outfile) {
+    // TODO: how to support gzip?
     co_return Unexpected{std::errc::function_not_supported};
 }
 

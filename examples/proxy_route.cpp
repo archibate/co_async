@@ -90,7 +90,7 @@ Task<Expected<void, std::errc>> amain(std::string serveAt,
                     #endif
                     co_return {};
                 });
-                while (1) {
+                while (true) {
                     if (auto income = co_await listener_accept(listener))
                         [[likely]] {
                         co_spawn(server.handle_http(std::move(*income)));

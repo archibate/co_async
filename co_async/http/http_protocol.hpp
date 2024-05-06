@@ -164,7 +164,8 @@ protected:
 
     void handleAcceptEncoding(HTTPHeaders &headers) {
         using namespace std::string_view_literals;
-#if 0 && CO_ASYNC_ZLIB
+        mContentEncoding = HTTPContentEncoding::Identity;
+#if CO_ASYNC_ZLIB
         if (auto acceptEnc = headers.get("accept-encoding"sv)) {
             for (std::string_view encName: split_string(*acceptEnc, ", "sv)) {
                 if (auto i = encName.find(';'); i != encName.npos) {
@@ -286,6 +287,7 @@ protected:
             co_await co_await writeChunked(body);
         } break;
         case HTTPContentEncoding::Deflate: {
+            co_await co_await sock.puts("content-encoding: deflate\r\n"sv);
             auto [r, w] = co_await co_await pipe_stream();
             FutureGroup group;
             group.add([&body, w = std::move(w)]() mutable -> Task<Expected<>> {
@@ -298,6 +300,7 @@ protected:
             co_await co_await group.wait();
         } break;
         case HTTPContentEncoding::Gzip: {
+            co_await co_await sock.puts("content-encoding: gzip\r\n"sv);
             OwningStream pin, pout;
             auto pid = co_await co_await ProcessBuilder()
                            .path("gzip"sv)

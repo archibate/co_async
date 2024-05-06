@@ -155,9 +155,9 @@ struct HTTPServer {
         auto sock = make_stream<SSLServerSocketStream>(
             std::move(handle), https.cert, https.skey, protocols, &https.cache);
         sock.timeout(mTimeout);
-        if (auto peek = co_await sock.peekn(2); peek && *peek == "h2"sv) {
-            co_return std::make_unique<HTTPProtocolVersion2>(std::move(sock));
-        }
+        /* if (auto peek = co_await sock.peekn(2); peek && *peek == "h2"sv) { */
+        /*     co_return std::make_unique<HTTPProtocolVersion2>(std::move(sock)); */
+        /* } */
         co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
     }
 

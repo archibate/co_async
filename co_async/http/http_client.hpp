@@ -70,7 +70,7 @@ private:
                                                       gTrustAnchors, protocols,
                                                       mProxy, mTimeout);
             if (sock.raw<SSLClientSocketStream>().ssl_get_selected_protocol() ==
-                "h2") { // todo: seems always false?
+                "h2") { // TODO: seems always return false?
                 co_return std::make_unique<HTTPProtocolVersion2>(
                     std::move(sock));
             } else {

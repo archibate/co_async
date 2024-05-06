@@ -55,11 +55,6 @@ struct HTTPProtocol {
 public:
     OwningStream sock;
 
-protected:
-    HTTPContentEncoding mContentEncoding;
-    std::optional<std::size_t> mContentLength;
-
-public:
     explicit HTTPProtocol(OwningStream sock) : sock(std::move(sock)) {}
 
     virtual ~HTTPProtocol() = default;
@@ -85,6 +80,10 @@ struct HTTPProtocolVersion11 : HTTPProtocol {
     using HTTPProtocol::HTTPProtocol;
 
 protected:
+    HTTPContentEncoding mContentEncoding;
+    std::string mAcceptEncoding;
+    std::optional<std::size_t> mContentLength;
+
     HTTPContentEncoding httpContentEncodingByName(std::string_view name) {
         using namespace std::string_view_literals;
         static constexpr std::pair<std::string_view, HTTPContentEncoding>
@@ -164,24 +163,31 @@ protected:
 
     void handleAcceptEncoding(HTTPHeaders &headers) {
         using namespace std::string_view_literals;
-        mContentEncoding = HTTPContentEncoding::Identity;
-#if CO_ASYNC_ZLIB
         if (auto acceptEnc = headers.get("accept-encoding"sv)) {
-            for (std::string_view encName: split_string(*acceptEnc, ", "sv)) {
+            mAcceptEncoding = std::move(*acceptEnc);
+            headers.erase("accept-encoding"sv);
+        } else {
+            mAcceptEncoding.clear();
+        }
+    }
+
+    void negotiateAcceptEncoding(HTTPHeaders &headers, std::span<HTTPContentEncoding const> encodings) {
+        using namespace std::string_view_literals;
+        mContentEncoding = HTTPContentEncoding::Identity;
+        if (!mAcceptEncoding.empty()) {
+            for (std::string_view encName: split_string(mAcceptEncoding, ", "sv)) {
                 if (auto i = encName.find(';'); i != encName.npos) {
                     encName = encName.substr(0, i);
                 }
                 auto enc = httpContentEncodingByName(encName);
                 if (enc != HTTPContentEncoding::Identity) [[likely]] {
-                    mContentEncoding = enc;
-                    break;
+                    if (std::find(encodings.begin(), encodings.end(), enc) != encodings.end()) {
+                        mContentEncoding = enc;
+                        break;
+                    }
                 }
             }
-            headers.erase("accept-encoding"sv);
         }
-#else
-        headers.erase("accept-encoding"sv);
-#endif
     }
 
     Task<Expected<void, std::errc>> writeChunked(BorrowedStream &body) {

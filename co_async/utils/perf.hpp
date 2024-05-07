@@ -1,35 +1,41 @@
 #pragma once
 
-#if CO_ASYNC_PERF
-
 #include <co_async/std.hpp>
 
 namespace co_async {
 
 struct Perf {
+private:
     char const *file;
     int line;
     std::chrono::high_resolution_clock::time_point t0;
 
-    struct PerfStatic {
-        struct TableEntry {
-            std::uint64_t duration;
-            char const *file;
-            int line;
-        };
+    struct PerfTableEntry {
+        std::uint64_t duration;
+        char const *file;
+        int line;
+    };
 
-        std::deque<TableEntry> table;
+    struct PerfThreadLocal {
+        std::deque<PerfTableEntry> table;
 
-        PerfStatic() {
-            signal(
-                SIGINT, +[](int signo) { std::exit(130); });
+        PerfThreadLocal() = default;
+
+        PerfThreadLocal(PerfThreadLocal &&) = delete;
+
+        ~PerfThreadLocal() {
+            gather(table);
+        }
+    };
+
+    static inline thread_local PerfThreadLocal perthread;
+
+    struct PerfGather {
+        PerfGather() {
+            signal(SIGINT, +[](int signo) { std::exit(130); });
         }
 
-        PerfStatic(PerfStatic &&) = delete;
-
-        ~PerfStatic() {
-            dump();
-        }
+        PerfGather(PerfGather &&) = delete;
 
         void dump() const {
             if (table.empty()) {
@@ -113,9 +119,21 @@ struct Perf {
             }
             printf("%s", o.c_str());
         }
+
+        ~PerfGather() {
+            dump();
+        }
+
+        std::deque<PerfTableEntry> table;
+        std::mutex lock;
     };
 
-    static inline thread_local PerfStatic stat;
+    static inline PerfGather gathered;
+
+    static void gather(std::deque<PerfTableEntry> const &table) {
+        std::lock_guard guard(gathered.lock);
+        gathered.table.insert(gathered.table.end(), table.begin(), table.end());
+    }
 
 public:
     Perf(std::source_location loc = std::source_location::current())
@@ -128,20 +146,8 @@ public:
     ~Perf() {
         auto t1 = std::chrono::high_resolution_clock::now();
         auto duration = (t1 - t0).count();
-        stat.table.emplace_back(duration, file, line);
+        perthread.table.emplace_back(duration, file, line);
     }
 };
 
 } // namespace co_async
-
-#else
-
-#include <co_async/std.hpp>
-
-namespace co_async {
-
-struct Perf {};
-
-} // namespace co_async
-
-#endif

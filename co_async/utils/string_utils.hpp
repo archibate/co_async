@@ -93,7 +93,7 @@ struct to_string_t<std::string_view> {
 template <std::integral T>
 struct to_string_t<T> {
     void operator()(std::string &result, T value) const {
-        result.resize(std::numeric_limits<T>::digits10 + 1, '\0');
+        result.resize(std::numeric_limits<T>::digits10 + 2, '\0');
         auto [p, ec] =
             std::to_chars(result.data(), result.data() + result.size(), value);
         if (ec != std::errc()) [[unlikely]] {
@@ -106,7 +106,7 @@ struct to_string_t<T> {
 template <std::floating_point T>
 struct to_string_t<T> {
     void operator()(std::string &result, T value) const {
-        result.resize(std::numeric_limits<T>::max_digits10 + 1, '\0');
+        result.resize(std::numeric_limits<T>::max_digits10 + 2, '\0');
         auto [p, ec] =
             std::to_chars(result.data(), result.data() + result.size(), value);
         if (ec != std::errc()) [[unlikely]] {

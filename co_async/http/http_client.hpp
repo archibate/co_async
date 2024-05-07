@@ -151,30 +151,30 @@ private:
         co_return Unexpected{std::errc::connection_aborted};
     }
 
-    Task<Expected<void, std::errc>>
-    tryWriteRequestAndBodyStream(HTTPRequest const &request,
-                                 BorrowedStream &bodyStream) {
-        auto cachedStream = make_stream<CachedStream>(bodyStream);
-        for (std::size_t n = 0; n < 3; ++n) {
-            if (!mHttp) {
-                if (auto e = co_await mHttpFactory->createConnection())
-                    [[likely]] {
-                    mHttp = std::move(*e);
-                    mHttp->initClientState();
-                } else {
-                    continue;
-                }
-            }
-            if (co_await mHttp->writeRequest(request) &&
-                co_await mHttp->writeBodyStream(cachedStream) &&
-                co_await mHttp->sock.peekchar()) [[likely]] {
-                co_return {};
-            }
-            (void)cachedStream.seek(0);
-            mHttp = nullptr;
-        }
-        co_return Unexpected{std::errc::connection_aborted};
-    }
+    /* Task<Expected<void, std::errc>> */
+    /* tryWriteRequestAndBodyStream(HTTPRequest const &request, */
+    /*                              BorrowedStream &bodyStream) { */
+    /*     auto cachedStream = make_stream<CachedStream>(bodyStream); */
+    /*     for (std::size_t n = 0; n < 3; ++n) { */
+    /*         if (!mHttp) { */
+    /*             if (auto e = co_await mHttpFactory->createConnection()) */
+    /*                 [[likely]] { */
+    /*                 mHttp = std::move(*e); */
+    /*                 mHttp->initClientState(); */
+    /*             } else { */
+    /*                 continue; */
+    /*             } */
+    /*         } */
+    /*         if (co_await mHttp->writeRequest(request) && */
+    /*             co_await mHttp->writeBodyStream(cachedStream) && */
+    /*             co_await mHttp->sock.peekchar()) [[likely]] { */
+    /*             co_return {}; */
+    /*         } */
+    /*         (void)cachedStream.seek(0); */
+    /*         mHttp = nullptr; */
+    /*     } */
+    /*     co_return Unexpected{std::errc::connection_aborted}; */
+    /* } */
 
     HTTPConnection(std::unique_ptr<HTTPProtocolFactory> httpFactory)
         : mHttp(nullptr),
@@ -231,66 +231,35 @@ public:
 
     HTTPConnection() = default;
 
-    Task<Expected<void, std::errc>> request(HTTPRequest req,
-                                            std::string_view in,
-                                            HTTPResponse &res,
-                                            std::string &out) {
+    Task<Expected<std::tuple<HTTPResponse, std::string>, std::errc>> request(
+        HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
+        HTTPResponse res;
+        std::string body;
         co_await co_await mHttp->readResponse(res);
-        co_await co_await mHttp->readBody(out);
+        co_await co_await mHttp->readBody(body);
         reset.neverMind();
-        co_return {};
+        co_return std::tuple{std::move(res), std::move(body)};
     }
 
-    Task<Expected<void, std::errc>> request(HTTPRequest req,
-                                            std::string_view in,
-                                            HTTPResponse &res,
-                                            BorrowedStream &out) {
+    Task<Expected<std::tuple<HTTPResponse, OwningStream>, std::errc>> requestStreamed(
+        HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
+        HTTPResponse res;
+        std::string body;
         co_await co_await mHttp->readResponse(res);
-        co_await co_await mHttp->readBodyStream(out);
+        auto [r, w] = co_await co_await pipe_stream();
+        co_spawn(pipe_bind(std::move(w),
+                                       [this] (OwningStream &w) -> Task<Expected<>> {
+            co_await co_await mHttp->readBodyStream(w);
+            co_return {};
+        }));
         reset.neverMind();
-        co_return {};
-    }
-
-    Task<Expected<void, std::errc>> request(HTTPRequest req, BorrowedStream &in,
-                                            HTTPResponse &res,
-                                            std::string &out) {
-        builtinHeaders(req);
-        RAIIPointerResetter reset(&mHttp);
-        co_await co_await tryWriteRequestAndBodyStream(req, in);
-        co_await co_await mHttp->readResponse(res);
-        co_await co_await mHttp->readBody(out);
-        reset.neverMind();
-        co_return {};
-    }
-
-    Task<Expected<void, std::errc>> request(HTTPRequest req, BorrowedStream &in,
-                                            HTTPResponse &res,
-                                            BorrowedStream &out) {
-        builtinHeaders(req);
-        RAIIPointerResetter reset(&mHttp);
-        co_await co_await tryWriteRequestAndBodyStream(req, in);
-        co_await co_await mHttp->readResponse(res);
-        co_await co_await mHttp->readBodyStream(out);
-        reset.neverMind();
-        co_return {};
-    }
-
-    Task<Expected<void, std::errc>>
-    request(HTTPRequest req, BorrowedStream &in,
-            FutureReference<HTTPResponse> const &res, BorrowedStream &out) {
-        builtinHeaders(req);
-        RAIIPointerResetter reset(&mHttp);
-        co_await co_await tryWriteRequestAndBodyStream(req, in);
-        co_await co_await mHttp->readResponse(res);
-        co_await co_await mHttp->readBodyStream(out);
-        reset.neverMind();
-        co_return {};
+        co_return std::tuple{res, std::move(r)};
     }
 };
 

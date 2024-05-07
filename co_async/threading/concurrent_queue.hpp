@@ -17,7 +17,7 @@ inline void assume(bool v) {
 #endif
 }
 
-#if 1
+#if 0
 template <class T>
 struct alignas(hardware_destructive_interference_size) ConcurrentQueue {
     std::optional<T> pop() {

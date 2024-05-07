@@ -156,7 +156,7 @@ struct Promise<Expected<T, E>> : PromiseBase {
     }
 
     template <class T2, class E2>
-    ValueAwaiter<T2> await_transform(Expected<T2, E2> e) noexcept {
+    ValueAwaiter<T2> await_transform(Expected<T2, E2> &&e) noexcept {
         if (e.has_error()) [[unlikely]] {
             if constexpr (std::is_void_v<E>) {
                 mResult.putValue(Unexpected<E>());
@@ -172,6 +172,11 @@ struct Promise<Expected<T, E>> : PromiseBase {
         } else {
             return ValueAwaiter<T2>(std::in_place, std::move(*e));
         }
+    }
+
+    template <class T2, class E2>
+    ValueAwaiter<T2> await_transform(Expected<T2, E2> &e) noexcept {
+        return await_transform(std::move(e));
     }
 
     template <class U>

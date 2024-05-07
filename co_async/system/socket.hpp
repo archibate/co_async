@@ -227,6 +227,8 @@ inline Task<Expected<SocketHandle, std::errc>>
 socket_connect(SocketAddress const &addr, std::chrono::nanoseconds timeout) {
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
+    /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_CORK, 0); */
+    /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_NODELAY, 1); */
     auto ts = durationToKernelTimespec(timeout);
     co_await expectError(co_await uring_join(
         uring_connect(sock.fileNo(), (const struct sockaddr *)&addr.mAddr,
@@ -240,7 +242,8 @@ listener_bind(SocketAddress const &addr, int backlog = SOMAXCONN) {
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
     co_await socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
-    /* socketSetOption(sock, IPPROTO_TCP, TCP_CORK, 1); */
+    /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_CORK, 0); */
+    /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_NODELAY, 1); */
     SocketListener serv(sock.releaseFile());
     co_await expectError(bind(
         serv.fileNo(), (struct sockaddr const *)&addr.mAddr, addr.mAddrLen));

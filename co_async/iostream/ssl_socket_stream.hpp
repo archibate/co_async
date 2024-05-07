@@ -502,7 +502,11 @@ protected:
                             eng->iomode = 0;
                             eng->err = BR_ERR_IO;
                         }
-                        co_return Unexpected{e.error()};
+                        if (e.has_error()) {
+                            co_return Unexpected{e.error()};
+                        } else {
+                            co_return Unexpected{std::errc::broken_pipe};
+                        }
                     }
                     co_return {};
                 }
@@ -536,7 +540,11 @@ protected:
                             eng->iomode = 0;
                             eng->err = BR_ERR_IO;
                         }
-                        co_return Unexpected{e.error()};
+                        if (e.has_error()) {
+                            co_return Unexpected{e.error()};
+                        } else {
+                            co_return Unexpected{std::errc::broken_pipe};
+                        }
                     }
                     co_return {};
                 }

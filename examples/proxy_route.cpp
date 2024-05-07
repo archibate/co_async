@@ -4,8 +4,8 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<Expected<void, std::errc>> amain(std::string serveAt,
-                                      std::string targetHost, std::string headers) {
+Task<Expected<void, std::errc>>
+amain(std::string serveAt, std::string targetHost, std::string headers) {
     co_await https_load_ca_certificates();
 
     co_await co_await stdio().putline("listening at: "s + serveAt);
@@ -65,29 +65,22 @@ Task<Expected<void, std::errc>> amain(std::string serveAt,
                         std::string(host.substr(host.find("://"sv) + 3)));
                     for (auto header: split_string(headers, '\n')) {
                         if (header.find(':') != header.npos) {
-                            auto [k, v] = split_string(header, ':').collect<2>();
-                            request.headers.insert_or_assign(trim_string(k), trim_string(v));
+                            auto [k, v] =
+                                split_string(header, ':').collect<2>();
+                            request.headers.insert_or_assign(trim_string(k),
+                                                             trim_string(v));
                         }
                     }
                     auto in = co_await co_await io.request_body();
-                    #if 0
-                    std::string out;
-                    HTTPResponse response;
-                    co_await co_await connection->request(request, in, response, out);
+#if 0
+                    debug(), request, in;
+                    auto [response, out] = co_await co_await connection->request(request, in);
+                    debug(), response, out;
                     co_await co_await io.response(response, out);
-                    #else
-                    FutureGroup group;
-                    FutureSource<HTTPResponse> response;
-                    auto out = co_await co_await pipe_invoke(group, [&](BorrowedStream &out) -> Task<Expected<>> {
-                        co_await co_await connection->request(
-                            request, in, response.reference(), out);
-                            co_await co_await out.flush();
-                            co_await out.close();
-                            co_return {};
-                        });
-                    co_await co_await io.response(co_await response, out);
-                    co_await co_await group.wait();
-                    #endif
+#else
+                    auto [response, stream] = co_await co_await connection->requestStreamed(request, in);
+                    co_await co_await io.response(response, stream);
+#endif
                     co_return {};
                 });
                 while (true) {
@@ -116,7 +109,9 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         targetHost = argv[3];
     }
-    if (int err = (int)co_synchronize(amain(serveAt, targetHost, headers)).error()) {
+    if (auto e = co_synchronize(amain(serveAt, targetHost, headers));
+        e.has_error()) {
+        int err = (int)e.error();
         std::cerr << argv[0] << ": " << std::system_category().message(err)
                   << '\n';
         return err;

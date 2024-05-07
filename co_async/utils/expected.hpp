@@ -378,10 +378,6 @@ public:
         return mError.has_error();
     }
 
-    bool is_error(auto const &e) const {
-        return mError.is_error(e);
-    }
-
     bool has_value() const noexcept {
         return !mError.has_error();
     }

@@ -4,64 +4,87 @@
 #include <co_async/system/fs.hpp>
 #include <co_async/system/pipe.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/threading/future.hpp>
-#include <co_async/threading/future_group.hpp>
 #include <co_async/iostream/stream_base.hpp>
+#include <co_async/threading/condition_variable.hpp>
+#include <co_async/threading/concurrent_queue.hpp>
 
 namespace co_async {
+
+struct PipeStreamBuffer {
+    ConcurrentQueue<std::string> mChunks;
+    ConditionVariable mNonEmpty;
+    ConditionVariable mNonFull;
+};
 
 struct IPipeStream : Stream {
     Task<Expected<std::size_t, std::errc>>
     raw_read(std::span<char> buffer) override {
-        co_return co_await fs_read(mFile, buffer);
+        while (true) {
+            if (auto chunk = mPipe->mChunks.pop()) {
+                mPipe->mNonFull.notify_one();
+                auto n = std::min(buffer.size(), chunk->size());
+                std::memcpy(buffer.data(), chunk->data(), n);
+                co_return n;
+            }
+            co_await mPipe->mNonEmpty;
+        }
     }
 
     Task<> raw_close() override {
-        (co_await fs_close(std::move(mFile))).value_or();
+        mPipe.reset();
+        co_return;
     }
 
-    FileHandle release() noexcept {
-        return std::move(mFile);
-    }
-
-    FileHandle &get() noexcept {
-        return mFile;
-    }
-
-    explicit IPipeStream(FileHandle file) : mFile(std::move(file)) {}
+    explicit IPipeStream(std::shared_ptr<PipeStreamBuffer> buffer) : mPipe(std::move(buffer)) {}
 
 private:
-    FileHandle mFile;
+    std::shared_ptr<PipeStreamBuffer> mPipe;
 };
 
 struct OPipeStream : Stream {
     Task<Expected<std::size_t, std::errc>>
     raw_write(std::span<char const> buffer) override {
-        co_return co_await fs_write(mFile, buffer);
+        if (auto p = mPipe.lock()) [[likely]] {
+            if (buffer.empty()) [[unlikely]] co_return 0;
+            while (!p->mChunks.push(std::string(buffer.data(), buffer.size()))) [[unlikely]] {
+                co_await p->mNonFull;
+            }
+            p->mNonEmpty.notify_one();
+            co_return buffer.size();
+        } else {
+            co_return Unexpected{std::errc::broken_pipe};
+        }
     }
 
     Task<> raw_close() override {
-        (co_await fs_close(std::move(mFile))).value_or();
+        if (auto p = mPipe.lock()) [[likely]] {
+            while (!p->mChunks.push(std::string())) [[unlikely]] {
+                co_await p->mNonFull;
+            }
+            p->mNonEmpty.notify_one();
+        }
+        mPipe.reset();
+        co_return;
     }
 
-    FileHandle release() noexcept {
-        return std::move(mFile);
+    ~OPipeStream() override {
+        if (auto p = mPipe.lock()) {
+            (void)p->mChunks.push(std::string());
+            p->mNonEmpty.notify_one();
+        }
     }
 
-    FileHandle &get() noexcept {
-        return mFile;
-    }
-
-    explicit OPipeStream(FileHandle file) : mFile(std::move(file)) {}
+    explicit OPipeStream(std::weak_ptr<PipeStreamBuffer> buffer) : mPipe(std::move(buffer)) {}
 
 private:
-    FileHandle mFile;
+    std::weak_ptr<PipeStreamBuffer> mPipe;
 };
 
 inline Task<Expected<std::array<OwningStream, 2>, std::errc>> pipe_stream() {
-    auto [r, w] = co_await co_await fs_pipe();
-    co_return std::array{make_stream<IPipeStream>(std::move(r)),
-                         make_stream<OPipeStream>(std::move(w))};
+    auto pipePtr = std::make_shared<PipeStreamBuffer>();
+    auto pipeWeakPtr = std::weak_ptr(pipePtr);
+    co_return std::array{make_stream<IPipeStream>(std::move(pipePtr)),
+                         make_stream<OPipeStream>(std::move(pipeWeakPtr))};
 }
 
 inline Task<Expected<void, std::errc>> pipe_forward(BorrowedStream &in,
@@ -133,9 +156,9 @@ pipe_invoke_string(std::invocable<BorrowedStream &, BorrowedStream &> auto func,
 }
 
 inline Task<Expected<OwningStream, std::errc>>
-pipe_invoke(FutureGroup &group, std::invocable<BorrowedStream &> auto func) {
+pipe_invoke(std::invocable<BorrowedStream &> auto func) {
     auto [r, w] = co_await co_await pipe_stream();
-    group.add([func = std::move(func),
+    co_spawn([func = std::move(func),
                w = std::move(w)]() mutable -> Task<Expected<void, std::errc>> {
         co_await co_await std::invoke(func, w);
         co_await co_await w.flush();
@@ -146,22 +169,25 @@ pipe_invoke(FutureGroup &group, std::invocable<BorrowedStream &> auto func) {
 }
 
 inline Task<Expected<OwningStream, std::errc>>
-pipe_invoke(FutureGroup &group,
-            std::invocable<BorrowedStream &, BorrowedStream &> auto func,
+pipe_invoke(std::invocable<BorrowedStream &, BorrowedStream &> auto func,
             BorrowedStream &in) {
-    return pipe_invoke(
-        group, std::bind(std::move(func), std::ref(in), std::placeholders::_1));
+    return pipe_invoke(std::bind(std::move(func), std::ref(in), std::placeholders::_1));
 }
 
-inline Task<Expected<void, std::errc>> pipe_bind(OwningStream w, auto &&func,
-                                                 auto &&...args) {
+template <class Func, class ...Args>
+    requires std::invocable<Func, Args..., OwningStream &>
+inline Task<Expected<void, std::errc>> pipe_bind(OwningStream w, Func &&func,
+                                                 Args &&...args) {
     return co_bind(
         [func = std::forward<decltype(func)>(func), w = std::move(w)](
             auto &&...args) mutable -> Task<Expected<void, std::errc>> {
-            co_await co_await std::invoke(
-                func, std::forward<decltype(args)>(args)..., w);
-            co_await co_await w.flush();
+            auto e1 = co_await std::invoke(
+                std::forward<decltype(func)>(func),
+                std::forward<decltype(args)>(args)..., w);
+            auto e2 = co_await w.flush();
             co_await w.close();
+            co_await e1;
+            co_await e2;
             co_return {};
         },
         std::forward<decltype(args)>(args)...);

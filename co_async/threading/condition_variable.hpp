@@ -13,8 +13,11 @@ struct ConditionVariable {
             return false;
         }
 
-        void await_suspend(std::coroutine_handle<> coroutine) const {
-            mThat->mWaitingList.push(coroutine);
+        bool await_suspend(std::coroutine_handle<> coroutine) const {
+            if (!mThat->mWaitingList.push(coroutine)) [[unlikely]] {
+                return false;
+            }
+            return true;
         }
 
         void await_resume() const noexcept {}
@@ -39,7 +42,7 @@ struct ConditionVariable {
     }
 };
 
-struct OneshotConditionVariable {
+struct ConditionOnce {
     std::atomic<void *> mWaitingCoroutine{nullptr};
 
     struct Awaiter {
@@ -60,7 +63,7 @@ struct OneshotConditionVariable {
 
         void await_resume() const noexcept {}
 
-        OneshotConditionVariable *mThat;
+        ConditionOnce *mThat;
     };
 
     Awaiter operator co_await() {

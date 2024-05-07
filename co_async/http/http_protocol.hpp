@@ -33,9 +33,9 @@ enum class HTTPContentEncoding {
 };
 
 struct HTTPRequest {
-    std::string method;
-    URI uri;
-    HTTPHeaders headers;
+    std::string method{"GET", 3};
+    URI uri{std::string{"/", 1}, {}};
+    HTTPHeaders headers{};
 
     auto repr() const {
         return std::make_tuple(method, uri, headers);
@@ -43,8 +43,8 @@ struct HTTPRequest {
 };
 
 struct HTTPResponse {
-    int status;
-    HTTPHeaders headers;
+    int status{0};
+    HTTPHeaders headers{};
 
     auto repr() const {
         return std::make_tuple(status, headers);
@@ -196,31 +196,33 @@ protected:
         do {
             auto bufSpan = body.peekbuf();
             auto n = bufSpan.size();
+            /* debug(), std::string_view(bufSpan.data(), n); */
             if (n > 0) {
-                char buf[sizeof(n) * 2 + 4] = {}, *ep = buf;
-                *ep++ = '\r';
-                *ep++ = '\n';
+                char buf[sizeof(n) * 2 + 2] = {}, *ep = buf;
                 do {
                     *ep++ = "0123456789ABCDEF"[n & 15];
                 } while (n >>= 4);
-                std::reverse(buf + 2, ep);
+                std::reverse(buf, ep);
                 *ep++ = '\r';
                 *ep++ = '\n';
                 if (!hadHeader) {
                     co_await co_await sock.puts(
-                        "transfer-encoding: chunked\r\n"sv);
+                        "transfer-encoding: chunked\r\n\r\n"sv);
                     hadHeader = true;
                 }
                 co_await co_await sock.puts(
                     std::string_view{buf, static_cast<std::size_t>(ep - buf)});
                 co_await co_await sock.putspan(bufSpan);
+                co_await co_await sock.puts("\r\n"sv);
+                co_await co_await sock.flush();
             }
         } while (co_await body.fillbuf());
-        if (!hadHeader) {
-            co_await co_await sock.puts("\r\n"sv);
+        if (hadHeader) {
+            co_await co_await sock.puts("0\r\n\r\n"sv);
         } else {
-            co_await co_await sock.puts("\r\n0\r\n\r\n"sv);
+            co_await co_await sock.puts("\r\n"sv);
         }
+        co_await co_await sock.flush();
         co_return {};
     }
 
@@ -244,6 +246,7 @@ protected:
                 std::string line;
                 co_await co_await sock.getn(line, n);
                 co_await co_await body.puts(line);
+                co_await co_await body.flush();
             }
         } else {
             std::string line;
@@ -257,7 +260,9 @@ protected:
                 }
                 line.clear();
                 co_await co_await sock.getn(line, n);
+                /* debug(), line; */
                 co_await co_await body.puts(line);
+                co_await co_await body.flush();
                 co_await co_await sock.dropn(2);
             }
         }
@@ -324,7 +329,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> writeEncoded(std::string_view body) {
+    Task<Expected<void, std::errc>> writeEncodedString(std::string_view body) {
         using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
@@ -384,7 +389,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> readEncoded(std::string &body) {
+    Task<Expected<void, std::errc>> readEncodedString(std::string &body) {
         using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
@@ -427,7 +432,7 @@ public:
 
     Task<Expected<void, std::errc>> writeBody(std::string_view body) override {
         checkPhase(1, 0);
-        co_await co_await writeEncoded(body);
+        co_await co_await writeEncodedString(body);
         co_await co_await sock.flush();
         co_return {};
     }
@@ -441,7 +446,7 @@ public:
 
     Task<Expected<void, std::errc>> readBody(std::string &body) override {
         checkPhase(-1, 0);
-        co_await co_await readEncoded(body);
+        co_await co_await readEncodedString(body);
         co_return {};
     }
 
@@ -533,58 +538,6 @@ public:
 
 struct HTTPProtocolVersion2 : HTTPProtocolVersion11 {
     using HTTPProtocolVersion11::HTTPProtocolVersion11;
-
-    void initServerState() override {
-        HTTPProtocolVersion11::initServerState();
-    }
-
-    void initClientState() override {
-        HTTPProtocolVersion11::initClientState();
-    }
-
-    Task<Expected<void, std::errc>>
-    writeBodyStream(BorrowedStream &body) override {
-        checkPhase(1, 0);
-        co_return Unexpected{std::errc::function_not_supported};
-    }
-
-    Task<Expected<void, std::errc>>
-    readBodyStream(BorrowedStream &body) override {
-        checkPhase(-1, 0);
-        co_return Unexpected{std::errc::function_not_supported};
-    }
-
-    Task<Expected<void, std::errc>> writeBody(std::string_view body) override {
-        checkPhase(1, 0);
-        co_return Unexpected{std::errc::function_not_supported};
-    }
-
-    Task<Expected<void, std::errc>> readBody(std::string &body) override {
-        checkPhase(-1, 0);
-        co_return Unexpected{std::errc::function_not_supported};
-    }
-
-    Task<Expected<void, std::errc>>
-    writeRequest(HTTPRequest const &req) override {
-        checkPhase(0, 1);
-        co_return Unexpected{std::errc::function_not_supported};
-    }
-
-    Task<Expected<void, std::errc>> readRequest(HTTPRequest &req) override {
-        checkPhase(0, -1);
-        co_return Unexpected{std::errc::function_not_supported};
-    }
-
-    Task<Expected<void, std::errc>>
-    writeResponse(HTTPResponse const &res) override {
-        checkPhase(0, 1);
-        co_return Unexpected{std::errc::function_not_supported};
-    }
-
-    Task<Expected<void, std::errc>> readResponse(HTTPResponse &res) override {
-        checkPhase(0, -1);
-        co_return Unexpected{std::errc::function_not_supported};
-    }
 };
 
 } // namespace co_async

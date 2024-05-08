@@ -12,8 +12,8 @@ struct ChatCompletionRequest {
         REFLECT(role, content);
     };
 
-    std::vector<Message> messages;
-    std::string model;
+    reflect::NoDefault<std::vector<Message>> messages;
+    reflect::NoDefault<std::string> model;
     std::optional<double> frequency_penalty;
     std::optional<int> max_tokens;
     std::optional<double> persence_penalty;
@@ -27,28 +27,62 @@ struct ChatCompletionRequest {
     REFLECT(messages, model, frequency_penalty, max_tokens, persence_penalty, stop, temperature, top_p, logprobs, top_logprobs, stream);
 };
 
-struct ChatCompletionStreamingResult {
+struct ChatCompletionResult {
     struct Choice {
-        struct Delta {
+        struct Message {
             std::optional<std::string> role;
             std::optional<std::string> content;
 
             REFLECT(role, content);
         };
 
-        int index;
-        Delta delta;
-        std::optional<std::string> finish_reason;
+        struct Logprobs {
+            struct Content {
+                struct Logprob {
+                    std::string token;
+                    double logprob;
+                    std::vector<std::uint8_t> bytes;
 
-        REFLECT(index, delta, finish_reason);
+                    REFLECT(token, logprob, bytes);
+                };
+
+                std::string token;
+                double logprob;
+                std::vector<std::uint8_t> bytes;
+                std::vector<Logprob> top_logprobs;
+
+                REFLECT(token, logprob, bytes, top_logprobs);
+            };
+
+            std::vector<Content> content;
+
+            REFLECT(content);
+        };
+
+        int index;
+        std::optional<Message> delta;
+        std::optional<Message> message;
+        std::optional<std::string> finish_reason;
+        std::optional<Logprobs> logprobs;
+
+        REFLECT(index, delta, finish_reason, logprobs);
+    };
+
+    struct Usage {
+        int completion_tokens;
+        int prompt_tokens;
+        int total_tokens;
+
+        REFLECT(completion_tokens, prompt_tokens, total_tokens);
     };
 
     std::string id;
     std::vector<Choice> choices;
     std::int64_t created;
     std::string model;
+    std::optional<Usage> usage;
 
-    REFLECT(id, choices, created, model);
+    REFLECT(id, choices, created, model, usage);
 };
 
 Task<Expected<void, std::errc>> amain() {
@@ -71,7 +105,9 @@ Task<Expected<void, std::errc>> amain() {
         };
         auto compReq = ChatCompletionRequest{
             .messages = {
-                {.role = "user", .content = "Why Google hates C++ exceptions?"},
+                /* {.role = "user", .content = "Why Google hates C++ exceptions?"}, */
+                /* {.role = "user", .content = "What is std::error_code?"}, */
+                {.role = "user", .content = "What is the difference between std::error_code and std::error_condition?"},
             },
             .model = "deepseek-coder",
             .stream = true,
@@ -85,9 +121,9 @@ Task<Expected<void, std::errc>> amain() {
                     break;
                 }
                 /* std::cerr << line << '\n'; */
-                auto compRes = reflect::json_decode<ChatCompletionStreamingResult>(line);
+                auto compRes = reflect::json_decode<ChatCompletionResult>(line);
                 /* debug(), compRes; */
-                co_await co_await stdio().puts(compRes.choices.at(0).delta.content.value_or(""));
+                co_await co_await stdio().puts(compRes.choices.at(0).delta.value().content.value_or(""));
                 co_await co_await stdio().flush();
             }
         }

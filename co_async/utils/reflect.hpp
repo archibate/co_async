@@ -129,8 +129,84 @@ REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector, T<REFLECT__PP_
 REFLECT_GLOBAL_TEMPLATED__EXTRA(__VA_ARGS__)
 #endif
 
+struct JsonValue {
+    using Ptr = std::unique_ptr<JsonValue>;
+
+    using Null = std::monostate;
+    using String = std::string;
+    using Dict = std::map<std::string, JsonValue::Ptr>;
+    using Array = std::vector<JsonValue::Ptr>;
+    using Integer = std::int64_t;
+    using Real = double;
+    using Boolean = bool;
+    using Union = std::variant<Null, String, Dict, Array, Integer, Real, Boolean>;
+
+    Union inner;
+
+    template <class T>
+    explicit JsonValue(std::in_place_type_t<T>, T &&value) : inner(std::in_place_type<T>, std::move(value)) {}
+
+    template <class T>
+    static Ptr make(T value) {
+        return std::make_unique<JsonValue>(std::in_place_type<T>, std::move(value));
+    }
+};
+
+template <class T>
+struct NoDefault {
+private:
+    T value;
+
+public:
+    /* template <class ...Args, class = std::enable_if_t<std::is_constructible_v<T, Args...> && sizeof...(Args)>> */
+    /* explicit NoDefault(Args &&...args) noexcept(std::is_nothrow_constructible_v<T, Args...>) : value(std::forward<Args>(args)...) { */
+    /* } */
+
+    NoDefault(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>) : value(std::move(value)) {}
+    NoDefault(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>) : value(value) {}
+
+    template <class U, class = std::enable_if_t<std::is_convertible_v<U, T>>>
+    NoDefault(U &&value) noexcept(std::is_nothrow_convertible_v<U, T>) : value(std::forward<U>(value)) {}
+
+    template <class = std::enable_if_t<std::is_convertible_v<std::initializer_list<typename T::value_type>, T>>>
+    NoDefault(std::initializer_list<typename T::value_type> value) noexcept(std::is_nothrow_convertible_v<std::initializer_list<typename T::value_type>, T>) : value(std::move(value)) {}
+
+    NoDefault(NoDefault const &) = default;
+    NoDefault &operator=(NoDefault const &) = default;
+    NoDefault(NoDefault &&) = default;
+    NoDefault &operator=(NoDefault &&) = default;
+
+    T &operator*() noexcept {
+        return value;
+    }
+
+    T const &operator*() const noexcept {
+        return value;
+    }
+
+    T *operator->() noexcept {
+        return std::addressof(value);
+    }
+
+    T const *operator->() const noexcept {
+        return std::addressof(value);
+    }
+
+    using value_type = T;
+};
+
+struct JsonEncoder;
+
 template <class T, class = void>
-struct JsonTrait;
+struct JsonTrait {
+    static void putValue(JsonEncoder *encoder, T const &value) {
+        static_assert(!std::is_same_v<T, T>, "the given type contains members that are not reflected, please add REFLECT macro to it");
+    }
+
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        static_assert(!std::is_same_v<T, T>, "the given type contains members that are not reflected, please add REFLECT macro to it");
+    }
+};
 
 struct JsonEncoder {
     std::string json;
@@ -186,64 +262,45 @@ struct JsonEncoder {
     }
 };
 
-struct JsonValue {
-    using Ptr = std::unique_ptr<JsonValue>;
-
-    using Null = std::monostate;
-    using String = std::string;
-    using Dict = std::map<std::string, JsonValue::Ptr>;
-    using Array = std::vector<JsonValue::Ptr>;
-    using Integer = std::int64_t;
-    using Real = double;
-    using Boolean = bool;
-    using Union = std::variant<Null, String, Dict, Array, Integer, Real, Boolean>;
-
-    Union inner;
-
-    template <class T>
-    explicit JsonValue(std::in_place_type_t<T>, T &&value) : inner(std::in_place_type<T>, std::move(value)) {}
-
-    template <class T>
-    static Ptr make(T value) {
-        return std::make_unique<JsonValue>(std::in_place_type<T>, std::move(value));
-    }
+enum class JsonError : int {
+    Success = 0,
+    TypeMismatch,
+    UnexpectedEnd,
+    UnexpectedToken,
+    NonTerminatedString,
+    InvalidUTF16String,
+    DictKeyNotString,
+    InvalidNumberFormat,
+    NotImplemented,
 };
 
-struct JsonCategory : std::error_category {
-    enum : int {
-        Success = 0,
-        TypeMismatch,
-        UnexpectedEnd,
-        UnexpectedToken,
-        NonTerminatedString,
-        InvalidUTF16String,
-        DictKeyNotString,
-        InvalidNumberFormat,
-    };
-
-    virtual const char *name() const noexcept {
-        return "reflect_json";
-    }
-
-    virtual std::string message(int i) const {
-        using namespace std::string_literals;
-        switch (i) {
-        case Success: return "success"s;
-        case TypeMismatch: return "type mismatch"s;
-        case UnexpectedEnd: return "unexpected end"s;
-        case UnexpectedToken: return "unexpected token"s;
-        case NonTerminatedString: return "non-terminated string"s;
-        case InvalidUTF16String: return "invalid utf-16 string"s;
-        case DictKeyNotString: return "dict key must be string"s;
-        case InvalidNumberFormat: return "invalid number format"s;
-        default: return "unknown error"s;
+inline std::error_category const &jsonCategory() {
+    static struct : std::error_category {
+        virtual const char *name() const noexcept {
+            return "reflect::json";
         }
-    }
-};
 
-static std::error_category const &jsonCategory() {
-    static JsonCategory instance;
+        virtual std::string message(int e) const {
+            using namespace std::string_literals;
+            switch (static_cast<JsonError>(e)) {
+                case JsonError::Success: return "success"s;
+                case JsonError::TypeMismatch: return "type mismatch"s;
+                case JsonError::UnexpectedEnd: return "unexpected end"s;
+                case JsonError::UnexpectedToken: return "unexpected token"s;
+                case JsonError::NonTerminatedString: return "non-terminated string"s;
+                case JsonError::InvalidUTF16String: return "invalid utf-16 string"s;
+                case JsonError::DictKeyNotString: return "dict key must be string"s;
+                case JsonError::InvalidNumberFormat: return "invalid number format"s;
+                case JsonError::NotImplemented: return "not implemented"s;
+                default: return "unknown error"s;
+            }
+        }
+    } instance;
     return instance;
+}
+
+inline std::error_code make_error_code(JsonError e) {
+    return std::error_code(static_cast<int>(e), jsonCategory());
 }
 
 inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
@@ -251,7 +308,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
     JsonValue::Ptr current;
     auto nonempty = json.find_first_not_of(" \t\n\r\0"sv);
     if (nonempty == json.npos) {
-        ec.assign(JsonCategory::UnexpectedEnd, jsonCategory());
+        ec = make_error_code(JsonError::UnexpectedEnd);
         return nullptr;
     }
     json.remove_prefix(nonempty);
@@ -265,7 +322,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
         std::size_t i;
         for (i = 0; ; ++i) {
             if (i == json.size()) {
-                ec.assign(JsonCategory::NonTerminatedString, jsonCategory());
+                ec = make_error_code(JsonError::NonTerminatedString);
                 return nullptr;
             }
             char c = json[i];
@@ -318,7 +375,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                             hisorr = true;
                             continue;
                         } else {
-                            ec.assign(JsonCategory::InvalidUTF16String, jsonCategory());
+                            ec = make_error_code(JsonError::InvalidUTF16String);
                             return nullptr;
                         }
                     } else if (0xDC00 <= hex && hex < 0xE000) {
@@ -327,7 +384,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                             hisorr = false;
                             phase = 0;
                         } else {
-                            ec.assign(JsonCategory::InvalidUTF16String, jsonCategory());
+                            ec = make_error_code(JsonError::InvalidUTF16String);
                             return nullptr;
                         }
                     }
@@ -346,7 +403,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                         str.push_back(0x80 | ((hex >> 6) & 0x3F));
                         str.push_back(0x80 | (hex & 0x3F));
                     } else {
-                        ec.assign(JsonCategory::InvalidUTF16String, jsonCategory());
+                        ec = make_error_code(JsonError::InvalidUTF16String);
                         return nullptr;
                     }
                     phase = 0;
@@ -365,7 +422,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
         for (;;) {
             nonempty = json.find_first_not_of(" \t\n\r\0"sv);
             if (nonempty == json.npos) {
-                ec.assign(JsonCategory::UnexpectedEnd, jsonCategory());
+                ec = make_error_code(JsonError::UnexpectedEnd);
                 return nullptr;
             }
             json.remove_prefix(nonempty);
@@ -384,17 +441,17 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                 if (auto p = std::get_if<JsonValue::String>(&key->inner)) {
                     keyString = std::move(*p);
                 } else {
-                    ec.assign(JsonCategory::DictKeyNotString, jsonCategory());
+                    ec = make_error_code(JsonError::DictKeyNotString);
                     return nullptr;
                 }
                 auto nonempty = json.find_first_not_of(" \t\n\r\0"sv);
                 if (nonempty == json.npos) {
-                    ec.assign(JsonCategory::UnexpectedEnd, jsonCategory());
+                    ec = make_error_code(JsonError::UnexpectedEnd);
                     return nullptr;
                 }
                 json.remove_prefix(nonempty);
                 if (json.front() != ':') {
-                    ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+                    ec = make_error_code(JsonError::UnexpectedToken);
                     return nullptr;
                 }
                 json.remove_prefix(1);
@@ -412,7 +469,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
         for (;;) {
             auto nonempty = json.find_first_not_of(" \t\n\r\0"sv);
             if (nonempty == json.npos) {
-                ec.assign(JsonCategory::UnexpectedEnd, jsonCategory());
+                ec = make_error_code(JsonError::UnexpectedEnd);
                 return nullptr;
             }
             json.remove_prefix(nonempty);
@@ -440,7 +497,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
             try {
                 value = std::stod(str);
             } catch (std::exception const &) {
-                ec.assign(JsonCategory::InvalidNumberFormat, jsonCategory());
+                ec = make_error_code(JsonError::InvalidNumberFormat);
                 return nullptr;
             }
             current = JsonValue::make<JsonValue::Real>(value);
@@ -449,7 +506,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
             try {
                 value = std::stoll(str);
             } catch (std::exception const &) {
-                ec.assign(JsonCategory::InvalidNumberFormat, jsonCategory());
+                ec = make_error_code(JsonError::InvalidNumberFormat);
                 return nullptr;
             }
             current = JsonValue::make<JsonValue::Integer>(value);
@@ -457,27 +514,27 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
         json.remove_prefix(end);
     } else if (c == 't') {
         if (!json.starts_with("true"sv)) {
-            ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+            ec = make_error_code(JsonError::UnexpectedToken);
             return nullptr;
         }
         current = JsonValue::make<JsonValue::Boolean>(true);
         json.remove_prefix(4);
     } else if (c == 'f') {
         if (!json.starts_with("false"sv)) {
-            ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+            ec = make_error_code(JsonError::UnexpectedToken);
             return nullptr;
         }
         current = JsonValue::make<JsonValue::Boolean>(false);
         json.remove_prefix(5);
     } else if (c == 'n') {
         if (!json.starts_with("null"sv)) {
-            ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+            ec = make_error_code(JsonError::UnexpectedToken);
             return nullptr;
         }
         current = JsonValue::make<JsonValue::Null>(JsonValue::Null());
         json.remove_prefix(4);
     } else {
-        ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+        ec = make_error_code(JsonError::UnexpectedToken);
         return nullptr;
     }
     return current;
@@ -540,7 +597,7 @@ struct ReflectorJsonDecode {
 #if DEBUG_LEVEL
         std::cerr << std::string("reflect::json_decode type mismatch (expect ") + expect + ", got " + got + ")\n";
 #endif
-        ec.assign(JsonCategory::TypeMismatch, jsonCategory());
+        ec = make_error_code(JsonError::TypeMismatch);
     }
 };
 
@@ -557,7 +614,7 @@ struct JsonTraitArrayLike {
             } else {
                 encoder->put(',');
             }
-            encoder->putValue(*it);
+            JsonTrait<typename T::value_type>::putValue(encoder, *it);
         }
         encoder->put(']');
     }
@@ -595,7 +652,7 @@ struct JsonTraitDictLike {
             }
             encoder->putString(it->first);
             encoder->put(':');
-            encoder->putValue(it->second);
+            JsonTrait<typename T::mapped_type>::putValue(encoder, it->second);
         }
         encoder->put('}');
     }
@@ -727,6 +784,8 @@ struct JsonTraitVariantLike {
 
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        ec = make_error_code(JsonError::NotImplemented);
+        return false;
         throw "TODO!! IMPLEMENT THIS!!";
         /* std::visit([&](auto const &arg) { */
         /*     using Arg = std::decay_t<decltype(arg)>; */
@@ -771,6 +830,18 @@ struct JsonTraitObjectLike {
             ReflectorJsonDecode::typeMismatch("object", data, ec);
             return false;
         }
+    }
+};
+
+struct JsonTraitWrapperLike {
+    template <class T>
+    static void putValue(JsonEncoder *encoder, T const &value) {
+        return JsonTrait<typename T::value_type>::putValue(encoder, *value);
+    }
+
+    template <class T>
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        return JsonTrait<typename T::value_type>::getValue(data, *value, ec);
     }
 };
 
@@ -820,6 +891,10 @@ struct JsonTrait<std::monostate> : JsonTraitNullLike {
 
 template <>
 struct JsonTrait<bool> : JsonTraitBooleanLike {
+};
+
+template <class T>
+struct JsonTrait<NoDefault<T>> : JsonTraitWrapperLike {
 };
 
 template <class T>

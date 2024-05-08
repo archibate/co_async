@@ -35,7 +35,7 @@
 // TL;DR: This is a useful debugging utility the C++ programmers had all dreamed of:
 //
 //   1. print using the neat comma syntax, easy-to-use
-//   2. supports printing STL objects including string, vector, tuple, optional, variant, unique_ptr, type_info, and so on. (C++20 required)
+//   2. supports printing STL objects including string, vector, tuple, optional, variant, unique_ptr, type_info, error_code, and so on.
 //   3. just add a member method named `repr`, e.g. `std::string repr() const { ... }` to support printing your custom class!
 //   4. classes that are not supported to print will be shown in something like `[TypeName@0xdeadbeaf]` where 0xdeadbeaf is it's address.
 //   5. highly configurable, customize the behaviour by defining the DEBUG_xxx macros (see below)
@@ -230,6 +230,7 @@
 # include <cstdlib>
 # include <iomanip>
 # include <iostream>
+# include <system_error>
 # if DEBUG_SHOW_SOURCE_CODE_LINE
 #  include <fstream>
 #  include <unordered_map>
@@ -539,6 +540,23 @@ private:
             } else {
                 oss << DEBUG_NULLPTR_STRING;
             }
+        } else if constexpr (std::is_same<T, std::errc>::value) {
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+            if (t != std::errc()) {
+                oss << std::system_category().name() << " error " << static_cast<int>(t) << ": ";
+                oss << std::system_category().message(static_cast<int>(t));
+            } else {
+                oss << "no error";
+            }
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
+        } else if constexpr (std::is_same<T, std::error_code>::value || std::is_same<T, std::error_condition>::value) {
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+            if (t) {
+                oss << t.category().name() << " error " << t.value() << ": " << t.message();
+            } else {
+                oss << "no error";
+            }
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
         } else if constexpr (requires(std::ostream &oss, T const &t) {
                                  oss << t;
                              }) {
@@ -697,6 +715,9 @@ private:
     DEBUG_CON(bool, std::is_same<T, bool>::value);
     DEBUG_CON(char, std::is_same<T, char>::value ||
                         std::is_same<T, signed char>::value);
+    DEBUG_CON(error_code, std::is_same<T, std::errc>::value ||
+                        std::is_same<T, std::error_code>::value ||
+                        std::is_same<T, std::error_condition>::value);
 #  if __cpp_char8_t
     DEBUG_CON(unicode_char, std::is_same<T, char8_t>::value ||
                                 std::is_same<T, char16_t>::value ||
@@ -718,7 +739,6 @@ private:
     DEBUG_CON(pointer, std::is_pointer<T>::value ||
                            std::is_same<T, std::nullptr_t>::value);
     DEBUG_CON(enum, std::is_enum<T>::value);
-    DEBUG_CON(type_info, std::is_same<T, std::type_info>::value);
 
     template <class T, class = void>
     struct debug_format_trait;
@@ -918,6 +938,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             debug_cond_is_ostream_ok<T>::value>::type> {
         void operator()(std::ostream &oss, T const &t) const {
             oss << t;
@@ -934,6 +955,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             debug_cond_pointer<T>::value>::type> {
         void operator()(std::ostream &oss, T const &t) const {
@@ -964,6 +986,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value &&
             debug_cond_is_range<T>::value>::type> {
@@ -1051,6 +1074,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             debug_cond_is_tuple<T>::value>::type> {
@@ -1072,6 +1096,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value &&
@@ -1087,12 +1112,50 @@ private:
         }
     };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<std::is_same<T, std::type_info>::value>::type> {
+    template <class V>
+    struct debug_format_trait<std::type_info, V> {
         void operator()(std::ostream &oss, std::type_info const &t) const {
             oss << debug_demangle(t.name());
+        }
+    };
+
+    template <class V>
+    struct debug_format_trait<std::errc, V> {
+        void operator()(std::ostream &oss, std::errc const &t) const {
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+            if (t != std::errc()) {
+                oss << std::system_category().name() << " error " << static_cast<int>(t) << ": ";
+                oss << std::system_category().message(static_cast<int>(t));
+            } else {
+                oss << "no error";
+            }
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
+        }
+    };
+
+    template <class V>
+    struct debug_format_trait<std::error_code, V> {
+        void operator()(std::ostream &oss, std::error_code const &t) const {
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+            if (t) {
+                oss << t.category().name() << " error " << t.value() << ": " << t.message();
+            } else {
+                oss << "no error";
+            }
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
+        }
+    };
+
+    template <class V>
+    struct debug_format_trait<std::error_condition, V> {
+        void operator()(std::ostream &oss, std::error_condition const &t) const {
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+            if (t) {
+                oss << t.category().name() << " error " << t.value() << ": " << t.message();
+            } else {
+                oss << "no error";
+            }
+            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
         }
     };
 
@@ -1106,6 +1169,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1125,6 +1189,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1145,6 +1210,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1166,6 +1232,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1188,6 +1255,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1211,6 +1279,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1244,6 +1313,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1267,6 +1337,7 @@ private:
             !debug_cond_integral<T>::value &&
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
+            !debug_cond_error_code<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1623,9 +1694,10 @@ public:
 #define DEBUG_PP_IF_0(t, f) DEBUG_PP_UNWRAP_BRACE(f)
 #define DEBUG_PP_IF_1(t, f) DEBUG_PP_UNWRAP_BRACE(t)
 
-#define DEBUG_PP_NARG(...) DEBUG_PP_IF((__VA_ARGS__), (0), (DEBUG_PP_NARG_(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)))
+
+#define DEBUG_PP_NARG(...) DEBUG_PP_IF((__VA_ARGS__), (0), (DEBUG_PP_NARG_(__VA_ARGS__, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)))
 #define DEBUG_PP_NARG_(...) DEBUG_PP_NARG__(__VA_ARGS__)
-#define DEBUG_PP_NARG__(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define DEBUG_PP_NARG__(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, N, ...) N
 
 #define DEBUG_PP_FOREACH(f, ...) DEBUG_PP_FOREACH_(DEBUG_PP_NARG(__VA_ARGS__), f, __VA_ARGS__)
 #define DEBUG_PP_FOREACH_(N, f, ...) DEBUG_PP_FOREACH__(N, f, __VA_ARGS__)
@@ -1641,6 +1713,24 @@ public:
 #define DEBUG_PP_FOREACH_8(f, a, b, c, d, e, g, h, i) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i)
 #define DEBUG_PP_FOREACH_9(f, a, b, c, d, e, g, h, i, j) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j)
 #define DEBUG_PP_FOREACH_10(f, a, b, c, d, e, g, h, i, j, k) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k)
+#define DEBUG_PP_FOREACH_11(f, a, b, c, d, e, g, h, i, j, k, l) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l)
+#define DEBUG_PP_FOREACH_12(f, a, b, c, d, e, g, h, i, j, k, l, m) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m)
+#define DEBUG_PP_FOREACH_13(f, a, b, c, d, e, g, h, i, j, k, l, m, n) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n)
+#define DEBUG_PP_FOREACH_14(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o)
+#define DEBUG_PP_FOREACH_15(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p)
+#define DEBUG_PP_FOREACH_16(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q)
+#define DEBUG_PP_FOREACH_17(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r)
+#define DEBUG_PP_FOREACH_18(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s)
+#define DEBUG_PP_FOREACH_19(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t)
+#define DEBUG_PP_FOREACH_20(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u)
+#define DEBUG_PP_FOREACH_21(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v)
+#define DEBUG_PP_FOREACH_22(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w)
+#define DEBUG_PP_FOREACH_23(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x)
+#define DEBUG_PP_FOREACH_24(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x) f(y)
+#define DEBUG_PP_FOREACH_25(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x) f(y) f(z)
+
+#define DEBUG_PP_STRINGIFY(...) DEBUG_PP_STRINGIFY(__VA_ARGS__)
+#define DEBUG_PP_STRINGIFY_(...) #__VA_ARGS__
 
 #define DEBUG_PP_EXPAND(...) DEBUG_PP_EXPAND_(__VA_ARGS__)
 #define DEBUG_PP_EXPAND_(...) __VA_ARGS__

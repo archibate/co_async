@@ -1,6 +1,5 @@
 #pragma once
 
-#include "co_async/utils/debug.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -36,12 +35,6 @@ namespace reflect {
 #define REFLECT__PP_GET_2(a, b, ...) b
 #define REFLECT__PP_GET_3(a, b, c, ...) c
 #define REFLECT__PP_GET_4(a, b, c, d, ...) d
-#define REFLECT__PP_GET_5(a, b, c, d, e, ...) e
-#define REFLECT__PP_GET_6(a, b, c, d, e, f, ...) f
-#define REFLECT__PP_GET_7(a, b, c, d, e, f, g, ...) g
-#define REFLECT__PP_GET_8(a, b, c, d, e, f, g, h, ...) h
-#define REFLECT__PP_GET_9(a, b, c, d, e, f, g, h, i, ...) i
-#define REFLECT__PP_GET_10(a, b, c, d, e, f, g, h, i, j, ...) j
 
 #define REFLECT__PP_VA_EMPTY_(...) REFLECT__PP_GET_2(__VA_OPT__(,)0,1,)
 #define REFLECT__PP_VA_OPT_SUPPORT ! REFLECT__PP_VA_EMPTY_
@@ -59,9 +52,9 @@ namespace reflect {
 #define REFLECT__PP_IF_0(t, f) REFLECT__PP_UNWRAP_BRACE(f)
 #define REFLECT__PP_IF_1(t, f) REFLECT__PP_UNWRAP_BRACE(t)
 
-#define REFLECT__PP_NARG(...) REFLECT__PP_IF((__VA_ARGS__), (0), (REFLECT__PP_NARG_(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)))
+#define REFLECT__PP_NARG(...) REFLECT__PP_IF((__VA_ARGS__), (0), (REFLECT__PP_NARG_(__VA_ARGS__, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)))
 #define REFLECT__PP_NARG_(...) REFLECT__PP_NARG__(__VA_ARGS__)
-#define REFLECT__PP_NARG__(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define REFLECT__PP_NARG__(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, N, ...) N
 
 #define REFLECT__PP_FOREACH(f, ...) REFLECT__PP_FOREACH_(REFLECT__PP_NARG(__VA_ARGS__), f, __VA_ARGS__)
 #define REFLECT__PP_FOREACH_(N, f, ...) REFLECT__PP_FOREACH__(N, f, __VA_ARGS__)
@@ -77,6 +70,24 @@ namespace reflect {
 #define REFLECT__PP_FOREACH_8(f, a, b, c, d, e, g, h, i) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i)
 #define REFLECT__PP_FOREACH_9(f, a, b, c, d, e, g, h, i, j) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j)
 #define REFLECT__PP_FOREACH_10(f, a, b, c, d, e, g, h, i, j, k) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k)
+#define REFLECT__PP_FOREACH_11(f, a, b, c, d, e, g, h, i, j, k, l) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l)
+#define REFLECT__PP_FOREACH_12(f, a, b, c, d, e, g, h, i, j, k, l, m) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m)
+#define REFLECT__PP_FOREACH_13(f, a, b, c, d, e, g, h, i, j, k, l, m, n) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n)
+#define REFLECT__PP_FOREACH_14(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o)
+#define REFLECT__PP_FOREACH_15(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p)
+#define REFLECT__PP_FOREACH_16(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q)
+#define REFLECT__PP_FOREACH_17(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r)
+#define REFLECT__PP_FOREACH_18(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s)
+#define REFLECT__PP_FOREACH_19(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t)
+#define REFLECT__PP_FOREACH_20(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u)
+#define REFLECT__PP_FOREACH_21(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v)
+#define REFLECT__PP_FOREACH_22(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w)
+#define REFLECT__PP_FOREACH_23(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x)
+#define REFLECT__PP_FOREACH_24(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x) f(y)
+#define REFLECT__PP_FOREACH_25(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x) f(y) f(z)
+
+#define REFLECT__PP_STRINGIFY(...) REFLECT__PP_STRINGIFY(__VA_ARGS__)
+#define REFLECT__PP_STRINGIFY_(...) #__VA_ARGS__
 
 #define REFLECT__PP_EXPAND(...) REFLECT__PP_EXPAND_(__VA_ARGS__)
 #define REFLECT__PP_EXPAND_(...) __VA_ARGS__
@@ -84,25 +95,38 @@ namespace reflect {
 #define REFLECT__PP_UNWRAP_BRACE(...) REFLECT__PP_UNWRAP_BRACE_ __VA_ARGS__
 #define REFLECT__PP_UNWRAP_BRACE_(...) __VA_ARGS__
 
+#ifdef DEBUG_REPR
+#define REFLECT__EXTRA(...) DEBUG_REPR(__VA_ARGS__)
+#define REFLECT_GLOBAL__EXTRA(...) DEBUG_REPR_GLOBAL(__VA_ARGS__)
+#define REFLECT_GLOBAL_TEMPLATED__EXTRA(...) DEBUG_REPR_GLOBAL_TEMPLATED(__VA_ARGS__)
+#else
+#define REFLECT__EXTRA(...)
+#define REFLECT_GLOBAL__EXTRA(...)
+#define REFLECT_GLOBAL_TEMPLATED__EXTRA(...)
+#endif
+
 #define REFLECT__ON_EACH(x) reflector.member(#x, x);
 #define REFLECT(...) \
 template <class ReflectorT> \
 REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector) { \
     REFLECT__PP_FOREACH(REFLECT__ON_EACH, __VA_ARGS__) \
-}
+} \
+REFLECT__EXTRA(__VA_ARGS__)
 
 #define REFLECT__GLOBAL_ON_EACH(x) reflector.member(#x##_REFLECT__static_string, object.x);
 #define REFLECT_GLOBAL(T, ...) \
 template <class ReflectorT> \
 REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector, T &object) { \
     REFLECT__PP_FOREACH(REFLECT__GLOBAL_ON_EACH, __VA_ARGS__) \
-}
+} \
+REFLECT_GLOBAL__EXTRA(__VA_ARGS__)
 
 #define REFLECT_GLOBAL_TEMPLATED(T, Tmpls, TmplsClassed, ...) \
 template <class ReflectorT, REFLECT__PP_UNWRAP_BRACE(TmplsClassed)> \
 REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector, T<REFLECT__PP_UNWRAP_BRACE(Tmpls)> &object) { \
     REFLECT__PP_FOREACH(REFLECT__GLOBAL_ON_EACH, __VA_ARGS__) \
-}
+} \
+REFLECT_GLOBAL_TEMPLATED__EXTRA(__VA_ARGS__)
 #endif
 
 template <class T, class = void>
@@ -162,208 +186,302 @@ struct JsonEncoder {
     }
 };
 
-struct JsonDecoder {
-    struct Value {
-        using Ptr = std::unique_ptr<Value>;
+struct JsonValue {
+    using Ptr = std::unique_ptr<JsonValue>;
 
-        using Null = std::monostate;
-        using String = std::string;
-        using Dict = std::map<std::string, Value::Ptr>;
-        using Array = std::vector<Value::Ptr>;
-        using Integer = std::int64_t;
-        using Real = double;
-        using Boolean = bool;
-        using Union = std::variant<Null, String, Dict, Array, Integer, Real, Boolean>;
+    using Null = std::monostate;
+    using String = std::string;
+    using Dict = std::map<std::string, JsonValue::Ptr>;
+    using Array = std::vector<JsonValue::Ptr>;
+    using Integer = std::int64_t;
+    using Real = double;
+    using Boolean = bool;
+    using Union = std::variant<Null, String, Dict, Array, Integer, Real, Boolean>;
 
-        Union data;
+    Union inner;
 
-        template <class T>
-        explicit Value(std::in_place_type_t<T>, T &&value) : data(std::in_place_type<T>, std::move(value)) {}
+    template <class T>
+    explicit JsonValue(std::in_place_type_t<T>, T &&value) : inner(std::in_place_type<T>, std::move(value)) {}
 
-        template <class T>
-        static Ptr make(T value) {
-            return std::make_unique<Value>(std::in_place_type<T>, std::move(value));
-        }
+    template <class T>
+    static Ptr make(T value) {
+        return std::make_unique<JsonValue>(std::in_place_type<T>, std::move(value));
+    }
+};
+
+struct JsonCategory : std::error_category {
+    enum : int {
+        Success = 0,
+        TypeMismatch,
+        UnexpectedEnd,
+        UnexpectedToken,
+        NonTerminatedString,
+        InvalidUTF16String,
+        DictKeyNotString,
+        InvalidNumberFormat,
     };
 
-    Value::Ptr root;
+    virtual const char *name() const noexcept {
+        return "reflect_json";
+    }
 
-    static Value::Ptr parse(std::string_view &json) {
-        using namespace std::string_view_literals;
-        if (json.empty()) {
-            throw std::runtime_error("reflect::json_decode got unexpected end when parsing json");
+    virtual std::string message(int i) const {
+        using namespace std::string_literals;
+        switch (i) {
+        case Success: return "success"s;
+        case TypeMismatch: return "type mismatch"s;
+        case UnexpectedEnd: return "unexpected end"s;
+        case UnexpectedToken: return "unexpected token"s;
+        case NonTerminatedString: return "non-terminated string"s;
+        case InvalidUTF16String: return "invalid utf-16 string"s;
+        case DictKeyNotString: return "dict key must be string"s;
+        case InvalidNumberFormat: return "invalid number format"s;
+        default: return "unknown error"s;
         }
-        Value::Ptr current;
-        auto nonempty = json.find_first_not_of(" \t\n\r\0"sv);
-        if (nonempty == json.npos) {
-            return nullptr;
-        }
-        json.remove_prefix(nonempty);
-        char c = json.front();
-        if (c == '"') {
-            json.remove_prefix(1);
-            std::string str;
-            unsigned int phase = 0;
-            bool hisorr = false;
-            unsigned int hex = 0;
-            std::size_t i;
-            for (i = 0; ; ++i) {
-                if (i == json.size()) {
-                    throw std::runtime_error("reflect::json_decode got non-terminated string");
+    }
+};
+
+static std::error_category const &jsonCategory() {
+    static JsonCategory instance;
+    return instance;
+}
+
+inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
+    using namespace std::string_view_literals;
+    JsonValue::Ptr current;
+    auto nonempty = json.find_first_not_of(" \t\n\r\0"sv);
+    if (nonempty == json.npos) {
+        ec.assign(JsonCategory::UnexpectedEnd, jsonCategory());
+        return nullptr;
+    }
+    json.remove_prefix(nonempty);
+    char c = json.front();
+    if (c == '"') {
+        json.remove_prefix(1);
+        std::string str;
+        unsigned int phase = 0;
+        bool hisorr = false;
+        unsigned int hex = 0;
+        std::size_t i;
+        for (i = 0; ; ++i) {
+            if (i == json.size()) {
+                ec.assign(JsonCategory::NonTerminatedString, jsonCategory());
+                return nullptr;
+            }
+            char c = json[i];
+            if (phase == 0) {
+                if (c == '"') {
+                    break;
+                } else if (c == '\\') {
+                    phase = 1;
+                    continue;
                 }
-                char c = json[i];
-                if (phase == 0) {
-                    if (c == '"') {
-                        break;
-                    } else if (c == '\\') {
-                        phase = 1;
-                        continue;
+            } else if (phase == 1) {
+                if (c == 'u') {
+                    phase = 2;
+                    hex = 0;
+                    hisorr = false;
+                    continue;
+                } else if (c == 'n') {
+                    c = '\n';
+                } else if (c == 't') {
+                    c = '\t';
+                } else if (c == '\\') {
+                    c = '\\';
+                } else if (c == '0') {
+                    c = '\0';
+                } else if (c == 'r') {
+                    c = '\r';
+                } else if (c == 'v') {
+                    c = '\v';
+                } else if (c == 'f') {
+                    c = '\f';
+                } else if (c == 'b') {
+                    c = '\b';
+                } else if (c == 'a') {
+                    c = '\a';
+                }
+                phase = 0;
+            } else {
+                hex <<= 4;
+                if ('0' <= c && c <= '9') {
+                    hex |= c - '0';
+                } else if ('a' <= c && c <= 'f') {
+                    hex |= c - 'a' + 10;
+                } else if ('A' <= c && c <= 'F') {
+                    hex |= c - 'A' + 10;
+                }
+                if (phase == 5) {
+                    if (0xD800 <= hex && hex < 0xDC00) {
+                        if (!hisorr) {
+                            phase = 2;
+                            hisorr = true;
+                            continue;
+                        } else {
+                            ec.assign(JsonCategory::InvalidUTF16String, jsonCategory());
+                            return nullptr;
+                        }
+                    } else if (0xDC00 <= hex && hex < 0xE000) {
+                        if (hisorr) {
+                            hex = 0x10000 + (hex - 0xD800) * 0x400 + (json[i] - 0xDC00);
+                            hisorr = false;
+                            phase = 0;
+                        } else {
+                            ec.assign(JsonCategory::InvalidUTF16String, jsonCategory());
+                            return nullptr;
+                        }
                     }
-                } else if (phase == 1) {
-                    if (c == 'u') {
-                        phase = 2;
-                        hex = 0;
-                        hisorr = false;
-                        continue;
-                    } else if (c == 'n') {
-                        c = '\n';
-                    } else if (c == 't') {
-                        c = '\t';
-                    } else if (c == '\\') {
-                        c = '\\';
-                    } else if (c == '0') {
-                        c = '\0';
-                    } else if (c == 'r') {
-                        c = '\r';
-                    } else if (c == 'v') {
-                        c = '\v';
-                    } else if (c == 'f') {
-                        c = '\f';
-                    } else if (c == 'b') {
-                        c = '\b';
-                    } else if (c == 'a') {
-                        c = '\a';
+                    if (hex <= 0x7F) {
+                        str.push_back(hex);
+                    } else if (hex <= 0x7FF) {
+                        str.push_back(0xC0 | (hex >> 6));
+                        str.push_back(0x80 | (hex & 0x3F));
+                    } else if (hex <= 0xFFFF) {
+                        str.push_back(0xE0 | (hex >> 12));
+                        str.push_back(0x80 | ((hex >> 6) & 0x3F));
+                        str.push_back(0x80 | (hex & 0x3F));
+                    } else if (hex <= 0x10FFFF) {
+                        str.push_back(0xF0 | (hex >> 18));
+                        str.push_back(0x80 | ((hex >> 12) & 0x3F));
+                        str.push_back(0x80 | ((hex >> 6) & 0x3F));
+                        str.push_back(0x80 | (hex & 0x3F));
+                    } else {
+                        ec.assign(JsonCategory::InvalidUTF16String, jsonCategory());
+                        return nullptr;
                     }
                     phase = 0;
                 } else {
-                    hex <<= 4;
-                    if ('0' <= c && c <= '9') {
-                        hex |= c - '0';
-                    } else if ('a' <= c && c <= 'f') {
-                        hex |= c - 'a' + 10;
-                    } else if ('A' <= c && c <= 'F') {
-                        hex |= c - 'A' + 10;
-                    }
-                    if (phase == 5) {
-                        if (0xD800 <= hex && hex < 0xDC00) {
-                            if (!hisorr) {
-                                phase = 2;
-                                hisorr = true;
-                                continue;
-                            } else {
-                                throw std::runtime_error("reflect::json_decode got invalid UTF-16");
-                            }
-                        } else if (0xDC00 <= hex && hex < 0xE000) {
-                            if (hisorr) {
-                                hex = 0x10000 + (hex - 0xD800) * 0x400 + (json[i] - 0xDC00);
-                                hisorr = false;
-                                phase = 0;
-                            } else {
-                                throw std::runtime_error("reflect::json_decode got invalid UTF-16");
-                            }
-                        }
-                        if (hex <= 0x7F) {
-                            str.push_back(hex);
-                        } else if (hex <= 0x7FF) {
-                            str.push_back(0xC0 | (hex >> 6));
-                            str.push_back(0x80 | (hex & 0x3F));
-                        } else if (hex <= 0xFFFF) {
-                            str.push_back(0xE0 | (hex >> 12));
-                            str.push_back(0x80 | ((hex >> 6) & 0x3F));
-                            str.push_back(0x80 | (hex & 0x3F));
-                        } else if (hex <= 0x10FFFF) {
-                            str.push_back(0xF0 | (hex >> 18));
-                            str.push_back(0x80 | ((hex >> 12) & 0x3F));
-                            str.push_back(0x80 | ((hex >> 6) & 0x3F));
-                            str.push_back(0x80 | (hex & 0x3F));
-                        } else {
-                            throw std::runtime_error("reflect::json_decode got invalid Unicode code point");
-                        }
-                        phase = 0;
-                    } else {
-                        ++phase;
-                    }
-                    continue;
+                    ++phase;
                 }
-                str.push_back(c);
+                continue;
             }
-            json.remove_prefix(i + 1);
-            current = Value::make<Value::String>(std::move(str));
-        } else if (c == '{') {
-            json.remove_prefix(1);
-            std::map<std::string, Value::Ptr> dict;
-            for (;;) {
-                if (json.front() == '}') {
-                    json.remove_prefix(1);
-                    break;
-                } else if (json.front() == ',') {
-                    json.remove_prefix(1);
-                    continue;
-                } else {
-                    auto key = parse(json);
-                    if (!key) {
-                        break;
-                    }
-                    std::string keyString;
-                    if (auto p = std::get_if<Value::String>(&key->data)) {
-                        keyString = std::move(*p);
-                    } else {
-                        throw std::runtime_error("reflect::json_decode got non-string key for dict");
-                    }
-                    debug(), keyString;
-                    if (json.front() != ':') {
-                        debug(), json;
-                        throw std::runtime_error("reflect::json_decode expect ':' in dict");
-                    }
-                    json.remove_prefix(1);
-                    debug(), json;
-                    auto value = parse(json);
-                    if (!value) {
-                        throw std::runtime_error("reflect::json_decode got non-value for dict");
-                    }
-                    dict.emplace(std::move(keyString), std::move(value));
-                    auto nonempty = json.find_first_not_of(" \t\n\r\0"sv);
-                    if (nonempty == json.npos) {
-                        throw std::runtime_error("reflect::json_decode got unexpected end when parsing dict");
-                    }
-                    json.remove_prefix(nonempty);
-                }
-            }
-            current = Value::make<Value::Dict>(std::move(dict));
-        } else if (c == '[') {
-            json.remove_prefix(1);
-            std::vector<Value::Ptr> array;
-            current = Value::make<Value::Array>(std::move(array));
-        } else if (('0' <= c && c <= '9') || c == '.' || c == '-' || c == '+') {
-            debug(), json;
-            auto end = json.find_first_of(",]}"sv);
-            if (end == json.npos) end = json.size();
-            auto str = std::string(json.data(), end);
-            debug(), str;
-            if (str.find('.') != str.npos) {
-                double value = std::stod(str);
-                current = Value::make<Value::Real>(value);
-            } else {
-                std::int64_t value = std::stoll(str);
-                current = Value::make<Value::Integer>(value);
-            }
-            json.remove_prefix(end);
-        } else {
-            throw std::runtime_error("reflect::json_decode got unexpected token");
+            str.push_back(c);
         }
-        return current;
+        json.remove_prefix(i + 1);
+        current = JsonValue::make<JsonValue::String>(std::move(str));
+    } else if (c == '{') {
+        json.remove_prefix(1);
+        std::map<std::string, JsonValue::Ptr> dict;
+        for (;;) {
+            nonempty = json.find_first_not_of(" \t\n\r\0"sv);
+            if (nonempty == json.npos) {
+                ec.assign(JsonCategory::UnexpectedEnd, jsonCategory());
+                return nullptr;
+            }
+            json.remove_prefix(nonempty);
+            if (json.front() == '}') {
+                json.remove_prefix(1);
+                break;
+            } else if (json.front() == ',') {
+                json.remove_prefix(1);
+                continue;
+            } else {
+                auto key = jsonParse(json, ec);
+                if (!key) {
+                    return nullptr;
+                }
+                std::string keyString;
+                if (auto p = std::get_if<JsonValue::String>(&key->inner)) {
+                    keyString = std::move(*p);
+                } else {
+                    ec.assign(JsonCategory::DictKeyNotString, jsonCategory());
+                    return nullptr;
+                }
+                auto nonempty = json.find_first_not_of(" \t\n\r\0"sv);
+                if (nonempty == json.npos) {
+                    ec.assign(JsonCategory::UnexpectedEnd, jsonCategory());
+                    return nullptr;
+                }
+                json.remove_prefix(nonempty);
+                if (json.front() != ':') {
+                    ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+                    return nullptr;
+                }
+                json.remove_prefix(1);
+                auto value = jsonParse(json, ec);
+                if (!value) {
+                    return nullptr;
+                }
+                dict.emplace(std::move(keyString), std::move(value));
+            }
+        }
+        current = JsonValue::make<JsonValue::Dict>(std::move(dict));
+    } else if (c == '[') {
+        json.remove_prefix(1);
+        std::vector<JsonValue::Ptr> array;
+        for (;;) {
+            auto nonempty = json.find_first_not_of(" \t\n\r\0"sv);
+            if (nonempty == json.npos) {
+                ec.assign(JsonCategory::UnexpectedEnd, jsonCategory());
+                return nullptr;
+            }
+            json.remove_prefix(nonempty);
+            if (json.front() == ']') {
+                json.remove_prefix(1);
+                break;
+            } else if (json.front() == ',') {
+                json.remove_prefix(1);
+                continue;
+            } else {
+                auto value = jsonParse(json, ec);
+                if (!value) {
+                    return nullptr;
+                }
+                array.emplace_back(std::move(value));
+            }
+        }
+        current = JsonValue::make<JsonValue::Array>(std::move(array));
+    } else if (('0' <= c && c <= '9') || c == '.' || c == '-' || c == '+') {
+        auto end = json.find_first_of(",]}"sv);
+        if (end == json.npos) end = json.size();
+        auto str = std::string(json.data(), end);
+        if (str.find('.') != str.npos) {
+            double value;
+            try {
+                value = std::stod(str);
+            } catch (std::exception const &) {
+                ec.assign(JsonCategory::InvalidNumberFormat, jsonCategory());
+                return nullptr;
+            }
+            current = JsonValue::make<JsonValue::Real>(value);
+        } else {
+            std::int64_t value;
+            try {
+                value = std::stoll(str);
+            } catch (std::exception const &) {
+                ec.assign(JsonCategory::InvalidNumberFormat, jsonCategory());
+                return nullptr;
+            }
+            current = JsonValue::make<JsonValue::Integer>(value);
+        }
+        json.remove_prefix(end);
+    } else if (c == 't') {
+        if (!json.starts_with("true"sv)) {
+            ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+            return nullptr;
+        }
+        current = JsonValue::make<JsonValue::Boolean>(true);
+        json.remove_prefix(4);
+    } else if (c == 'f') {
+        if (!json.starts_with("false"sv)) {
+            ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+            return nullptr;
+        }
+        current = JsonValue::make<JsonValue::Boolean>(false);
+        json.remove_prefix(5);
+    } else if (c == 'n') {
+        if (!json.starts_with("null"sv)) {
+            ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+            return nullptr;
+        }
+        current = JsonValue::make<JsonValue::Null>(JsonValue::Null());
+        json.remove_prefix(4);
+    } else {
+        ec.assign(JsonCategory::UnexpectedToken, jsonCategory());
+        return nullptr;
     }
-};
+    return current;
+}
 
 struct ReflectorJsonEncode {
     JsonEncoder *encoder;
@@ -383,17 +501,46 @@ struct ReflectorJsonEncode {
 };
 
 struct ReflectorJsonDecode {
-    JsonDecoder::Value::Dict *currentDict;
+    JsonValue::Dict *currentDict;
+    std::error_code ec;
+    bool failed = false;
 
     template <class T>
     void member(const char *name, T &value) {
+        if (failed) return;
         auto it = currentDict->find(name);
         if (it == currentDict->end()) {
-            JsonDecoder::Value::Union nullData;
-            JsonTrait<T>::getValue(nullData, value);
+            JsonValue::Union nullData;
+            failed = !JsonTrait<T>::getValue(nullData, value, ec);
         } else {
-            JsonTrait<T>::getValue(it->second->data, value);
+            failed = !JsonTrait<T>::getValue(it->second->inner, value, ec);
         }
+    }
+
+    static void typeMismatch(const char *expect, JsonValue::Union const &inner, std::error_code &ec) {
+        const char *got = "???";
+        std::visit([&](auto &&arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, JsonValue::Null>) {
+                got = "null";
+            } else if constexpr (std::is_same_v<T, JsonValue::String>) {
+                got = "string";
+            } else if constexpr (std::is_same_v<T, JsonValue::Dict>) {
+                got = "dict";
+            } else if constexpr (std::is_same_v<T, JsonValue::Array>) {
+                got = "array";
+            } else if constexpr (std::is_same_v<T, JsonValue::Integer>) {
+                got = "integer";
+            } else if constexpr (std::is_same_v<T, JsonValue::Real>) {
+                got = "real";
+            } else if constexpr (std::is_same_v<T, JsonValue::Boolean>) {
+                got = "boolean";
+            }
+        }, inner);
+#if DEBUG_LEVEL
+        std::cerr << std::string("reflect::json_decode type mismatch (expect ") + expect + ", got " + got + ")\n";
+#endif
+        ec.assign(JsonCategory::TypeMismatch, jsonCategory());
     }
 };
 
@@ -416,16 +563,19 @@ struct JsonTraitArrayLike {
     }
 
     template <class T>
-    static void getValue(JsonDecoder::Value::Union &data, T &value) {
-        if (auto p = std::get_if<JsonDecoder::Value::Array>(&data)) {
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        if (auto p = std::get_if<JsonValue::Array>(&data)) {
             auto bit = p->begin();
             auto eit = p->end();
             for (auto it = bit; it != eit; ++it) {
                 auto &element = value.emplace_back();
-                JsonTrait<typename T::value_type>::getValue((*it)->data, element);
+                if (!JsonTrait<typename T::value_type>::getValue((*it)->inner, element, ec))
+                    return false;
             }
+            return true;
         } else {
-            throw std::runtime_error("reflect::json_decode got type mismatch");
+            ReflectorJsonDecode::typeMismatch("array", data, ec);
+            return false;
         }
     }
 };
@@ -451,16 +601,19 @@ struct JsonTraitDictLike {
     }
 
     template <class T>
-    static void getValue(JsonDecoder::Value::Union &data, T &value) {
-        if (auto p = std::get_if<JsonDecoder::Value::Dict>(&data)) {
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        if (auto p = std::get_if<JsonValue::Dict>(&data)) {
             auto bit = p->begin();
             auto eit = p->end();
             for (auto it = bit; it != eit; ++it) {
                 auto &element = value.try_emplace(it->first).first->second;
-                JsonTrait<typename T::mapped_type>::getValue(it->second->data, element);
+                if (!JsonTrait<typename T::mapped_type>::getValue(it->second->inner, element, ec))
+                    return false;
             }
+            return true;
         } else {
-            throw std::runtime_error("reflect::json_decode got type mismatch");
+            ReflectorJsonDecode::typeMismatch("dict", data, ec);
+            return false;
         }
     }
 };
@@ -472,11 +625,30 @@ struct JsonTraitStringLike {
     }
 
     template <class T>
-    static void getValue(JsonDecoder::Value::Union &data, T &value) {
-        if (auto p = std::get_if<JsonDecoder::Value::String>(&data)) {
-            value = *p;
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        if (auto p = std::get_if<JsonValue::String>(&data)) {
+            value = std::move(*p);
+            return true;
         } else {
-            throw std::runtime_error("reflect::json_decode got type mismatch");
+            ReflectorJsonDecode::typeMismatch("string", data, ec);
+            return false;
+        }
+    }
+};
+
+struct JsonTraitNullLike {
+    template <class T>
+    static void putValue(JsonEncoder *encoder, T const &value) {
+        encoder->put("null", 4);
+    }
+
+    template <class T>
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        if (std::get_if<JsonValue::Null>(&data)) {
+            return true;
+        } else {
+            ReflectorJsonDecode::typeMismatch("null", data, ec);
+            return false;
         }
     }
 };
@@ -492,11 +664,12 @@ struct JsonTraitOptionalLike {
     }
 
     template <class T>
-    static void getValue(JsonDecoder::Value::Union &data, T &value) {
-        if (std::get_if<JsonDecoder::Value::Null>(&data)) {
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        if (std::get_if<JsonValue::Null>(&data)) {
             value = std::nullopt;
+            return true;
         } else {
-            JsonTrait<typename T::value_type>::getValue(data, value.emplace());
+            return JsonTrait<typename T::value_type>::getValue(data, value.emplace(), ec);
         }
     }
 };
@@ -512,11 +685,13 @@ struct JsonTraitBooleanLike {
     }
 
     template <class T>
-    static void getValue(JsonDecoder::Value::Union &data, T &value) {
-        if (auto p = std::get_if<JsonDecoder::Value::Boolean>(&data)) {
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        if (auto p = std::get_if<JsonValue::Boolean>(&data)) {
             value = *p;
+            return true;
         } else {
-            throw std::runtime_error("reflect::json_decode got type mismatch");
+            ReflectorJsonDecode::typeMismatch("boolean", data, ec);
+            return false;
         }
     }
 };
@@ -528,14 +703,48 @@ struct JsonTraitArithmeticLike {
     }
 
     template <class T>
-    static void getValue(JsonDecoder::Value::Union &data, T &value) {
-        if (auto p = std::get_if<JsonDecoder::Value::Integer>(&data)) {
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        if (auto p = std::get_if<JsonValue::Integer>(&data)) {
             value = *p;
-        } else if (auto p = std::get_if<JsonDecoder::Value::Real>(&data)) {
+            return true;
+        } else if (auto p = std::get_if<JsonValue::Real>(&data)) {
             value = *p;
+            return true;
         } else {
-            throw std::runtime_error("reflect::json_decode got type mismatch");
+            ReflectorJsonDecode::typeMismatch("integer or real", data, ec);
+            return false;
         }
+    }
+};
+
+struct JsonTraitVariantLike {
+    template <class T>
+    static void putValue(JsonEncoder *encoder, T const &value) {
+        std::visit([&](auto const &arg) {
+            encoder->putValue(arg);
+        }, value);
+    }
+
+    template <class T>
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        throw "TODO!! IMPLEMENT THIS!!";
+        /* std::visit([&](auto const &arg) { */
+        /*     using Arg = std::decay_t<decltype(arg)>; */
+        /*     encoder->getValue(data, arg, ec); */
+        /* }, data.inner); */
+    }
+};
+
+struct JsonTraitJsonValueLike {
+    template <class T>
+    static void putValue(JsonEncoder *encoder, T const &value) {
+        encoder->putValue(value.inner);
+    }
+
+    template <class T>
+    static bool getValue(JsonValue::Union &data, JsonValue &value, std::error_code &ec) {
+        value.inner = std::move(data);
+        return true;
     }
 };
 
@@ -549,12 +758,18 @@ struct JsonTraitObjectLike {
     }
 
     template <class T>
-    static void getValue(JsonDecoder::Value::Union &data, T &value) {
-        if (auto p = std::get_if<JsonDecoder::Value::Dict>(&data)) {
+    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+        if (auto p = std::get_if<JsonValue::Dict>(&data)) {
             ReflectorJsonDecode reflector(p);
             reflect_members(reflector, value);
+            if (reflector.failed) {
+                ec = reflector.ec;
+                return false;
+            }
+            return true;
         } else {
-            throw std::runtime_error("reflect::json_decode got type mismatch");
+            ReflectorJsonDecode::typeMismatch("object", data, ec);
+            return false;
         }
     }
 };
@@ -583,8 +798,24 @@ template <class Traits>
 struct JsonTrait<std::basic_string_view<char, Traits>> : JsonTraitStringLike {
 };
 
+template <class ...Ts>
+struct JsonTrait<std::variant<Ts...>> : JsonTraitVariantLike {
+};
+
 template <class T>
 struct JsonTrait<std::optional<T>> : JsonTraitOptionalLike {
+};
+
+template <>
+struct JsonTrait<std::nullptr_t> : JsonTraitNullLike {
+};
+
+template <>
+struct JsonTrait<std::nullopt_t> : JsonTraitNullLike {
+};
+
+template <>
+struct JsonTrait<std::monostate> : JsonTraitNullLike {
 };
 
 template <>
@@ -606,6 +837,10 @@ inline void reflect_members(Reflector &reflector, T &value) {
 }
 
 template <class T>
+struct JsonTrait<T, JsonValue> : JsonTraitJsonValueLike {
+};
+
+template <class T>
 struct JsonTrait<T, std::void_t<decltype(reflect_members(std::declval<ReflectorJsonEncode &>(), std::declval<T &>()))>> : JsonTraitObjectLike {
 };
 
@@ -617,11 +852,36 @@ inline std::string json_encode(T const &value) {
 }
 
 template <class T>
-inline T json_decode(std::string_view json) {
-    JsonDecoder decoder;
-    decoder.root = JsonDecoder::parse(json);
+inline bool json_decode(JsonValue &root, T &value, std::error_code &ec) {
+    return JsonTrait<T>::getValue(root.inner, value, ec);
+}
+
+template <class T>
+inline bool json_decode(std::string_view json, T &value, std::error_code &ec) {
+    auto root = jsonParse(json, ec);
+    if (!root) {
+        return false;
+    }
+    return json_decode(*root, value, ec);
+}
+
+template <class T>
+inline T json_decode(JsonValue root) {
     T value;
-    JsonTrait<T>::getValue(decoder.root->data, value);
+    std::error_code ec;
+    if (!json_decode(root, value, ec)) {
+        throw std::system_error(ec, "json_decode");
+    }
+    return value;
+}
+
+template <class T>
+inline T json_decode(std::string_view json) {
+    T value;
+    std::error_code ec;
+    if (!json_decode(json, value, ec)) {
+        throw std::system_error(ec, "json_decode");
+    }
     return value;
 }
 

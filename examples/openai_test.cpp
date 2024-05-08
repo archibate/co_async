@@ -14,21 +14,29 @@ struct ChatCompletionRequest {
 
     std::vector<Message> messages;
     std::string model;
-    bool stream;
+    std::optional<double> frequency_penalty;
+    std::optional<int> max_tokens;
+    std::optional<double> persence_penalty;
+    std::optional<std::vector<std::string>> stop;
+    std::optional<double> temperature;
+    std::optional<double> top_p;
+    std::optional<bool> logprobs;
+    std::optional<int> top_logprobs;
+    std::optional<bool> stream;
 
-    REFLECT(messages, model, stream);
+    REFLECT(messages, model, frequency_penalty, max_tokens, persence_penalty, stop, temperature, top_p, logprobs, top_logprobs, stream);
 };
 
 struct ChatCompletionStreamingResult {
     struct Choice {
         struct Delta {
-            std::string role;
+            std::optional<std::string> role;
             std::optional<std::string> content;
 
             REFLECT(role, content);
         };
 
-        std::string index;
+        int index;
         Delta delta;
         std::optional<std::string> finish_reason;
 
@@ -37,9 +45,10 @@ struct ChatCompletionStreamingResult {
 
     std::string id;
     std::vector<Choice> choices;
+    std::int64_t created;
     std::string model;
 
-    REFLECT(id, choices, model);
+    REFLECT(id, choices, created, model);
 };
 
 Task<Expected<void, std::errc>> amain() {
@@ -62,7 +71,7 @@ Task<Expected<void, std::errc>> amain() {
         };
         auto compReq = ChatCompletionRequest{
             .messages = {
-                {.role = "user", .content = "1 + 1 = ?"},
+                {.role = "user", .content = "Why Google hates C++ exceptions?"},
             },
             .model = "deepseek-coder",
             .stream = true,
@@ -75,18 +84,23 @@ Task<Expected<void, std::errc>> amain() {
                 if (line == "[DONE]"sv) {
                     break;
                 }
+                /* std::cerr << line << '\n'; */
                 auto compRes = reflect::json_decode<ChatCompletionStreamingResult>(line);
-                debug(), compRes;
+                /* debug(), compRes; */
+                co_await co_await stdio().puts(compRes.choices.at(0).delta.content.value_or(""));
+                co_await co_await stdio().flush();
             }
         }
         co_await body.dropall();
+        co_await co_await stdio().putchar('\n');
+        co_await co_await stdio().flush();
     }
     co_return {};
 }
 
 int main() {
-    auto tmp = reflect::json_decode<std::map<std::string, std::string>>(R"json({"hello":"world"})json");
-    debug(), tmp;
-    /* co_synchronize(amain()).value(); */
+    /* auto tmp = reflect::json_decode<ChatCompletionStreamingResult>(R"json({"id":"1234","choices":[{"index":1,"delta":{"role":"user","content":"Hello?"},"finish_reason":null}],"model":"deepseek-coder"})json"); */
+    /* debug(), tmp; */
+    co_synchronize(amain()).value();
     return 0;
 }

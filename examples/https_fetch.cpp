@@ -15,11 +15,9 @@ Task<Expected<void, std::errc>> amain() {
                 .method = "GET",
                 .uri = URI::parse("/" + path),
             };
-            HTTPResponse res;
-            std::string body;
-            debug(), "req", req;
-            co_await co_await conn->request(req, {}, res, body);
-            debug(), "res", body.size(), res;
+            debug(), "requesting", req;
+            auto [re, body] = co_await co_await conn->request(req, {});
+            debug(), "response", res, "with", body.size(), "bytes";
             co_await co_await file_write(make_path("/tmp", path), body);
             co_return {};
         })));
@@ -29,11 +27,11 @@ Task<Expected<void, std::errc>> amain() {
     for (auto &&r: res) {
         co_await co_await r;
     }
-    /* Pid pid = co_await co_await ProcessBuilder() */
-    /*     .path("display") */
-    /*     .arg("koru-icon.png") */
-    /*     .spawn(); */
-    /* co_await co_await wait_process(pid); */
+    Pid pid = co_await co_await ProcessBuilder()
+        .path("display")
+        .arg("koru-icon.png")
+        .spawn();
+    co_await co_await wait_process(pid);
     co_return {};
 }
 

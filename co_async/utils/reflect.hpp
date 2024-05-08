@@ -22,9 +22,12 @@ namespace reflect {
 #endif
 
 #if defined(_MSC_VER) && (!defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL)
-#define REFLECT(...) __pragma(message("Please turn on /Zc:preprocessor before using REFLECT!"))
-#define REFLECT_GLOBAL(...) __pragma(message("Please turn on /Zc:preprocessor before using REFLECT!"))
-#define REFLECT_GLOBAL_TEMPLATED(...) __pragma(message("Please turn on /Zc:preprocessor before using REFLECT!"))
+#define REFLECT(...) \
+    __pragma(message("Please turn on /Zc:preprocessor before using REFLECT!"))
+#define REFLECT_GLOBAL(...) \
+    __pragma(message("Please turn on /Zc:preprocessor before using REFLECT!"))
+#define REFLECT_GLOBAL_TEMPLATED(...) \
+    __pragma(message("Please turn on /Zc:preprocessor before using REFLECT!"))
 #define REFLECT__PP_VA_OPT_SUPPORT(...) 0
 #else
 
@@ -36,8 +39,8 @@ namespace reflect {
 #define REFLECT__PP_GET_3(a, b, c, ...) c
 #define REFLECT__PP_GET_4(a, b, c, d, ...) d
 
-#define REFLECT__PP_VA_EMPTY_(...) REFLECT__PP_GET_2(__VA_OPT__(,)0,1,)
-#define REFLECT__PP_VA_OPT_SUPPORT ! REFLECT__PP_VA_EMPTY_
+#define REFLECT__PP_VA_EMPTY_(...) REFLECT__PP_GET_2(__VA_OPT__(, ) 0, 1, )
+#define REFLECT__PP_VA_OPT_SUPPORT !REFLECT__PP_VA_EMPTY_
 
 #if REFLECT__PP_VA_OPT_SUPPORT(?)
 #define REFLECT__PP_VA_EMPTY(...) REFLECT__PP_VA_EMPTY_(__VA_ARGS__)
@@ -46,17 +49,26 @@ namespace reflect {
 #endif
 #define REFLECT__PP_IF(a, t, f) REFLECT__PP_IF_(a, t, f)
 #define REFLECT__PP_IF_(a, t, f) REFLECT__PP_IF__(a, t, f)
-#define REFLECT__PP_IF__(a, t, f) REFLECT__PP_IF___(REFLECT__PP_VA_EMPTY a, t, f)
+#define REFLECT__PP_IF__(a, t, f) \
+    REFLECT__PP_IF___(REFLECT__PP_VA_EMPTY a, t, f)
 #define REFLECT__PP_IF___(a, t, f) REFLECT__PP_IF____(a, t, f)
 #define REFLECT__PP_IF____(a, t, f) REFLECT__PP_IF_##a(t, f)
 #define REFLECT__PP_IF_0(t, f) REFLECT__PP_UNWRAP_BRACE(f)
 #define REFLECT__PP_IF_1(t, f) REFLECT__PP_UNWRAP_BRACE(t)
 
-#define REFLECT__PP_NARG(...) REFLECT__PP_IF((__VA_ARGS__), (0), (REFLECT__PP_NARG_(__VA_ARGS__, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)))
+#define REFLECT__PP_NARG(...)                                                  \
+    REFLECT__PP_IF((__VA_ARGS__), (0),                                         \
+                   (REFLECT__PP_NARG_(__VA_ARGS__, 26, 25, 24, 23, 22, 21, 20, \
+                                      19, 18, 17, 16, 15, 14, 13, 12, 11, 10,  \
+                                      9, 8, 7, 6, 5, 4, 3, 2, 1)))
 #define REFLECT__PP_NARG_(...) REFLECT__PP_NARG__(__VA_ARGS__)
-#define REFLECT__PP_NARG__(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, N, ...) N
+#define REFLECT__PP_NARG__(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, \
+                           _13, _14, _15, _16, _17, _18, _19, _20, _21, _22,  \
+                           _23, _24, _25, _26, N, ...)                        \
+    N
 
-#define REFLECT__PP_FOREACH(f, ...) REFLECT__PP_FOREACH_(REFLECT__PP_NARG(__VA_ARGS__), f, __VA_ARGS__)
+#define REFLECT__PP_FOREACH(f, ...) \
+    REFLECT__PP_FOREACH_(REFLECT__PP_NARG(__VA_ARGS__), f, __VA_ARGS__)
 #define REFLECT__PP_FOREACH_(N, f, ...) REFLECT__PP_FOREACH__(N, f, __VA_ARGS__)
 #define REFLECT__PP_FOREACH__(N, f, ...) REFLECT__PP_FOREACH_##N(f, __VA_ARGS__)
 #define REFLECT__PP_FOREACH_0(f, ...)
@@ -66,25 +78,64 @@ namespace reflect {
 #define REFLECT__PP_FOREACH_4(f, a, b, c, d) f(a) f(b) f(c) f(d)
 #define REFLECT__PP_FOREACH_5(f, a, b, c, d, e) f(a) f(b) f(c) f(d) f(e)
 #define REFLECT__PP_FOREACH_6(f, a, b, c, d, e, g) f(a) f(b) f(c) f(d) f(e) f(g)
-#define REFLECT__PP_FOREACH_7(f, a, b, c, d, e, g, h) f(a) f(b) f(c) f(d) f(e) f(g) f(h)
-#define REFLECT__PP_FOREACH_8(f, a, b, c, d, e, g, h, i) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i)
-#define REFLECT__PP_FOREACH_9(f, a, b, c, d, e, g, h, i, j) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j)
-#define REFLECT__PP_FOREACH_10(f, a, b, c, d, e, g, h, i, j, k) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k)
-#define REFLECT__PP_FOREACH_11(f, a, b, c, d, e, g, h, i, j, k, l) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l)
-#define REFLECT__PP_FOREACH_12(f, a, b, c, d, e, g, h, i, j, k, l, m) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m)
-#define REFLECT__PP_FOREACH_13(f, a, b, c, d, e, g, h, i, j, k, l, m, n) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n)
-#define REFLECT__PP_FOREACH_14(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o)
-#define REFLECT__PP_FOREACH_15(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p)
-#define REFLECT__PP_FOREACH_16(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q)
-#define REFLECT__PP_FOREACH_17(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r)
-#define REFLECT__PP_FOREACH_18(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s)
-#define REFLECT__PP_FOREACH_19(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t)
-#define REFLECT__PP_FOREACH_20(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u)
-#define REFLECT__PP_FOREACH_21(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v)
-#define REFLECT__PP_FOREACH_22(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w)
-#define REFLECT__PP_FOREACH_23(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x)
-#define REFLECT__PP_FOREACH_24(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x) f(y)
-#define REFLECT__PP_FOREACH_25(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x) f(y) f(z)
+#define REFLECT__PP_FOREACH_7(f, a, b, c, d, e, g, h) \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h)
+#define REFLECT__PP_FOREACH_8(f, a, b, c, d, e, g, h, i) \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i)
+#define REFLECT__PP_FOREACH_9(f, a, b, c, d, e, g, h, i, j) \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j)
+#define REFLECT__PP_FOREACH_10(f, a, b, c, d, e, g, h, i, j, k) \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k)
+#define REFLECT__PP_FOREACH_11(f, a, b, c, d, e, g, h, i, j, k, l) \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l)
+#define REFLECT__PP_FOREACH_12(f, a, b, c, d, e, g, h, i, j, k, l, m) \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m)
+#define REFLECT__PP_FOREACH_13(f, a, b, c, d, e, g, h, i, j, k, l, m, n) \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n)
+#define REFLECT__PP_FOREACH_14(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o) \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o)
+#define REFLECT__PP_FOREACH_15(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p) \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p)
+#define REFLECT__PP_FOREACH_16(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q)                                              \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q)
+#define REFLECT__PP_FOREACH_17(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q, r)                                           \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q) f(r)
+#define REFLECT__PP_FOREACH_18(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q, r, s)                                        \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q) f(r) f(s)
+#define REFLECT__PP_FOREACH_19(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q, r, s, t)                                     \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q) f(r) f(s) f(t)
+#define REFLECT__PP_FOREACH_20(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q, r, s, t, u)                                  \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q) f(r) f(s) f(t) f(u)
+#define REFLECT__PP_FOREACH_21(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q, r, s, t, u, v)                               \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q) f(r) f(s) f(t) f(u) f(v)
+#define REFLECT__PP_FOREACH_22(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q, r, s, t, u, v, w)                            \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q) f(r) f(s) f(t) f(u) f(v) f(w)
+#define REFLECT__PP_FOREACH_23(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q, r, s, t, u, v, w, x)                         \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x)
+#define REFLECT__PP_FOREACH_24(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q, r, s, t, u, v, w, x, y)                      \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x) f(y)
+#define REFLECT__PP_FOREACH_25(f, a, b, c, d, e, g, h, i, j, k, l, m, n, o, p, \
+                               q, r, s, t, u, v, w, x, y, z)                   \
+    f(a) f(b) f(c) f(d) f(e) f(g) f(h) f(i) f(j) f(k) f(l) f(m) f(n) f(o) f(p) \
+        f(q) f(r) f(s) f(t) f(u) f(v) f(w) f(x) f(y) f(z)
 
 #define REFLECT__PP_STRINGIFY(...) REFLECT__PP_STRINGIFY(__VA_ARGS__)
 #define REFLECT__PP_STRINGIFY_(...) #__VA_ARGS__
@@ -98,7 +149,8 @@ namespace reflect {
 #ifdef DEBUG_REPR
 #define REFLECT__EXTRA(...) DEBUG_REPR(__VA_ARGS__)
 #define REFLECT_GLOBAL__EXTRA(...) DEBUG_REPR_GLOBAL(__VA_ARGS__)
-#define REFLECT_GLOBAL_TEMPLATED__EXTRA(...) DEBUG_REPR_GLOBAL_TEMPLATED(__VA_ARGS__)
+#define REFLECT_GLOBAL_TEMPLATED__EXTRA(...) \
+    DEBUG_REPR_GLOBAL_TEMPLATED(__VA_ARGS__)
 #else
 #define REFLECT__EXTRA(...)
 #define REFLECT_GLOBAL__EXTRA(...)
@@ -106,27 +158,28 @@ namespace reflect {
 #endif
 
 #define REFLECT__ON_EACH(x) reflector.member(#x, x);
-#define REFLECT(...) \
-template <class ReflectorT> \
-REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector) { \
-    REFLECT__PP_FOREACH(REFLECT__ON_EACH, __VA_ARGS__) \
-} \
-REFLECT__EXTRA(__VA_ARGS__)
+#define REFLECT(...)                                                   \
+    template <class ReflectorT>                                        \
+    REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector){ \
+        REFLECT__PP_FOREACH(REFLECT__ON_EACH,                          \
+                            __VA_ARGS__)} REFLECT__EXTRA(__VA_ARGS__)
 
-#define REFLECT__GLOBAL_ON_EACH(x) reflector.member(#x##_REFLECT__static_string, object.x);
-#define REFLECT_GLOBAL(T, ...) \
-template <class ReflectorT> \
-REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector, T &object) { \
-    REFLECT__PP_FOREACH(REFLECT__GLOBAL_ON_EACH, __VA_ARGS__) \
-} \
-REFLECT_GLOBAL__EXTRA(__VA_ARGS__)
+#define REFLECT__GLOBAL_ON_EACH(x) \
+    reflector.member(#x##_REFLECT__static_string, object.x);
+#define REFLECT_GLOBAL(T, ...)                                        \
+    template <class ReflectorT>                                       \
+    REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector, \
+                                               T &object){            \
+        REFLECT__PP_FOREACH(REFLECT__GLOBAL_ON_EACH,                  \
+                            __VA_ARGS__)} REFLECT_GLOBAL__EXTRA(__VA_ARGS__)
 
-#define REFLECT_GLOBAL_TEMPLATED(T, Tmpls, TmplsClassed, ...) \
-template <class ReflectorT, REFLECT__PP_UNWRAP_BRACE(TmplsClassed)> \
-REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector, T<REFLECT__PP_UNWRAP_BRACE(Tmpls)> &object) { \
-    REFLECT__PP_FOREACH(REFLECT__GLOBAL_ON_EACH, __VA_ARGS__) \
-} \
-REFLECT_GLOBAL_TEMPLATED__EXTRA(__VA_ARGS__)
+#define REFLECT_GLOBAL_TEMPLATED(T, Tmpls, TmplsClassed, ...)            \
+    template <class ReflectorT, REFLECT__PP_UNWRAP_BRACE(TmplsClassed)>  \
+    REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(                          \
+        ReflectorT &reflector,                                           \
+        T<REFLECT__PP_UNWRAP_BRACE(Tmpls)> &object){REFLECT__PP_FOREACH( \
+        REFLECT__GLOBAL_ON_EACH,                                         \
+        __VA_ARGS__)} REFLECT_GLOBAL_TEMPLATED__EXTRA(__VA_ARGS__)
 #endif
 
 struct JsonValue {
@@ -139,16 +192,19 @@ struct JsonValue {
     using Integer = std::int64_t;
     using Real = double;
     using Boolean = bool;
-    using Union = std::variant<Null, String, Dict, Array, Integer, Real, Boolean>;
+    using Union =
+        std::variant<Null, String, Dict, Array, Integer, Real, Boolean>;
 
     Union inner;
 
     template <class T>
-    explicit JsonValue(std::in_place_type_t<T>, T &&value) : inner(std::in_place_type<T>, std::move(value)) {}
+    explicit JsonValue(std::in_place_type_t<T>, T &&value)
+        : inner(std::in_place_type<T>, std::move(value)) {}
 
     template <class T>
     static Ptr make(T value) {
-        return std::make_unique<JsonValue>(std::in_place_type<T>, std::move(value));
+        return std::make_unique<JsonValue>(std::in_place_type<T>,
+                                           std::move(value));
     }
 };
 
@@ -162,14 +218,22 @@ public:
     /* explicit NoDefault(Args &&...args) noexcept(std::is_nothrow_constructible_v<T, Args...>) : value(std::forward<Args>(args)...) { */
     /* } */
 
-    NoDefault(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>) : value(std::move(value)) {}
-    NoDefault(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>) : value(value) {}
+    NoDefault(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>)
+        : value(std::move(value)) {}
+
+    NoDefault(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>)
+        : value(value) {}
 
     template <class U, class = std::enable_if_t<std::is_convertible_v<U, T>>>
-    NoDefault(U &&value) noexcept(std::is_nothrow_convertible_v<U, T>) : value(std::forward<U>(value)) {}
+    NoDefault(U &&value) noexcept(std::is_nothrow_convertible_v<U, T>)
+        : value(std::forward<U>(value)) {}
 
-    template <class = std::enable_if_t<std::is_convertible_v<std::initializer_list<typename T::value_type>, T>>>
-    NoDefault(std::initializer_list<typename T::value_type> value) noexcept(std::is_nothrow_convertible_v<std::initializer_list<typename T::value_type>, T>) : value(std::move(value)) {}
+    template <class = std::enable_if_t<std::is_convertible_v<
+                  std::initializer_list<typename T::value_type>, T>>>
+    NoDefault(std::initializer_list<typename T::value_type> value) noexcept(
+        std::is_nothrow_convertible_v<
+            std::initializer_list<typename T::value_type>, T>)
+        : value(std::move(value)) {}
 
     NoDefault(NoDefault const &) = default;
     NoDefault &operator=(NoDefault const &) = default;
@@ -200,11 +264,16 @@ struct JsonEncoder;
 template <class T, class = void>
 struct JsonTrait {
     static void putValue(JsonEncoder *encoder, T const &value) {
-        static_assert(!std::is_same_v<T, T>, "the given type contains members that are not reflected, please add REFLECT macro to it");
+        static_assert(!std::is_same_v<T, T>,
+                      "the given type contains members that are not reflected, "
+                      "please add REFLECT macro to it");
     }
 
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
-        static_assert(!std::is_same_v<T, T>, "the given type contains members that are not reflected, please add REFLECT macro to it");
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
+        static_assert(!std::is_same_v<T, T>,
+                      "the given type contains members that are not reflected, "
+                      "please add REFLECT macro to it");
     }
 };
 
@@ -215,17 +284,17 @@ struct JsonEncoder {
         json.push_back(c);
     }
 
-    void put(const char *s, std::size_t len) {
+    void put(char const *s, std::size_t len) {
         json.append(s, len);
     }
 
-    void putLiterialString(const char *name) {
+    void putLiterialString(char const *name) {
         put('"');
         json.append(name);
         put('"');
     }
 
-    void putString(const char *name, std::size_t len) {
+    void putString(char const *name, std::size_t len) {
         put('"');
         for (char const *it = name, *ep = name + len; it != ep; ++it) {
             char c = *it;
@@ -276,26 +345,29 @@ enum class JsonError : int {
 
 inline std::error_category const &jsonCategory() {
     static struct : std::error_category {
-        virtual const char *name() const noexcept {
+        virtual char const *name() const noexcept {
             return "reflect::json";
         }
 
         virtual std::string message(int e) const {
             using namespace std::string_literals;
             switch (static_cast<JsonError>(e)) {
-                case JsonError::Success: return "success"s;
-                case JsonError::TypeMismatch: return "type mismatch"s;
-                case JsonError::UnexpectedEnd: return "unexpected end"s;
-                case JsonError::UnexpectedToken: return "unexpected token"s;
-                case JsonError::NonTerminatedString: return "non-terminated string"s;
-                case JsonError::InvalidUTF16String: return "invalid utf-16 string"s;
-                case JsonError::DictKeyNotString: return "dict key must be string"s;
-                case JsonError::InvalidNumberFormat: return "invalid number format"s;
-                case JsonError::NotImplemented: return "not implemented"s;
-                default: return "unknown error"s;
+            case JsonError::Success: return "success"s;
+            case JsonError::TypeMismatch: return "type mismatch"s;
+            case JsonError::UnexpectedEnd: return "unexpected end"s;
+            case JsonError::UnexpectedToken: return "unexpected token"s;
+            case JsonError::NonTerminatedString:
+                return "non-terminated string"s;
+            case JsonError::InvalidUTF16String: return "invalid utf-16 string"s;
+            case JsonError::DictKeyNotString: return "dict key must be string"s;
+            case JsonError::InvalidNumberFormat:
+                return "invalid number format"s;
+            case JsonError::NotImplemented: return "not implemented"s;
+            default: return "unknown error"s;
             }
         }
     } instance;
+
     return instance;
 }
 
@@ -320,7 +392,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
         bool hisorr = false;
         unsigned int hex = 0;
         std::size_t i;
-        for (i = 0; ; ++i) {
+        for (i = 0;; ++i) {
             if (i == json.size()) {
                 ec = make_error_code(JsonError::NonTerminatedString);
                 return nullptr;
@@ -380,7 +452,8 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                         }
                     } else if (0xDC00 <= hex && hex < 0xE000) {
                         if (hisorr) {
-                            hex = 0x10000 + (hex - 0xD800) * 0x400 + (json[i] - 0xDC00);
+                            hex = 0x10000 + (hex - 0xD800) * 0x400 +
+                                  (json[i] - 0xDC00);
                             hisorr = false;
                             phase = 0;
                         } else {
@@ -490,7 +563,8 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
         current = JsonValue::make<JsonValue::Array>(std::move(array));
     } else if (('0' <= c && c <= '9') || c == '.' || c == '-' || c == '+') {
         auto end = json.find_first_of(",]}"sv);
-        if (end == json.npos) end = json.size();
+        if (end == json.npos)
+            end = json.size();
         auto str = std::string(json.data(), end);
         if (str.find('.') != str.npos) {
             double value;
@@ -545,7 +619,7 @@ struct ReflectorJsonEncode {
     bool comma = false;
 
     template <class T>
-    void member(const char *name, T &value) {
+    void member(char const *name, T &value) {
         if (!comma) {
             comma = true;
         } else {
@@ -563,8 +637,9 @@ struct ReflectorJsonDecode {
     bool failed = false;
 
     template <class T>
-    void member(const char *name, T &value) {
-        if (failed) return;
+    void member(char const *name, T &value) {
+        if (failed)
+            return;
         auto it = currentDict->find(name);
         if (it == currentDict->end()) {
             JsonValue::Union nullData;
@@ -574,28 +649,33 @@ struct ReflectorJsonDecode {
         }
     }
 
-    static void typeMismatch(const char *expect, JsonValue::Union const &inner, std::error_code &ec) {
-        const char *got = "???";
-        std::visit([&](auto &&arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, JsonValue::Null>) {
-                got = "null";
-            } else if constexpr (std::is_same_v<T, JsonValue::String>) {
-                got = "string";
-            } else if constexpr (std::is_same_v<T, JsonValue::Dict>) {
-                got = "dict";
-            } else if constexpr (std::is_same_v<T, JsonValue::Array>) {
-                got = "array";
-            } else if constexpr (std::is_same_v<T, JsonValue::Integer>) {
-                got = "integer";
-            } else if constexpr (std::is_same_v<T, JsonValue::Real>) {
-                got = "real";
-            } else if constexpr (std::is_same_v<T, JsonValue::Boolean>) {
-                got = "boolean";
-            }
-        }, inner);
+    static void typeMismatch(char const *expect, JsonValue::Union const &inner,
+                             std::error_code &ec) {
+        char const *got = "???";
+        std::visit(
+            [&](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, JsonValue::Null>) {
+                    got = "null";
+                } else if constexpr (std::is_same_v<T, JsonValue::String>) {
+                    got = "string";
+                } else if constexpr (std::is_same_v<T, JsonValue::Dict>) {
+                    got = "dict";
+                } else if constexpr (std::is_same_v<T, JsonValue::Array>) {
+                    got = "array";
+                } else if constexpr (std::is_same_v<T, JsonValue::Integer>) {
+                    got = "integer";
+                } else if constexpr (std::is_same_v<T, JsonValue::Real>) {
+                    got = "real";
+                } else if constexpr (std::is_same_v<T, JsonValue::Boolean>) {
+                    got = "boolean";
+                }
+            },
+            inner);
 #if DEBUG_LEVEL
-        std::cerr << std::string("reflect::json_decode type mismatch (expect ") + expect + ", got " + got + ")\n";
+        std::cerr << std::string(
+                         "reflect::json_decode type mismatch (expect ") +
+                         expect + ", got " + got + ")\n";
 #endif
         ec = make_error_code(JsonError::TypeMismatch);
     }
@@ -620,13 +700,15 @@ struct JsonTraitArrayLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         if (auto p = std::get_if<JsonValue::Array>(&data)) {
             auto bit = p->begin();
             auto eit = p->end();
             for (auto it = bit; it != eit; ++it) {
                 auto &element = value.emplace_back();
-                if (!JsonTrait<typename T::value_type>::getValue((*it)->inner, element, ec))
+                if (!JsonTrait<typename T::value_type>::getValue((*it)->inner,
+                                                                 element, ec))
                     return false;
             }
             return true;
@@ -658,13 +740,15 @@ struct JsonTraitDictLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         if (auto p = std::get_if<JsonValue::Dict>(&data)) {
             auto bit = p->begin();
             auto eit = p->end();
             for (auto it = bit; it != eit; ++it) {
                 auto &element = value.try_emplace(it->first).first->second;
-                if (!JsonTrait<typename T::mapped_type>::getValue(it->second->inner, element, ec))
+                if (!JsonTrait<typename T::mapped_type>::getValue(
+                        it->second->inner, element, ec))
                     return false;
             }
             return true;
@@ -682,7 +766,8 @@ struct JsonTraitStringLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         if (auto p = std::get_if<JsonValue::String>(&data)) {
             value = std::move(*p);
             return true;
@@ -700,7 +785,8 @@ struct JsonTraitNullLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         if (std::get_if<JsonValue::Null>(&data)) {
             return true;
         } else {
@@ -721,12 +807,14 @@ struct JsonTraitOptionalLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         if (std::get_if<JsonValue::Null>(&data)) {
             value = std::nullopt;
             return true;
         } else {
-            return JsonTrait<typename T::value_type>::getValue(data, value.emplace(), ec);
+            return JsonTrait<typename T::value_type>::getValue(
+                data, value.emplace(), ec);
         }
     }
 };
@@ -742,7 +830,8 @@ struct JsonTraitBooleanLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         if (auto p = std::get_if<JsonValue::Boolean>(&data)) {
             value = *p;
             return true;
@@ -760,7 +849,8 @@ struct JsonTraitArithmeticLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         if (auto p = std::get_if<JsonValue::Integer>(&data)) {
             value = *p;
             return true;
@@ -777,13 +867,12 @@ struct JsonTraitArithmeticLike {
 struct JsonTraitVariantLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
-        std::visit([&](auto const &arg) {
-            encoder->putValue(arg);
-        }, value);
+        std::visit([&](auto const &arg) { encoder->putValue(arg); }, value);
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         ec = make_error_code(JsonError::NotImplemented);
         return false;
         throw "TODO!! IMPLEMENT THIS!!";
@@ -801,7 +890,8 @@ struct JsonTraitJsonValueLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, JsonValue &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, JsonValue &value,
+                         std::error_code &ec) {
         value.inner = std::move(data);
         return true;
     }
@@ -817,7 +907,8 @@ struct JsonTraitObjectLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         if (auto p = std::get_if<JsonValue::Dict>(&data)) {
             ReflectorJsonDecode reflector(p);
             reflect_members(reflector, value);
@@ -840,84 +931,79 @@ struct JsonTraitWrapperLike {
     }
 
     template <class T>
-    static bool getValue(JsonValue::Union &data, T &value, std::error_code &ec) {
+    static bool getValue(JsonValue::Union &data, T &value,
+                         std::error_code &ec) {
         return JsonTrait<typename T::value_type>::getValue(data, *value, ec);
     }
 };
 
 template <class T, std::size_t N>
-struct JsonTrait<std::array<T, N>> : JsonTraitArrayLike {
-};
+struct JsonTrait<std::array<T, N>> : JsonTraitArrayLike {};
 
 template <class T, class Alloc>
-struct JsonTrait<std::vector<T, Alloc>> : JsonTraitArrayLike {
-};
+struct JsonTrait<std::vector<T, Alloc>> : JsonTraitArrayLike {};
 
 template <class K, class V, class Cmp, class Alloc>
-struct JsonTrait<std::map<K, V, Cmp, Alloc>> : JsonTraitDictLike {
-};
+struct JsonTrait<std::map<K, V, Cmp, Alloc>> : JsonTraitDictLike {};
 
 template <class K, class V, class Hash, class Eq, class Alloc>
-struct JsonTrait<std::unordered_map<K, V, Hash, Eq, Alloc>> : JsonTraitDictLike {
-};
+struct JsonTrait<std::unordered_map<K, V, Hash, Eq, Alloc>>
+    : JsonTraitDictLike {};
 
 template <class Traits, class Alloc>
 struct JsonTrait<std::basic_string<char, Traits, Alloc>> : JsonTraitStringLike {
 };
 
 template <class Traits>
-struct JsonTrait<std::basic_string_view<char, Traits>> : JsonTraitStringLike {
-};
+struct JsonTrait<std::basic_string_view<char, Traits>> : JsonTraitStringLike {};
 
-template <class ...Ts>
-struct JsonTrait<std::variant<Ts...>> : JsonTraitVariantLike {
-};
+template <class... Ts>
+struct JsonTrait<std::variant<Ts...>> : JsonTraitVariantLike {};
 
 template <class T>
-struct JsonTrait<std::optional<T>> : JsonTraitOptionalLike {
-};
+struct JsonTrait<std::optional<T>> : JsonTraitOptionalLike {};
 
 template <>
-struct JsonTrait<std::nullptr_t> : JsonTraitNullLike {
-};
+struct JsonTrait<std::nullptr_t> : JsonTraitNullLike {};
 
 template <>
-struct JsonTrait<std::nullopt_t> : JsonTraitNullLike {
-};
+struct JsonTrait<std::nullopt_t> : JsonTraitNullLike {};
 
 template <>
-struct JsonTrait<std::monostate> : JsonTraitNullLike {
-};
+struct JsonTrait<std::monostate> : JsonTraitNullLike {};
 
 template <>
-struct JsonTrait<bool> : JsonTraitBooleanLike {
-};
+struct JsonTrait<bool> : JsonTraitBooleanLike {};
 
 template <class T>
-struct JsonTrait<NoDefault<T>> : JsonTraitWrapperLike {
-};
+struct JsonTrait<NoDefault<T>> : JsonTraitWrapperLike {};
 
 template <class T>
-struct JsonTrait<T, std::enable_if_t<std::is_arithmetic_v<T>>> : JsonTraitArithmeticLike {
-};
+struct JsonTrait<T, std::enable_if_t<std::is_arithmetic_v<T>>>
+    : JsonTraitArithmeticLike {};
 
 template <class Reflector, class T>
-inline std::void_t<decltype(std::declval<T &>().REFLECT__MEMBERS(std::declval<Reflector &>()))> reflect_members(Reflector &reflector, T &value) {
+inline std::void_t<
+    decltype(std::declval<T &>().REFLECT__MEMBERS(std::declval<Reflector &>()))>
+reflect_members(Reflector &reflector, T &value) {
     value.REFLECT__MEMBERS(reflector);
 }
 
-template <class Reflector, class T, class = std::void_t<decltype(REFLECT__MEMBERS(std::declval<T &>(), std::declval<Reflector &>()))>>
+template <class Reflector, class T,
+          class = std::void_t<decltype(REFLECT__MEMBERS(
+              std::declval<T &>(), std::declval<Reflector &>()))>>
 inline void reflect_members(Reflector &reflector, T &value) {
     value.REFLECT__MEMBERS(value, reflector);
 }
 
 template <class T>
-struct JsonTrait<T, JsonValue> : JsonTraitJsonValueLike {
-};
+struct JsonTrait<T, JsonValue> : JsonTraitJsonValueLike {};
 
 template <class T>
-struct JsonTrait<T, std::void_t<decltype(reflect_members(std::declval<ReflectorJsonEncode &>(), std::declval<T &>()))>> : JsonTraitObjectLike {
-};
+struct JsonTrait<
+    T, std::void_t<decltype(reflect_members(
+           std::declval<ReflectorJsonEncode &>(), std::declval<T &>()))>>
+    : JsonTraitObjectLike {};
 
 template <class T>
 inline std::string json_encode(T const &value) {
@@ -960,4 +1046,4 @@ inline T json_decode(std::string_view json) {
     return value;
 }
 
-}
+} // namespace reflect

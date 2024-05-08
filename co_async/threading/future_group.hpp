@@ -8,28 +8,28 @@
 namespace co_async {
 
 struct FutureGroup {
-    std::vector<FutureSource<Expected<void, std::errc>>> mFutures;
+    std::vector<FutureSource<Expected<>>> mFutures;
 
-    FutureGroup &add(FutureSource<Expected<void, std::errc>> future) {
+    FutureGroup &add(FutureSource<Expected<>> future) {
         mFutures.push_back(std::move(future));
         return *this;
     }
 
-    FutureGroup &add(Task<Expected<void, std::errc>> task) {
+    FutureGroup &add(Task<Expected<>> task) {
         add(co_future(std::move(task)));
         return *this;
     }
 
     template <class F, class... Args>
-        requires(std::same_as<std::invoke_result_t<F, Args...>,
-                              Task<Expected<void, std::errc>>>)
+        requires(
+            std::same_as<std::invoke_result_t<F, Args...>, Task<Expected<>>>)
     FutureGroup &add(F &&f, Args &&...args) {
         add(co_future(
             co_bind(std::forward<F>(f), std::forward<Args>(args)...)));
         return *this;
     }
 
-    Task<Expected<void, std::errc>> wait() {
+    Task<Expected<>> wait() {
         for (auto &result: co_await when_all(mFutures)) {
             co_await std::move(result);
         }

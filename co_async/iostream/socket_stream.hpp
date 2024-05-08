@@ -9,12 +9,11 @@
 namespace co_async {
 
 struct SocketStream : Stream {
-    Task<Expected<std::size_t, std::errc>>
-    raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         co_return co_await socket_read(mFile, buffer, mTimeout);
     }
 
-    Task<Expected<std::size_t, std::errc>>
+    Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         co_return co_await socket_write(mFile, buffer, mTimeout);
     }
@@ -38,7 +37,7 @@ private:
     std::chrono::nanoseconds mTimeout = std::chrono::seconds(10);
 };
 
-inline Task<Expected<OwningStream, std::errc>>
+inline Task<Expected<OwningStream>>
 tcp_connect(char const *host, int port, std::string_view proxy,
             std::chrono::nanoseconds timeout) {
     auto handle =
@@ -48,7 +47,7 @@ tcp_connect(char const *host, int port, std::string_view proxy,
     co_return sock;
 }
 
-inline Task<Expected<OwningStream, std::errc>>
+inline Task<Expected<OwningStream>>
 tcp_accept(SocketListener &listener, std::chrono::nanoseconds timeout) {
     auto handle = co_await co_await listener_accept(listener);
     OwningStream sock = make_stream<SocketStream>(std::move(handle));

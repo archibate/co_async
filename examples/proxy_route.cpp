@@ -4,7 +4,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<Expected<void, std::errc>>
+Task<Expected<>>
 amain(std::string serveAt, std::string targetHost, std::string headers) {
     co_await https_load_ca_certificates();
 
@@ -109,12 +109,9 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         targetHost = argv[3];
     }
-    if (auto e = co_synchronize(amain(serveAt, targetHost, headers));
-        e.has_error()) {
-        int err = (int)e.error();
-        std::cerr << argv[0] << ": " << std::system_category().message(err)
-                  << '\n';
-        return err;
+    if (auto e = co_synchronize(amain(serveAt, targetHost, headers)); e.has_error()) {
+        std::cerr << argv[0] << ": " << e.error().message() << '\n';
+        return e.error().value();
     }
     return 0;
 }

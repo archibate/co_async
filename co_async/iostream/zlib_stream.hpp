@@ -14,8 +14,8 @@ namespace co_async {
 #if CO_ASYNC_ZLIB
 // borrowed from: https://github.com/intel/zlib/blob/master/examples/zpipe.c
 
-inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source,
-                                                    BorrowedStream &dest) {
+inline Task<Expected<>> zlib_inflate(BorrowedStream &source,
+                                     BorrowedStream &dest) {
     /* decompress */
     int ret;
     unsigned have;
@@ -34,7 +34,8 @@ inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source,
 #if CO_ASYNC_DEBUG
         std::cerr << "WARNING: inflateInit returned error\n";
 #endif
-        co_return Unexpected{std::errc::not_enough_memory};
+        co_return Unexpected{
+            std::make_error_code(std::errc::not_enough_memory)};
     }
 
     do {
@@ -65,7 +66,7 @@ inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source,
                 std::cerr << "WARNING: inflate error: " + std::to_string(ret) +
                                  ": " + std::string(strm.msg) + "\n";
 #endif
-                co_return Unexpected{std::errc::io_error};
+                co_return Unexpected{std::make_error_code(std::errc::io_error)};
             }
             have = chunk - strm.avail_out;
             if (auto e = co_await dest.putspan(
@@ -86,13 +87,13 @@ inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source,
 #if CO_ASYNC_DEBUG
         std::cerr << "WARNING: inflate got unexpected end of file\n";
 #endif
-        co_return Unexpected{std::errc::io_error};
+        co_return Unexpected{std::make_error_code(std::errc::io_error)};
     }
     co_return {};
 }
 
-inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source,
-                                                    BorrowedStream &dest) {
+inline Task<Expected<>> zlib_deflate(BorrowedStream &source,
+                                     BorrowedStream &dest) {
     /* compress */
     int ret, flush;
     unsigned have;
@@ -111,7 +112,8 @@ inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source,
 #if CO_ASYNC_DEBUG
         std::cerr << "WARNING: deflateInit returned error\n";
 #endif
-        co_return Unexpected{std::errc::not_enough_memory};
+        co_return Unexpected{
+            std::make_error_code(std::errc::not_enough_memory)};
     }
 
     do {
@@ -155,14 +157,16 @@ inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source,
     co_return {};
 }
 #else
-inline Task<Expected<void, std::errc>> zlib_inflate(BorrowedStream &source,
-                                                    BorrowedStream &dest) {
-    co_return Unexpected{std::errc::function_not_supported};
+inline Task<Expected<>> zlib_inflate(BorrowedStream &source,
+                                     BorrowedStream &dest) {
+    co_return Unexpected{
+        std::make_error_code(std::errc::function_not_supported)};
 }
 
-inline Task<Expected<void, std::errc>> zlib_deflate(BorrowedStream &source,
-                                                    BorrowedStream &dest) {
-    co_return Unexpected{std::errc::function_not_supported};
+inline Task<Expected<>> zlib_deflate(BorrowedStream &source,
+                                     BorrowedStream &dest) {
+    co_return Unexpected{
+        std::make_error_code(std::errc::function_not_supported)};
 }
 #endif
 

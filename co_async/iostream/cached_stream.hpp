@@ -14,8 +14,7 @@ struct CachedStream : Stream {
         return mStream;
     }
 
-    Task<Expected<std::size_t, std::errc>>
-    raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         if (mPos != mCache.size()) {
             auto n = std::min(mCache.size() - mPos, buffer.size());
             std::memcpy(buffer.data(), mCache.data() + mPos, n);
@@ -35,16 +34,16 @@ struct CachedStream : Stream {
         return mStream.close();
     }
 
-    Task<Expected<void, std::errc>> raw_flush() override {
+    Task<Expected<>> raw_flush() override {
         return mStream.flush();
     }
 
-    Task<Expected<void, std::errc>> raw_seek(std::uint64_t pos) override {
+    Task<Expected<>> raw_seek(std::uint64_t pos) override {
         if (pos <= mCache.size()) {
             mPos = pos;
             co_return {};
         } else {
-            co_return Unexpected{std::errc::invalid_seek};
+            co_return Unexpected{std::make_error_code(std::errc::invalid_seek)};
         }
     }
 

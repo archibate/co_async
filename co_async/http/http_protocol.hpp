@@ -61,19 +61,14 @@ public:
 
     virtual void initServerState() = 0;
     virtual void initClientState() = 0;
-    virtual Task<Expected<void, std::errc>>
-    writeBodyStream(BorrowedStream &body) = 0;
-    virtual Task<Expected<void, std::errc>>
-    readBodyStream(BorrowedStream &body) = 0;
-    virtual Task<Expected<void, std::errc>>
-    writeBody(std::string_view body) = 0;
-    virtual Task<Expected<void, std::errc>> readBody(std::string &body) = 0;
-    virtual Task<Expected<void, std::errc>>
-    writeRequest(HTTPRequest const &req) = 0;
-    virtual Task<Expected<void, std::errc>> readRequest(HTTPRequest &req) = 0;
-    virtual Task<Expected<void, std::errc>>
-    writeResponse(HTTPResponse const &res) = 0;
-    virtual Task<Expected<void, std::errc>> readResponse(HTTPResponse &res) = 0;
+    virtual Task<Expected<>> writeBodyStream(BorrowedStream &body) = 0;
+    virtual Task<Expected<>> readBodyStream(BorrowedStream &body) = 0;
+    virtual Task<Expected<>> writeBody(std::string_view body) = 0;
+    virtual Task<Expected<>> readBody(std::string &body) = 0;
+    virtual Task<Expected<>> writeRequest(HTTPRequest const &req) = 0;
+    virtual Task<Expected<>> readRequest(HTTPRequest &req) = 0;
+    virtual Task<Expected<>> writeResponse(HTTPResponse const &res) = 0;
+    virtual Task<Expected<>> readResponse(HTTPResponse &res) = 0;
 };
 
 struct HTTPProtocolVersion11 : HTTPProtocol {
@@ -100,7 +95,7 @@ protected:
         return HTTPContentEncoding::Identity;
     }
 
-    Task<Expected<void, std::errc>> parseHeaders(HTTPHeaders &headers) {
+    Task<Expected<>> parseHeaders(HTTPHeaders &headers) {
         using namespace std::string_view_literals;
         std::string line;
         while (true) {
@@ -112,7 +107,8 @@ protected:
             auto pos = line.find(':');
             if (pos == line.npos || pos == line.size() - 1 ||
                 line[pos + 1] != ' ') [[unlikely]] {
-                co_return Unexpected{std::errc::protocol_error};
+                co_return Unexpected{
+                    std::make_error_code(std::errc::protocol_error)};
             }
             auto key = line.substr(0, pos);
             for (auto &c: key) {
@@ -126,7 +122,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> dumpHeaders(HTTPHeaders const &headers) {
+    Task<Expected<>> dumpHeaders(HTTPHeaders const &headers) {
         using namespace std::string_view_literals;
         for (auto const &[k, v]: headers) {
             co_await co_await sock.puts(k);
@@ -171,17 +167,21 @@ protected:
         }
     }
 
-    void negotiateAcceptEncoding(HTTPHeaders &headers, std::span<HTTPContentEncoding const> encodings) {
+    void
+    negotiateAcceptEncoding(HTTPHeaders &headers,
+                            std::span<HTTPContentEncoding const> encodings) {
         using namespace std::string_view_literals;
         mContentEncoding = HTTPContentEncoding::Identity;
         if (!mAcceptEncoding.empty()) {
-            for (std::string_view encName: split_string(mAcceptEncoding, ", "sv)) {
+            for (std::string_view encName:
+                 split_string(mAcceptEncoding, ", "sv)) {
                 if (auto i = encName.find(';'); i != encName.npos) {
                     encName = encName.substr(0, i);
                 }
                 auto enc = httpContentEncodingByName(encName);
                 if (enc != HTTPContentEncoding::Identity) [[likely]] {
-                    if (std::find(encodings.begin(), encodings.end(), enc) != encodings.end()) {
+                    if (std::find(encodings.begin(), encodings.end(), enc) !=
+                        encodings.end()) {
                         mContentEncoding = enc;
                         break;
                     }
@@ -190,7 +190,7 @@ protected:
         }
     }
 
-    Task<Expected<void, std::errc>> writeChunked(BorrowedStream &body) {
+    Task<Expected<>> writeChunked(BorrowedStream &body) {
         using namespace std::string_view_literals;
         bool hadHeader = false;
         do {
@@ -226,7 +226,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> writeChunkedString(std::string_view body) {
+    Task<Expected<>> writeChunkedString(std::string_view body) {
         using namespace std::string_view_literals;
         if (body.empty()) {
             co_await co_await sock.puts("\r\n"sv);
@@ -239,7 +239,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> readChunked(BorrowedStream &body) {
+    Task<Expected<>> readChunked(BorrowedStream &body) {
         using namespace std::string_view_literals;
         if (mContentLength) {
             if (auto n = *mContentLength; n > 0) {
@@ -269,7 +269,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> readChunkedString(std::string &body) {
+    Task<Expected<>> readChunkedString(std::string &body) {
         using namespace std::string_view_literals;
         if (mContentLength) {
             if (auto n = *mContentLength; n > 0) {
@@ -291,7 +291,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> writeEncoded(BorrowedStream &body) {
+    Task<Expected<>> writeEncoded(BorrowedStream &body) {
         using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
@@ -329,7 +329,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> writeEncodedString(std::string_view body) {
+    Task<Expected<>> writeEncodedString(std::string_view body) {
         using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
@@ -343,7 +343,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> readEncoded(BorrowedStream &body) {
+    Task<Expected<>> readEncoded(BorrowedStream &body) {
         using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
@@ -389,7 +389,7 @@ protected:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> readEncodedString(std::string &body) {
+    Task<Expected<>> readEncodedString(std::string &body) {
         using namespace std::string_view_literals;
         switch (mContentEncoding) {
         case HTTPContentEncoding::Identity: {
@@ -422,36 +422,33 @@ private:
 #endif
 
 public:
-    Task<Expected<void, std::errc>>
-    writeBodyStream(BorrowedStream &body) override {
+    Task<Expected<>> writeBodyStream(BorrowedStream &body) override {
         checkPhase(1, 0);
         co_await co_await writeEncoded(body);
         co_await co_await sock.flush();
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> writeBody(std::string_view body) override {
+    Task<Expected<>> writeBody(std::string_view body) override {
         checkPhase(1, 0);
         co_await co_await writeEncodedString(body);
         co_await co_await sock.flush();
         co_return {};
     }
 
-    Task<Expected<void, std::errc>>
-    readBodyStream(BorrowedStream &body) override {
+    Task<Expected<>> readBodyStream(BorrowedStream &body) override {
         checkPhase(-1, 0);
         co_await co_await readEncoded(body);
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> readBody(std::string &body) override {
+    Task<Expected<>> readBody(std::string &body) override {
         checkPhase(-1, 0);
         co_await co_await readEncodedString(body);
         co_return {};
     }
 
-    Task<Expected<void, std::errc>>
-    writeRequest(HTTPRequest const &req) override {
+    Task<Expected<>> writeRequest(HTTPRequest const &req) override {
         checkPhase(0, 1);
         using namespace std::string_view_literals;
         co_await co_await sock.puts(req.method);
@@ -475,21 +472,23 @@ public:
 #endif
     }
 
-    Task<Expected<void, std::errc>> readRequest(HTTPRequest &req) override {
+    Task<Expected<>> readRequest(HTTPRequest &req) override {
         checkPhase(0, -1);
         using namespace std::string_view_literals;
         std::string line;
         if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) {
-            co_return Unexpected{std::errc::broken_pipe};
+            co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
         }
         auto pos = line.find(' ');
         if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
-            co_return Unexpected{std::errc::protocol_error};
+            co_return Unexpected{
+                std::make_error_code(std::errc::protocol_error)};
         }
         req.method = line.substr(0, pos);
         auto pos2 = line.find(' ', pos + 1);
         if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
-            co_return Unexpected{std::errc::protocol_error};
+            co_return Unexpected{
+                std::make_error_code(std::errc::protocol_error)};
         }
         req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
 
@@ -499,8 +498,7 @@ public:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>>
-    writeResponse(HTTPResponse const &res) override {
+    Task<Expected<>> writeResponse(HTTPResponse const &res) override {
         checkPhase(0, 1);
         using namespace std::string_view_literals;
         co_await co_await sock.puts("HTTP/1.1 "sv);
@@ -513,22 +511,24 @@ public:
         co_return {};
     }
 
-    Task<Expected<void, std::errc>> readResponse(HTTPResponse &res) override {
+    Task<Expected<>> readResponse(HTTPResponse &res) override {
         checkPhase(0, -1);
         using namespace std::string_view_literals;
         std::string line;
         if (!co_await sock.getline(line, "\r\n"sv) || line.empty())
             [[unlikely]] {
-            co_return Unexpected{std::errc::broken_pipe};
+            co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
         }
         if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv ||
             line[8] != ' ') [[unlikely]] {
-            co_return Unexpected{std::errc::protocol_error};
+            co_return Unexpected{
+                std::make_error_code(std::errc::protocol_error)};
         }
         if (auto statusOpt = from_string<int>(line.substr(9, 3))) [[likely]] {
             res.status = *statusOpt;
         } else [[unlikely]] {
-            co_return Unexpected{std::errc::protocol_error};
+            co_return Unexpected{
+                std::make_error_code(std::errc::protocol_error)};
         }
         co_await co_await parseHeaders(res.headers);
         handleContentEncoding(res.headers);

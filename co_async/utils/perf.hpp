@@ -32,7 +32,8 @@ private:
 
     struct PerfGather {
         PerfGather() {
-            signal(SIGINT, +[](int signo) { std::exit(130); });
+            signal(
+                SIGINT, +[](int signo) { std::exit(130); });
         }
 
         PerfGather(PerfGather &&) = delete;

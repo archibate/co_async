@@ -23,7 +23,7 @@ inline Task<> https_load_ca_certificates() {
     auto path = make_path("/etc/ssl/certs/ca-certificates.crt");
     if (auto s = co_await fs_stat(path); s && s->is_readable()) [[likely]] {
         if (auto content = co_await file_read(path)) [[likely]] {
-            gTrustAnchors.add(*content);
+            gTrustAnchors.add(*content).value_or();
         }
     }
 }
@@ -129,8 +129,8 @@ private:
 #endif
     }
 
-    Task<Expected<void, std::errc>>
-    tryWriteRequestAndBody(HTTPRequest const &request, std::string_view body) {
+    Task<Expected<>> tryWriteRequestAndBody(HTTPRequest const &request,
+                                            std::string_view body) {
         for (std::size_t n = 0; n < 3; ++n) {
             if (!mHttp) {
                 if (auto e = co_await mHttpFactory->createConnection())
@@ -148,10 +148,11 @@ private:
             }
             mHttp = nullptr;
         }
-        co_return Unexpected{std::errc::connection_aborted};
+        co_return Unexpected{
+            std::make_error_code(std::errc::connection_aborted)};
     }
 
-    /* Task<Expected<void, std::errc>> */
+    /* Task<Expected<>> */
     /* tryWriteRequestAndBodyStream(HTTPRequest const &request, */
     /*                              BorrowedStream &bodyStream) { */
     /*     auto cachedStream = make_stream<CachedStream>(bodyStream); */
@@ -196,9 +197,8 @@ private:
     }
 
 public:
-    Expected<void, std::errc> doConnect(std::string_view host,
-                                        std::chrono::nanoseconds timeout,
-                                        bool followProxy) {
+    Expected<> doConnect(std::string_view host,
+                         std::chrono::nanoseconds timeout, bool followProxy) {
         terminateLifetime();
         if (host.starts_with("https://")) {
             host.remove_prefix(8);
@@ -225,14 +225,15 @@ public:
                 std::move(h), p, host, std::move(proxy), timeout);
             return {};
         } else [[unlikely]] {
-            return Unexpected{std::errc::protocol_not_supported};
+            return Unexpected{
+                std::make_error_code(std::errc::protocol_not_supported)};
         }
     }
 
     HTTPConnection() = default;
 
-    Task<Expected<std::tuple<HTTPResponse, std::string>, std::errc>> request(
-        HTTPRequest req, std::string_view in = {}) {
+    Task<Expected<std::tuple<HTTPResponse, std::string>>>
+    request(HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
@@ -244,8 +245,8 @@ public:
         co_return std::tuple{std::move(res), std::move(body)};
     }
 
-    Task<Expected<std::tuple<HTTPResponse, OwningStream>, std::errc>> requestStreamed(
-        HTTPRequest req, std::string_view in = {}) {
+    Task<Expected<std::tuple<HTTPResponse, OwningStream>>>
+    requestStreamed(HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
@@ -254,10 +255,10 @@ public:
         co_await co_await mHttp->readResponse(res);
         auto [r, w] = co_await co_await pipe_stream();
         co_spawn(pipe_bind(std::move(w),
-                                       [this] (OwningStream &w) -> Task<Expected<>> {
-            co_await co_await mHttp->readBodyStream(w);
-            co_return {};
-        }));
+                           [this](OwningStream &w) -> Task<Expected<>> {
+                               co_await co_await mHttp->readBodyStream(w);
+                               co_return {};
+                           }));
         reset.neverMind();
         co_return std::tuple{res, std::move(r)};
     }
@@ -334,7 +335,7 @@ public:
           mFollowProxy(followProxy) {}
 
 private:
-    std::optional<Expected<HTTPConnectionPtr, std::errc>>
+    std::optional<Expected<HTTPConnectionPtr>>
     lookForFreeSlot(bool exactReuse, std::string_view host) /* MT-safe */ {
         for (auto &entry: mPool) {
             bool expected = false;
@@ -397,7 +398,7 @@ private:
     }
 
 public:
-    Task<Expected<HTTPConnectionPtr, std::errc>>
+    Task<Expected<HTTPConnectionPtr>>
     connect(std::string_view host) /* MT-safe */ {
     again:
         garbageCollect();

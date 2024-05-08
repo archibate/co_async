@@ -168,7 +168,7 @@ Unexpected(E) -> Unexpected<E>;
 
 Unexpected() -> Unexpected<>;
 
-template <class T = void, class E = std::errc>
+template <class T = void, class E = std::error_code>
 struct [[nodiscard]] Expected {
 private:
     static_assert(!std::is_reference_v<T> && !std::is_reference_v<E>);

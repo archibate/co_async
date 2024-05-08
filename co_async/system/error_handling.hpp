@@ -92,9 +92,9 @@ namespace co_async {
 /* } */
 /* #endif */
 
-inline Expected<int, std::errc> expectError(int res) {
+inline Expected<int> expectError(int res) {
     if (res < 0) [[unlikely]] {
-        return Unexpected{std::errc(-res)};
+        return Unexpected{std::make_error_code(std::errc(-res))};
     }
     return res;
 }

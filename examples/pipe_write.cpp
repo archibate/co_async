@@ -4,7 +4,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<Expected<void, std::errc>> amain() {
+Task<Expected<>> amain() {
     co_await co_await stdio().putline("starting process: cat");
 
     auto p = co_await co_await fs_pipe();

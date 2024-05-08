@@ -34,7 +34,7 @@ struct HTTPServer {
 
         HTTPRequest request;
 
-        Task<Expected<void, std::errc>> readRequestHeader() {
+        Task<Expected<>> readRequestHeader() {
             mHttp->initServerState();
             co_await co_await mHttp->readRequest(request);
             co_return {};

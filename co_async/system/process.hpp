@@ -38,14 +38,13 @@ struct WaitProcessResult {
     } exitType;
 };
 
-inline Task<Expected<void, std::errc>> kill_process(Pid pid,
-                                                    int sig = SIGKILL) {
+inline Task<Expected<>> kill_process(Pid pid, int sig = SIGKILL) {
     co_await expectError(kill(pid, sig));
     co_return {};
 }
 
-inline Task<Expected<WaitProcessResult, std::errc>>
-wait_process(Pid pid, int options = WEXITED) {
+inline Task<Expected<WaitProcessResult>> wait_process(Pid pid,
+                                                      int options = WEXITED) {
     siginfo_t info{};
     co_await expectError(co_await uring_waitid(P_PID, pid, &info, options, 0));
     co_return WaitProcessResult{
@@ -55,15 +54,15 @@ wait_process(Pid pid, int options = WEXITED) {
     };
 }
 
-inline Task<Expected<WaitProcessResult, std::errc>>
+inline Task<Expected<WaitProcessResult>>
 wait_process(Pid pid, std::chrono::nanoseconds timeout, int options = WEXITED) {
     siginfo_t info{};
     auto ts = durationToKernelTimespec(timeout);
     auto ret = expectError(
         co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0),
                             uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
-    if (ret == std::errc::operation_canceled) {
-        co_return Unexpected{std::errc::timed_out};
+    if (ret == std::make_error_code(std::errc::operation_canceled)) {
+        co_return Unexpected{std::make_error_code(std::errc::timed_out)};
     }
     co_await std::move(ret);
     co_return WaitProcessResult{
@@ -170,7 +169,7 @@ struct ProcessBuilder {
         return *this;
     }
 
-    Task<Expected<Pid, std::errc>> spawn() {
+    Task<Expected<Pid>> spawn() {
         Pid pid;
         std::vector<char *> argv;
         std::vector<char *> envp;
@@ -195,7 +194,7 @@ struct ProcessBuilder {
             &pid, mPath.c_str(), &mFileActions, &mAttr, argv.data(),
             mEnvpStore.empty() ? environ : envp.data());
         if (status != 0) [[unlikely]] {
-            co_return Unexpected{std::errc(errno)};
+            co_return Unexpected{std::make_error_code(std::errc(errno))};
         }
         mPath.clear();
         mArgvStore.clear();
@@ -215,12 +214,12 @@ private:
     std::vector<FileHandle> mFileStore;
 };
 
-//inline Task<Expected<OwningStream, std::errc>>
+//inline Task<Expected<OwningStream>>
 //pipe_capture(FutureGroup &group, ProcessBuilder &process) {
 //auto pipe = co_await co_await fs_pipe();
 //process.open(1, pipe.writer());
 //Pid pid = co_await co_await process.spawn();
-//group.add([pid]() mutable -> Task<Expected<void, std::errc>> {
+//group.add([pid]() mutable -> Task<Expected<>> {
 ///* using namespace std::chrono_literals; */
 ///* co_await sleep_for(300ms); */
 //co_return co_await wait_process(pid);
@@ -229,11 +228,11 @@ private:
 //co_return {std::move(reader)};
 //}
 //
-//inline Task<Expected<OwningStream, std::errc>>
+//inline Task<Expected<OwningStream>>
 //pipe_capture(FutureGroup &group, ProcessBuilder &process, BorrowedStream &in) {
 //auto pipe = co_await co_await fs_pipe();
 //process.open(0, pipe.reader());
-//group.add([&in, writer = file_from_handle(pipe.writer())]() mutable -> Task<Expected<void, std::errc>> {
+//group.add([&in, writer = file_from_handle(pipe.writer())]() mutable -> Task<Expected<>> {
 //while (true) {
 //if (in.bufempty()) {
 //if (!co_await in.fillbuf()) {
@@ -247,13 +246,13 @@ private:
 //co_return co_await pipe_capture(group, process);
 //}
 //
-//inline Task<Expected<std::string, std::errc>>
+//inline Task<Expected<std::string>>
 //pipe_capture_string(ProcessBuilder &process,
 //std::string_view in) {
 //FutureGroup group;
 //auto pipe = co_await co_await fs_pipe();
 //process.open(0, pipe.reader());
-//group.add([in, writer = file_from_handle(pipe.writer())]() mutable -> Task<Expected<void, std::errc>> {
+//group.add([in, writer = file_from_handle(pipe.writer())]() mutable -> Task<Expected<>> {
 //co_await co_await writer.puts(in);
 //co_await co_await writer.flush();
 //co_await writer.close();
@@ -267,7 +266,7 @@ private:
 //co_return ret;
 //}
 //
-//inline Task<Expected<std::string, std::errc>>
+//inline Task<Expected<std::string>>
 //pipe_capture_string(ProcessBuilder &process) {
 //FutureGroup group;
 //auto out = co_await co_await pipe_capture(group, process);

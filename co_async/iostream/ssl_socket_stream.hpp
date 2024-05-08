@@ -19,7 +19,7 @@ namespace co_async {
 
 inline std::error_category const &bearSSLCategory() {
     static struct : std::error_category {
-        virtual const char *name() const noexcept {
+        virtual char const *name() const noexcept {
             return "BearSSL";
         }
 
@@ -272,6 +272,7 @@ inline std::error_category const &bearSSLCategory() {
             return to_string(e);
         }
     } instance;
+
     return instance;
 }
 
@@ -365,14 +366,14 @@ public:
         return *this;
     }
 
-    std::string_view getDN() const {
+    Expected<std::string_view> getDN() const {
         int err = br_x509_decoder_last_error(x509Dec.get());
         if (err != BR_ERR_OK) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-            std::cerr << "X509 decoder error: " + bearSSLCategory().message(err) + "\n";
+            std::cerr << "X509 decoder error: " +
+                             bearSSLCategory().message(err) + "\n";
 #endif
-            throw std::runtime_error("X509 decoder error: " +
-                                     bearSSLCategory().message(err));
+            return Unexpected{std::error_code(err, bearSSLCategory())};
         }
         return result;
     }
@@ -417,23 +418,28 @@ struct SSLClientTrustAnchor {
 public:
     std::vector<br_x509_trust_anchor> trustAnchors;
 
-    SSLClientTrustAnchor &addBinary(std::string_view certX506) {
+    Expected<> addBinary(std::string_view certX506) {
         auto &x506 = x506Stores.emplace_back();
         x506.decode(certX506);
         auto dn = x506.getDN();
+        if (dn.has_error()) {
+            return Unexpected{dn.error()};
+        }
         trustAnchors.push_back({
-            {(unsigned char *)dn.data(), dn.size()},
+            {(unsigned char *)dn->data(), dn->size()},
             BR_X509_TA_CA,
             *x506.getPubKey(),
         });
-        return *this;
+        return {};
     }
 
-    SSLClientTrustAnchor &add(std::string_view certX506) {
+    Expected<> add(std::string_view certX506) {
         for (auto &s: SSLPemDecoder::tryDecode(certX506)) {
-            addBinary(s);
+            if (auto e = addBinary(s); e.has_error()) {
+                return e;
+            }
         }
-        return *this;
+        return {};
     }
 
 private:
@@ -487,16 +493,19 @@ protected:
         br_ssl_engine_set_buffer(eng, iobuf.get(), BR_SSL_BUFSIZE_BIDI, 1);
     }
 
-    Task<Expected<void, std::errc>> bearSSLRunUntil(unsigned target) {
+    Task<Expected<>> bearSSLRunUntil(unsigned target) {
         for (;;) {
             unsigned state = br_ssl_engine_current_state(eng);
             if (state & BR_SSL_CLOSED) {
                 int err = br_ssl_engine_last_error(eng);
                 if (err != BR_ERR_OK) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-                    std::cerr << "SSL error: " + bearSSLCategory().message(err) + "\n";
+                    std::cerr
+                        << "SSL error: " + bearSSLCategory().message(err) +
+                               "\n";
 #endif
-                    co_return Unexpected{std::errc::io_error};
+                    co_return Unexpected{
+                        std::error_code(err, bearSSLCategory())};
                 }
                 co_return {};
             }
@@ -518,10 +527,14 @@ protected:
                         if (e.has_error()) {
                             co_return Unexpected{e.error()};
                         } else {
-                            co_return Unexpected{std::errc::broken_pipe};
+                            co_return Unexpected{
+                                std::make_error_code(std::errc::broken_pipe)};
                         }
+                    } else if (e.has_error()) [[unlikely]] {
+                        co_return Unexpected{e.error()};
+                    } else {
+                        co_return {};
                     }
-                    co_return {};
                 }
 
                 br_ssl_engine_sendrec_ack(eng, wlen);
@@ -556,10 +569,14 @@ protected:
                         if (e.has_error()) {
                             co_return Unexpected{e.error()};
                         } else {
-                            co_return Unexpected{std::errc::broken_pipe};
+                            co_return Unexpected{
+                                std::make_error_code(std::errc::broken_pipe)};
                         }
+                    } else if (e.has_error()) [[unlikely]] {
+                        co_return Unexpected{e.error()};
+                    } else {
+                        co_return {};
                     }
-                    co_return {};
                 }
 
                 br_ssl_engine_recvrec_ack(eng, rlen);
@@ -571,14 +588,13 @@ protected:
     }
 
 public:
-    Task<Expected<void, std::errc>> raw_flush() override {
+    Task<Expected<>> raw_flush() override {
         br_ssl_engine_flush(eng, 0);
         co_await co_await bearSSLRunUntil(BR_SSL_SENDAPP | BR_SSL_RECVAPP);
         co_return {};
     }
 
-    Task<Expected<std::size_t, std::errc>>
-    raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         unsigned char *buf;
         std::size_t alen;
 
@@ -595,7 +611,7 @@ public:
         co_return alen;
     }
 
-    Task<Expected<std::size_t, std::errc>>
+    Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         unsigned char *buf;
         std::size_t alen;
@@ -703,7 +719,7 @@ public:
     }
 };
 
-inline Task<Expected<OwningStream, std::errc>>
+inline Task<Expected<OwningStream>>
 ssl_connect(char const *host, int port, SSLClientTrustAnchor const &ta,
             std::span<char const *const> protocols, std::string_view proxy,
             std::chrono::nanoseconds timeout) {

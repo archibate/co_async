@@ -85,7 +85,7 @@ struct ChatCompletionResult {
     REFLECT(id, choices, created, model, usage);
 };
 
-Task<Expected<void, std::errc>> amain() {
+Task<Expected<>> amain() {
     std::string authorization;
     if (auto p = std::getenv("DEEPSEEK_API_KEY")) {
         authorization.append("Bearer ");
@@ -106,8 +106,8 @@ Task<Expected<void, std::errc>> amain() {
         auto compReq = ChatCompletionRequest{
             .messages = {
                 /* {.role = "user", .content = "Why Google hates C++ exceptions?"}, */
-                /* {.role = "user", .content = "What is std::error_code?"}, */
-                {.role = "user", .content = "What is the difference between std::error_code and std::error_condition?"},
+                {.role = "user", .content = "What is std::error_code?"},
+                /* {.role = "user", .content = "What is the difference between std::error_code and std::error_condition?"}, */
             },
             .model = "deepseek-coder",
             .stream = true,

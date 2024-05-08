@@ -7,7 +7,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<Expected<void, std::errc>> amain() {
+Task<Expected<>> amain() {
     auto file = co_await co_await file_open("/home/bate/下载/5b1b42af22a09746f2a88345717599dbf698ad5c.jpg", OpenMode::Read);
     std::string buffer = co_await file.getall();
     int nx, ny, comp;

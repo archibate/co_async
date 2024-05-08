@@ -50,6 +50,7 @@ struct BorrowedStream {
 
     Task<Expected<char, std::errc>> getchar() {
         if (bufempty()) {
+            mInIndex = 0;
             co_await co_await fillbuf();
         }
         char c = mInBuffer[mInIndex];
@@ -95,6 +96,7 @@ struct BorrowedStream {
         co_await co_await getline(s, eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
             if (bufempty()) {
+                mInIndex = 0;
                 co_await co_await fillbuf();
             }
             char c = mInBuffer[mInIndex];
@@ -113,6 +115,7 @@ struct BorrowedStream {
         co_await co_await dropline(eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
             if (bufempty()) {
+                mInIndex = 0;
                 co_await co_await fillbuf();
             }
             char c = mInBuffer[mInIndex];
@@ -197,6 +200,12 @@ struct BorrowedStream {
         co_return s;
     }
 
+    Task<> dropall() {
+        do {
+            mInIndex = 0;
+        } while (co_await fillbuf());
+    }
+
     Task<> getall(std::string &s) {
         std::size_t start = mInIndex;
         do {
@@ -244,6 +253,7 @@ struct BorrowedStream {
 
     Task<Expected<char, std::errc>> peekchar() {
         if (bufempty()) {
+            mInIndex = 0;
             co_await co_await fillbuf();
         }
         co_return mInBuffer[mInIndex];

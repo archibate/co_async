@@ -151,5 +151,7 @@
 #endif
 
 #if CO_ASYNC_DEBUG
+#define DEBUG_LEVEL 1
 #include <co_async/utils/debug.hpp>
 #endif
+#include <co_async/utils/reflect.hpp>

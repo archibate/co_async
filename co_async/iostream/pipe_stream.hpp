@@ -106,72 +106,72 @@ inline Task<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out) {
     co_return {};
 }
 
-inline Task<Expected<std::string>>
-pipe_invoke_string(std::invocable<BorrowedStream &> auto func) {
-    auto [r, w] = co_await co_await pipe_stream();
-    auto [a, b] = co_await when_all(
-        co_bind([func = std::move(func),
-                 w = std::move(w)]() mutable -> Task<Expected<>> {
-            co_await co_await std::invoke(func, w);
-            co_await co_await w.flush();
-            co_await w.close();
-            co_return {};
-        }),
-        co_bind([r = std::move(r)]() mutable -> Task<Expected<std::string>> {
-            auto out = co_await r.getall();
-            co_return std::move(out);
-        }));
-    co_await std::move(a);
-    co_return co_await std::move(b);
-}
-
-inline Task<Expected<std::string>>
-pipe_invoke_string(std::invocable<BorrowedStream &, BorrowedStream &> auto func,
-                   std::string_view in) {
-    auto [r1, w1] = co_await co_await pipe_stream();
-    auto [r2, w2] = co_await co_await pipe_stream();
-    auto [a, b, c] = co_await when_all(
-        co_bind([in, w1 = std::move(w1)]() mutable -> Task<Expected<>> {
-            co_await co_await w1.puts(in);
-            co_await co_await w1.flush();
-            co_await w1.close();
-            co_return {};
-        }),
-        co_bind([func = std::move(func), r1 = std::move(r1),
-                 w2 = std::move(w2)]() mutable -> Task<Expected<>> {
-            co_await co_await std::invoke(func, r1, w2);
-            co_await co_await w2.flush();
-            co_await w2.close();
-            co_return {};
-        }),
-        co_bind([r2 = std::move(r2)]() mutable -> Task<Expected<std::string>> {
-            auto out = co_await r2.getall();
-            co_return std::move(out);
-        }));
-    co_await std::move(a);
-    co_await std::move(b);
-    co_return co_await std::move(c);
-}
-
-inline Task<Expected<OwningStream>>
-pipe_invoke(std::invocable<BorrowedStream &> auto func) {
-    auto [r, w] = co_await co_await pipe_stream();
-    co_spawn([func = std::move(func),
-              w = std::move(w)]() mutable -> Task<Expected<>> {
-        co_await co_await std::invoke(func, w);
-        co_await co_await w.flush();
-        co_await w.close();
-        co_return {};
-    });
-    co_return {std::move(r)};
-}
-
-inline Task<Expected<OwningStream>>
-pipe_invoke(std::invocable<BorrowedStream &, BorrowedStream &> auto func,
-            BorrowedStream &in) {
-    return pipe_invoke(
-        std::bind(std::move(func), std::ref(in), std::placeholders::_1));
-}
+/* inline Task<Expected<std::string>> */
+/* pipe_invoke_string(std::invocable<BorrowedStream &> auto func) { */
+/*     auto [r, w] = co_await co_await pipe_stream(); */
+/*     auto [a, b] = co_await when_all( */
+/*         co_bind([func = std::move(func), */
+/*                  w = std::move(w)]() mutable -> Task<Expected<>> { */
+/*             co_await co_await std::invoke(func, w); */
+/*             co_await co_await w.flush(); */
+/*             co_await w.close(); */
+/*             co_return {}; */
+/*         }), */
+/*         co_bind([r = std::move(r)]() mutable -> Task<Expected<std::string>> { */
+/*             auto out = co_await r.getall(); */
+/*             co_return std::move(out); */
+/*         })); */
+/*     co_await std::move(a); */
+/*     co_return co_await std::move(b); */
+/* } */
+/*  */
+/* inline Task<Expected<std::string>> */
+/* pipe_invoke_string(std::invocable<BorrowedStream &, BorrowedStream &> auto func, */
+/*                    std::string_view in) { */
+/*     auto [r1, w1] = co_await co_await pipe_stream(); */
+/*     auto [r2, w2] = co_await co_await pipe_stream(); */
+/*     auto [a, b, c] = co_await when_all( */
+/*         co_bind([in, w1 = std::move(w1)]() mutable -> Task<Expected<>> { */
+/*             co_await co_await w1.puts(in); */
+/*             co_await co_await w1.flush(); */
+/*             co_await w1.close(); */
+/*             co_return {}; */
+/*         }), */
+/*         co_bind([func = std::move(func), r1 = std::move(r1), */
+/*                  w2 = std::move(w2)]() mutable -> Task<Expected<>> { */
+/*             co_await co_await std::invoke(func, r1, w2); */
+/*             co_await co_await w2.flush(); */
+/*             co_await w2.close(); */
+/*             co_return {}; */
+/*         }), */
+/*         co_bind([r2 = std::move(r2)]() mutable -> Task<Expected<std::string>> { */
+/*             auto out = co_await r2.getall(); */
+/*             co_return std::move(out); */
+/*         })); */
+/*     co_await std::move(a); */
+/*     co_await std::move(b); */
+/*     co_return co_await std::move(c); */
+/* } */
+/*  */
+/* inline Task<Expected<OwningStream>> */
+/* pipe_invoke(std::invocable<BorrowedStream &> auto func) { */
+/*     auto [r, w] = co_await co_await pipe_stream(); */
+/*     co_spawn([func = std::move(func), */
+/*               w = std::move(w)]() mutable -> Task<Expected<>> { */
+/*         co_await co_await std::invoke(func, w); */
+/*         co_await co_await w.flush(); */
+/*         co_await w.close(); */
+/*         co_return {}; */
+/*     }); */
+/*     co_return {std::move(r)}; */
+/* } */
+/*  */
+/* inline Task<Expected<OwningStream>> */
+/* pipe_invoke(std::invocable<BorrowedStream &, BorrowedStream &> auto func, */
+/*             BorrowedStream &in) { */
+/*     return pipe_invoke( */
+/*         std::bind(std::move(func), std::ref(in), std::placeholders::_1)); */
+/* } */
 
 template <class Func, class... Args>
     requires std::invocable<Func, Args..., OwningStream &>

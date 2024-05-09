@@ -91,6 +91,13 @@ public:
     explicit Unexpected(std::in_place_t, Es &&...args) {
         mErrorOpt.emplace(std::forward<Es>(args)...);
     }
+
+    std::optional<E> repr() const {
+        if (has_error()) {
+            return error();
+        }
+        return std::nullopt;
+    }
 };
 
 template <>
@@ -116,6 +123,13 @@ public:
     void error() const noexcept {}
 
     explicit Unexpected() noexcept : mHasError(true) {}
+
+    std::optional<Void> repr() const {
+        if (has_error()) {
+            return Void();
+        }
+        return std::nullopt;
+    }
 };
 
 template <class E>
@@ -160,6 +174,13 @@ public:
             throw std::logic_error("Unexpected constructed with no error");
         }
 #endif
+    }
+
+    std::optional<E> repr() const {
+        if (has_error()) {
+            return error();
+        }
+        return std::nullopt;
     }
 };
 
@@ -337,7 +358,7 @@ public:
 
 #if CO_ASYNC_DEBUG
     std::variant<AvoidCRef<E>, AvoidCRef<T>> repr() const {
-        if (has_error()) [[unlikely]] {
+        if (has_error()) {
             return error();
         }
         return value();
@@ -417,7 +438,7 @@ public:
 
 #if CO_ASYNC_DEBUG
     std::variant<AvoidCRef<E>, Void> repr() const {
-        if (has_error()) [[unlikely]] {
+        if (has_error()) {
             return error();
         }
         return Void();

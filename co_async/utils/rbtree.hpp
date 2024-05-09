@@ -6,11 +6,13 @@ namespace co_async {
 
 template <class Value, class Compare = std::less<>>
 struct RbTree {
+private:
     enum RbColor {
         RED,
         BLACK
     };
 
+protected:
     struct RbNode {
         RbNode() noexcept
             : left(nullptr),
@@ -18,14 +20,6 @@ struct RbTree {
               parent(nullptr),
               tree(nullptr),
               color(RED) {}
-
-        RbNode(RbNode &&) = delete;
-
-        ~RbNode() noexcept {
-            if (tree) {
-                tree->doErase(this);
-            }
-        }
 
         friend struct RbTree;
 
@@ -35,6 +29,28 @@ struct RbTree {
         RbNode *parent;
         RbTree *tree;
         RbColor color;
+
+    protected:
+        RbTree *getRbTree() const noexcept {
+            return tree;
+        }
+    };
+
+    void onDestructorErase(RbNode *current) noexcept {
+        doErase(current);
+    }
+
+public:
+    struct NodeType : RbNode {
+        NodeType() = default;
+        NodeType(NodeType &&) = delete;
+
+        ~NodeType() noexcept {
+            auto tree = this->getRbTree();
+            if (tree) {
+                tree->onDestructorErase(this);
+            }
+        }
     };
 
 private:
@@ -343,6 +359,62 @@ public:
     void traverseInorder(Visitor &&visitor) {
         doTraverseInorder(root, std::forward<Visitor>(visitor));
     }
+};
+
+template <class Value, class Compare = std::less<>>
+struct ConcurrentRbTree : private RbTree<Value, Compare> {
+private:
+    using BaseTree = RbTree<Value, Compare>;
+
+    void onDestructorErase(BaseTree::RbNode *current) noexcept {
+        std::lock_guard guard(mMutex);
+        BaseTree::onDestructorErase(current);
+    }
+
+public:
+    struct NodeType : BaseTree::RbNode {
+        NodeType() = default;
+        NodeType(NodeType &&) = delete;
+
+        ~NodeType() noexcept {
+            auto tree = static_cast<ConcurrentRbTree *>(this->getRbTree());
+            if (tree) {
+                tree->onDestructorErase(this);
+            }
+        }
+    };
+
+    struct LockGuard {
+    private:
+        BaseTree *mThat;
+        std::unique_lock<std::mutex> mGuard;
+
+        explicit LockGuard(ConcurrentRbTree *that) noexcept : mThat(that), mGuard(that->mMutex) {
+        }
+
+        friend ConcurrentRbTree;
+
+    public:
+        BaseTree &operator*() const noexcept {
+            return *mThat;
+        }
+
+        BaseTree *operator->() const noexcept {
+            return mThat;
+        }
+
+        void unlock() noexcept {
+            mGuard.unlock();
+            mThat = nullptr;
+        }
+    };
+
+    LockGuard lock() noexcept {
+        return LockGuard(this);
+    }
+
+private:
+    std::mutex mMutex;
 };
 
 } // namespace co_async

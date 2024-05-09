@@ -125,9 +125,9 @@ struct HTTPServerUtils {
         if (stat->is_directory()) {
             co_return co_await make_response_from_directory(io, path);
         }
-        if (stat->is_executable()) {
-            co_return co_await make_response_from_cgi_script(io, path);
-        }
+        /* if (stat->is_executable()) { */
+        /*     co_return co_await make_response_from_cgi_script(io, path); */
+        /* } */
         HTTPResponse res{
             .status = 200,
             .headers =
@@ -165,97 +165,97 @@ struct HTTPServerUtils {
         co_return {};
     }
 
-    static Task<Expected<>>
-    make_response_from_cgi_script(HTTPServer::IO &io,
-                                  std::filesystem::path path) {
-        auto stat = co_await fs_stat(path, STATX_MODE);
-        if (!stat || stat->is_directory()) [[unlikely]] {
-            co_return co_await make_error_response(io, 404);
-        }
-        if (!stat->is_executable()) [[unlikely]] {
-            co_return co_await make_error_response(io, 403);
-        }
-        HTTPHeaders headers;
-        std::string content;
-        auto proc = ProcessBuilder();
-        proc.path(path, true);
-        proc.inherit_env();
-        proc.env("HTTP_PATH", io.request.uri.path);
-        proc.env("HTTP_METHOD", io.request.method);
-        for (auto const &[k, v]: io.request.uri.params) {
-            for (char c: k) {
-                if (!(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
-                      c == '_')) [[unlikely]] {
-                    goto skip1;
-                }
-            }
-            proc.env("HTTP_GET_" + k, v);
-        skip1:;
-        }
-        for (auto const &[k, v]: io.request.headers) {
-            auto key = k;
-            for (char &c: key) {
-                if (c == '-')
-                    c = '_';
-                if (!(('a' <= c && c <= 'z') || c == '_')) [[unlikely]] {
-                    goto skip2;
-                }
-            }
-            proc.env("HTTP_HEADER_" + key, v);
-        skip2:;
-        }
-        auto pipeOut = co_await co_await fs_pipe();
-        auto pipeIn = co_await co_await fs_pipe();
-        proc.open(0, pipeIn.reader());
-        proc.open(1, pipeOut.writer());
-        proc.open(2, 2);
-        Pid pid = co_await co_await proc.spawn();
-        auto [reader, writer] = co_await co_await pipe_stream();
-        co_await co_await io.request_body_stream(writer);
-        std::string line;
-        while (true) {
-            line.clear();
-            if (!co_await reader.getline(line, '\n')) [[unlikely]] {
-#if CO_ASYNC_DEBUG
-                std::cerr << "unexpected eof in cgi header\n";
-#endif
-                co_return co_await make_error_response(io, 500);
-            }
-            if (line.empty()) {
-                break;
-            }
-            auto pos = line.find(':');
-            if (pos == std::string::npos) [[unlikely]] {
-#if CO_ASYNC_DEBUG
-                std::cerr << "invalid k-v pair in cgi header\n";
-#endif
-                co_return co_await make_error_response(io, 500);
-            }
-            headers.insert_or_assign(
-                trim_string(lower_string(line.substr(0, pos))),
-                trim_string(line.substr(pos + 1)));
-        }
-        int status = 200;
-        if (auto statusOpt = headers.get("status", from_string<int>)) {
-            status = *statusOpt;
-            headers.erase("status");
-        }
-        co_await reader.getall(content);
-        auto exited =
-            co_await co_await wait_process(pid, std::chrono::seconds(10));
-        if (exited.status != 0) [[unlikely]] {
-#if CO_ASYNC_DEBUG
-            std::cerr << "cgi script exit failure\n";
-#endif
-            co_return co_await make_error_response(io, 500);
-        }
-        HTTPResponse res{
-            .status = status,
-            .headers = std::move(headers),
-        };
-        co_await co_await io.response(res, content);
-        co_return {};
-    }
+/*     static Task<Expected<>> */
+/*     make_response_from_cgi_script(HTTPServer::IO &io, */
+/*                                   std::filesystem::path path) { */
+/*         auto stat = co_await fs_stat(path, STATX_MODE); */
+/*         if (!stat || stat->is_directory()) [[unlikely]] { */
+/*             co_return co_await make_error_response(io, 404); */
+/*         } */
+/*         if (!stat->is_executable()) [[unlikely]] { */
+/*             co_return co_await make_error_response(io, 403); */
+/*         } */
+/*         HTTPHeaders headers; */
+/*         std::string content; */
+/*         auto proc = ProcessBuilder(); */
+/*         proc.path(path, true); */
+/*         proc.inherit_env(); */
+/*         proc.env("HTTP_PATH", io.request.uri.path); */
+/*         proc.env("HTTP_METHOD", io.request.method); */
+/*         for (auto const &[k, v]: io.request.uri.params) { */
+/*             for (char c: k) { */
+/*                 if (!(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || */
+/*                       c == '_')) [[unlikely]] { */
+/*                     goto skip1; */
+/*                 } */
+/*             } */
+/*             proc.env("HTTP_GET_" + k, v); */
+/*         skip1:; */
+/*         } */
+/*         for (auto const &[k, v]: io.request.headers) { */
+/*             auto key = k; */
+/*             for (char &c: key) { */
+/*                 if (c == '-') */
+/*                     c = '_'; */
+/*                 if (!(('a' <= c && c <= 'z') || c == '_')) [[unlikely]] { */
+/*                     goto skip2; */
+/*                 } */
+/*             } */
+/*             proc.env("HTTP_HEADER_" + key, v); */
+/*         skip2:; */
+/*         } */
+/*         auto pipeOut = co_await co_await fs_pipe(); */
+/*         auto pipeIn = co_await co_await fs_pipe(); */
+/*         proc.open(0, pipeIn.reader()); */
+/*         proc.open(1, pipeOut.writer()); */
+/*         proc.open(2, 2); */
+/*         Pid pid = co_await co_await proc.spawn(); */
+/*         auto [reader, writer] = co_await co_await pipe_stream(); */
+/*         co_await co_await io.request_body_stream(writer); */
+/*         std::string line; */
+/*         while (true) { */
+/*             line.clear(); */
+/*             if (!co_await reader.getline(line, '\n')) [[unlikely]] { */
+/* #if CO_ASYNC_DEBUG */
+/*                 std::cerr << "unexpected eof in cgi header\n"; */
+/* #endif */
+/*                 co_return co_await make_error_response(io, 500); */
+/*             } */
+/*             if (line.empty()) { */
+/*                 break; */
+/*             } */
+/*             auto pos = line.find(':'); */
+/*             if (pos == std::string::npos) [[unlikely]] { */
+/* #if CO_ASYNC_DEBUG */
+/*                 std::cerr << "invalid k-v pair in cgi header\n"; */
+/* #endif */
+/*                 co_return co_await make_error_response(io, 500); */
+/*             } */
+/*             headers.insert_or_assign( */
+/*                 trim_string(lower_string(line.substr(0, pos))), */
+/*                 trim_string(line.substr(pos + 1))); */
+/*         } */
+/*         int status = 200; */
+/*         if (auto statusOpt = headers.get("status", from_string<int>)) { */
+/*             status = *statusOpt; */
+/*             headers.erase("status"); */
+/*         } */
+/*         co_await reader.getall(content); */
+/*         auto exited = */
+/*             co_await co_await wait_process(pid, std::chrono::seconds(10)); */
+/*         if (exited.status != 0) [[unlikely]] { */
+/* #if CO_ASYNC_DEBUG */
+/*             std::cerr << "cgi script exit failure\n"; */
+/* #endif */
+/*             co_return co_await make_error_response(io, 500); */
+/*         } */
+/*         HTTPResponse res{ */
+/*             .status = status, */
+/*             .headers = std::move(headers), */
+/*         }; */
+/*         co_await co_await io.response(res, content); */
+/*         co_return {}; */
+/*     } */
 };
 
 } // namespace co_async

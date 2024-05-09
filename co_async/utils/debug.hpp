@@ -277,6 +277,11 @@
 #include <cxxabi.h>
 #endif
 #endif
+#if defined(__has_include)
+#if __has_include(<variant>)
+#include <variant>
+#endif
+#endif
 #ifndef DEBUG_STRING_VIEW
 #if defined(__has_include)
 #if __cplusplus >= 201703L
@@ -436,6 +441,11 @@ private:
 #if __cpp_if_constexpr && __cpp_concepts && \
     __cpp_lib_type_trait_variable_templates
 
+public:
+    template <class T, class U> requires std::is_same<T, U>::value
+    static void debug_same_as(U &&) {}
+private:
+
     template <class T>
     static void debug_format(std::ostream &oss, T const &t) {
         using std::begin;
@@ -561,6 +571,10 @@ private:
                 oss << "no error";
             }
             oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
+        } else if constexpr (requires (T const &t) {
+                             debug_same_as<typename T::type &>(t.get());
+                             }) {
+            debug_format(oss, t.get());
         } else if constexpr (requires(std::ostream &oss, T const &t) {
                                  oss << t;
                              }) {
@@ -592,7 +606,7 @@ private:
                 debug_format(oss, std::forward<decltype(i)>(i));
             }
             oss << DEBUG_RANGE_BRACE[1];
-        } else if constexpr (requires(T const &t) {
+        } else if constexpr (requires {
                                  std::tuple_size<T>::value;
                              }) {
             oss << DEBUG_TUPLE_BRACE[0];
@@ -621,11 +635,11 @@ private:
         } else if constexpr (std::is_same<T, std::type_info>::value) {
             oss << debug_demangle(t.name());
         } else if constexpr (requires(T const &t) { t.DEBUG_REPR_NAME(); }) {
-            debug_format(oss, t.DEBUG_REPR_NAME());
+            debug_format(oss, raw_repr_if_string(t.DEBUG_REPR_NAME()));
         } else if constexpr (requires(T const &t) { t.DEBUG_REPR_NAME(oss); }) {
             t.DEBUG_REPR_NAME(oss);
         } else if constexpr (requires(T const &t) { DEBUG_REPR_NAME(t); }) {
-            debug_format(oss, DEBUG_REPR_NAME(t));
+            debug_format(oss, raw_repr_if_string(DEBUG_REPR_NAME(t)));
         } else if constexpr (requires(debug_formatter const &out, T const &t) {
                                  t.DEBUG_FORMATTER_REPR_NAME(out);
                              }) {
@@ -634,10 +648,12 @@ private:
                                  DEBUG_FORMATTER_REPR_NAME(out, t);
                              }) {
             DEBUG_FORMATTER_REPR_NAME(debug_formatter{oss}, t);
-        } else if constexpr (requires(bool &b, T const &t) {
-                                 b = holds_alternative(t);
+#if __cpp_lib_variant
+        } else if constexpr (requires {
+                                 std::variant_size<T>::value;
                              }) {
             visit([&oss](auto const &t) { debug_format(oss, t); }, t);
+#endif
         } else if constexpr (requires(T const &t) {
                                  (void)(*t);
                                  (void)(bool)t;
@@ -703,8 +719,7 @@ private:
         void operator()(T const &) const {}
     };
 
-    DEBUG_COND(is_variant, std::declval<bool &>() =
-                               holds_alternative(std::declval<T const &>()));
+    DEBUG_COND(is_variant, std::variant_size<T>::value);
     DEBUG_COND(is_smart_pointer, static_cast<void const volatile *>(
                                      std::declval<T const &>().get()));
     DEBUG_COND(is_optional, (((void)*std::declval<T const &>(), (void)0),
@@ -722,6 +737,7 @@ private:
     DEBUG_CON(error_code, std::is_same<T, std::errc>::value ||
                               std::is_same<T, std::error_code>::value ||
                               std::is_same<T, std::error_condition>::value);
+    DEBUG_CON(reference_wrapper, std::is_same<typename T::type &, decltype(std::declval<T const &>().get())>::value);
 #if __cpp_char8_t
     DEBUG_CON(unicode_char, std::is_same<T, char8_t>::value ||
                                 std::is_same<T, char16_t>::value ||
@@ -944,6 +960,24 @@ private:
                !debug_cond_floating_point<T>::value &&
                !debug_cond_is_smart_pointer<T>::value &&
                !debug_cond_error_code<T>::value &&
+               debug_cond_reference_wrapper<T>::value>::type> {
+        void operator()(std::ostream &oss, T const &t) const {
+            debug_format(oss, t.get());
+        }
+    };
+
+    template <class T>
+    struct debug_format_trait<
+        T, typename std::enable_if<
+               !debug_is_char_array<T>::value && !debug_cond_string<T>::value &&
+               !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+               !debug_cond_unicode_char<T>::value &&
+               !debug_cond_integral_unsigned<T>::value &&
+               !debug_cond_integral<T>::value &&
+               !debug_cond_floating_point<T>::value &&
+               !debug_cond_is_smart_pointer<T>::value &&
+               !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
                debug_cond_is_ostream_ok<T>::value>::type> {
         void operator()(std::ostream &oss, T const &t) const {
             oss << t;
@@ -961,6 +995,7 @@ private:
                !debug_cond_floating_point<T>::value &&
                !debug_cond_is_smart_pointer<T>::value &&
                !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
                !debug_cond_is_ostream_ok<T>::value &&
                debug_cond_pointer<T>::value>::type> {
         void operator()(std::ostream &oss, T const &t) const {
@@ -992,6 +1027,7 @@ private:
                !debug_cond_floating_point<T>::value &&
                !debug_cond_is_smart_pointer<T>::value &&
                !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
                !debug_cond_is_ostream_ok<T>::value &&
                !debug_cond_pointer<T>::value &&
                debug_cond_is_range<T>::value>::type> {
@@ -1080,6 +1116,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             debug_cond_is_tuple<T>::value>::type> {
@@ -1102,6 +1139,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value &&
@@ -1179,12 +1217,13 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
             debug_cond_is_member_repr<T>::value>::type> {
         void operator()(std::ostream &oss, T const &t) const {
-            debug_format(oss, t.DEBUG_REPR_NAME());
+            debug_format(oss, raw_repr_if_string(t.DEBUG_REPR_NAME()));
         }
     };
 
@@ -1199,6 +1238,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1220,6 +1260,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1227,7 +1268,7 @@ private:
             !debug_cond_is_member_repr_stream<T>::value &&
             debug_cond_is_adl_repr<T>::value>::type> {
         void operator()(std::ostream &oss, T const &t) const {
-            debug_format(oss, DEBUG_REPR_NAME(t));
+            debug_format(oss, raw_repr_if_string(DEBUG_REPR_NAME(t)));
         }
     };
 
@@ -1242,6 +1283,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1265,6 +1307,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1289,6 +1332,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1323,6 +1367,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1347,6 +1392,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
+               !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1661,8 +1707,32 @@ public:
     };
 
     template <class T>
-    named_member_t<T> named_member(char const *name, T const &value) {
+    static named_member_t<T> named_member(char const *name, T const &value) {
         return {name, value};
+    }
+
+    template <class T>
+    struct raw_repr_t {
+        T const &value;
+
+        void DEBUG_REPR_NAME(std::ostream &os) const {
+            os << value;
+        }
+    };
+
+    template <class T>
+    static raw_repr_t<T> raw_repr(T const &value) {
+        return {value};
+    }
+
+    template <class T, std::enable_if_t<std::is_convertible<T, std::string>::value || std::is_convertible<T, DEBUG_STRING_VIEW>::value, int> = 0>
+    static raw_repr_t<T> raw_repr_if_string(T const &value) {
+        return {value};
+    }
+
+    template <class T, std::enable_if_t<!(std::is_convertible<T, std::string>::value || std::is_convertible<T, DEBUG_STRING_VIEW>::value), int> = 0>
+    static T const &raw_repr_if_string(T const &value) {
+        return value;
     }
 };
 
@@ -1946,8 +2016,23 @@ public:
     };
 
     template <class T>
-    named_member_t<T> named_member(char const *name, T const &value) {
+    static named_member_t<T> named_member(char const *name, T const &value) {
         return {name, value};
+    }
+
+    template <class T>
+    struct raw_repr_t {
+        T const &value;
+    };
+
+    template <class T>
+    static raw_repr_t<T> raw_repr(T const &value) {
+        return {value};
+    }
+
+    template <class T>
+    static T raw_repr_if_string(T const &value) {
+        return value;
     }
 };
 

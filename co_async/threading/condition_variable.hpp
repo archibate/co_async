@@ -19,9 +19,11 @@ private:
         }
 
         bool operator<(ConditionTimedPromise const &that) const {
-            return this < &that;
             if (!mExpires) {
                 return false;
+            }
+            if (!that.mExpires) {
+                return true;
             }
             return *mExpires < *that.mExpires;
         }

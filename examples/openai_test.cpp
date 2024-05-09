@@ -91,7 +91,6 @@ Task<Expected<>> amain() {
         authorization.append("Bearer ");
         authorization.append(p);
     }
-    co_await https_load_ca_certificates();
     HTTPConnectionPool pool;
     for (std::size_t i = 0; i < 1; ++i) {
         auto conn = co_await co_await pool.connect("https://api.deepseek.com");

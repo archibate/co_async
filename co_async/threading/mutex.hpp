@@ -94,7 +94,11 @@ public:
 
     public:
         T &operator*() const {
-            return mImpl->unsafe_value();
+            return mImpl->unsafe_access();
+        }
+
+        T *operator->() const {
+            return std::addressof(mImpl->unsafe_access());
         }
 
         void unlock() {
@@ -139,11 +143,11 @@ public:
         co_return Locked(this);
     }
 
-    T &unsafe_value() {
+    T &unsafe_access() {
         return mValue;
     }
 
-    T const &unsafe_value() const {
+    T const &unsafe_access() const {
         return mValue;
     }
 };

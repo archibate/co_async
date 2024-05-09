@@ -4,8 +4,8 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<Expected<>>
-amain(std::string serveAt, std::string targetHost, std::string headers) {
+Task<Expected<>> amain(std::string serveAt, std::string targetHost,
+                       std::string headers) {
     co_await https_load_ca_certificates();
 
     co_await co_await stdio().putline("listening at: "s + serveAt);
@@ -78,7 +78,9 @@ amain(std::string serveAt, std::string targetHost, std::string headers) {
                     debug(), response, out;
                     co_await co_await io.response(response, out);
 #else
-                    auto [response, stream] = co_await co_await connection->requestStreamed(request, in);
+                    auto [response, stream] =
+                        co_await co_await connection->requestStreamed(request,
+                                                                      in);
                     co_await co_await io.response(response, stream);
 #endif
                     co_return {};
@@ -109,7 +111,8 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         targetHost = argv[3];
     }
-    if (auto e = co_synchronize(amain(serveAt, targetHost, headers)); e.has_error()) {
+    if (auto e = co_synchronize(amain(serveAt, targetHost, headers));
+        e.has_error()) {
         std::cerr << argv[0] << ": " << e.error().message() << '\n';
         return e.error().value();
     }

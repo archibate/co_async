@@ -241,6 +241,17 @@ struct BorrowedStream {
         mInIndex += n;
     }
 
+    Task<Expected<std::string>> getchunk() noexcept {
+        if (bufempty()) {
+            mInIndex = 0;
+            co_await co_await fillbuf();
+        }
+        auto buf = peekbuf();
+        std::string ret(buf.data(), buf.size());
+        seenbuf(buf.size());
+        co_return std::move(ret);
+    }
+
     std::size_t tryread(std::span<char> buffer) {
         auto peekBuf = peekbuf();
         std::size_t n = std::min(buffer.size(), peekBuf.size());
@@ -364,6 +375,11 @@ struct BorrowedStream {
     Task<Expected<>> putstruct(T const &s) {
         return putspan(
             std::span<char const>((char const *)std::addressof(s), sizeof(T)));
+    }
+
+    Task<Expected<>> putchunk(std::string_view s) {
+        co_await co_await puts(s);
+        co_return co_await flush();
     }
 
     Task<Expected<>> putline(std::string_view s) {

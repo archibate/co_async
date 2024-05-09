@@ -442,6 +442,14 @@ public:
         return {};
     }
 
+    bool empty() const {
+        return trustAnchors.empty();
+    }
+
+    void clear() {
+        trustAnchors.clear();
+    }
+
 private:
     std::vector<SSLX509Decoder> x506Stores;
 };

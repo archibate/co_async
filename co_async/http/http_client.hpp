@@ -17,17 +17,6 @@
 
 namespace co_async {
 
-inline SSLClientTrustAnchor gTrustAnchors;
-
-inline Task<> https_load_ca_certificates() {
-    auto path = make_path("/etc/ssl/certs/ca-certificates.crt");
-    if (auto s = co_await fs_stat(path); s && s->is_readable()) [[likely]] {
-        if (auto content = co_await file_read(path)) [[likely]] {
-            gTrustAnchors.add(*content).value_or();
-        }
-    }
-}
-
 struct HTTPConnection {
 private:
     struct HTTPProtocolFactory {
@@ -60,14 +49,29 @@ private:
     struct HTTPProtocolFactoryHTTPS : HTTPProtocolFactory {
         using HTTPProtocolFactory::HTTPProtocolFactory;
 
+        static SSLClientTrustAnchor &trustAnchors() {
+            static SSLClientTrustAnchor instance;
+            return instance;
+        }
+
+        static Task<Expected<>> loadCACertificates() {
+            auto path = make_path("/etc/ssl/certs/ca-certificates.crt");
+            auto content = co_await co_await file_read(path);
+            co_await trustAnchors().add(content);
+            co_return {};
+        }
+
         Task<Expected<std::unique_ptr<HTTPProtocol>>>
         createConnection() override {
             static char const *const protocols[] = {
                 /* "h2", */
                 "http/1.1",
             };
+            if (trustAnchors().empty()) {
+                co_await co_await loadCACertificates();
+            }
             auto sock = co_await co_await ssl_connect(mHost.c_str(), mPort,
-                                                      gTrustAnchors, protocols,
+                                                      trustAnchors(), protocols,
                                                       mProxy, mTimeout);
             if (sock.raw<SSLClientSocketStream>().ssl_get_selected_protocol() ==
                 "h2") { // TODO: seems always return false?
@@ -131,6 +135,7 @@ private:
 
     Task<Expected<>> tryWriteRequestAndBody(HTTPRequest const &request,
                                             std::string_view body) {
+        std::error_code ec;
         for (std::size_t n = 0; n < 3; ++n) {
             if (!mHttp) {
                 if (auto e = co_await mHttpFactory->createConnection())
@@ -138,6 +143,7 @@ private:
                     mHttp = std::move(*e);
                     mHttp->initClientState();
                 } else {
+                    ec = e.error();
                     continue;
                 }
             }
@@ -148,8 +154,7 @@ private:
             }
             mHttp = nullptr;
         }
-        co_return Unexpected{
-            std::make_error_code(std::errc::connection_aborted)};
+        co_return Unexpected{ec};
     }
 
     /* Task<Expected<>> */

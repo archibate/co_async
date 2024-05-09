@@ -326,7 +326,7 @@ public:
         return std::addressof(operator*());
     }
 
-    decltype(auto) error() const {
+    std::add_lvalue_reference_t<std::add_const_t<E>> error() const {
 #if CO_ASYNC_DEBUG
         if (!mError.has_error()) [[unlikely]] {
             throw std::logic_error("Expected: no error but error() is called");
@@ -336,7 +336,7 @@ public:
     }
 
 #if CO_ASYNC_DEBUG
-    std::variant<Avoid<E>, Avoid<T>> repr() const {
+    std::variant<AvoidCRef<E>, AvoidCRef<T>> repr() const {
         if (has_error()) [[unlikely]] {
             return error();
         }
@@ -403,7 +403,7 @@ public:
 #endif
     }
 
-    decltype(auto) error() const {
+    std::add_lvalue_reference_t<std::add_const_t<E>> error() const {
 #if CO_ASYNC_DEBUG
         if constexpr (!UnexpectedTraits<E>::inplace_storable::value) {
             if (!mError.has_error()) [[unlikely]] {
@@ -416,7 +416,7 @@ public:
     }
 
 #if CO_ASYNC_DEBUG
-    std::variant<Avoid<E>, Void> repr() const {
+    std::variant<AvoidCRef<E>, Void> repr() const {
         if (has_error()) [[unlikely]] {
             return error();
         }

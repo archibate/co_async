@@ -34,14 +34,24 @@ struct Void final {
 template <class T = void>
 struct AvoidVoidTrait {
     using Type = T;
+    using RefType = std::reference_wrapper<T>;
+    using CRefType = std::reference_wrapper<T const>;
 };
 
 template <>
 struct AvoidVoidTrait<void> final {
     using Type = Void;
+    using RefType = Void;
+    using CRefType = Void;
 };
 
 template <class T>
 using Avoid = typename AvoidVoidTrait<T>::Type;
+
+template <class T>
+using AvoidRef = typename AvoidVoidTrait<T>::RefType;
+
+template <class T>
+using AvoidCRef = typename AvoidVoidTrait<T>::CRefType;
 
 } // namespace co_async

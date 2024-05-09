@@ -2,6 +2,8 @@
 #include <co_async/std.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
+#define STBI_NO_STDIO
+#define STBIDEF [[maybe_unused]] static
 #include "stb_image.h"
 
 using namespace co_async;

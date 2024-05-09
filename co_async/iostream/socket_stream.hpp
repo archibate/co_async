@@ -10,12 +10,20 @@ namespace co_async {
 
 struct SocketStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        co_return co_await socket_read(mFile, buffer, mTimeout);
+        auto ret = co_await socket_read(mFile, buffer, mTimeout);
+        if (ret == std::make_error_code(std::errc::operation_canceled)) [[unlikely]] {
+            co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+        }
+        co_return ret;
     }
 
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
-        co_return co_await socket_write(mFile, buffer, mTimeout);
+        auto ret = co_await socket_write(mFile, buffer, mTimeout);
+        if (ret == std::make_error_code(std::errc::operation_canceled)) [[unlikely]] {
+            co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+        }
+        co_return ret;
     }
 
     SocketHandle release() noexcept {

@@ -37,19 +37,16 @@ private:
         }
 
         void await_suspend(std::coroutine_handle<ConditionTimedPromise> coroutine) const {
-            debug(), 'p';
             mThat->pushWaiting(coroutine.promise());
         }
 
         void await_resume() const noexcept {
-            debug(), 'r';
         }
 
         ConditionTimed *mThat;
     };
 
     ConditionTimedPromise *popWaiting() {
-        debug(), 'P';
         auto locked = mWaitingList.lock();
         if (locked->empty()) {
             return nullptr;

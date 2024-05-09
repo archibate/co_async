@@ -253,12 +253,12 @@ public:
 
     template <std::equality_comparable_with<E> U>
         requires(!std::equality_comparable_with<U, T>)
-    bool operator==(U const &e) const {
+    bool operator==(U &&e) const {
         return mError.has_error() && mError.error() == e;
     }
 
     template <std::equality_comparable_with<T> U>
-    bool operator==(U const &v) const {
+    bool operator==(U &&v) const {
         return !mError.has_error() && mValue.refValue() == v;
     }
 

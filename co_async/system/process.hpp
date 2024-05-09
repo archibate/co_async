@@ -62,7 +62,7 @@ wait_process(Pid pid, std::chrono::nanoseconds timeout, int options = WEXITED) {
         co_await uring_join(uring_waitid(P_PID, pid, &info, options, 0),
                             uring_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
     if (ret == std::make_error_code(std::errc::operation_canceled)) {
-        co_return Unexpected{std::make_error_code(std::errc::timed_out)};
+        co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
     }
     co_await std::move(ret);
     co_return WaitProcessResult{

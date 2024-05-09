@@ -7,7 +7,7 @@ using namespace std::literals;
 ConditionTimed cv;
 
 Task<Expected<>> func() {
-    co_await sleep_for(400ms);
+    co_await sleep_for(1000ms);
     cv.notify();
     co_return {};
 }
@@ -15,6 +15,14 @@ Task<Expected<>> func() {
 Task<Expected<>> amain() {
     co_spawn(func());
     auto e = co_await cv.wait_for(800ms);
+    debug(), e;
+    e = co_await cv.wait_for(800ms);
+    debug(), e;
+    e = co_await cv.wait_for(800ms);
+    debug(), e;
+    e = co_await cv.wait_for(800ms);
+    debug(), e;
+    e = co_await cv.wait_for(800ms);
     debug(), e;
     co_return {};
 }

@@ -391,6 +391,7 @@ public:
         if (&that != this) [[likely]] {
             mError = that.mError;
         }
+        return *this;
     }
 
     ~Expected() = default;

@@ -185,6 +185,15 @@ inline void co_spawn(std::size_t hintWorkerId, Task<T, P> task) {
                                std::move(task));
 }
 
+inline void co_spawn(std::coroutine_handle<> coroutine) {
+#if CO_ASYNC_DEBUG
+    if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
+        throw std::logic_error("not a worker thread");
+    }
+#endif
+    return loopEnqueueHandle(*BasicLoop::tlsInstance, std::move(coroutine));
+}
+
 template <class T, class P>
 inline auto co_synchronize(Task<T, P> task) {
 #if CO_ASYNC_DEBUG

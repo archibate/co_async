@@ -58,6 +58,10 @@ inline void loopEnqueueDetached(BasicLoop &loop, Task<T, P> task) {
     wrapped.release();
 }
 
+inline void loopEnqueueHandle(BasicLoop &loop, std::coroutine_handle<> coroutine) {
+    loop.enqueue(coroutine);
+}
+
 template <class T, class P>
 inline Task<> loopEnqueueSyncStarter(Task<T, P> task,
                                      std::condition_variable &cv,

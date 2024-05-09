@@ -22,6 +22,15 @@ inline Task<> sleep_for(std::chrono::duration<Rep, Period> dur) {
 }
 
 template <class Clk, class Dur>
+inline Task<> sleep_until_monotonic(std::chrono::time_point<Clk, Dur> tp) {
+    auto ts = timePointToKernelTimespec(tp);
+    int ret = co_await uring_timeout(
+        &ts, 1, IORING_TIMEOUT_ABS | IORING_TIMEOUT_BOOTTIME);
+    if (ret != -ETIME)
+        throwingError(ret);
+}
+
+template <class Clk, class Dur>
 inline Task<> sleep_until(std::chrono::time_point<Clk, Dur> tp) {
     auto ts = timePointToKernelTimespec(tp);
     int ret = co_await uring_timeout(

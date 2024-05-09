@@ -5,6 +5,7 @@
 #include <co_async/system/timer.hpp>
 #include <co_async/awaiter/when_any.hpp>
 #include <co_async/threading/future.hpp>
+#include <co_async/system/system_loop.hpp>
 #include <co_async/utils/rbtree.hpp>
 #include <co_async/threading/concurrent_queue.hpp>
 
@@ -19,7 +20,13 @@ private:
 
         bool operator<(ConditionTimedPromise const &that) const {
             return this < &that;
+            if (!mExpires) {
+                return false;
+            }
+            return *mExpires < *that.mExpires;
         }
+
+        std::optional<std::chrono::system_clock::time_point> mExpires;
     };
 
     ConcurrentRbTree<ConditionTimedPromise> mWaitingList;
@@ -29,17 +36,20 @@ private:
             return false;
         }
 
-        bool await_suspend(std::coroutine_handle<ConditionTimedPromise> coroutine) const {
+        void await_suspend(std::coroutine_handle<ConditionTimedPromise> coroutine) const {
+            debug(), 'p';
             mThat->pushWaiting(coroutine.promise());
-            return true;
         }
 
-        void await_resume() const noexcept {}
+        void await_resume() const noexcept {
+            debug(), 'r';
+        }
 
         ConditionTimed *mThat;
     };
 
     ConditionTimedPromise *popWaiting() {
+        debug(), 'P';
         auto locked = mWaitingList.lock();
         if (locked->empty()) {
             return nullptr;
@@ -58,8 +68,20 @@ public:
         co_await Awaiter(this);
     }
 
+    Task<Expected<>> wait_until(std::chrono::system_clock::time_point expires) {
+        auto waiter = wait();
+        waiter.get().promise().mExpires = expires;
+        auto res = co_await when_any(std::move(waiter), sleep_until(expires));
+        if (res.index() != 0) {
+            co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+        }
+        co_return {};
+    }
+
     Task<Expected<>> wait_for(std::chrono::nanoseconds timeout) {
-        auto res = co_await when_any(wait(), sleep_for(timeout));
+        auto waiter = wait();
+        waiter.get().promise().mExpires = std::chrono::system_clock::now() + timeout;
+        auto res = co_await when_any(std::move(waiter), sleep_for(timeout));
         if (res.index() != 0) {
             co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
         }
@@ -68,13 +90,13 @@ public:
 
     void notify() {
         while (auto promise = popWaiting()) {
-            std::coroutine_handle<ConditionTimedPromise>::from_promise(*promise).resume();
+            co_spawn(std::coroutine_handle<ConditionTimedPromise>::from_promise(*promise));
         }
     }
 
     void notify_one() {
         if (auto promise = popWaiting()) {
-            std::coroutine_handle<ConditionTimedPromise>::from_promise(*promise).resume();
+            co_spawn(std::coroutine_handle<ConditionTimedPromise>::from_promise(*promise));
         }
     }
 };
@@ -109,13 +131,13 @@ public:
 
     void notify() {
         while (auto coroutine = mWaitingList.pop()) {
-            coroutine->resume();
+            co_spawn(*coroutine);
         }
     }
 
     void notify_one() {
         if (auto coroutine = mWaitingList.pop()) {
-            coroutine->resume();
+            co_spawn(*coroutine);
         }
     }
 };
@@ -152,8 +174,7 @@ public:
         auto coroPtr =
             mWaitingCoroutine.exchange(nullptr, std::memory_order_acq_rel);
         if (coroPtr) {
-            auto coroutine = std::coroutine_handle<>::from_address(coroPtr);
-            coroutine.resume();
+            co_spawn(std::coroutine_handle<>::from_address(coroPtr));
         }
     }
 };

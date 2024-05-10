@@ -29,27 +29,33 @@ struct SystemLoop {
         return mNumWorkers;
     }
 
-    void start(std::size_t numWorkers = 0, std::size_t numBatchWait = 1,
-               std::chrono::system_clock::duration batchTimeout =
-                   std::chrono::milliseconds(40),
-               std::chrono::system_clock::duration batchTimeoutDelta =
-                   std::chrono::milliseconds(20)) {
+    struct StartOptions {
+        std::size_t numWorkers = 0;
+        std::size_t numBatchWait = 1;
+        std::chrono::steady_clock::duration batchTimeout = std::chrono::milliseconds(40);
+        std::chrono::steady_clock::duration batchTimeoutDelta = std::chrono::milliseconds(20);
+    };
+
+    void start() {
+        return start({});
+    }
+
+    void start(StartOptions options) {
         if (mThreads) [[unlikely]] {
             throw std::runtime_error("loop already started");
         }
         bool setAffinity = false;
-        if (numWorkers < 1) [[unlikely]] {
-            numWorkers = std::thread::hardware_concurrency();
+        if (options.numWorkers < 1) [[unlikely]] {
+            options.numWorkers = std::thread::hardware_concurrency();
             setAffinity = true;
         }
-        mThreads = std::make_unique<std::thread[]>(numWorkers);
-        mBasicLoops = std::make_unique<BasicLoop[]>(numWorkers);
-        mUringLoops = std::make_unique<UringLoop[]>(numWorkers);
-        mNumWorkers = numWorkers;
-        for (std::size_t i = 0; i < numWorkers; ++i) {
+        mThreads = std::make_unique<std::thread[]>(options.numWorkers);
+        mBasicLoops = std::make_unique<BasicLoop[]>(options.numWorkers);
+        mUringLoops = std::make_unique<UringLoop[]>(options.numWorkers);
+        mNumWorkers = options.numWorkers;
+        for (std::size_t i = 0; i < options.numWorkers; ++i) {
             mThreads[i] =
-                std::thread(&SystemLoop::threadEntry, this, i, numWorkers,
-                            numBatchWait, batchTimeout, batchTimeoutDelta);
+                std::thread(&SystemLoop::threadEntry, this, i, options);
 #if defined(__linux__) && defined(_GLIBCXX_HAS_GTHREADS)
             if (setAffinity) {
                 pthread_t h = mThreads[i].native_handle();
@@ -66,17 +72,14 @@ struct SystemLoop {
         }
     }
 
-    void threadEntry(std::size_t i, std::size_t numWorkers,
-                     std::size_t numBatchWait,
-                     std::chrono::system_clock::duration batchTimeout,
-                     std::chrono::system_clock::duration batchTimeoutDelta) {
+    void threadEntry(std::size_t i, StartOptions options) {
         auto &thisBasicLoop = mBasicLoops[i];
         auto &thisUringLoop = mUringLoops[i];
         BasicLoop::tlsInstance = &thisBasicLoop;
         UringLoop::tlsInstance = &thisUringLoop;
         auto stealWork = [&] {
-            for (std::size_t j = 1; j < numWorkers; ++j) {
-                auto other = (i + j) % numWorkers;
+            for (std::size_t j = 1; j < options.numWorkers; ++j) {
+                auto other = (i + j) % options.numWorkers;
                 if (mBasicLoops[other].run()) {
                     return true;
                 }
@@ -92,16 +95,16 @@ struct SystemLoop {
         }
         if (stealWork())
             goto compute;
-        auto timeout = batchTimeout;
+        auto timeout = options.batchTimeout;
         while (!mStop.stop_requested()) [[likely]] {
             auto ts = durationToKernelTimespec(timeout);
-            if (thisUringLoop.runBatchedWait(numBatchWait, &ts))
+            if (thisUringLoop.runBatchedWait(options.numBatchWait, &ts))
                 goto compute;
             if (thisBasicLoop.run())
                 goto compute;
             if (stealWork())
                 goto compute;
-            timeout += batchTimeoutDelta;
+            timeout += options.batchTimeoutDelta;
         }
     }
 
@@ -164,25 +167,25 @@ private:
 
 inline SystemLoop globalSystemLoop;
 
-template <class T, class P>
-inline void co_spawn(Task<T, P> &&task) {
+template <Awaitable A>
+inline void co_spawn(A awaitable) {
 #if CO_ASYNC_DEBUG
     if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
         throw std::logic_error("not a worker thread");
     }
 #endif
-    return loopEnqueueDetached(*BasicLoop::tlsInstance, std::move(task));
+    return loopEnqueueDetached(*BasicLoop::tlsInstance, std::move(awaitable));
 }
 
-template <class T, class P>
-inline void co_spawn(std::size_t hintWorkerId, Task<T, P> task) {
+template <Awaitable A>
+inline void co_spawn(std::size_t hintWorkerId, A awaitable) {
 #if CO_ASYNC_DEBUG
     if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
         throw std::logic_error("not a worker thread");
     }
 #endif
     return loopEnqueueDetached(globalSystemLoop.nthWorkerLoop(hintWorkerId),
-                               std::move(task));
+                               std::move(awaitable));
 }
 
 inline void co_spawn(std::coroutine_handle<> coroutine) {

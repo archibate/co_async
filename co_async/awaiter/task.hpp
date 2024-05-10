@@ -197,6 +197,14 @@ public:
 };
 
 template <class T, class P>
+struct CustomPromise : Promise<T> {
+    auto get_return_object() {
+        static_assert(std::is_base_of_v<CustomPromise, P>);
+        return std::coroutine_handle<P>::from_promise(static_cast<P &>(*this));
+    }
+};
+
+template <class T, class P>
 struct TaskAwaiter {
     bool await_ready() const noexcept {
         return false;

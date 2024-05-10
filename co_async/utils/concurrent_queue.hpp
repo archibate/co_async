@@ -1,7 +1,6 @@
 #pragma once
 
 #include <co_async/std.hpp>
-#include <co_async/utils/cacheline.hpp>
 
 namespace co_async {
 
@@ -17,32 +16,14 @@ inline void assume(bool v) {
 #endif
 }
 
-#if 0
-template <class T>
-struct alignas(hardware_destructive_interference_size) ConcurrentQueue {
-    std::optional<T> pop() {
-        std::lock_guard lck(mMutex);
-        if (mQueue.empty()) {
-            return std::nullopt;
-        }
-        T p = std::move(mQueue.front());
-        mQueue.pop_front();
-        return p;
-    }
+template <class T, std::size_t Capacity = 0>
+struct ConcurrentQueue {
+    static constexpr std::size_t Shift = std::bit_width(Capacity);
+    using Stamp = std::conditional_t<Shift <= 4, std::uint8_t, std::conditional_t<Shift <= 8, std::uint16_t, std::conditional_t<Shift <= 16, std::uint32_t, std::uint64_t>>>;
 
-    bool push(T p) {
-        std::lock_guard lck(mMutex);
-        mQueue.push_back(p);
-        return true;
-    }
+    static_assert(Shift * 2 <= sizeof(Stamp) * 8);
+    static_assert(Capacity < (1 << Shift));
 
-private:
-    std::deque<T> mQueue;
-    std::mutex mMutex;
-};
-#else
-template <class T, std::size_t Shift = 12, class Stamp = std::uint32_t>
-struct alignas(hardware_destructive_interference_size) ConcurrentQueue {
     static constexpr Stamp kSize = 1 << Shift;
 
     [[nodiscard]] std::optional<T> pop() {
@@ -92,7 +73,7 @@ private:
     }
 
     inline bool canWrite(Stamp s) const {
-        return offsetRead(s) != offsetWrite(s) + 1;
+        return (offsetRead(s) & (kSize - 1)) != ((offsetWrite(s) + (kSize - Capacity)) & (kSize - 1));
     }
 
     inline Stamp advectRead(Stamp s) const {
@@ -108,28 +89,28 @@ private:
     std::unique_ptr<T[]> mHead = std::make_unique<T[]>(kSize);
     std::atomic<Stamp> mStamp{0};
 };
-#endif
 
-/* template <class T, std::size_t N = 256, std::size_t Shift = 8> */
-/* struct alignas(hardware_destructive_interference_size) ConcurrentQueue { */
-/*     using Block = ConcurrentQueueBlock<T, Shift>; */
-/*  */
-/*     Block mBlocks[N]; */
-/*     std::size_t mTop{0}; */
-/*  */
-/*     [[nodiscard]] std::optional<T> pop() { */
-/*         auto ret = mBlocks[0].pop(); */
-/*         if (ret || !mTop) [[likely]] { */
-/*             return ret; */
-/*         } */
-/*         for (std::size_t i = 1; i <= mTop; ++i) { */
-/*             ret = mBlocks[i].pop(); */
-/*             if (ret) [[likely]] { */
-/*                 return ret; */
-/*             } */
-/*         } */
-/*         return std::nullopt; */
-/*     } */
-/* }; */
+template <class T>
+struct ConcurrentQueue<T, 0> {
+    std::optional<T> pop() {
+        std::lock_guard lck(mMutex);
+        if (mQueue.empty()) {
+            return std::nullopt;
+        }
+        T p = std::move(mQueue.front());
+        mQueue.pop_front();
+        return p;
+    }
+
+    bool push(T p) {
+        std::lock_guard lck(mMutex);
+        mQueue.push_back(p);
+        return true;
+    }
+
+private:
+    std::deque<T> mQueue;
+    std::mutex mMutex;
+};
 
 } // namespace co_async

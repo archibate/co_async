@@ -12,7 +12,7 @@
 #include <co_async/iostream/ssl_socket_stream.hpp>
 #include <co_async/iostream/cached_stream.hpp>
 #include <co_async/threading/future.hpp>
-#include <co_async/threading/concurrent_queue.hpp>
+#include <co_async/threading/mutex.hpp>
 #include <co_async/threading/condition_variable.hpp>
 
 namespace co_async {
@@ -54,21 +54,18 @@ private:
             return instance;
         }
 
-        static Task<Expected<>> loadCACertificates() {
-            auto path = make_path("/etc/ssl/certs/ca-certificates.crt");
-            auto content = co_await co_await file_read(path);
-            co_await trustAnchors().add(content);
-            co_return {};
-        }
-
         Task<Expected<std::unique_ptr<HTTPProtocol>>>
         createConnection() override {
+            static CallOnce taInitializeOnce;
             static char const *const protocols[] = {
                 /* "h2", */
                 "http/1.1",
             };
-            if (trustAnchors().empty()) {
-                co_await co_await loadCACertificates();
+            if (auto locked = co_await taInitializeOnce.call_once()) {
+                auto path = make_path("/etc/ssl/certs/ca-certificates.crt");
+                auto content = co_await co_await file_read(path);
+                co_await trustAnchors().add(content);
+                locked.set_ready();
             }
             auto sock = co_await co_await ssl_connect(mHost.c_str(), mPort,
                                                       trustAnchors(), protocols,
@@ -280,7 +277,7 @@ private:
     };
 
     std::vector<PoolEntry> mPool;
-    ConditionVariable mFreeSlot;
+    ConditionList mFreeSlot;
     std::chrono::nanoseconds mTimeout;
     std::chrono::nanoseconds mKeepAlive;
     std::chrono::high_resolution_clock::time_point mLastGC;

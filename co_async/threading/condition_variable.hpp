@@ -3,22 +3,17 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/system/timer.hpp>
-#include <co_async/awaiter/when_any.hpp>
 #include <co_async/threading/future.hpp>
 #include <co_async/system/system_loop.hpp>
 #include <co_async/utils/rbtree.hpp>
-#include <co_async/threading/concurrent_queue.hpp>
+#include <co_async/utils/concurrent_queue.hpp>
 
 namespace co_async {
 
-struct ConditionTimed {
+struct ConditionVariable {
 private:
-    struct ConditionTimedPromise : Promise<void>, ConcurrentRbTree<ConditionTimedPromise>::NodeType {
-        auto get_return_object() {
-            return std::coroutine_handle<ConditionTimedPromise>::from_promise(*this);
-        }
-
-        bool operator<(ConditionTimedPromise const &that) const {
+    struct PromiseNode : CustomPromise<void, PromiseNode>, ConcurrentRbTree<PromiseNode>::NodeType {
+        bool operator<(PromiseNode const &that) const {
             if (!mExpires) {
                 return false;
             }
@@ -28,27 +23,27 @@ private:
             return *mExpires < *that.mExpires;
         }
 
-        std::optional<std::chrono::system_clock::time_point> mExpires;
+        std::optional<std::chrono::steady_clock::time_point> mExpires;
     };
 
-    ConcurrentRbTree<ConditionTimedPromise> mWaitingList;
+    ConcurrentRbTree<PromiseNode> mWaitingList;
 
     struct Awaiter {
         bool await_ready() const noexcept {
             return false;
         }
 
-        void await_suspend(std::coroutine_handle<ConditionTimedPromise> coroutine) const {
+        void await_suspend(std::coroutine_handle<PromiseNode> coroutine) const {
             mThat->pushWaiting(coroutine.promise());
         }
 
         void await_resume() const noexcept {
         }
 
-        ConditionTimed *mThat;
+        ConditionVariable *mThat;
     };
 
-    ConditionTimedPromise *popWaiting() {
+    PromiseNode *popWaiting() {
         auto locked = mWaitingList.lock();
         if (locked->empty()) {
             return nullptr;
@@ -58,16 +53,16 @@ private:
         return &promise;
     }
 
-    void pushWaiting(ConditionTimedPromise &promise) {
+    void pushWaiting(PromiseNode &promise) {
         mWaitingList.lock()->insert(promise);
     }
 
 public:
-    Task<void, ConditionTimedPromise> wait() {
+    Task<void, PromiseNode> wait() {
         co_await Awaiter(this);
     }
 
-    Task<Expected<>> wait_until(std::chrono::system_clock::time_point expires) {
+    Task<Expected<>> wait_until(std::chrono::steady_clock::time_point expires) {
         auto waiter = wait();
         waiter.get().promise().mExpires = expires;
         auto res = co_await when_any(std::move(waiter), sleep_until(expires));
@@ -79,7 +74,7 @@ public:
 
     Task<Expected<>> wait_for(std::chrono::nanoseconds timeout) {
         auto waiter = wait();
-        waiter.get().promise().mExpires = std::chrono::system_clock::now() + timeout;
+        waiter.get().promise().mExpires = std::chrono::steady_clock::now() + timeout;
         auto res = co_await when_any(std::move(waiter), sleep_for(timeout));
         if (res.index() != 0) {
             co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
@@ -89,20 +84,20 @@ public:
 
     void notify() {
         while (auto promise = popWaiting()) {
-            co_spawn(std::coroutine_handle<ConditionTimedPromise>::from_promise(*promise));
+            co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*promise));
         }
     }
 
     void notify_one() {
         if (auto promise = popWaiting()) {
-            co_spawn(std::coroutine_handle<ConditionTimedPromise>::from_promise(*promise));
+            co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*promise));
         }
     }
 };
 
-struct ConditionVariable {
+struct ConditionList {
 private:
-    ConcurrentQueue<std::coroutine_handle<>> mWaitingList;
+    ConcurrentQueue<std::coroutine_handle<>, (1 << 4) - 1> mWaitingList;
 
     struct Awaiter {
         bool await_ready() const noexcept {
@@ -116,7 +111,7 @@ private:
 
         void await_resume() const noexcept {}
 
-        ConditionVariable *mThat;
+        ConditionList *mThat;
     };
 
 public:

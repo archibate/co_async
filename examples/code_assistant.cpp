@@ -134,7 +134,6 @@ Task<Expected<OwningStream>> evaluate(std::string prompt) {
                 auto compRes = reflect::json_decode<ChatCompletionResult>(line);
                 auto delta = compRes.choices.at(0).delta.value().content.value_or("");
                 co_await co_await w.putchunk(delta);
-                co_await co_await w.flush();
             }
         }
         co_await body.dropall();

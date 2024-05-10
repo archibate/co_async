@@ -29,3 +29,5 @@
 #include <co_async/threading/future.hpp>
 #include <co_async/threading/future_group.hpp>
 #include <co_async/threading/condition_variable.hpp>
+#include <co_async/threading/queue.hpp>
+#include <co_async/threading/mutex.hpp>

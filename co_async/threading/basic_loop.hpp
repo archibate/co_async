@@ -1,16 +1,17 @@
 #pragma once
 
 #include <co_async/std.hpp>
+#include <co_async/utils/cacheline.hpp>
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/details/ignore_return_promise.hpp>
 #include <co_async/utils/uninitialized.hpp>
 #include <co_async/utils/non_void_helper.hpp>
-#include <co_async/threading/concurrent_queue.hpp>
+#include <co_async/utils/concurrent_queue.hpp>
 
 namespace co_async {
 
-struct BasicLoop {
+struct alignas(hardware_destructive_interference_size) BasicLoop {
     bool run() {
         if (auto coroutine = mQueue.pop()) {
             coroutine->resume();
@@ -41,18 +42,18 @@ struct BasicLoop {
     static inline thread_local BasicLoop *tlsInstance;
 
 private:
-    ConcurrentQueue<std::coroutine_handle<>> mQueue;
+    ConcurrentQueue<std::coroutine_handle<>, (1 << 16) - 1> mQueue;
 };
 
-template <class T, class P>
+template <class A>
 inline Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>>
-loopEnqueueDetachStarter(Task<T, P> task) {
-    (void)co_await task;
+loopEnqueueDetachStarter(A awaitable) {
+    (void)co_await std::move(awaitable);
 }
 
-template <class T, class P>
-inline void loopEnqueueDetached(BasicLoop &loop, Task<T, P> task) {
-    auto wrapped = loopEnqueueDetachStarter(std::move(task));
+template <class A>
+inline void loopEnqueueDetached(BasicLoop &loop, A awaitable) {
+    auto wrapped = loopEnqueueDetachStarter(std::move(awaitable));
     auto coroutine = wrapped.get();
     loop.enqueue(coroutine);
     wrapped.release();

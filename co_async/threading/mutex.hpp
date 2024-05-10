@@ -3,25 +3,17 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/threading/condition_variable.hpp>
+#include <co_async/utils/non_void_helper.hpp>
+#include <co_async/utils/cacheline.hpp>
 
 namespace co_async {
 
-template <class T = void>
-struct Mutex;
-
-template <class T = void>
-struct TimedMutex;
-
-template <>
-struct Mutex<void> {
+struct BasicMutex {
+    ConditionList mReady;
     std::mutex mMutex;
-    ConditionVariable mReady;
 
-    Expected<> try_lock() {
-        if (mMutex.try_lock()) {
-            return Unexpected{std::make_error_code(std::errc::stream_timeout)};
-        }
-        return {};
+    bool try_lock() {
+        return mMutex.try_lock();
     }
 
     Task<> lock() {
@@ -36,16 +28,12 @@ struct Mutex<void> {
     }
 };
 
-template <>
-struct TimedMutex<void> {
+struct BasicTimedMutex {
+    ConditionVariable mReady;
     std::mutex mMutex;
-    ConditionTimed mReady;
 
-    Expected<> try_lock() {
-        if (mMutex.try_lock()) {
-            return Unexpected{std::make_error_code(std::errc::stream_timeout)};
-        }
-        return {};
+    bool try_lock() {
+        return mMutex.try_lock();
     }
 
     Task<> lock() {
@@ -54,23 +42,23 @@ struct TimedMutex<void> {
         }
     }
 
-    Task<Expected<>> try_lock_for(std::chrono::nanoseconds timeout) {
-        auto expires = std::chrono::system_clock::now() + timeout;
+    Task<bool> try_lock_for(std::chrono::nanoseconds timeout) {
+        auto expires = std::chrono::steady_clock::now() + timeout;
         while (!mMutex.try_lock()) {
-            if (std::chrono::system_clock::now() > expires || !co_await mReady.wait_until(expires)) [[unlikely]] {
-                co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+            if (std::chrono::steady_clock::now() > expires || !co_await mReady.wait_until(expires)) [[unlikely]] {
+                co_return false;
             }
         }
-        co_return {};
+        co_return true;
     }
 
-    Task<Expected<>> try_lock_until(std::chrono::system_clock::time_point expires) {
+    Task<bool> try_lock_until(std::chrono::steady_clock::time_point expires) {
         while (!mMutex.try_lock()) {
-            if (std::chrono::system_clock::now() > expires || !co_await mReady.wait_until(expires)) [[unlikely]] {
-                co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+            if (std::chrono::steady_clock::now() > expires || !co_await mReady.wait_until(expires)) [[unlikely]] {
+                co_return false;
             }
         }
-        co_return {};
+        co_return true;
     }
 
     void unlock() {
@@ -80,7 +68,7 @@ struct TimedMutex<void> {
 };
 
 template <class M, class T>
-struct MutexImpl {
+struct alignas(hardware_destructive_interference_size) MutexImpl {
 private:
     M mMutex;
     T mValue;
@@ -88,17 +76,23 @@ private:
 public:
     struct Locked {
     private:
-        explicit Locked(MutexImpl *that) : mImpl(that) {}
+        explicit Locked(MutexImpl *impl) noexcept : mImpl(impl) {}
 
         friend MutexImpl;
 
     public:
+        Locked() noexcept : mImpl(nullptr) {}
+
         T &operator*() const {
             return mImpl->unsafe_access();
         }
 
         T *operator->() const {
             return std::addressof(mImpl->unsafe_access());
+        }
+
+        explicit operator bool() const noexcept {
+            return mImpl != nullptr;
         }
 
         void unlock() {
@@ -108,10 +102,11 @@ public:
             }
         }
 
-        Locked(Locked &&that) : mImpl(std::exchange(that.mImpl, nullptr)) {}
+        Locked(Locked &&that) noexcept : mImpl(std::exchange(that.mImpl, nullptr)) {}
 
-        Locked &operator=(Locked &&that) {
+        Locked &operator=(Locked &&that) noexcept {
             std::swap(mImpl, that.mImpl);
+            return *this;
         }
 
         ~Locked() {
@@ -122,10 +117,12 @@ public:
         MutexImpl *mImpl;
     };
 
-    Expected<Locked> try_lock() {
-        auto e = mMutex.try_lock();
-        if (e.has_error()) return Unexpected{e.error()};
-        return Locked(this);
+    Locked try_lock() {
+        if (auto e = mMutex.try_lock()) {
+            return Locked(this);
+        } else {
+            return Locked();
+        }
     }
 
     Task<Locked> lock() {
@@ -133,13 +130,13 @@ public:
         co_return Locked(this);
     }
 
-    Task<Expected<Locked>> try_lock_for(std::chrono::nanoseconds timeout) {
-        co_await mMutex.try_lock_for(timeout);
+    Task<Locked> try_lock_for(std::chrono::nanoseconds timeout) {
+        if (!co_await mMutex.try_lock_for(timeout)) co_return Locked();
         co_return Locked(this);
     }
 
-    Task<Expected<Locked>> try_lock_until(std::chrono::system_clock::time_point expires) {
-        co_await mMutex.try_lock_until(expires);
+    Task<Locked> try_lock_until(std::chrono::steady_clock::time_point expires) {
+        if (!co_await mMutex.try_lock_for(expires)) co_return Locked();
         co_return Locked(this);
     }
 
@@ -150,12 +147,65 @@ public:
     T const &unsafe_access() const {
         return mValue;
     }
+
+    M &unsafe_basic_mutex() {
+        return mMutex;
+    }
+
+    M const &unsafe_basic_mutex() const {
+        return mMutex;
+    }
 };
 
-template <class T>
-struct Mutex : MutexImpl<Mutex<>, T> {};
+template <class M>
+struct MutexImpl<M, void> : MutexImpl<M, Void> {
+};
 
-template <class T>
-struct TimedMutex : MutexImpl<TimedMutex<>, T> {};
+template <class T = void>
+struct Mutex : MutexImpl<BasicMutex, T> {};
+
+template <class T = void>
+struct TimedMutex : MutexImpl<BasicTimedMutex, T> {};
+
+struct CallOnce {
+private:
+    std::atomic_bool mCalled{false};
+    Mutex<> mMutex;
+
+public:
+    struct Locked {
+    private:
+        explicit Locked(Mutex<>::Locked locked, CallOnce *impl) noexcept : mLocked(std::move(locked)), mImpl(impl) {}
+
+        friend CallOnce;
+
+    public:
+        Locked() noexcept : mLocked(), mImpl(nullptr) {}
+
+        explicit operator bool() const noexcept {
+            return (bool)mLocked;
+        }
+
+        void set_ready() {
+            mImpl->mCalled.store(true, std::memory_order_relaxed);
+        }
+
+    private:
+        Mutex<>::Locked mLocked;
+        CallOnce *mImpl;
+    };
+
+    Task<Locked> call_once() {
+        if (mCalled.load(std::memory_order_relaxed)) {
+            co_return Locked();
+        }
+        Locked locked(co_await mMutex.lock(), this);
+        if (mCalled.load(std::memory_order_relaxed)) {
+            co_return Locked();
+        }
+        co_return std::move(locked);
+
+    }
+};
 
 } // namespace co_async

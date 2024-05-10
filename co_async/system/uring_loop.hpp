@@ -1,6 +1,7 @@
 #pragma once
 
 #include <co_async/std.hpp>
+#include <co_async/utils/cacheline.hpp>
 
 #ifdef __linux__
 #include <liburing.h>
@@ -33,7 +34,7 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
     return durationToKernelTimespec(tp.time_since_epoch());
 }
 
-struct UringLoop {
+struct alignas(hardware_destructive_interference_size) UringLoop {
     inline void runSingle();
     inline bool runBatchedWait(std::size_t numBatch,
                                struct __kernel_timespec *timeout);

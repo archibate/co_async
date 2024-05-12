@@ -4,7 +4,6 @@
 #include <co_async/awaiter/task.hpp>
 #include <co_async/threading/condition_variable.hpp>
 #include <co_async/utils/non_void_helper.hpp>
-#include <co_async/utils/cacheline.hpp>
 
 namespace co_async {
 

@@ -48,6 +48,10 @@
 // `#define DEBUG_LEVEL 0` (default when defined NDEBUG) - disable debug output, completely no runtime overhead
 // `#define DEBUG_LEVEL 1` (default when !defined NDEBUG) - enable debug output, prints everything you asked to print
 //
+// `#define DEBUG_STEPPING 0` (default) - no step debugging
+// `#define DEBUG_STEPPING 1` - enable step debugging, stops whenever debug output generated, manually press ENTER to continue
+// `#define DEBUG_STEPPING 2` - enable debug output, like 1, but trigger a 'trap' interrupt for debugger to catch instead
+//
 // `#define DEBUG_SHOW_LOCATION 1` (default) - show source location mark before each line of the debug output (e.g. "file.cpp:233")
 // `#define DEBUG_SHOW_LOCATION 0` - do not show the location mark
 //
@@ -137,6 +141,10 @@
 
 #ifndef DEBUG_PANIC_METHOD
 #define DEBUG_PANIC_METHOD 1
+#endif
+
+#ifndef DEBUG_STEPPING
+#define DEBUG_STEPPING 0
 #endif
 
 #ifndef DEBUG_SUPRESS_NON_ASCII
@@ -324,6 +332,24 @@
 #define DEBUG_LIKELY
 #define DEBUG_UNLIKELY
 #define DEBUG_NODISCARD
+#endif
+#if DEBUG_STEPPING == 1
+#include <mutex>
+#if defined(__has_include)
+#if defined(__unix__)
+#if __has_include(<unistd.h>) && __has_include(<termios.h>)
+#include <unistd.h>
+#include <termios.h>
+#define DEBUG_STEPPING_HAS_TERMIOS 1
+#endif
+#endif
+#if defined(_WIN32)
+#if __has_include(<conio.h>)
+#include <conio.h>
+#define DEBUG_STEPPING_HAS_GETCH 1
+#endif
+#endif
+#endif
 #endif
 
 DEBUG_NAMESPACE_BEGIN
@@ -1687,6 +1713,51 @@ public:
             oss << '\n';
             DEBUG_OUTPUT(oss.str());
         }
+#if DEBUG_STEPPING == 1
+        static std::mutex mutex;
+        std::lock_guard lock(mutex);
+#ifdef DEBUG_CUSTOM_STEPPING
+        DEBUG_CUSTOM_STEPPING(msg);
+#elif DEBUG_STEPPING_HAS_TERMIOS
+        struct termios tc, oldtc;
+        bool tty = isatty(0);
+        if (tty) {
+            tcgetattr(0, &oldtc);
+            tc = oldtc;
+            tc.c_lflag &= ~ICANON;
+            tc.c_lflag &= ~ECHO;
+            tcsetattr(0, TCSANOW, &tc);
+        }
+        std::cerr << "--More--" << std::flush;
+        static char buf[100];
+        read(0, buf, sizeof buf);
+        std::cerr << "\r        \r";
+        if (tty) {
+            tcsetattr(0, TCSANOW, &oldtc);
+        }
+#elif DEBUG_STEPPING_HAS_GETCH
+        std::cerr << "--More--" << std::flush;
+        getch();
+        std::cerr << "\r        \r";
+#else
+        std::cerr << "[Press ENTER to continue]" << std::flush;
+        std::string line;
+        std::getline(std::cin, line);
+#endif
+#elif DEBUG_STEPPING == 2
+#if defined(DEBUG_PANIC_CUSTOM_TRAP)
+                DEBUG_PANIC_CUSTOM_TRAP;
+                return;
+#elif defined(_MSC_VER)
+        __debugbreak();
+#elif defined(__GNUC__) && defined(__has_builtin)
+#if __has_builtin(__builtin_trap)
+        __builtin_trap();
+#else
+        std::terminate();
+#endif
+#endif
+#endif
     }
 
     operator std::string() {

@@ -199,7 +199,7 @@ inline auto co_bind(F &&f, Args &&...args) {
         std::optional o(std::move(f));
         decltype(auto) r = (co_await std::move(*o)(), Void());
         o.reset();
-        co_return Void() | std::forward<decltype(r)>(r);
+        co_return typename AwaitableTraits<std::invoke_result_t<F, Args...>>::RetType(std::forward<decltype(r)>(r));
     }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 }
 

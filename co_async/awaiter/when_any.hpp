@@ -10,9 +10,6 @@
 namespace co_async {
 
 struct WhenAnyCtlBlock {
-    static constexpr std::size_t kNullIndex = std::size_t(-1);
-
-    std::size_t mIndex{kNullIndex};
     std::coroutine_handle<> mPrevious{};
 #if CO_ASYNC_EXCEPT
     std::exception_ptr mException{};
@@ -46,20 +43,42 @@ struct WhenAnyAwaiter {
     std::span<ReturnPreviousTask const> mTasks;
 };
 
-template <class T>
+template <std::size_t I, class T>
 ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
-                                 Uninitialized<T> &result, std::size_t index) {
+                                 Uninitialized<T> &result, std::atomic_bool &outReady) {
 #if CO_ASYNC_EXCEPT
     try {
 #endif
-        result.putValue((co_await std::forward<decltype(t)>(t), Void()));
+        bool notReady{false};
+        if (outReady.compare_exchange_strong(notReady, true, std::memory_order_acq_rel)) {
+            result.putValue(std::in_place_index<I>, (co_await std::forward<decltype(t)>(t), Void()));
+        }
 #if CO_ASYNC_EXCEPT
     } catch (...) {
         control.mException = std::current_exception();
         co_return control.mPrevious;
     }
 #endif
-    control.mIndex = index;
+    co_return control.mPrevious;
+}
+
+template <class T>
+ReturnPreviousTask whenAnyHelper(auto &&t, WhenAnyCtlBlock &control,
+                                 Uninitialized<T> &result, std::size_t index, std::atomic_size_t &outIndex) {
+#if CO_ASYNC_EXCEPT
+    try {
+#endif
+        auto res = (co_await std::forward<decltype(t)>(t), Void());
+        std::size_t nullIndex(-1);
+        if (outIndex.compare_exchange_strong(nullIndex, index, std::memory_order_acq_rel)) {
+            result.putValue(std::move(res));
+        }
+#if CO_ASYNC_EXCEPT
+    } catch (...) {
+        control.mException = std::current_exception();
+        co_return control.mPrevious;
+    }
+#endif
     co_return control.mPrevious;
 }
 
@@ -67,18 +86,11 @@ template <std::size_t... Is, class... Ts>
 Task<std::variant<typename AwaitableTraits<Ts>::AvoidRetType...>>
 whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
     WhenAnyCtlBlock control{};
-    std::tuple<Uninitialized<typename AwaitableTraits<Ts>::RetType>...> result;
-    ReturnPreviousTask taskArray[]{
-        whenAnyHelper(ts, control, std::get<Is>(result), Is)...};
+    Uninitialized<std::variant<typename AwaitableTraits<Ts>::AvoidRetType...>> result;
+    std::atomic_bool outReady{false};
+    ReturnPreviousTask taskArray[]{whenAnyHelper<Is>(ts, control, result, outReady)...};
     co_await WhenAnyAwaiter(control, taskArray);
-    Uninitialized<std::variant<typename AwaitableTraits<Ts>::AvoidRetType...>>
-        varResult;
-    ((control.mIndex == Is &&
-      (varResult.putValue(std::in_place_index<Is>,
-                          std::get<Is>(result).moveValue()),
-       0)),
-     ...);
-    co_return varResult.moveValue();
+    co_return result.moveValue();
 }
 
 template <Awaitable... Ts>
@@ -89,23 +101,27 @@ auto when_any(Ts &&...ts) {
 }
 
 template <Awaitable T, class Alloc = std::allocator<T>>
-Task<typename AwaitableTraits<T>::RetType>
+Task<std::tuple<typename AwaitableTraits<T>::RetType, std::size_t>>
 when_any(std::vector<T, Alloc> const &tasks) {
     WhenAnyCtlBlock control{tasks.size()};
     Alloc alloc = tasks.get_allocator();
     Uninitialized<typename AwaitableTraits<T>::RetType> result;
+    std::size_t id;
     {
         std::vector<ReturnPreviousTask,
                     typename std::allocator_traits<
                         Alloc>::template rebind_alloc<ReturnPreviousTask>>
             taskArray(alloc);
         taskArray.reserve(tasks.size());
+        std::size_t index = 0;
+        std::atomic_size_t outIndex{std::size_t(-1)};
         for (auto &task: tasks) {
-            taskArray.push_back(whenAllHelper(task, control, result));
+            taskArray.push_back(whenAllHelper(task, control, result, index, outIndex));
         }
         co_await WhenAnyAwaiter(control, taskArray);
+        id = outIndex.load(std::memory_order_relaxed);
     }
-    co_return result.moveValue();
+    co_return result.moveValue(), id;
 }
 
 } // namespace co_async

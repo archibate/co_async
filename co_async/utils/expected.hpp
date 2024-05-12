@@ -379,6 +379,8 @@ private:
 public:
     Expected() : mError(std::in_place_type<void>) {}
 
+    Expected(Void) : mError(std::in_place_type<void>) {}
+
     Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {}
 
     Expected(Expected &&that) noexcept : mError(that.mError) {}

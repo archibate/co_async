@@ -23,6 +23,12 @@ private:
             return *mExpires < *that.mExpires;
         }
 
+        void doCancel() {
+            this->destructiveErase();
+            co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
+            /* std::coroutine_handle<PromiseNode>::from_promise(*this).resume(); */
+        }
+
         std::optional<std::chrono::steady_clock::time_point> mExpires;
     };
 
@@ -57,26 +63,40 @@ private:
         mWaitingList.lock()->insert(promise);
     }
 
+    struct Canceller {
+        using OpType = Task<void, PromiseNode>;
+
+        static Task<> doCancel(OpType *op) {
+            op->get().promise().doCancel();
+            co_return;
+        }
+
+        static void earlyCancelValue() noexcept {
+        }
+    };
+
+    Task<> waitCancellable(std::chrono::steady_clock::time_point expires, CancelToken cancel) {
+        auto waiter = wait();
+        waiter.get().promise().mExpires = expires;
+        co_await cancel.invoke<Canceller>(waiter);
+    }
+
 public:
     Task<void, PromiseNode> wait() {
         co_await Awaiter(this);
     }
 
     Task<Expected<>> wait_until(std::chrono::steady_clock::time_point expires) {
-        auto waiter = wait();
-        waiter.get().promise().mExpires = expires;
-        auto res = co_await when_any(std::move(waiter), sleep_until(expires));
-        if (res.index() != 0) {
+        auto res = co_await timeout_until(&ConditionVariable::waitCancellable, expires, this, expires);
+        if (!res) {
             co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
         }
         co_return {};
     }
 
     Task<Expected<>> wait_for(std::chrono::nanoseconds timeout) {
-        auto waiter = wait();
-        waiter.get().promise().mExpires = std::chrono::steady_clock::now() + timeout;
-        auto res = co_await when_any(std::move(waiter), sleep_for(timeout));
-        if (res.index() != 0) {
+        auto res = co_await timeout_for(&ConditionVariable::waitCancellable, timeout, this, std::chrono::steady_clock::now() + timeout);
+        if (!res) {
             co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
         }
         co_return {};

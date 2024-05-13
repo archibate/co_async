@@ -166,12 +166,6 @@ struct [[nodiscard]] SocketHandle : FileHandle {
 
 struct [[nodiscard]] SocketListener : SocketHandle {
     using SocketHandle::SocketHandle;
-
-    SocketAddress mAddr;
-
-    SocketAddress const &address() const noexcept {
-        return mAddr;
-    }
 };
 
 inline SocketAddress get_socket_address(SocketHandle &sock) {
@@ -257,22 +251,35 @@ inline Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
     co_await expectError(bind(
         serv.fileNo(), (struct sockaddr const *)&addr.mAddr, addr.mAddrLen));
     co_await expectError(listen(serv.fileNo(), backlog));
-    serv.mAddr = addr;
     co_return serv;
 }
 
 inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener) {
     int fd = co_await expectError(co_await uring_accept(
-        listener.fileNo(), (struct sockaddr *)&listener.mAddr.mAddr,
-        &listener.mAddr.mAddrLen, 0));
+        listener.fileNo(), nullptr, nullptr, 0));
     SocketHandle sock(fd);
     co_return sock;
 }
 
 inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener, CancelToken cancel) {
     int fd = co_await expectError(co_await cancel.invoke<UringOpCanceller>(uring_accept(
-        listener.fileNo(), (struct sockaddr *)&listener.mAddr.mAddr,
-        &listener.mAddr.mAddrLen, 0)));
+        listener.fileNo(), nullptr, nullptr, 0)));
+    SocketHandle sock(fd);
+    co_return sock;
+}
+
+inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener, SocketAddress &peerAddr) {
+    int fd = co_await expectError(co_await uring_accept(
+        listener.fileNo(), (struct sockaddr *)&peerAddr.mAddr,
+        &peerAddr.mAddrLen, 0));
+    SocketHandle sock(fd);
+    co_return sock;
+}
+
+inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener, SocketAddress &peerAddr, CancelToken cancel) {
+    int fd = co_await expectError(co_await cancel.invoke<UringOpCanceller>(uring_accept(
+        listener.fileNo(), (struct sockaddr *)&peerAddr.mAddr,
+        &peerAddr.mAddrLen, 0)));
     SocketHandle sock(fd);
     co_return sock;
 }

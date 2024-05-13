@@ -314,7 +314,7 @@ struct [[nodiscard("did you forgot to co_await?")]] Task {
         explicit Awaiter(std::coroutine_handle<P> coroutine)
             : mCoroutine(coroutine) {}
 
-        Awaiter(Awaiter &&) = delete;
+        Awaiter(Awaiter &&that) noexcept : mCoroutine(std::exchange(that.mCoroutine, nullptr)) {}
 
         ~Awaiter() noexcept {
             if (mCoroutine && mCoroutine.done()) [[unlikely]] {

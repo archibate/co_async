@@ -5,6 +5,7 @@ using namespace co_async;
 using namespace std::literals;
 
 Task<Expected<>> amain() {
+    co_await co_await stdio().putline("listening at: 127.0.0.1"sv);
     auto listener = co_await co_await listener_bind({"127.0.0.1", 8080});
     HTTPServer server;
     server.route("GET", "/", HTTPRouteMode::SuffixPath, [](HTTPServer::IO &io, std::string_view suffix) -> Task<Expected<>> {

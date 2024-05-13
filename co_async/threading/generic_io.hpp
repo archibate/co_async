@@ -149,6 +149,44 @@ inline Task<Expected<>, GenericIOContext::TimerNode> co_sleep(std::chrono::stead
     return co_sleep(std::chrono::steady_clock::now() + timeout, cancel);
 }
 
+inline Task<> co_forever() {
+    co_await std::suspend_always();
+#if defined(__GNUC__) && defined(__has_builtin)
+#if __has_builtin(__builtin_unreachable)
+    __builtin_unreachable();
+#endif
+#endif
+}
+
+inline Task<> co_forever(CancelToken cancel) {
+    struct ForeverAwaiter {
+        struct Canceller {
+            using OpType = ForeverAwaiter;
+
+            static Task<> doCancel(OpType *op) {
+                co_spawn(op->mPrevious);
+                co_return;
+            }
+
+            static void earlyCancelValue(OpType *op) noexcept {}
+        };
+
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> coroutine) noexcept {
+            mPrevious = coroutine;
+        }
+
+        void await_resume() const noexcept {}
+
+        std::coroutine_handle<> mPrevious;
+    };
+
+    co_return co_await cancel.invoke<ForeverAwaiter::Canceller>(ForeverAwaiter());
+}
+
 inline auto co_resume() {
     struct ResumeAwaiter {
         bool await_ready() const noexcept {

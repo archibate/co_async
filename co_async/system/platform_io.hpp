@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sched.h>
+/* #include <signal.h> */
 #include <co_async/system/error_handling.hpp>
 #include <co_async/awaiter/task.hpp>
 
@@ -55,7 +56,7 @@ struct PlatformIOContext {
         return io_uring_cq_ready(&mRing);
     }
 
-    io_uring *getRing() {
+    struct io_uring *getRing() {
         return &mRing;
     }
 
@@ -93,12 +94,12 @@ struct PlatformIOContext {
     static inline thread_local PlatformIOContext *instance;
 
 private:
-    io_uring mRing;
+    struct io_uring mRing;
 };
 
 struct [[nodiscard]] UringOp {
     explicit UringOp(auto const &func) {
-        io_uring *ring = PlatformIOContext::instance->getRing();
+        struct io_uring *ring = PlatformIOContext::instance->getRing();
         mSqe = io_uring_get_sqe(ring);
         if (!mSqe) [[unlikely]] {
             throw std::bad_alloc();
@@ -162,7 +163,7 @@ struct UringOpCanceller {
 };
 
 bool PlatformIOContext::waitEventsFor(std::size_t numBatch, std::optional<std::chrono::steady_clock::duration> timeout) {
-    io_uring_cqe *cqe;
+    struct io_uring_cqe *cqe;
     struct __kernel_timespec ts, *tsp;
     if (timeout) {
         tsp = &(ts = durationToKernelTimespec(*timeout));

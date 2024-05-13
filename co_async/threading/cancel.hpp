@@ -11,7 +11,7 @@ struct CancelToken;
 
 struct [[nodiscard]] CancelSource {
 private:
-    struct CancellerBase : ConcurrentRbTree<CancellerBase>::NodeType {
+    struct CancellerBase : RbTree<CancellerBase>::NodeType {
         virtual Task<> doCancel() = 0;
 
         CancellerBase &operator=(CancellerBase &&) = delete;
@@ -35,37 +35,28 @@ private:
     };
 
     struct Impl {
-        ConcurrentRbTree<CancellerBase> mCancellers;
-        std::atomic_bool mCanceled;
+        RbTree<CancellerBase> mCancellers;
+        bool mCanceled;
 
         Task<> doCancel() {
-            mCanceled.store(true, std::memory_order_release);
+            mCanceled = true;
             std::vector<Task<>> tasks;
-            {
-                auto locked = mCancellers.lock();
-                locked->traverseInorder([&] (CancellerBase &canceller) {
-                    tasks.push_back(canceller.doCancel());
-                });
-                locked->clear();
-            }
+            mCancellers.traverseInorder([&] (CancellerBase &canceller) {
+                tasks.push_back(canceller.doCancel());
+            });
+            mCancellers.clear();
             co_await when_all(tasks);
         }
 
-        bool doIsCanceled() {
-            return mCanceled.load(std::memory_order_acquire);
+        bool doIsCanceled() const noexcept {
+            return mCanceled;
         }
 
         template <class Canceller, class Awaiter>
         Task<typename AwaitableTraits<Awaiter>::RetType> doInvoke(Awaiter &&awaiter) {
             typename Canceller::OpType *op = std::addressof(awaiter);
-            if (mCanceled.load(std::memory_order_acquire)) [[unlikely]] {
-                co_return Canceller::earlyCancelValue(op);
-            }
             CancellerImpl<Canceller> cancellerImpl(op);
-            mCancellers.lock()->insert(static_cast<CancellerBase &>(cancellerImpl));
-            if (mCanceled.load(std::memory_order_acquire)) [[unlikely]] {
-                co_return Canceller::earlyCancelValue(op);
-            }
+            mCancellers.insert(static_cast<CancellerBase &>(cancellerImpl));
             co_return co_await awaiter;
         }
     };
@@ -110,7 +101,7 @@ public:
         return mImpl->doCancel();
     }
 
-    bool is_canceled() const {
+    bool is_canceled() const noexcept {
         return mImpl->doIsCanceled();
     }
 

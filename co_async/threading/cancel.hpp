@@ -3,7 +3,7 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/utils/rbtree.hpp>
-#include <co_async/threading/task_group.hpp>
+#include <co_async/awaiter/when_all.hpp>
 
 namespace co_async {
 
@@ -40,15 +40,15 @@ private:
 
         Task<> doCancel() {
             mCanceled.store(true, std::memory_order_release);
-            TaskGroup group;
+            std::vector<Task<>> tasks;
             {
                 auto locked = mCancellers.lock();
                 locked->traverseInorder([&] (CancellerBase &canceller) {
-                    group.add(canceller.doCancel());
+                    tasks.push_back(canceller.doCancel());
                 });
                 locked->clear();
             }
-            co_await group.wait();
+            co_await when_all(tasks);
         }
 
         bool doIsCanceled() {

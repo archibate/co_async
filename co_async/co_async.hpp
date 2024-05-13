@@ -10,7 +10,6 @@
 #include <co_async/system/socket.hpp>
 #include <co_async/system/process.hpp>
 #include <co_async/awaiter/when_all.hpp>
-#include <co_async/awaiter/when_any.hpp>
 #include <co_async/awaiter/and_then.hpp>
 #include <co_async/awaiter/just.hpp>
 #include <co_async/awaiter/task.hpp>
@@ -28,6 +27,7 @@
 #include <co_async/iostream/stream_base.hpp>
 #include <co_async/iostream/zlib_stream.hpp>
 #include <co_async/threading/future.hpp>
+#include <co_async/threading/task_group.hpp>
 #include <co_async/threading/condition_variable.hpp>
 #include <co_async/threading/queue.hpp>
 #include <co_async/threading/mutex.hpp>

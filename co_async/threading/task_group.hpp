@@ -3,15 +3,22 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/when_all.hpp>
+#include <co_async/threading/future.hpp>
+#include <co_async/awaiter/details/task_owned_awaiter.hpp>
 
 namespace co_async {
 
 template <class T = void>
 struct TaskGroup {
-    std::vector<Task<T>> mTasks;
+    std::vector<FutureSource<T>> mTasks;
+
+    TaskGroup &add(FutureSource<T> future) {
+        mTasks.push_back(std::move(future));
+        return *this;
+    }
 
     TaskGroup &add(Task<T> task) {
-        mTasks.push_back(std::move(task));
+        add(co_future(std::move(task)));
         return *this;
     }
 
@@ -27,6 +34,10 @@ struct TaskGroup {
         auto ret = (co_await when_all(mTasks), Void());
         mTasks.clear();
         co_return Void() | std::move(ret);
+    }
+
+    auto operator co_await() {
+        return TaskOwnedAwaiter(wait());
     }
 
     TaskGroup() = default;

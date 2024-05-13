@@ -3,6 +3,7 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/system/platform_io.hpp>
+#include <co_async/threading/cancel.hpp>
 #include <co_async/system/timeout.hpp>
 #include <co_async/utils/rbtree.hpp>
 #include <co_async/utils/concurrent_queue.hpp>
@@ -159,11 +160,12 @@ public:
 struct ConditionOnce {
 private:
     std::coroutine_handle<> mWaitingCoroutine{nullptr};
+    bool mReady{false};
 
 public:
     struct Awaiter {
         bool await_ready() const noexcept {
-            return false;
+            return mThat->mReady;
         }
 
         void await_suspend(std::coroutine_handle<> coroutine) const {
@@ -175,7 +177,14 @@ public:
             mThat->mWaitingCoroutine = coroutine;
         }
 
-        void await_resume() const noexcept {}
+        void await_resume() const noexcept {
+#if CO_ASYNC_DEBUG
+            if (!mThat->mReady) [[unlikely]] {
+                throw std::logic_error("ConditionOnce or Future waked up but not ready");
+            }
+#endif
+            mThat->mReady = false;
+        }
 
         ConditionOnce *mThat;
     };
@@ -189,6 +198,7 @@ public:
     }
 
     void notify() {
+        mReady = true;
         if (auto coroutine = mWaitingCoroutine) {
             mWaitingCoroutine = nullptr;
             co_spawn(coroutine);

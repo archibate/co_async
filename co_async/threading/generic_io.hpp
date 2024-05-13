@@ -149,4 +149,20 @@ inline Task<Expected<>, GenericIOContext::TimerNode> co_sleep(std::chrono::stead
     return co_sleep(std::chrono::steady_clock::now() + timeout, cancel);
 }
 
+inline auto co_resume() {
+    struct ResumeAwaiter {
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> coroutine) const {
+            co_spawn(coroutine);
+        }
+
+        void await_resume() const noexcept {}
+    };
+
+    return ResumeAwaiter();
+}
+
 } // namespace co_async

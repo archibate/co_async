@@ -18,19 +18,19 @@ Task<Expected<>> func() {
 }
 
 Task<Expected<>> amain() {
-    auto fut = co_future(func());
+    TaskGroup<Expected<>> group;
+    group.add(func());
     for (int i = 0; i < 8; i++) {
         debug(), i;
         auto e = co_await q.pop(400ms);
         debug(), i, e;
     }
-    co_await co_await fut;
+    co_await co_await group.wait();
     co_return {};
 }
 
 int main() {
     std::setlocale(LC_ALL, "");
-    globalSystemLoop.start({.numWorkers = 1});
-    co_synchronize(amain()).value();
+    IOContext().join(amain()).value();
     return 0;
 }

@@ -9,6 +9,7 @@
 #include <co_async/iostream/zlib_stream.hpp>
 #include <co_async/http/http_status_code.hpp>
 #include <co_async/utils/string_utils.hpp>
+#include <co_async/threading/task_group.hpp>
 #include <co_async/system/process.hpp>
 #include <co_async/system/fs.hpp>
 #include <co_async/http/uri.hpp>

@@ -181,14 +181,16 @@ struct TaskPromise<Expected<T, E>> : PromiseBase {
     }
 
     template <class E2>
-    ValueAwaiter<void> await_transform(std::vector<Expected<void, E2>> &&e) noexcept {
+    ValueAwaiter<void>
+    await_transform(std::vector<Expected<void, E2>> &&e) noexcept {
         for (std::size_t i = 0; i < e.size(); ++i) {
             if (e[i].has_error()) [[unlikely]] {
                 if constexpr (std::is_void_v<E>) {
                     mResult.putValue(Unexpected<E>());
                 } else {
-                    static_assert(std::same_as<E2, E>,
-                                  "co_await'ing Expected's error type mismatch");
+                    static_assert(
+                        std::same_as<E2, E>,
+                        "co_await'ing Expected's error type mismatch");
                     mResult.putValue(Unexpected<E>(std::move(e[i].error())));
                 }
                 return ValueAwaiter<void>(mPrevious);
@@ -198,14 +200,16 @@ struct TaskPromise<Expected<T, E>> : PromiseBase {
     }
 
     template <class T2, class E2>
-    ValueAwaiter<std::vector<T2>> await_transform(std::vector<Expected<T2, E2>> &&e) noexcept {
+    ValueAwaiter<std::vector<T2>>
+    await_transform(std::vector<Expected<T2, E2>> &&e) noexcept {
         for (std::size_t i = 0; i < e.size(); ++i) {
             if (e[i].has_error()) [[unlikely]] {
                 if constexpr (std::is_void_v<E>) {
                     mResult.putValue(Unexpected<E>());
                 } else {
-                    static_assert(std::same_as<E2, E>,
-                                  "co_await'ing Expected's error type mismatch");
+                    static_assert(
+                        std::same_as<E2, E>,
+                        "co_await'ing Expected's error type mismatch");
                     mResult.putValue(Unexpected<E>(std::move(e[i].error())));
                 }
                 return ValueAwaiter<std::vector<T2>>(mPrevious);
@@ -220,7 +224,8 @@ struct TaskPromise<Expected<T, E>> : PromiseBase {
     }
 
     template <class T2, class E2>
-    ValueAwaiter<std::vector<T2>> await_transform(std::vector<Expected<T2, E2>> &e) noexcept {
+    ValueAwaiter<std::vector<T2>>
+    await_transform(std::vector<Expected<T2, E2>> &e) noexcept {
         return await_transform(std::move(e));
     }
 
@@ -247,50 +252,6 @@ struct CustomPromise : TaskPromise<T> {
         static_assert(std::is_base_of_v<CustomPromise, P>);
         return std::coroutine_handle<P>::from_promise(static_cast<P &>(*this));
     }
-};
-
-template <class T, class P>
-struct TaskAwaiter {
-    bool await_ready() const noexcept {
-        return false;
-    }
-
-    std::coroutine_handle<P>
-    await_suspend(std::coroutine_handle<> coroutine) const noexcept {
-        P &promise = mCoroutine.promise();
-        promise.setPrevious(coroutine);
-        return mCoroutine;
-    }
-
-#if CO_ASYNC_DEBUG
-    T await_resume() const {
-        auto coroutine = mCoroutine;
-        mCoroutine = nullptr;
-        return coroutine.promise().result();
-    }
-
-    explicit TaskAwaiter(std::coroutine_handle<P> coroutine)
-        : mCoroutine(coroutine) {}
-
-    TaskAwaiter(TaskAwaiter &&) = delete;
-
-    ~TaskAwaiter() noexcept {
-        if (mCoroutine && mCoroutine.done()) [[unlikely]] {
-            std::cerr << "WARNING: done coroutine return value ignored\n";
-            (void)mCoroutine.promise().result();
-        }
-    }
-
-private:
-    mutable std::coroutine_handle<P> mCoroutine;
-
-#else
-    T await_resume() const {
-        return mCoroutine.promise().result();
-    }
-
-    std::coroutine_handle<P> mCoroutine;
-#endif
 };
 
 template <class T = void, class P = TaskPromise<T>>
@@ -331,8 +292,51 @@ struct [[nodiscard("did you forgot to co_await?")]] Task {
         mCoroutine.destroy();
     }
 
+    struct Awaiter {
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        std::coroutine_handle<P>
+        await_suspend(std::coroutine_handle<> coroutine) const noexcept {
+            P &promise = mCoroutine.promise();
+            promise.setPrevious(coroutine);
+            return mCoroutine;
+        }
+
+#if CO_ASYNC_DEBUG
+        T await_resume() const {
+            auto coroutine = mCoroutine;
+            mCoroutine = nullptr;
+            return coroutine.promise().result();
+        }
+
+        explicit Awaiter(std::coroutine_handle<P> coroutine)
+            : mCoroutine(coroutine) {}
+
+        Awaiter(Awaiter &&) = delete;
+
+        ~Awaiter() noexcept {
+            if (mCoroutine && mCoroutine.done()) [[unlikely]] {
+                std::cerr << "WARNING: done coroutine return value ignored\n";
+                (void)mCoroutine.promise().result();
+            }
+        }
+
+    private:
+        mutable std::coroutine_handle<P> mCoroutine;
+
+#else
+        T await_resume() const {
+            return mCoroutine.promise().result();
+        }
+
+        std::coroutine_handle<P> mCoroutine;
+#endif
+    };
+
     auto operator co_await() const noexcept {
-        return TaskAwaiter<T, P>(mCoroutine);
+        return Awaiter(mCoroutine);
     }
 
     std::coroutine_handle<promise_type> get() const noexcept {
@@ -354,7 +358,9 @@ inline auto co_bind(F &&f, Args &&...args) {
         std::optional o(std::move(f));
         decltype(auto) r = (co_await std::move(*o)(), Void());
         o.reset();
-        co_return typename AwaitableTraits<std::invoke_result_t<F, Args...>>::RetType(std::forward<decltype(r)>(r));
+        co_return
+            typename AwaitableTraits<std::invoke_result_t<F, Args...>>::RetType(
+                std::forward<decltype(r)>(r));
     }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 }
 

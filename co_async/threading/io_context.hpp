@@ -50,6 +50,10 @@ public:
             });
     }
 
+    void detach(std::coroutine_handle<> coroutine) {
+        mGenericIO.enqueueJob(coroutine);
+    }
+
     template <class T, class P>
     void detach(Task<T, P> task) {
         if (!mStarted) [[unlikely]] {
@@ -112,5 +116,23 @@ private:
         cv.notify_one();
     }
 };
+
+inline auto co_resume_on(IOContext &context) {
+    struct ResumeOnAwaiter {
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> coroutine) const {
+            mContext.detach(coroutine);
+        }
+
+        void await_resume() const noexcept {}
+
+        IOContext &mContext;
+    };
+
+    return ResumeOnAwaiter(context);
+}
 
 } // namespace co_async

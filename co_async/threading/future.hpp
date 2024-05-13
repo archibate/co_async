@@ -4,6 +4,7 @@
 #include <co_async/awaiter/task.hpp>
 #include <co_async/system/platform_io.hpp>
 #include <co_async/threading/condition_variable.hpp>
+#include <co_async/threading/cancel.hpp>
 #include <co_async/awaiter/details/ignore_return_promise.hpp>
 
 namespace co_async {
@@ -13,6 +14,9 @@ struct [[nodiscard]] FutureToken;
 
 template <class T = void>
 struct [[nodiscard]] FutureSource {
+public:
+    struct Awaiter;
+
 private:
     struct Impl : ConditionOnce {
         Uninitialized<T> mValue;
@@ -20,9 +24,7 @@ private:
         std::exception_ptr mException{nullptr};
 #endif
 
-        Awaiter makeAwaiter() {
-            return Awaiter(static_cast<ConditionOnce &>(*this).operator co_await());
-        }
+        inline FutureSource::Awaiter makeAwaiter();
     };
 
     std::unique_ptr<Impl> mImpl = std::make_unique<Impl>();
@@ -30,9 +32,10 @@ private:
 public:
     struct Awaiter : ConditionOnce::Awaiter {
         T await_resume() const noexcept {
+            ConditionOnce::Awaiter::await_resume();
             auto impl = static_cast<Impl *>(mThat);
             if constexpr (!std::is_void_v<T>) {
-                co_return impl->mValue.moveValue();
+                return impl->mValue.moveValue();
             }
         }
     };
@@ -50,6 +53,11 @@ public:
     template <class>
     friend struct FutureToken;
 };
+
+template <class T>
+auto FutureSource<T>::Impl::makeAwaiter() -> FutureSource::Awaiter {
+    return FutureSource::Awaiter(static_cast<ConditionOnce &>(*this).operator co_await());
+}
 
 template <class T>
 struct FutureToken {

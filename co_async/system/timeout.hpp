@@ -10,7 +10,6 @@
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/when_all.hpp>
 #include <co_async/system/platform_io.hpp>
-#include <co_async/threading/task_group.hpp>
 #include <co_async/threading/cancel.hpp>
 
 namespace co_async {
@@ -25,20 +24,17 @@ co_timeout(F &&task, Timeout timeout, Args &&...args) {
     std::optional<typename AwaitableTraits<
         std::invoke_result_t<F, Args..., CancelToken>>::AvoidRetType>
         result;
-    TaskGroup group;
-    group.add(co_bind([&]() mutable -> Task<> {
+    co_await when_all(co_bind([&]() mutable -> Task<> {
         auto res = (co_await std::invoke(task, std::forward<Args>(args)..., ct),
                     Void());
         co_await cs.cancel();
         if (!ct.is_canceled()) {
             result = res;
         }
-    }));
-    group.add(co_bind([&]() mutable -> Task<> {
+    }), co_bind([&]() mutable -> Task<> {
         (void)co_await co_sleep(timeout, cs);
         co_await ct.cancel();
     }));
-    co_await group.wait();
     co_return result;
 }
 

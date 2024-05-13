@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         targetHost = argv[3];
     }
-    if (auto e = co_synchronize(amain(serveAt, targetHost, headers));
+    if (auto e = IOContext().join(amain(serveAt, targetHost, headers));
         e.has_error()) {
         std::cerr << argv[0] << ": " << e.error().message() << '\n';
         return e.error().value();

@@ -143,7 +143,7 @@ Task<Expected<OwningStream>> evaluate(std::string prompt) {
 }
 
 void code_complete(std::string code, std::function<void(std::string)> callback) {
-    co_synchronize(co_bind([code = std::move(code), callback = std::move(callback)] () -> Task<Expected<>> {
+    IOContext().join(co_bind([code = std::move(code), callback = std::move(callback)] () -> Task<Expected<>> {
         auto prompt = form_code_complete(code);
         auto stream = co_await co_await evaluate(std::move(prompt));
         while (auto chunk = co_await stream.getchunk()) {

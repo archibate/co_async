@@ -108,7 +108,7 @@ private:
 #if CO_ASYNC_EXCEPT
         } catch (...) {
 #if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: exception occurred in co_synchronize\n";
+            std::cerr << "WARNING: exception occurred in IOContext::join\n";
 #endif
             exception = std::current_exception();
         }

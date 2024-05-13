@@ -7,27 +7,27 @@ using namespace std::literals;
 ConditionVariable cv;
 
 Task<Expected<>> func() {
-    co_await sleep_for(1000ms);
+    (void)co_await co_sleep(1000ms);
     cv.notify();
     co_return {};
 }
 
 Task<Expected<>> amain() {
     co_spawn(func());
-    auto e = co_await cv.wait_for(800ms);
+    auto e = co_await cv.wait(800ms);
     debug(), e;
-    e = co_await cv.wait_for(800ms);
+    e = co_await cv.wait(800ms);
     debug(), e;
-    e = co_await cv.wait_for(800ms);
+    e = co_await cv.wait(800ms);
     debug(), e;
-    e = co_await cv.wait_for(800ms);
+    e = co_await cv.wait(800ms);
     debug(), e;
-    e = co_await cv.wait_for(800ms);
+    e = co_await cv.wait(800ms);
     debug(), e;
     co_return {};
 }
 
 int main() {
-    co_synchronize(amain()).value();
+    IOContext().join(amain()).value();
     return 0;
 }

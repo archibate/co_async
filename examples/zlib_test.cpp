@@ -19,6 +19,6 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
-    co_synchronize(amain(decomp)).value();
+    IOContext().join(amain(decomp)).value();
     return 0;
 }

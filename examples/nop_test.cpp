@@ -10,6 +10,6 @@ Task<> amain() {
 }
 
 int main() {
-    co_synchronize(amain());
+    IOContext().join(amain());
     return 0;
 }

@@ -136,6 +136,6 @@ Task<Expected<>> amain() {
 int main() {
     /* auto tmp = reflect::json_decode<ChatCompletionStreamingResult>(R"json({"id":"1234","choices":[{"index":1,"delta":{"role":"user","content":"Hello?"},"finish_reason":null}],"model":"deepseek-coder"})json"); */
     /* debug(), tmp; */
-    co_synchronize(amain()).value();
+    IOContext().join(amain()).value();
     return 0;
 }

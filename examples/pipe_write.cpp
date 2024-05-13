@@ -24,6 +24,6 @@ Task<Expected<>> amain() {
 }
 
 int main() {
-    co_synchronize(amain()).value();
+    IOContext().join(amain()).value();
     return 0;
 }

@@ -8,10 +8,10 @@ using namespace std::literals;
 TimedQueue<int, 15> q;
 
 Task<Expected<>> func() {
-    co_await co_await sleep_for(1000ms);
+    (void)co_await co_sleep(1000ms);
     debug(), "PUSH 42";
     co_await q.push(42);
-    co_await co_await sleep_for(2000ms);
+    (void)co_await co_sleep(1000ms);
     debug(), "PUSH 64";
     co_await q.push(64);
     co_return {};
@@ -21,15 +21,15 @@ Task<Expected<>> amain() {
     auto fut = co_future(func());
     for (int i = 0; i < 8; i++) {
         debug(), i;
-        auto e = co_await q.pop_for(400ms);
+        auto e = co_await q.pop(400ms);
         debug(), i, e;
     }
     co_await co_await fut;
-    co_await co_await sleep_for(400ms);
     co_return {};
 }
 
 int main() {
+    std::setlocale(LC_ALL, "");
     globalSystemLoop.start({.numWorkers = 1});
     co_synchronize(amain()).value();
     return 0;

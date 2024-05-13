@@ -4,7 +4,6 @@
 
 #ifdef __linux__
 
-#include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -16,75 +15,65 @@
 
 namespace co_async {
 
-struct UringTimeoutCanceller {
-    using OpType = UringOp;
-
-    static Task<> doCancel(OpType *op) {
-        co_await uring_timeout_remove(op, 0);
-    }
-
-    static int earlyCancelValue() noexcept {
-        return -ECANCELED;
-    }
-};
-
-template <class Rep, class Period>
-inline Task<Expected<>> sleep_for(std::chrono::duration<Rep, Period> dur) {
-    auto ts = durationToKernelTimespec(dur);
-    int flags = IORING_TIMEOUT_BOOTTIME | IORING_TIMEOUT_ETIME_SUCCESS;
-    int ret = co_await uring_timeout(&ts, 1, flags);
-    if (ret < 0 && ret != -ETIME) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc(-ret))};
-    } else {
-        co_return {};
-    }
-}
-
-template <class Clk, class Dur>
-inline Task<Expected<>> sleep_until(std::chrono::time_point<Clk, Dur> tp) {
-    auto ts = timePointToKernelTimespec(tp);
-    int flags = IORING_TIMEOUT_ABS | IORING_TIMEOUT_ETIME_SUCCESS;
-    if constexpr (!Clk::is_steady) {
-        flags |= IORING_TIMEOUT_REALTIME;
-    }
-    int ret = co_await uring_timeout(&ts, 1, flags);
-    if (ret < 0 && ret != -ETIME) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc(-ret))};
-    } else {
-        co_return {};
-    }
-}
-
-template <class Rep, class Period>
-inline Task<Expected<>> sleep_for(std::chrono::duration<Rep, Period> dur,
-                                  CancelToken cancel) {
-    auto ts = durationToKernelTimespec(dur);
-    int flags = IORING_TIMEOUT_BOOTTIME | IORING_TIMEOUT_ETIME_SUCCESS;
-    auto ret = co_await cancel.invoke<UringTimeoutCanceller>(
-        uring_timeout(&ts, 1, flags));
-    if (ret < 0 && ret != -ETIME) {
-        co_return Unexpected{std::make_error_code(std::errc(-ret))};
-    } else {
-        co_return {};
-    }
-}
-
-template <class Clk, class Dur>
-inline Task<Expected<>> sleep_until(std::chrono::time_point<Clk, Dur> tp,
-                                    CancelToken cancel) {
-    auto ts = timePointToKernelTimespec(tp);
-    int flags = IORING_TIMEOUT_ABS | IORING_TIMEOUT_ETIME_SUCCESS;
-    if constexpr (!Clk::is_steady) {
-        flags |= IORING_TIMEOUT_REALTIME;
-    }
-    auto ret = co_await cancel.invoke<UringTimeoutCanceller>(
-        uring_timeout(&ts, 1, flags));
-    if (ret < 0 && ret != -ETIME) {
-        co_return Unexpected{std::make_error_code(std::errc(-ret))};
-    } else {
-        co_return {};
-    }
-}
+/* template <class Rep, class Period> */
+/* inline Task<Expected<>> sleep_for(std::chrono::duration<Rep, Period> dur) { */
+/*     auto ts = durationToKernelTimespec(dur); */
+/*     int flags = IORING_TIMEOUT_BOOTTIME; */
+/*     auto op = uring_timeout(&ts, 1, flags); */
+/*     int ret = co_await op; */
+/*     if (ret < 0) { */
+/*         co_return Unexpected{std::make_error_code(std::errc(-ret))}; */
+/*     } else { */
+/*         co_return {}; */
+/*     } */
+/* } */
+/*  */
+/* template <class Clk, class Dur> */
+/* inline Task<Expected<>> sleep_until(std::chrono::time_point<Clk, Dur> tp) { */
+/*     auto ts = timePointToKernelTimespec(tp); */
+/*     int flags = IORING_TIMEOUT_ABS; */
+/*     if constexpr (!Clk::is_steady) { */
+/*         flags |= IORING_TIMEOUT_REALTIME; */
+/*     } */
+/*     auto op = uring_timeout(&ts, 1, flags); */
+/*     int ret = co_await op; */
+/*     if (ret < 0) { */
+/*         co_return Unexpected{std::make_error_code(std::errc(-ret))}; */
+/*     } else { */
+/*         co_return {}; */
+/*     } */
+/* } */
+/*  */
+/* template <class Rep, class Period> */
+/* inline Task<Expected<>> sleep_for(std::chrono::duration<Rep, Period> dur, */
+/*                                   CancelToken cancel) { */
+/*     auto ts = durationToKernelTimespec(dur); */
+/*     int flags = IORING_TIMEOUT_BOOTTIME; */
+/*     auto op = uring_timeout(&ts, 1, flags); */
+/*     auto ret = co_await cancel.invoke<UringTimeoutCanceller>(op); */
+/*     if (ret < 0) { */
+/*         co_return Unexpected{std::make_error_code(std::errc(-ret))}; */
+/*     } else { */
+/*         co_return {}; */
+/*     } */
+/* } */
+/*  */
+/* template <class Clk, class Dur> */
+/* inline Task<Expected<>> sleep_until(std::chrono::time_point<Clk, Dur> tp, */
+/*                                     CancelToken cancel) { */
+/*     auto ts = timePointToKernelTimespec(tp); */
+/*     int flags = IORING_TIMEOUT_ABS; */
+/*     if constexpr (!Clk::is_steady) { */
+/*         flags |= IORING_TIMEOUT_REALTIME; */
+/*     } */
+/*     auto op = uring_timeout(&ts, 1, flags); */
+/*     auto ret = co_await cancel.invoke<UringTimeoutCanceller>(op); */
+/*     if (ret < 0) { */
+/*         co_return Unexpected{std::make_error_code(std::errc(-ret))}; */
+/*     } else { */
+/*         co_return {}; */
+/*     } */
+/* } */
 
 template <class F, class... Args, class Rep, class Period>
     requires Awaitable<std::invoke_result_t<F, Args..., CancelToken>>
@@ -105,7 +94,7 @@ timeout_for(F &&task, std::chrono::duration<Rep, Period> dur, Args &&...args) {
                 co_return res;
             }),
         co_bind([&]() mutable -> Task<> {
-            (void)co_await sleep_for(dur, cs);
+            (void)co_await co_sleep(dur, cs);
             co_await ct.cancel();
         }));
     co_return std::get<0>(res);
@@ -131,7 +120,7 @@ timeout_until(F &&task, std::chrono::time_point<Clk, Dur> tp, Args &&...args) {
         }
     }));
     group.add(co_bind([&]() mutable -> Task<> {
-        (void)co_await sleep_until(tp, cs);
+        (void)co_await co_sleep(tp, cs);
         co_await ct.cancel();
     }));
     co_await group.wait();

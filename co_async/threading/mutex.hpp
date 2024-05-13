@@ -41,19 +41,19 @@ struct BasicTimedMutex {
         }
     }
 
-    Task<bool> try_lock_for(std::chrono::nanoseconds timeout) {
+    Task<bool> try_lock(std::chrono::nanoseconds timeout) {
         auto expires = std::chrono::steady_clock::now() + timeout;
         while (!mMutex.try_lock()) {
-            if (std::chrono::steady_clock::now() > expires || !co_await mReady.wait_until(expires)) [[unlikely]] {
+            if (std::chrono::steady_clock::now() > expires || !co_await mReady.wait(expires)) [[unlikely]] {
                 co_return false;
             }
         }
         co_return true;
     }
 
-    Task<bool> try_lock_until(std::chrono::steady_clock::time_point expires) {
+    Task<bool> try_lock(std::chrono::steady_clock::time_point expires) {
         while (!mMutex.try_lock()) {
-            if (std::chrono::steady_clock::now() > expires || !co_await mReady.wait_until(expires)) [[unlikely]] {
+            if (std::chrono::steady_clock::now() > expires || !co_await mReady.wait(expires)) [[unlikely]] {
                 co_return false;
             }
         }

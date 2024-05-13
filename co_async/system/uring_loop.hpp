@@ -59,7 +59,7 @@ struct alignas(hardware_destructive_interference_size) UringLoop {
     }
 
     void doSubmit() {
-        throwingError(io_uring_submit(&mRing));
+        /* throwingError(io_uring_submit(&mRing)); */
     }
 
     void reserveFixedBuffers(std::size_t numBufs, std::size_t bufSize = 8192) {
@@ -133,7 +133,7 @@ private:
     std::vector<FixedBuffer> mFixedBuffers;
 };
 
-struct UringOp {
+struct [[nodiscard]] UringOp {
     explicit UringOp(auto const &func) {
         io_uring *ring = UringLoop::tlsInstance->getRing();
         mSqe = io_uring_get_sqe(ring);
@@ -185,8 +185,23 @@ private:
     friend UringLoop;
 };
 
+inline UringOp uring_cancel(UringOp *op, unsigned int flags);
+
+struct UringOpCanceller {
+    using OpType = UringOp;
+
+    static Task<> doCancel(OpType *op) {
+        co_await uring_cancel(op, IORING_ASYNC_CANCEL_ALL);
+    }
+
+    static int earlyCancelValue(OpType *op) noexcept {
+        return -ECANCELED;
+    }
+};
+
 void UringLoop::runSingle() {
     io_uring_cqe *cqe;
+    throwingError(io_uring_submit(&mRing));
     throwingError(io_uring_wait_cqe(&mRing, &cqe));
     auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
     op->mRes = cqe->res;
@@ -196,7 +211,7 @@ void UringLoop::runSingle() {
 
 bool UringLoop::runBatchedNoWait(std::size_t numBatch) {
     io_uring_cqe *cqe;
-    int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, nullptr, nullptr);
+    int res = io_uring_submit_and_wait_timeout(&mRing, &cqe, numBatch, nullptr, nullptr);
     if (res == -EINTR) [[unlikely]] {
         return false;
     }
@@ -215,7 +230,7 @@ bool UringLoop::runBatchedNoWait(std::size_t numBatch) {
 bool UringLoop::runBatchedWait(std::size_t numBatch,
                                struct __kernel_timespec *timeout) {
     io_uring_cqe *cqe;
-    int res = io_uring_wait_cqes(&mRing, &cqe, numBatch, timeout, nullptr);
+    int res = io_uring_submit_and_wait_timeout(&mRing, &cqe, numBatch, timeout, nullptr);
     if (res == -EINTR) [[unlikely]] {
         return false;
     }

@@ -35,10 +35,6 @@ protected:
         RbColor rbColor;
     };
 
-    void onDestructiveErase(RbNode *current) noexcept {
-        doErase(current);
-    }
-
 public:
     struct NodeType : RbNode {
         NodeType() = default;
@@ -53,7 +49,7 @@ public:
             static_assert(std::is_base_of_v<NodeType, Value>, "Value type must be derived from RbTree<Value>::NodeType");
 
             if (this->rbTree) {
-                this->rbTree->onDestructiveErase(this);
+                this->rbTree->doErase(this);
                 this->rbTree = nullptr;
             }
         }
@@ -352,13 +348,18 @@ public:
         }
 
     protected:
-        void destructiveErase() {
+        bool destructiveErase() {
             static_assert(std::is_base_of_v<NodeType, Value>, "Value type must be derived from RbTree<Value>::NodeType");
 
             if (this->rbTree) {
-                static_cast<ConcurrentRbTree *>(this->rbTree)->onDestructiveErase(this);
-                this->rbTree = nullptr;
+                auto lock = static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
+                if (this->rbTree) [[likely]] {
+                    lock->erase(static_cast<Value &>(*this));
+                    this->rbTree = nullptr;
+                    return true;
+                }
             }
+            return false;
         }
     };
 

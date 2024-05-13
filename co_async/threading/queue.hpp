@@ -56,7 +56,7 @@ public:
 
     Task<Expected<>> push_until(T value, std::chrono::steady_clock::time_point expires) {
         while (!mQueue.push(std::move(value))) {
-            if (auto e = co_await mNonFull.wait_until(expires); e.has_error()) {
+            if (auto e = co_await mNonFull.wait(expires); e.has_error()) {
                 co_return Unexpected{e.error()};
             }
         }
@@ -74,17 +74,17 @@ public:
         }
     }
 
-    Task<Expected<T>> pop_for(std::chrono::nanoseconds timeout) {
-        return pop_until(std::chrono::steady_clock::now() + timeout);
+    Task<Expected<T>> pop(std::chrono::nanoseconds timeout) {
+        return pop(std::chrono::steady_clock::now() + timeout);
     }
 
-    Task<Expected<T>> pop_until(std::chrono::steady_clock::time_point expires) {
+    Task<Expected<T>> pop(std::chrono::steady_clock::time_point expires) {
         while (true) {
             if (auto value = mQueue.pop()) {
                 mNonFull.notify_one();
                 co_return std::move(*value);
             }
-            if (auto e = co_await mNonEmpty.wait_until(expires); e.has_error()) {
+            if (auto e = co_await mNonEmpty.wait(expires); e.has_error()) {
                 co_return Unexpected{e.error()};
             }
         }

@@ -3,7 +3,7 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/utils/rbtree.hpp>
-#include <co_async/threading/future_group.hpp>
+#include <co_async/threading/task_group.hpp>
 
 namespace co_async {
 
@@ -57,13 +57,14 @@ private:
 
         template <class Canceller, class Awaiter>
         Task<typename AwaitableTraits<Awaiter>::RetType> doInvoke(Awaiter &&awaiter) {
-            if (mCanceled.load(std::memory_order_acquire)) {
-                co_return Canceller::earlyCancelValue();
+            typename Canceller::OpType *op = std::addressof(awaiter);
+            if (mCanceled.load(std::memory_order_acquire)) [[unlikely]] {
+                co_return Canceller::earlyCancelValue(op);
             }
-            CancellerImpl<Canceller> cancellerImpl(std::addressof(awaiter));
+            CancellerImpl<Canceller> cancellerImpl(op);
             mCancellers.lock()->insert(static_cast<CancellerBase &>(cancellerImpl));
             if (mCanceled.load(std::memory_order_acquire)) [[unlikely]] {
-                co_return Canceller::earlyCancelValue();
+                co_return Canceller::earlyCancelValue(op);
             }
             co_return co_await awaiter;
         }

@@ -24,9 +24,8 @@ private:
         }
 
         void doCancel() {
-            this->destructiveErase();
-            co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
-            /* std::coroutine_handle<PromiseNode>::from_promise(*this).resume(); */
+            if (this->destructiveErase()) [[likely]]
+                co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
         }
 
         std::optional<std::chrono::steady_clock::time_point> mExpires;
@@ -71,7 +70,7 @@ private:
             co_return;
         }
 
-        static void earlyCancelValue() noexcept {
+        static void earlyCancelValue(OpType *op) noexcept {
         }
     };
 
@@ -86,7 +85,7 @@ public:
         co_await Awaiter(this);
     }
 
-    Task<Expected<>> wait_until(std::chrono::steady_clock::time_point expires) {
+    Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
         auto res = co_await timeout_until(&ConditionVariable::waitCancellable, expires, this, expires);
         if (!res) {
             co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
@@ -94,7 +93,7 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> wait_for(std::chrono::nanoseconds timeout) {
+    Task<Expected<>> wait(std::chrono::nanoseconds timeout) {
         auto res = co_await timeout_for(&ConditionVariable::waitCancellable, timeout, this, std::chrono::steady_clock::now() + timeout);
         if (!res) {
             co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};

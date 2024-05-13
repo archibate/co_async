@@ -8,6 +8,7 @@
 #endif
 #include <co_async/awaiter/details/previous_awaiter.hpp>
 #include <co_async/awaiter/details/value_awaiter.hpp>
+#include <co_async/awaiter/concepts.hpp>
 
 namespace co_async {
 
@@ -62,7 +63,7 @@ protected:
 };
 
 template <class T>
-struct Promise : PromiseBase {
+struct TaskPromise : PromiseBase {
     void return_value(T &&ret) {
         mResult.putValue(std::move(ret));
     }
@@ -81,7 +82,7 @@ struct Promise : PromiseBase {
     }
 
     auto get_return_object() {
-        return std::coroutine_handle<Promise>::from_promise(*this);
+        return std::coroutine_handle<TaskPromise>::from_promise(*this);
     }
 
 private:
@@ -97,7 +98,7 @@ public:
 };
 
 template <>
-struct Promise<void> : PromiseBase {
+struct TaskPromise<void> : PromiseBase {
     void return_void() noexcept {}
 
     void result() {
@@ -109,7 +110,7 @@ struct Promise<void> : PromiseBase {
     }
 
     auto get_return_object() {
-        return std::coroutine_handle<Promise>::from_promise(*this);
+        return std::coroutine_handle<TaskPromise>::from_promise(*this);
     }
 
 #if CO_ASYNC_PERF
@@ -121,7 +122,7 @@ struct Promise<void> : PromiseBase {
 };
 
 template <class T, class E>
-struct Promise<Expected<T, E>> : PromiseBase {
+struct TaskPromise<Expected<T, E>> : PromiseBase {
     void return_value(Expected<T, E> &&ret) {
         mResult.putValue(std::move(ret));
     }
@@ -152,7 +153,7 @@ struct Promise<Expected<T, E>> : PromiseBase {
     }
 
     auto get_return_object() {
-        return std::coroutine_handle<Promise>::from_promise(*this);
+        return std::coroutine_handle<TaskPromise>::from_promise(*this);
     }
 
     template <class T2, class E2>
@@ -197,7 +198,7 @@ public:
 };
 
 template <class T, class P>
-struct CustomPromise : Promise<T> {
+struct CustomPromise : TaskPromise<T> {
     auto get_return_object() {
         static_assert(std::is_base_of_v<CustomPromise, P>);
         return std::coroutine_handle<P>::from_promise(static_cast<P &>(*this));
@@ -248,7 +249,7 @@ private:
 #endif
 };
 
-template <class T = void, class P = Promise<T>>
+template <class T = void, class P = TaskPromise<T>>
 struct [[nodiscard("did you forgot to co_await?")]] Task {
     using promise_type = P;
 
@@ -301,5 +302,16 @@ struct [[nodiscard("did you forgot to co_await?")]] Task {
 private:
     std::coroutine_handle<promise_type> mCoroutine;
 };
+
+template <class F, class... Args>
+    requires(Awaitable<std::invoke_result_t<F, Args...>>)
+inline auto co_bind(F &&f, Args &&...args) {
+    return [](auto f) mutable -> std::invoke_result_t<F, Args...> {
+        std::optional o(std::move(f));
+        decltype(auto) r = (co_await std::move(*o)(), Void());
+        o.reset();
+        co_return typename AwaitableTraits<std::invoke_result_t<F, Args...>>::RetType(std::forward<decltype(r)>(r));
+    }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+}
 
 } // namespace co_async

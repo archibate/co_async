@@ -192,15 +192,4 @@ inline FutureSource<T> co_future(Task<T> task) {
     return future;
 }
 
-template <class F, class... Args>
-    requires(Awaitable<std::invoke_result_t<F, Args...>>)
-inline auto co_bind(F &&f, Args &&...args) {
-    return [](auto f) mutable -> std::invoke_result_t<F, Args...> {
-        std::optional o(std::move(f));
-        decltype(auto) r = (co_await std::move(*o)(), Void());
-        o.reset();
-        co_return typename AwaitableTraits<std::invoke_result_t<F, Args...>>::RetType(std::forward<decltype(r)>(r));
-    }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-}
-
 } // namespace co_async

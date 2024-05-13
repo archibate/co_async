@@ -3,6 +3,7 @@
 #include <co_async/std.hpp>
 #include <co_async/system/uring_loop.hpp>
 #include <co_async/threading/basic_loop.hpp>
+#include <co_async/threading/cancel.hpp>
 #include <co_async/awaiter/task.hpp>
 #if defined(__linux__) && defined(_GLIBCXX_HAS_GTHREADS)
 #include <pthread.h>
@@ -31,9 +32,9 @@ struct SystemLoop {
 
     struct StartOptions {
         std::size_t numWorkers = 0;
-        std::size_t numBatchWait = 1;
-        std::chrono::steady_clock::duration batchTimeout = std::chrono::milliseconds(40);
-        std::chrono::steady_clock::duration batchTimeoutDelta = std::chrono::milliseconds(20);
+        /* std::size_t numBatchWait = 0; */
+        /* std::chrono::steady_clock::duration batchTimeout = std::chrono::milliseconds(40); */
+        /* std::chrono::steady_clock::duration batchTimeoutDelta = std::chrono::milliseconds(20); */
     };
 
     void start() {
@@ -95,16 +96,21 @@ struct SystemLoop {
         }
         if (stealWork())
             goto compute;
-        auto timeout = options.batchTimeout;
+        if (thisBasicLoop.run())
+            goto compute;
         while (!mStop.stop_requested()) [[likely]] {
-            auto ts = durationToKernelTimespec(timeout);
-            if (thisUringLoop.runBatchedWait(options.numBatchWait, &ts))
+            struct __kernel_timespec ts, *tsp;
+            if (auto timeout = thisBasicLoop.runTimers()) {
+                tsp = &(ts = durationToKernelTimespec(*timeout));
+            } else {
+                tsp = nullptr;
+            }
+            if (thisUringLoop.runBatchedWait(1, tsp))
                 goto compute;
             if (thisBasicLoop.run())
                 goto compute;
             if (stealWork())
                 goto compute;
-            timeout += options.batchTimeoutDelta;
         }
     }
 
@@ -208,6 +214,32 @@ inline auto co_synchronize(Task<T, P> task) {
         globalSystemLoop.start();
     return loopEnqueueSynchronized(globalSystemLoop.getAnyWorkingLoop(),
                                    std::move(task));
+}
+
+inline Task<Expected<>, BasicLoop::TimerNode> co_sleep(std::chrono::steady_clock::time_point expires) {
+#if CO_ASYNC_DEBUG
+    if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
+        throw std::logic_error("not a worker thread");
+    }
+#endif
+    return loopWaitTimer(*BasicLoop::tlsInstance, expires);
+}
+
+inline Task<Expected<>, BasicLoop::TimerNode> co_sleep(std::chrono::nanoseconds timeout) {
+    return co_sleep(std::chrono::steady_clock::now() + timeout);
+}
+
+inline Task<Expected<>, BasicLoop::TimerNode> co_sleep(std::chrono::steady_clock::time_point expires, CancelToken cancel) {
+#if CO_ASYNC_DEBUG
+    if (!globalSystemLoop.is_this_thread_worker()) [[unlikely]] {
+        throw std::logic_error("not a worker thread");
+    }
+#endif
+    return loopWaitTimer(*BasicLoop::tlsInstance, expires, cancel);
+}
+
+inline Task<Expected<>, BasicLoop::TimerNode> co_sleep(std::chrono::nanoseconds timeout, CancelToken cancel) {
+    return co_sleep(std::chrono::steady_clock::now() + timeout, cancel);
 }
 
 } // namespace co_async

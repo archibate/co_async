@@ -50,7 +50,7 @@ public:
         co_return;
     }
 
-    Task<Expected<>> push_for(T value, std::chrono::nanoseconds timeout) {
+    Task<Expected<>> push_for(T value, std::chrono::steady_clock::duration timeout) {
         return push_until(std::move(value), std::chrono::steady_clock::now() + timeout);
     }
 
@@ -74,7 +74,7 @@ public:
         }
     }
 
-    Task<Expected<T>> pop(std::chrono::nanoseconds timeout) {
+    Task<Expected<T>> pop(std::chrono::steady_clock::duration timeout) {
         return pop(std::chrono::steady_clock::now() + timeout);
     }
 

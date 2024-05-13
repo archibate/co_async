@@ -180,6 +180,50 @@ struct TaskPromise<Expected<T, E>> : PromiseBase {
         return await_transform(std::move(e));
     }
 
+    template <class E2>
+    ValueAwaiter<void> await_transform(std::vector<Expected<void, E2>> &&e) noexcept {
+        for (std::size_t i = 0; i < e.size(); ++i) {
+            if (e[i].has_error()) [[unlikely]] {
+                if constexpr (std::is_void_v<E>) {
+                    mResult.putValue(Unexpected<E>());
+                } else {
+                    static_assert(std::same_as<E2, E>,
+                                  "co_await'ing Expected's error type mismatch");
+                    mResult.putValue(Unexpected<E>(std::move(e[i].error())));
+                }
+                return ValueAwaiter<void>(mPrevious);
+            }
+        }
+        return ValueAwaiter<void>(std::in_place);
+    }
+
+    template <class T2, class E2>
+    ValueAwaiter<std::vector<T2>> await_transform(std::vector<Expected<T2, E2>> &&e) noexcept {
+        for (std::size_t i = 0; i < e.size(); ++i) {
+            if (e[i].has_error()) [[unlikely]] {
+                if constexpr (std::is_void_v<E>) {
+                    mResult.putValue(Unexpected<E>());
+                } else {
+                    static_assert(std::same_as<E2, E>,
+                                  "co_await'ing Expected's error type mismatch");
+                    mResult.putValue(Unexpected<E>(std::move(e[i].error())));
+                }
+                return ValueAwaiter<std::vector<T2>>(mPrevious);
+            }
+        }
+        std::vector<T2> ret;
+        ret.reserve(e.size());
+        for (std::size_t i = 0; i < e.size(); ++i) {
+            ret.emplace_back(std::move(*e[i]));
+        }
+        return ValueAwaiter<std::vector<T2>>(std::in_place, std::move(ret));
+    }
+
+    template <class T2, class E2>
+    ValueAwaiter<std::vector<T2>> await_transform(std::vector<Expected<T2, E2>> &e) noexcept {
+        return await_transform(std::move(e));
+    }
+
     template <class U>
     U &&await_transform(U &&u) noexcept {
         return std::forward<U>(u);

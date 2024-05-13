@@ -9,50 +9,46 @@ namespace co_async {
 
 struct BasicMutex {
     ConditionList mReady;
-    std::mutex mMutex;
+    std::atomic_bool mLocked;
 
     bool try_lock() {
-        return mMutex.try_lock();
+        bool expect = false;
+        return mLocked.compare_exchange_strong(expect, true, std::memory_order_acquire, std::memory_order_relaxed);
     }
 
     Task<> lock() {
-        while (!mMutex.try_lock()) {
+        while (!try_lock()) {
             co_await mReady.wait();
         }
     }
 
     void unlock() {
-        mMutex.unlock();
+        mLocked.store(false, std::memory_order_release);
         mReady.notify_one();
     }
 };
 
 struct BasicTimedMutex {
     ConditionVariable mReady;
-    std::mutex mMutex;
+    std::atomic_bool mLocked;
 
     bool try_lock() {
-        return mMutex.try_lock();
+        bool expect = false;
+        return mLocked.compare_exchange_strong(expect, true, std::memory_order_acquire, std::memory_order_relaxed);
     }
 
     Task<> lock() {
-        while (!mMutex.try_lock()) {
+        while (!try_lock()) {
             co_await mReady.wait();
         }
     }
 
-    Task<bool> try_lock(std::chrono::nanoseconds timeout) {
-        auto expires = std::chrono::steady_clock::now() + timeout;
-        while (!mMutex.try_lock()) {
-            if (std::chrono::steady_clock::now() > expires || !co_await mReady.wait(expires)) [[unlikely]] {
-                co_return false;
-            }
-        }
-        co_return true;
+    Task<bool> try_lock(std::chrono::steady_clock::duration timeout) {
+        return try_lock(std::chrono::steady_clock::now() + timeout);
     }
 
     Task<bool> try_lock(std::chrono::steady_clock::time_point expires) {
-        while (!mMutex.try_lock()) {
+        while (!try_lock()) {
             if (std::chrono::steady_clock::now() > expires || !co_await mReady.wait(expires)) [[unlikely]] {
                 co_return false;
             }
@@ -61,7 +57,7 @@ struct BasicTimedMutex {
     }
 
     void unlock() {
-        mMutex.unlock();
+        mLocked.store(false, std::memory_order_release);
         mReady.notify_one();
     }
 };
@@ -129,7 +125,7 @@ public:
         co_return Locked(this);
     }
 
-    Task<Locked> try_lock_for(std::chrono::nanoseconds timeout) {
+    Task<Locked> try_lock_for(std::chrono::steady_clock::duration timeout) {
         if (!co_await mMutex.try_lock_for(timeout)) co_return Locked();
         co_return Locked(this);
     }

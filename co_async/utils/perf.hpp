@@ -8,7 +8,7 @@ struct Perf {
 private:
     char const *file;
     int line;
-    std::chrono::high_resolution_clock::time_point t0;
+    std::chrono::steady_clock::time_point t0;
 
     struct PerfTableEntry {
         std::uint64_t duration;
@@ -140,12 +140,12 @@ public:
     Perf(std::source_location loc = std::source_location::current())
         : file(loc.file_name()),
           line(loc.line()),
-          t0(std::chrono::high_resolution_clock::now()) {}
+          t0(std::chrono::steady_clock::now()) {}
 
     Perf(Perf &&) = delete;
 
     ~Perf() {
-        auto t1 = std::chrono::high_resolution_clock::now();
+        auto t1 = std::chrono::steady_clock::now();
         auto duration = (t1 - t0).count();
         perthread.table.emplace_back(duration, file, line);
     }

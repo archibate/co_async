@@ -88,7 +88,7 @@ public:
         return mImpl->doInvoke<Canceller>(std::forward<decltype(awaiter)>(awaiter));
     }
 
-    inline CancelToken get_token() const;
+    inline CancelToken token() const;
 
     CancelSource() = default;
     CancelSource(CancelSource &&) = default;
@@ -120,7 +120,7 @@ public:
     }
 };
 
-inline CancelToken CancelSource::get_token() const {
+inline CancelToken CancelSource::token() const {
     return *this;
 }
 

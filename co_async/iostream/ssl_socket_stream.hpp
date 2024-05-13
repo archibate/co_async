@@ -648,7 +648,7 @@ public:
         co_return;
     }
 
-    void raw_timeout(std::chrono::nanoseconds timeout) override {
+    void raw_timeout(std::chrono::steady_clock::duration timeout) override {
         raw.raw_timeout(timeout);
     }
 
@@ -730,7 +730,7 @@ public:
 inline Task<Expected<OwningStream>>
 ssl_connect(char const *host, int port, SSLClientTrustAnchor const &ta,
             std::span<char const *const> protocols, std::string_view proxy,
-            std::chrono::nanoseconds timeout) {
+            std::chrono::steady_clock::duration timeout) {
     auto conn =
         co_await co_await socket_proxy_connect(host, port, proxy, timeout);
     auto sock = make_stream<SSLClientSocketStream>(std::move(conn), ta, host,

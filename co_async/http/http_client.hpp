@@ -25,12 +25,12 @@ private:
         int mPort;
         std::string mHostName;
         std::string mProxy;
-        std::chrono::nanoseconds mTimeout;
+        std::chrono::steady_clock::duration mTimeout;
 
     public:
         HTTPProtocolFactory(std::string host, int port,
                             std::string_view hostName, std::string proxy,
-                            std::chrono::nanoseconds timeout)
+                            std::chrono::steady_clock::duration timeout)
             : mHost(std::move(host)),
               mPort(port),
               mHostName(hostName),
@@ -200,7 +200,7 @@ private:
 
 public:
     Expected<> doConnect(std::string_view host,
-                         std::chrono::nanoseconds timeout, bool followProxy) {
+                         std::chrono::steady_clock::duration timeout, bool followProxy) {
         terminateLifetime();
         if (host.starts_with("https://")) {
             host.remove_prefix(8);
@@ -272,15 +272,15 @@ private:
         HTTPConnection mHttp;
         std::atomic_bool mInuse{false};
         bool mValid{false};
-        std::chrono::high_resolution_clock::time_point mLastAccess;
+        std::chrono::steady_clock::time_point mLastAccess;
         std::string mHostName;
     };
 
     std::vector<PoolEntry> mPool;
     ConditionList mFreeSlot;
-    std::chrono::nanoseconds mTimeout;
-    std::chrono::nanoseconds mKeepAlive;
-    std::chrono::high_resolution_clock::time_point mLastGC;
+    std::chrono::steady_clock::duration mTimeout;
+    std::chrono::steady_clock::duration mKeepAlive;
+    std::chrono::steady_clock::time_point mLastGC;
     bool mFollowProxy;
 
 public:
@@ -311,7 +311,7 @@ public:
 
         ~HTTPConnectionPtr() {
             if (mEntry) {
-                mEntry->mLastAccess = std::chrono::high_resolution_clock::now();
+                mEntry->mLastAccess = std::chrono::steady_clock::now();
                 mEntry->mInuse.store(false, std::memory_order_release);
                 mPool->mFreeSlot.notify_one();
             }
@@ -328,8 +328,8 @@ public:
 
     explicit HTTPConnectionPool(
         std::size_t poolSize = 256,
-        std::chrono::nanoseconds timeout = std::chrono::seconds(5),
-        std::chrono::nanoseconds keepAlive = std::chrono::minutes(3),
+        std::chrono::steady_clock::duration timeout = std::chrono::seconds(5),
+        std::chrono::steady_clock::duration keepAlive = std::chrono::minutes(3),
         bool followProxy = true)
         : mPool(poolSize),
           mTimeout(timeout),
@@ -351,12 +351,12 @@ private:
                     }
                     entry.mHostName = host;
                     entry.mLastAccess =
-                        std::chrono::high_resolution_clock::now();
+                        std::chrono::steady_clock::now();
                     entry.mValid = true;
                 } else {
                     if (entry.mHostName == host) {
                         entry.mLastAccess =
-                            std::chrono::high_resolution_clock::now();
+                            std::chrono::steady_clock::now();
                     } else {
                         if (exactReuse) {
                             entry.mInuse.store(false,
@@ -370,7 +370,7 @@ private:
                             }
                             entry.mHostName = host;
                             entry.mLastAccess =
-                                std::chrono::high_resolution_clock::now();
+                                std::chrono::steady_clock::now();
                         }
                     }
                 }
@@ -381,7 +381,7 @@ private:
     }
 
     void garbageCollect() /* MT-safe */ {
-        auto now = std::chrono::high_resolution_clock::now();
+        auto now = std::chrono::steady_clock::now();
         if ((now - mLastGC) * 2 > mKeepAlive) {
             for (auto &entry: mPool) {
                 bool expected = false;

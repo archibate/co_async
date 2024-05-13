@@ -36,22 +36,24 @@ public:
     IOContext() = default;
     IOContext(IOContext &&) = delete;
 
-    void start_worker_inplace(std::stop_token stop, PlatformIOContextOptions options) {
+    void startHere(std::stop_token stop, PlatformIOContextOptions options) {
         mStarted = true;
         IOContextGuard guard(this);
         PlatformIOContext::instance->startMain(stop, options);
     }
 
-    void start_worker(PlatformIOContextOptions options = {}) {
-        mThread = std::jthread(
-            [this, options = std::move(options)](std::stop_token stop) { this->start_worker_inplace(stop, options); });
+    void start(PlatformIOContextOptions options = {}) {
         mStarted = true;
+        mThread = std::jthread(
+            [this, options = std::move(options)](std::stop_token stop) {
+                this->startHere(stop, options);
+            });
     }
 
     template <class T, class P>
     void detach(Task<T, P> task) {
         if (!mStarted) [[unlikely]] {
-            start_worker();
+            start();
         }
         auto wrapped = coSpawnStarter(std::move(task));
         auto coroutine = wrapped.get();

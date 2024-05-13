@@ -2,7 +2,6 @@
 
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/threading/future.hpp>
 #include <co_async/system/platform_io.hpp>
 #include <co_async/system/timeout.hpp>
 #include <co_async/utils/rbtree.hpp>
@@ -92,7 +91,7 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> wait(std::chrono::nanoseconds timeout) {
+    Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
         auto res = co_await co_timeout(&ConditionVariable::waitCancellable, timeout, this, std::chrono::steady_clock::now() + timeout);
         if (!res) {
             co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
@@ -132,7 +131,7 @@ private:
     };
 
 public:
-    Awaiter operator co_await() {
+    Awaiter operator co_await() noexcept {
         return Awaiter(this);
     }
 
@@ -159,16 +158,21 @@ public:
 
 struct ConditionOnce {
 private:
-    std::atomic<void *> mWaitingCoroutine{nullptr};
+    std::coroutine_handle<> mWaitingCoroutine{nullptr};
 
+public:
     struct Awaiter {
         bool await_ready() const noexcept {
             return false;
         }
 
         void await_suspend(std::coroutine_handle<> coroutine) const {
-            mThat->mWaitingCoroutine.store(coroutine.address(),
-                                           std::memory_order_release);
+#if CO_ASYNC_DEBUG
+            if (mThat->mWaitingCoroutine) [[unlikely]] {
+                throw std::logic_error("please do not co_await on the same ConditionOnce or Future for multiple times");
+            }
+#endif
+            mThat->mWaitingCoroutine = coroutine;
         }
 
         void await_resume() const noexcept {}
@@ -176,8 +180,7 @@ private:
         ConditionOnce *mThat;
     };
 
-public:
-    Awaiter operator co_await() {
+    Awaiter operator co_await() noexcept {
         return Awaiter(this);
     }
 
@@ -186,10 +189,9 @@ public:
     }
 
     void notify() {
-        auto coroPtr =
-            mWaitingCoroutine.exchange(nullptr, std::memory_order_acq_rel);
-        if (coroPtr) {
-            co_spawn(std::coroutine_handle<>::from_address(coroPtr));
+        if (auto coroutine = mWaitingCoroutine) {
+            mWaitingCoroutine = nullptr;
+            co_spawn(coroutine);
         }
     }
 };

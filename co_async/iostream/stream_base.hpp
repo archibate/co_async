@@ -9,7 +9,7 @@ namespace co_async {
 inline constexpr std::size_t kStreamBufferSize = 8192;
 
 struct Stream {
-    virtual void raw_timeout(std::chrono::nanoseconds timeout) {}
+    virtual void raw_timeout(std::chrono::steady_clock::duration timeout) {}
 
     virtual Task<Expected<>> raw_seek(std::uint64_t pos) {
         co_return Unexpected{std::make_error_code(std::errc::invalid_seek)};
@@ -482,7 +482,7 @@ struct BorrowedStream {
         return trywrite(std::span<char const>((char const *)buffer, len));
     }
 
-    void timeout(std::chrono::nanoseconds timeout) {
+    void timeout(std::chrono::steady_clock::duration timeout) {
         mRaw->raw_timeout(timeout);
     }
 

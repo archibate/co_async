@@ -184,34 +184,29 @@ inline Task<Expected<>> fs_close(FileHandle file) {
 }
 
 inline Task<Expected<>> fs_mkdir(DirFilePath path, mode_t access = 0755) {
-    co_await expectError(
+    co_return expectError(
         co_await uring_mkdirat(path.dir_file(), path.c_str(), access));
-    co_return {};
 }
 
 inline Task<Expected<>> fs_link(DirFilePath oldpath, DirFilePath newpath) {
-    co_await expectError(
+    co_return expectError(
         co_await uring_linkat(oldpath.dir_file(), oldpath.c_str(),
                               newpath.dir_file(), newpath.c_str(), 0));
-    co_return {};
 }
 
 inline Task<Expected<>> fs_symlink(DirFilePath target, DirFilePath linkpath) {
-    co_await expectError(co_await uring_symlinkat(
+    co_return expectError(co_await uring_symlinkat(
         target.c_str(), linkpath.dir_file(), linkpath.c_str()));
-    co_return {};
 }
 
 inline Task<Expected<>> fs_unlink(DirFilePath path) {
-    co_await expectError(
+    co_return expectError(
         co_await uring_unlinkat(path.dir_file(), path.c_str(), 0));
-    co_return {};
 }
 
 inline Task<Expected<>> fs_rmdir(DirFilePath path) {
-    co_await expectError(
+    co_return expectError(
         co_await uring_unlinkat(path.dir_file(), path.c_str(), AT_REMOVEDIR));
-    co_return {};
 }
 
 inline Task<Expected<FileStat>>
@@ -231,26 +226,25 @@ inline Task<Expected<std::uint64_t>> fs_stat_size(DirFilePath path) {
 
 inline Task<Expected<std::size_t>>
 fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = -1) {
-    co_return co_await expectError(
+    co_return expectError(
         co_await uring_read(file.fileNo(), buffer, offset));
 }
 
 inline Task<Expected<std::size_t>> fs_write(FileHandle &file,
                                             std::span<char const> buffer,
                                             std::uint64_t offset = -1) {
-    co_return co_await expectError(
+    co_return expectError(
         co_await uring_write(file.fileNo(), buffer, offset));
 }
 
 inline Task<Expected<>> fs_truncate(FileHandle &file, std::uint64_t size = 0) {
-    co_await expectError(co_await uring_ftruncate(file.fileNo(), size));
-    co_return {};
+    co_return expectError(co_await uring_ftruncate(file.fileNo(), size));
 }
 
 inline Task<Expected<std::size_t>>
 fs_splice(FileHandle &fileIn, FileHandle &fileOut, std::size_t size,
           std::uint64_t offsetIn = -1, std::uint64_t offsetOut = -1) {
-    co_return co_await expectError(co_await uring_splice(
+    co_return expectError(co_await uring_splice(
         fileIn.fileNo(), offsetIn, fileOut.fileNo(), offsetOut, size, 0));
 }
 
@@ -260,7 +254,7 @@ inline Task<Expected<std::size_t>> fs_getdents(FileHandle &dirFile,
     if (res < 0) [[unlikely]] {
         res = -errno;
     }
-    co_return co_await expectError(res);
+    co_return expectError(res);
 }
 
 inline Task<int> fs_nop() {
@@ -268,9 +262,8 @@ inline Task<int> fs_nop() {
 }
 
 inline Task<Expected<>> fs_cancel_fd(FileHandle &file) {
-    co_await expectError(co_await uring_cancel_fd(
+    co_return expectError(co_await uring_cancel_fd(
         file.fileNo(), IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_ALL));
-    co_return {};
 }
 
 } // namespace co_async

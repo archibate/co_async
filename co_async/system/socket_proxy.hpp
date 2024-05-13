@@ -10,7 +10,7 @@ namespace co_async {
 
 inline Task<Expected<SocketHandle>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
-                     std::chrono::nanoseconds timeout) {
+                     std::chrono::steady_clock::duration timeout) {
     if (proxy.starts_with("http://")) {
         proxy.remove_prefix(7);
         std::string proxyHost;

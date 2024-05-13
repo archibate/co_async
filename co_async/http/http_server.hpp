@@ -117,7 +117,7 @@ struct HTTPServer {
     HTTPServer() = default;
     HTTPServer(HTTPServer &&) = delete;
 
-    void timeout(std::chrono::nanoseconds timeout) {
+    void timeout(std::chrono::steady_clock::duration timeout) {
         mTimeout = timeout;
     }
 
@@ -216,7 +216,7 @@ struct HTTPServer {
             if (!co_await io.readRequestHeader())
                 break;
 #if CO_ASYNC_DEBUG
-            std::chrono::high_resolution_clock::time_point t0;
+            std::chrono::steady_clock::time_point t0;
             if (mLogRequests) {
                 std::clog << io.request.method + ' ' + io.request.uri.dump() +
                                  '\n';
@@ -228,13 +228,13 @@ struct HTTPServer {
                     std::clog
                         << "      " + capitalizeHTTPHeader(k) + ": " + v + '\n';
                 }
-                t0 = std::chrono::high_resolution_clock::now();
+                t0 = std::chrono::steady_clock::now();
             }
 #endif
             co_await co_await doHandleRequest(io);
 #if CO_ASYNC_DEBUG
             if (mLogRequests) {
-                auto dt = std::chrono::high_resolution_clock::now() - t0;
+                auto dt = std::chrono::steady_clock::now() - t0;
                 std::clog
                     << io.request.method + ' ' + io.request.uri.dump() + ' ' +
                            std::to_string(io.mResponseSavedForDebug.status) +
@@ -348,7 +348,7 @@ private:
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
     };
-    std::chrono::nanoseconds mTimeout = std::chrono::seconds(5);
+    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(5);
 #if CO_ASYNC_DEBUG
     bool mLogRequests = false;
 #endif

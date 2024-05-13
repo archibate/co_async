@@ -76,7 +76,6 @@ struct GenericIOContext {
                 promise.destructiveErase();
                 enqueueJob(std::coroutine_handle<TimerNode>::from_promise(promise));
             } else {
-                /* debug(), duration_cast<std::chrono::milliseconds>(promise.mExpires - now); */
                 return promise.mExpires - now;
             }
         }

@@ -26,7 +26,7 @@ struct CachedStream : Stream {
         co_return n;
     }
 
-    void raw_timeout(std::chrono::nanoseconds timeout) override {
+    void raw_timeout(std::chrono::steady_clock::duration timeout) override {
         mStream.timeout(timeout);
     }
 

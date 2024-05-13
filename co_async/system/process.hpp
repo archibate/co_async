@@ -16,7 +16,6 @@
 #include <co_async/system/platform_io.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/threading/future_group.hpp>
 #include <co_async/utils/expected.hpp>
 
 namespace co_async {
@@ -55,7 +54,7 @@ inline Task<Expected<WaitProcessResult>> wait_process(Pid pid,
 }
 
 inline Task<Expected<WaitProcessResult>>
-wait_process(Pid pid, std::chrono::nanoseconds timeout, int options = WEXITED) {
+wait_process(Pid pid, std::chrono::steady_clock::duration timeout, int options = WEXITED) {
     siginfo_t info{};
     auto ts = durationToKernelTimespec(timeout);
     auto ret = expectError(

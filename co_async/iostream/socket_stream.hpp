@@ -36,18 +36,18 @@ struct SocketStream : Stream {
 
     explicit SocketStream(SocketHandle file) : mFile(std::move(file)) {}
 
-    void raw_timeout(std::chrono::nanoseconds timeout) override {
+    void raw_timeout(std::chrono::steady_clock::duration timeout) override {
         mTimeout = timeout;
     }
 
 private:
     SocketHandle mFile;
-    std::chrono::nanoseconds mTimeout = std::chrono::seconds(10);
+    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(10);
 };
 
 inline Task<Expected<OwningStream>>
 tcp_connect(char const *host, int port, std::string_view proxy,
-            std::chrono::nanoseconds timeout) {
+            std::chrono::steady_clock::duration timeout) {
     auto handle =
         co_await co_await socket_proxy_connect(host, port, proxy, timeout);
     OwningStream sock = make_stream<SocketStream>(std::move(handle));
@@ -56,7 +56,7 @@ tcp_connect(char const *host, int port, std::string_view proxy,
 }
 
 inline Task<Expected<OwningStream>>
-tcp_accept(SocketListener &listener, std::chrono::nanoseconds timeout) {
+tcp_accept(SocketListener &listener, std::chrono::steady_clock::duration timeout) {
     auto handle = co_await co_await listener_accept(listener);
     OwningStream sock = make_stream<SocketStream>(std::move(handle));
     sock.timeout(timeout);

@@ -300,7 +300,7 @@ protected:
         case HTTPContentEncoding::Deflate: {
             co_await co_await sock.puts("content-encoding: deflate\r\n"sv);
             auto [r, w] = co_await co_await pipe_stream();
-            FutureGroup group;
+            TaskGroup<Expected<>> group;
             group.add([&body, w = std::move(w)]() mutable -> Task<Expected<>> {
                 co_await co_await zlib_deflate(body, w);
                 co_await co_await w.flush();
@@ -319,7 +319,7 @@ protected:
                            .pipe_in(0, pin)
                            .pipe_out(1, pout)
                            .spawn();
-            FutureGroup group;
+            TaskGroup<Expected<>> group;
             group.add(pipe_forward(body, pin));
             group.add(writeChunked(pout));
             co_await co_await group.wait();
@@ -351,7 +351,7 @@ protected:
         } break;
         case HTTPContentEncoding::Deflate: {
             auto [r, w] = co_await co_await pipe_stream();
-            FutureGroup group;
+            TaskGroup<Expected<>> group;
             group.add(pipe_bind(std::move(w),
                                 &std::decay_t<decltype(*this)>::readChunked,
                                 this));
@@ -373,7 +373,7 @@ protected:
                            .pipe_in(0, pin)
                            .pipe_out(1, pout)
                            .spawn();
-            FutureGroup group;
+            TaskGroup<Expected<>> group;
             group.add(
                 [this, pin = std::move(pin)]() mutable -> Task<Expected<>> {
                     co_await co_await readChunked(pin);

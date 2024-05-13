@@ -10,9 +10,8 @@ Task<Expected<>> amain(std::string serveAt, std::string targetHost,
     auto listener = co_await co_await listener_bind(
         SocketAddress::parseCommaSeperated(serveAt, 80));
     HTTPConnectionPool pool;
-    for (std::size_t i = 0; i < globalSystemLoop.num_workers(); ++i) {
-        co_spawn(
-            i, co_bind([&]() -> Task<> {
+    for (std::size_t i = 0; i < IOContextMT::num_workers(); ++i) {
+        IOContextMT::nth_worker(i).spawn(co_bind([&]() -> Task<> {
                 HTTPServer server;
                 server.route(
                     "GET", "/favicon.ico",
@@ -109,7 +108,7 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         targetHost = argv[3];
     }
-    if (auto e = IOContext().join(amain(serveAt, targetHost, headers));
+    if (auto e = IOContextMT().join(amain(serveAt, targetHost, headers));
         e.has_error()) {
         std::cerr << argv[0] << ": " << e.error().message() << '\n';
         return e.error().value();

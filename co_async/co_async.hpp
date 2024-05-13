@@ -16,6 +16,7 @@
 #include <co_async/threading/generic_io.hpp>
 #include <co_async/system/platform_io.hpp>
 #include <co_async/threading/io_context.hpp>
+#include <co_async/threading/io_context_mt.hpp>
 #include <co_async/iostream/file_stream.hpp>
 #include <co_async/iostream/stdio_stream.hpp>
 #include <co_async/iostream/string_stream.hpp>

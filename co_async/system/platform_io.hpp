@@ -4,16 +4,25 @@
 #include <co_async/threading/generic_io.hpp>
 
 #ifdef __linux__
+
 #include <liburing.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sched.h>
 #include <co_async/system/error_handling.hpp>
 #include <co_async/awaiter/task.hpp>
 
 namespace co_async {
+
+inline void schedSetThreadAffinity(int cpu) {
+    cpu_set_t cpu_set;
+    CPU_ZERO(&cpu_set);
+    CPU_SET(cpu, &cpu_set);
+    throwingErrorErrno(sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpu_set));
+}
 
 template <class Rep, class Period>
 struct __kernel_timespec
@@ -36,6 +45,7 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
 struct PlatformIOContextOptions {
     std::optional<std::chrono::steady_clock::duration> maxSleep = std::chrono::milliseconds(5);
     std::chrono::steady_clock::duration maxSleepInc = std::chrono::milliseconds(5);
+    std::optional<std::size_t> threadAffinity = std::nullopt;
 };
 
 struct PlatformIOContext {
@@ -60,6 +70,9 @@ struct PlatformIOContext {
     }
 
     void startMain(std::stop_token stop, PlatformIOContextOptions options) {
+        if (options.threadAffinity) {
+            schedSetThreadAffinity(*options.threadAffinity);
+        }
         auto maxSleep = options.maxSleep;
         while (!stop.stop_requested()) [[likely]] {
             auto duration = GenericIOContext::instance->runDuration();

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <co_async/std.hpp>
-#include <co_async/utils/cacheline.hpp>
+#include <co_async/threading/generic_io.hpp>
 
 #ifdef __linux__
 #include <liburing.h>
@@ -10,7 +10,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <co_async/threading/basic_loop.hpp>
 #include <co_async/system/error_handling.hpp>
 #include <co_async/awaiter/task.hpp>
 
@@ -34,13 +33,15 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
     return durationToKernelTimespec(tp.time_since_epoch());
 }
 
-struct alignas(hardware_destructive_interference_size) UringLoop {
-    inline void runSingle();
-    inline bool runBatchedWait(std::size_t numBatch,
-                               struct __kernel_timespec *timeout);
-    inline bool runBatchedNoWait(std::size_t numBatch);
+struct PlatformIOContextOptions {
+    std::optional<std::chrono::steady_clock::duration> maxSleep = std::chrono::milliseconds(5);
+    std::chrono::steady_clock::duration maxSleepInc = std::chrono::milliseconds(5);
+};
 
-    std::size_t hasAnyEvent() const {
+struct PlatformIOContext {
+    inline bool waitEventsFor(std::size_t numBatch, std::optional<std::chrono::steady_clock::duration> timeout);
+
+    std::size_t pendingEventCount() const {
         return io_uring_cq_ready(&mRing);
     }
 
@@ -48,94 +49,43 @@ struct alignas(hardware_destructive_interference_size) UringLoop {
         return &mRing;
     }
 
-    UringLoop &operator=(UringLoop &&) = delete;
+    PlatformIOContext &operator=(PlatformIOContext &&) = delete;
 
-    explicit UringLoop(std::size_t entries = 512) {
+    explicit PlatformIOContext(std::size_t entries = 512) {
         throwingError(io_uring_queue_init(entries, &mRing, 0));
     }
 
-    ~UringLoop() {
+    ~PlatformIOContext() {
         io_uring_queue_exit(&mRing);
     }
 
-    void doSubmit() {
-        /* throwingError(io_uring_submit(&mRing)); */
-    }
-
-    void reserveFixedBuffers(std::size_t numBufs, std::size_t bufSize = 8192) {
-        if (mFixedBuffers.size() > numBufs)
-            return;
-        mFixedBuffers.resize(numBufs);
-        std::vector<struct iovec> iovecs(numBufs);
-        for (std::size_t i = mFixedBuffers.size(); i < numBufs; ++i) {
-            FixedBuffer &buffer = mFixedBuffers[i];
-            buffer.mBuffer = std::make_unique<char[]>(bufSize);
-            buffer.mBufferSize = bufSize;
-            iovecs[i] = {
-                .iov_base = buffer.mBuffer.get(),
-                .iov_len = buffer.mBufferSize,
-            };
-        }
-        io_uring_register_buffers(&mRing, iovecs.data(), iovecs.size());
-    }
-
-    void reserveFixedFiles(std::size_t numFiles) {
-        if (mFixedFiles.size() >= numFiles)
-            return;
-        mFixedFiles.resize(numFiles);
-        int null_fd = throwingErrorErrno(open("/dev/null", O_RDONLY));
-
-        struct Closer {
-            int fd;
-
-            ~Closer() {
-                close(fd);
+    void startMain(std::stop_token stop, PlatformIOContextOptions options) {
+        auto maxSleep = options.maxSleep;
+        while (!stop.stop_requested()) [[likely]] {
+            auto duration = GenericIOContext::instance->runDuration();
+            if (maxSleep && (!duration || *duration > maxSleep)) {
+                duration = maxSleep;
             }
-        } closer{null_fd};
-
-        for (std::size_t i = mFixedFiles.size(); i < numFiles; ++i) {
-            mFixedFiles[i] = null_fd;
-            null_fd = throwingErrorErrno(dup(null_fd));
+            bool hasEvent = waitEventsFor(1, duration);
+            if (options.maxSleep) {
+                if (hasEvent) {
+                    maxSleep = *options.maxSleep + options.maxSleepInc;
+                } else {
+                    maxSleep = options.maxSleep;
+                }
+            }
         }
-        io_uring_register_files(&mRing, mFixedFiles.data(), mFixedFiles.size());
     }
 
-    std::span<char> lookupFixedBuffer(std::size_t buf_index) {
-#if CO_ASYNC_DEBUG
-        if (buf_index >= mFixedFiles.size()) [[unlikely]] {
-            throw std::out_of_range("UringLoop::lookupFixedFile");
-        }
-#endif
-        FixedBuffer &buffer = mFixedBuffers[buf_index];
-        return {buffer.mBuffer.get(), buffer.mBufferSize};
-    }
-
-    int lookupFixedFile(std::size_t file_index) {
-#if CO_ASYNC_DEBUG
-        if (file_index >= mFixedFiles.size()) [[unlikely]] {
-            throw std::out_of_range("UringLoop::lookupFixedFile");
-        }
-#endif
-        return mFixedFiles[file_index];
-    }
-
-    struct FixedBuffer {
-        std::unique_ptr<char[]> mBuffer;
-        std::size_t mBufferSize;
-    };
-
-    static inline thread_local UringLoop *tlsInstance;
+    static inline thread_local PlatformIOContext *instance;
 
 private:
     io_uring mRing;
-    std::vector<std::coroutine_handle<>> mCoroutinesBatched;
-    std::vector<int> mFixedFiles;
-    std::vector<FixedBuffer> mFixedBuffers;
 };
 
 struct [[nodiscard]] UringOp {
     explicit UringOp(auto const &func) {
-        io_uring *ring = UringLoop::tlsInstance->getRing();
+        io_uring *ring = PlatformIOContext::instance->getRing();
         mSqe = io_uring_get_sqe(ring);
         if (!mSqe) [[unlikely]] {
             throw std::bad_alloc();
@@ -154,7 +104,6 @@ struct [[nodiscard]] UringOp {
         void await_suspend(std::coroutine_handle<> coroutine) {
             mOp->mPrevious = coroutine;
             mOp->mRes = -ENOSYS;
-            UringLoop::tlsInstance->doSubmit();
         }
 
         int await_resume() const noexcept {
@@ -182,7 +131,7 @@ private:
         io_uring_sqe *mSqe;
     };
 
-    friend UringLoop;
+    friend PlatformIOContext;
 };
 
 inline UringOp uring_cancel(UringOp *op, unsigned int flags);
@@ -199,38 +148,15 @@ struct UringOpCanceller {
     }
 };
 
-void UringLoop::runSingle() {
+bool PlatformIOContext::waitEventsFor(std::size_t numBatch, std::optional<std::chrono::steady_clock::duration> timeout) {
     io_uring_cqe *cqe;
-    throwingError(io_uring_submit(&mRing));
-    throwingError(io_uring_wait_cqe(&mRing, &cqe));
-    auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
-    op->mRes = cqe->res;
-    io_uring_cqe_seen(&mRing, cqe);
-    BasicLoop::tlsInstance->enqueue(op->mPrevious);
-}
-
-bool UringLoop::runBatchedNoWait(std::size_t numBatch) {
-    io_uring_cqe *cqe;
-    int res = io_uring_submit_and_wait_timeout(&mRing, &cqe, numBatch, nullptr, nullptr);
-    if (res == -EINTR) [[unlikely]] {
-        return false;
+    struct __kernel_timespec ts, *tsp;
+    if (timeout) {
+        tsp = &(ts = durationToKernelTimespec(*timeout));
+    } else {
+        tsp = nullptr;
     }
-    throwingError(res);
-    unsigned head, numGot = 0;
-    io_uring_for_each_cqe(&mRing, head, cqe) {
-        auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
-        op->mRes = cqe->res;
-        BasicLoop::tlsInstance->enqueue(op->mPrevious);
-        ++numGot;
-    }
-    io_uring_cq_advance(&mRing, numGot);
-    return true;
-}
-
-bool UringLoop::runBatchedWait(std::size_t numBatch,
-                               struct __kernel_timespec *timeout) {
-    io_uring_cqe *cqe;
-    int res = io_uring_submit_and_wait_timeout(&mRing, &cqe, numBatch, timeout, nullptr);
+    int res = io_uring_submit_and_wait_timeout(&mRing, &cqe, numBatch, tsp, nullptr);
     if (res == -EINTR) [[unlikely]] {
         return false;
     }
@@ -242,7 +168,7 @@ bool UringLoop::runBatchedWait(std::size_t numBatch,
     io_uring_for_each_cqe(&mRing, head, cqe) {
         auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
         op->mRes = cqe->res;
-        BasicLoop::tlsInstance->enqueue(op->mPrevious);
+        GenericIOContext::instance->enqueueJob(op->mPrevious);
         ++numGot;
     }
     io_uring_cq_advance(&mRing, numGot);

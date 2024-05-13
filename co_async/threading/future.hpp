@@ -2,7 +2,7 @@
 
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/system/system_loop.hpp>
+#include <co_async/system/platform_io.hpp>
 #include <co_async/awaiter/details/ignore_return_promise.hpp>
 
 namespace co_async {

@@ -51,6 +51,10 @@
 // `#define DEBUG_STEPPING 0` (default) - no step debugging
 // `#define DEBUG_STEPPING 1` - enable step debugging, stops whenever debug output generated, manually press ENTER to continue
 // `#define DEBUG_STEPPING 2` - enable debug output, like 1, but trigger a 'trap' interrupt for debugger to catch instead
+
+// `#define DEBUG_SHOW_TIMESTAMP 0` - do not print timestamp
+// `#define DEBUG_SHOW_TIMESTAMP 1` - enable printing a timestamp for each line of debug output (e.g. "09:57:32")
+// `#define DEBUG_SHOW_TIMESTAMP 2` (default) - printing timestamp relative to program staring time rather than system real time
 //
 // `#define DEBUG_SHOW_LOCATION 1` (default) - show source location mark before each line of the debug output (e.g. "file.cpp:233")
 // `#define DEBUG_SHOW_LOCATION 0` - do not show the location mark
@@ -139,6 +143,10 @@
 #define DEBUG_ENABLE_FILES_MATCH 0
 #endif
 
+#ifndef DEBUG_ERROR_CODE_SHOW_NUMBER
+#define DEBUG_ERROR_CODE_SHOW_NUMBER 0
+#endif
+
 #ifndef DEBUG_PANIC_METHOD
 #define DEBUG_PANIC_METHOD 1
 #endif
@@ -165,6 +173,10 @@
 
 #ifndef DEBUG_SOURCE_LINE_BRACE
 #define DEBUG_SOURCE_LINE_BRACE "[]"
+#endif
+
+#ifndef DEBUG_TIMESTAMP_BRACE
+#define DEBUG_TIMESTAMP_BRACE "[]"
 #endif
 
 #ifndef DEBUG_RANGE_BRACE
@@ -203,6 +215,22 @@
 #define DEBUG_UNKNOWN_TYPE_BRACE "[]"
 #endif
 
+#ifndef DEBUG_ERROR_CODE_BRACE
+#define DEBUG_ERROR_CODE_BRACE "[]"
+#endif
+
+#ifndef DEBUG_ERROR_CODE_INFIX
+#define DEBUG_ERROR_CODE_INFIX ""
+#endif
+
+#ifndef DEBUG_ERROR_CODE_POSTFIX
+#define DEBUG_ERROR_CODE_POSTFIX ": "
+#endif
+
+#ifndef DEBUG_ERROR_CODE_NO_ERROR
+#define DEBUG_ERROR_CODE_NO_ERROR std::generic_category().message(0)
+#endif
+
 #ifndef DEBUG_UNKNOWN_TYPE_AT
 #define DEBUG_UNKNOWN_TYPE_AT '@'
 #endif
@@ -225,6 +253,14 @@
 
 #ifndef DEBUG_HEXADECIMAL_UPPERCASE
 #define DEBUG_HEXADECIMAL_UPPERCASE 0
+#endif
+
+#ifndef DEBUG_SHOW_SOURCE_CODE_LINE
+#define DEBUG_SHOW_SOURCE_CODE_LINE 0
+#endif
+
+#ifndef DEBUG_SHOW_TIMESTAMP
+#define DEBUG_SHOW_TIMESTAMP 2
 #endif
 
 #ifdef DEBUG_CLASS_NAME
@@ -284,6 +320,19 @@
 #else
 #include <cxxabi.h>
 #endif
+#endif
+#if DEBUG_SHOW_TIMESTAMP == 1
+#if defined(__has_include)
+#if defined(__unix__) && __has_include(<sys/time.h>)
+#include <sys/time.h>
+#define DEBUG_HAS_SYS_TIME_H
+#endif
+#endif
+#ifndef DEBUG_HAS_SYS_TIME_H
+#include <chrono>
+#endif
+#elif DEBUG_SHOW_TIMESTAMP == 2
+#include <chrono>
 #endif
 #if defined(__has_include)
 #if __has_include(<variant>)
@@ -578,25 +627,32 @@ private:
                 oss << DEBUG_NULLPTR_STRING;
             }
         } else if constexpr (std::is_same<T, std::errc>::value) {
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+            oss << DEBUG_ERROR_CODE_BRACE[0];
             if (t != std::errc()) {
-                oss << std::system_category().name() << " error "
-                    << static_cast<int>(t) << ": ";
-                oss << std::system_category().message(static_cast<int>(t));
+                oss << std::generic_category().name() << DEBUG_ERROR_CODE_INFIX
+#if DEBUG_ERROR_CODE_SHOW_NUMBER
+                    << ' ' << static_cast<int>(t)
+#endif
+                    << DEBUG_ERROR_CODE_POSTFIX;
+                oss << std::generic_category().message(static_cast<int>(t));
             } else {
-                oss << "no error";
+                oss << DEBUG_ERROR_CODE_NO_ERROR;
             }
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
+            oss << DEBUG_ERROR_CODE_BRACE[1];
         } else if constexpr (std::is_same<T, std::error_code>::value ||
                              std::is_same<T, std::error_condition>::value) {
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+            oss << DEBUG_ERROR_CODE_BRACE[0];
             if (t) {
-                oss << t.category().name() << " error " << t.value() << ": "
-                    << t.message();
+                oss << t.category().name() << DEBUG_ERROR_CODE_INFIX
+#if DEBUG_ERROR_CODE_SHOW_NUMBER
+            << ' ' << t.value()
+#endif
+            << DEBUG_ERROR_CODE_POSTFIX
+            << t.message();
             } else {
-                oss << "no error";
+                oss << DEBUG_ERROR_CODE_NO_ERROR;
             }
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
+            oss << DEBUG_ERROR_CODE_BRACE[1];
         } else if constexpr (requires (T const &t) {
                              debug_same_as<typename T::type &>(t.get());
                              }) {
@@ -1191,29 +1247,36 @@ private:
     template <class V>
     struct debug_format_trait<std::errc, V> {
         void operator()(std::ostream &oss, std::errc const &t) const {
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+            oss << DEBUG_ERROR_CODE_BRACE[0];
             if (t != std::errc()) {
-                oss << std::system_category().name() << " error "
-                    << static_cast<int>(t) << ": ";
-                oss << std::system_category().message(static_cast<int>(t));
+                oss << std::generic_category().name() << DEBUG_ERROR_CODE_INFIX
+#if DEBUG_ERROR_CODE_SHOW_NUMBER
+                    << ' ' << static_cast<int>(t)
+#endif
+                    << DEBUG_ERROR_CODE_POSTFIX;
+                oss << std::generic_category().message(static_cast<int>(t));
             } else {
-                oss << "no error";
+                oss << DEBUG_ERROR_CODE_NO_ERROR;
             }
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
+            oss << DEBUG_ERROR_CODE_BRACE[1];
         }
     };
 
     template <class V>
     struct debug_format_trait<std::error_code, V> {
         void operator()(std::ostream &oss, std::error_code const &t) const {
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+            oss << DEBUG_ERROR_CODE_BRACE[0];
             if (t) {
-                oss << t.category().name() << " error " << t.value() << ": "
-                    << t.message();
+                oss << t.category().name() << DEBUG_ERROR_CODE_INFIX
+#if DEBUG_ERROR_CODE_SHOW_NUMBER
+            << ' ' << t.value()
+#endif
+            << DEBUG_ERROR_CODE_POSTFIX
+            << t.message();
             } else {
-                oss << "no error";
+                oss << DEBUG_ERROR_CODE_NO_ERROR;
             }
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
+            oss << DEBUG_ERROR_CODE_BRACE[1];
         }
     };
 
@@ -1450,7 +1513,51 @@ private:
 
     DEBUG_SOURCE_LOCATION loc;
 
+#if DEBUG_SHOW_TIMESTAMP == 2
+#if __cpp_inline_variables
+    inline static const std::chrono::steady_clock::time_point tp0 = std::chrono::steady_clock::now();
+#endif
+#endif
+
     debug &add_location_marks() {
+#if DEBUG_SHOW_TIMESTAMP == 1
+#ifdef DEBUG_HAS_SYS_TIME_H
+        struct timeval tv;
+        gettimeofday(&tv, nullptr);
+        std::tm now = *std::localtime(&tv.tv_sec);
+        oss << std::put_time(&now, "%H:%M:%S.");
+        auto flags = oss.flags();
+        oss << std::setw(3) << std::setfill('0');
+        oss << (tv.tv_usec / 1000) % 1000;
+        oss.flags(flags);
+#else
+        auto tp = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(tp);
+        std::tm now = *std::gmtime(&t);
+        oss << std::put_time(&now, "%H:%M:%S.");
+        auto flags = oss.flags();
+        oss << std::setw(3) << std::setfill('0');
+        oss << std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch()).count() % 1000;
+        oss.flags(flags);
+#endif
+        oss << ' ';
+#elif DEBUG_SHOW_TIMESTAMP == 2
+#if __cpp_inline_variables
+        auto dur = std::chrono::steady_clock::now() - tp0;
+#else
+        static const std::chrono::steady_clock::time_point tp0 = std::chrono::steady_clock::now();
+        auto dur = std::chrono::steady_clock::now() - tp0;
+#endif
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+        auto flags = oss.flags();
+        oss << std::setw(3) << std::setfill(' ');
+        oss << (elapsed / 1000) % 1000;
+        oss << '.';
+        oss << std::setw(3) << std::setfill('0');
+        oss << elapsed % 1000;
+        oss.flags(flags);
+        oss << ' ';
+#endif
         char const *fn = loc.file_name();
         for (char const *fp = fn; *fp; ++fp) {
             if (*fp == '/') {
@@ -1475,7 +1582,7 @@ private:
             else if (auto file = std::ifstream(loc.file_name()); file.is_open())
                 DEBUG_LIKELY {
                     std::string line;
-                    for (int i = 0; i < loc.line(); ++i) {
+                    for (std::uint32_t i = 0; i < loc.line(); ++i) {
                         if (!std::getline(file, line))
                             DEBUG_UNLIKELY {
                                 line.clear();

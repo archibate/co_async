@@ -9,7 +9,7 @@
 #include <co_async/system/fs.hpp>
 #include <co_async/system/socket.hpp>
 #include <co_async/system/socket_proxy.hpp>
-#include <co_async/system/system_loop.hpp>
+#include <co_async/system/platform_io.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <co_async/iostream/socket_stream.hpp>

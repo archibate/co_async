@@ -2,9 +2,9 @@
 
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/system/timer.hpp>
 #include <co_async/threading/future.hpp>
-#include <co_async/system/system_loop.hpp>
+#include <co_async/system/platform_io.hpp>
+#include <co_async/system/timeout.hpp>
 #include <co_async/utils/rbtree.hpp>
 #include <co_async/utils/concurrent_queue.hpp>
 
@@ -12,7 +12,7 @@ namespace co_async {
 
 struct ConditionVariable {
 private:
-    struct PromiseNode : CustomPromise<void, PromiseNode>, ConcurrentRbTree<PromiseNode>::NodeType {
+    struct PromiseNode : CustomPromise<void, PromiseNode>, RbTree<PromiseNode>::NodeType {
         bool operator<(PromiseNode const &that) const {
             if (!mExpires) {
                 return false;
@@ -24,14 +24,14 @@ private:
         }
 
         void doCancel() {
-            if (this->destructiveErase()) [[likely]]
-                co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
+            this->destructiveErase();
+            co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
         }
 
         std::optional<std::chrono::steady_clock::time_point> mExpires;
     };
 
-    ConcurrentRbTree<PromiseNode> mWaitingList;
+    RbTree<PromiseNode> mWaitingList;
 
     struct Awaiter {
         bool await_ready() const noexcept {
@@ -49,17 +49,16 @@ private:
     };
 
     PromiseNode *popWaiting() {
-        auto locked = mWaitingList.lock();
-        if (locked->empty()) {
+        if (mWaitingList.empty()) {
             return nullptr;
         }
-        auto &promise = locked->front();
-        locked->erase(promise);
+        auto &promise = mWaitingList.front();
+        mWaitingList.erase(promise);
         return &promise;
     }
 
     void pushWaiting(PromiseNode &promise) {
-        mWaitingList.lock()->insert(promise);
+        mWaitingList.insert(promise);
     }
 
     struct Canceller {
@@ -86,7 +85,7 @@ public:
     }
 
     Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
-        auto res = co_await timeout_until(&ConditionVariable::waitCancellable, expires, this, expires);
+        auto res = co_await co_timeout(&ConditionVariable::waitCancellable, expires, this, expires);
         if (!res) {
             co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
         }
@@ -94,7 +93,7 @@ public:
     }
 
     Task<Expected<>> wait(std::chrono::nanoseconds timeout) {
-        auto res = co_await timeout_for(&ConditionVariable::waitCancellable, timeout, this, std::chrono::steady_clock::now() + timeout);
+        auto res = co_await co_timeout(&ConditionVariable::waitCancellable, timeout, this, std::chrono::steady_clock::now() + timeout);
         if (!res) {
             co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
         }
@@ -116,16 +115,15 @@ public:
 
 struct ConditionList {
 private:
-    ConcurrentQueue<std::coroutine_handle<>, (1 << 4) - 1> mWaitingList;
+    std::deque<std::coroutine_handle<>> mWaitingList;
 
     struct Awaiter {
         bool await_ready() const noexcept {
             return false;
         }
 
-        bool await_suspend(std::coroutine_handle<> coroutine) const {
-            if (!mThat->mWaitingList.push(coroutine)) [[unlikely]] return false;
-            return true;
+        void await_suspend(std::coroutine_handle<> coroutine) const {
+            mThat->mWaitingList.push_back(coroutine);
         }
 
         void await_resume() const noexcept {}
@@ -143,14 +141,18 @@ public:
     }
 
     void notify() {
-        while (auto coroutine = mWaitingList.pop()) {
-            co_spawn(*coroutine);
+        while (!mWaitingList.empty()) {
+            auto coroutine = mWaitingList.front();
+            mWaitingList.pop_front();
+            co_spawn(coroutine);
         }
     }
 
     void notify_one() {
-        if (auto coroutine = mWaitingList.pop()) {
-            co_spawn(*coroutine);
+        if (!mWaitingList.empty()) {
+            auto coroutine = mWaitingList.front();
+            mWaitingList.pop_front();
+            co_spawn(coroutine);
         }
     }
 };

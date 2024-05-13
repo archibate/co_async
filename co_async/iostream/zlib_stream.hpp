@@ -4,7 +4,7 @@
 #include <zlib.h>
 #endif
 #include <co_async/std.hpp>
-#include <co_async/system/system_loop.hpp>
+#include <co_async/system/platform_io.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/iostream/stream_base.hpp>

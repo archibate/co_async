@@ -10,7 +10,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/system/system_loop.hpp>
+#include <co_async/system/platform_io.hpp>
 #include <co_async/system/error_handling.hpp>
 
 namespace co_async {

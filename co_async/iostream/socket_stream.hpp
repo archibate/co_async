@@ -1,8 +1,8 @@
 #pragma once
 
 #include <co_async/std.hpp>
-#include <co_async/system/socket.hpp>
-#include <co_async/system/socket_proxy.hpp>
+#include <co_async/platform/socket.hpp>
+#include <co_async/net/socket_proxy.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/iostream/stream_base.hpp>
 

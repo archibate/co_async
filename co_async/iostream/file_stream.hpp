@@ -1,7 +1,7 @@
 #pragma once
 
 #include <co_async/std.hpp>
-#include <co_async/system/fs.hpp>
+#include <co_async/platform/fs.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/iostream/stream_base.hpp>
 

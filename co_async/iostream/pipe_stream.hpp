@@ -1,19 +1,18 @@
 #pragma once
 
 #include <co_async/std.hpp>
-#include <co_async/system/fs.hpp>
-#include <co_async/system/pipe.hpp>
+#include <co_async/platform/fs.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/iostream/stream_base.hpp>
-#include <co_async/threading/condition_variable.hpp>
+#include <co_async/generic/condition_variable.hpp>
 #include <co_async/utils/concurrent_queue.hpp>
 
 namespace co_async {
 
 struct PipeStreamBuffer {
     ConcurrentQueue<std::string, (1 << 8) - 1> mChunks;
-    ConditionList mNonEmpty;
-    ConditionList mNonFull;
+    ConditionVariable mNonEmpty;
+    ConditionVariable mNonFull;
 };
 
 struct IPipeStream : Stream {

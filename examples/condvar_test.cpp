@@ -4,7 +4,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-ConditionVariable cv;
+TimedConditionVariable cv;
 
 Task<Expected<>> func() {
     (void)co_await co_sleep(1000ms);

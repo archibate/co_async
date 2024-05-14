@@ -39,6 +39,7 @@ Task<Expected<>> amain() {
 
     while (true) {
         if (auto income = co_await listener_accept(listener)) {
+            // 如果成功 accept 到输入连接，则开始处理 HTTP 请求
             co_spawn(server.handle_http(std::move(*income)));
         }
     }
@@ -60,7 +61,9 @@ int main() {
 - GCC >= 10
 - Clang >= 16
 
-小彭老师推荐使用 Arch Linux 系统作为开发平台，Ubuntu 20.04 的话需要手动升级一下 gcc 版本：
+小彭老师推荐使用 Arch Linux 系统作为开发平台。
+
+如果是 Ubuntu 20.04 的话需要手动升级一下 gcc 版本：
 
 ```bash
 sudo apt install -y g++-10 libstdc++-10-dev
@@ -129,6 +132,7 @@ cmake -B build -DCO_ASYNC_DEBUG=ON  # 启用调试与安全性检测
 cmake -B build -DCO_ASYNC_EXCEPT=ON  # 启用异常（会影响协程函数性能）
 cmake -B build -DCO_ASYNC_PERF=ON  # 启用性能测试（程序结束时自动打印测时结果）
 cmake -B build -DCO_ASYNC_ZLIB=ON  # 启用压缩支持（需要链接 /usr/lib/libz.so）
+cmake -B build -DCO_ASYNC_STEAL=ON  # 启用任务窃取队列（类似于 TBB）
 ```
 
 ## 性能测试

@@ -849,10 +849,10 @@ struct JsonTraitArithmeticLike {
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
         if (auto p = std::get_if<JsonValue::Integer>(&data)) {
-            value = *p;
+            value = static_cast<T>(*p);
             return true;
         } else if (auto p = std::get_if<JsonValue::Real>(&data)) {
-            value = *p;
+            value = static_cast<T>(*p);
             return true;
         } else {
             ReflectorJsonDecode::typeMismatch("integer or real", data, ec);

@@ -462,7 +462,7 @@ private:
     }
 
     struct debug_special_void {
-        char const (&repr())[5] const {
+        friend char const (&repr(debug_special_void))[5] {
             return "void";
         }
     };
@@ -470,7 +470,7 @@ private:
     template <class T>
     static auto debug_deref_avoid(T const &t)
         -> std::enable_if_t<std::is_void_v<decltype(*t)>, debug_special_void> {
-        return debug_special_void();
+        return {};
     }
 
     static void debug_quotes(std::ostream &oss, DEBUG_STRING_VIEW sv,

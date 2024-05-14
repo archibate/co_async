@@ -1,36 +1,32 @@
 #pragma once
-
 #include <co_async/std.hpp>
-#include <co_async/utils/uninitialized.hpp>
-#include <co_async/awaiter/task.hpp>
-#include <co_async/awaiter/details/return_previous.hpp>
 #include <co_async/awaiter/concepts.hpp>
-
+#include <co_async/awaiter/details/return_previous.hpp>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/utils/uninitialized.hpp>
 namespace co_async {
-
 struct WhenAllCtlBlock {
-    std::size_t mCount;
+    std::size_t             mCount;
     std::coroutine_handle<> mPrevious{};
 #if CO_ASYNC_EXCEPT
     std::exception_ptr mException{};
 #endif
 };
-
 struct WhenAllAwaiter {
     bool await_ready() const noexcept {
         return false;
     }
-
     std::coroutine_handle<>
     await_suspend(std::coroutine_handle<> coroutine) const {
-        if (mTasks.empty())
+        if (mTasks.empty()) {
             return coroutine;
+        }
         mControl.mPrevious = coroutine;
-        for (auto const &t: mTasks.subspan(0, mTasks.size() - 1))
+        for (auto const &t: mTasks.subspan(0, mTasks.size() - 1)) {
             t.get().resume();
+        }
         return mTasks.back().get();
     }
-
     void await_resume() const {
 #if CO_ASYNC_EXCEPT
         if (mControl.mException) [[unlikely]] {
@@ -38,11 +34,9 @@ struct WhenAllAwaiter {
         }
 #endif
     }
-
-    WhenAllCtlBlock &mControl;
+    WhenAllCtlBlock                    &mControl;
     std::span<ReturnPreviousTask const> mTasks;
 };
-
 template <class T>
 ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
                                  Uninitialized<T> &result) {
@@ -62,7 +56,6 @@ ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
     }
     co_return std::noop_coroutine();
 }
-
 template <class = void>
 ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
                                  Uninitialized<void> &) {
@@ -82,7 +75,6 @@ ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
     }
     co_return std::noop_coroutine();
 }
-
 template <std::size_t... Is, class... Ts>
 Task<std::tuple<typename AwaitableTraits<Ts>::AvoidRetType...>>
 whenAllImpl(std::index_sequence<Is...>, Ts &&...ts) {
@@ -94,14 +86,12 @@ whenAllImpl(std::index_sequence<Is...>, Ts &&...ts) {
     co_return std::tuple<typename AwaitableTraits<Ts>::AvoidRetType...>(
         std::get<Is>(result).moveValue()...);
 }
-
 template <Awaitable... Ts>
     requires(sizeof...(Ts) != 0)
 auto when_all(Ts &&...ts) {
     return whenAllImpl(std::make_index_sequence<sizeof...(Ts)>{},
                        std::forward<Ts>(ts)...);
 }
-
 template <Awaitable T, class Alloc = std::allocator<T>>
 Task<std::conditional_t<
     !std::is_void_v<typename AwaitableTraits<T>::RetType>,
@@ -111,7 +101,7 @@ Task<std::conditional_t<
     void>>
 when_all(std::vector<T, Alloc> const &tasks) {
     WhenAllCtlBlock control{tasks.size()};
-    Alloc alloc = tasks.get_allocator();
+    Alloc           alloc = tasks.get_allocator();
     std::vector<Uninitialized<typename AwaitableTraits<T>::RetType>,
                 typename std::allocator_traits<Alloc>::template rebind_alloc<
                     Uninitialized<typename AwaitableTraits<T>::RetType>>>
@@ -140,5 +130,4 @@ when_all(std::vector<T, Alloc> const &tasks) {
         co_return res;
     }
 }
-
 } // namespace co_async

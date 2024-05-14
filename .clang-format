@@ -1,3 +1,4 @@
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
 BasedOnStyle: LLVM
 Standard: c++20
 IndentWidth: 4
@@ -5,13 +6,43 @@ AccessModifierOffset: -4
 ColumnLimit: 80
 DeriveLineEnding: false
 UseCRLF: false
-# LineEnding: LF
-# InsertNewlineAtEOF: true
+LineEnding: LF
+InsertNewlineAtEOF: true
 UseTab: Never
 TabWidth: 4
 IndentCaseLabels: false
 IndentCaseBlocks: false
 IndentRequiresClause: true
+RequiresExpressionIndentation: OuterScope
+IntegerLiteralSeparator:
+  Binary: 4
+  BinaryMinDigits: 6
+  Decimal: 3
+  DecimalMinDigits: 6
+  Hex: 4
+  HexMinDigits: 9
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: true
+  PadOperators: false
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: true
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCaseColons: false
+AlignEscapedNewlines: DontAlign
+RequiresClausePosition: OwnLine
 BreakBeforeConceptDeclarations: Always
 IndentAccessModifiers: false
 AllowShortIfStatementsOnASingleLine: false
@@ -21,17 +52,16 @@ AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortLambdasOnASingleLine: Inline
 AllowAllArgumentsOnNextLine: true
-AlignTrailingComments: true
-AlignEscapedNewlines: true
-AlignConsecutiveDeclarations: false
 AllowShortFunctionsOnASingleLine: Empty
 AlignOperands: true
-LambdaBodyIndentation: Signature
+LambdaBodyIndentation: OuterScope
 NamespaceIndentation: None
 PackConstructorInitializers: CurrentLine
 EmptyLineBeforeAccessModifier: LogicalBlock
+EmptyLineAfterAccessModifier: Never
+IndentWrappedFunctionNames: false
+InsertBraces: true
 FixNamespaceComments: true
-ReflowComments: false
 SpaceAfterTemplateKeyword: true
 SpaceBeforeRangeBasedForLoopColon: false
 SpaceBeforeCtorInitializerColon: true
@@ -52,11 +82,26 @@ BraceWrapping:
   SplitEmptyFunction: false
   BeforeCatch: false
   BeforeElse: false
+IndentPPDirectives: AfterHash
+PPIndentWidth: 1
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+KeepEmptyLinesAtEOF: false
+MaxEmptyLinesToKeep: 0
+SortIncludes: CaseSensitive
+IncludeBlocks: Merge
+SortUsingDeclarations: LexicographicNumeric
 DerivePointerAlignment: false
 PointerAlignment: Right
 ReferenceAlignment: Pointer
-SortIncludes: false
-SortUsingDeclarations: false
 SpaceAroundPointerQualifiers: After
+ReflowComments: true
 QualifierAlignment: Custom
-QualifierOrder: ['static', 'inline', 'constexpr', 'type', 'const', 'volatile']
+QualifierOrder: ['static', 'inline', 'friend', 'constexpr', 'type', 'const', 'volatile']
+IncludeCategories:
+- Regex:           'std\.hpp>$'
+  Priority:        1
+- Regex:           '.*'
+  Priority:        2

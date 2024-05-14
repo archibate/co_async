@@ -1,20 +1,18 @@
-#include <co_async/net/http_protocol.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/utils/simple_map.hpp>
-#include <co_async/utils/expected.hpp>
+#include <co_async/generic/task_group.hpp>
+#include <co_async/iostream/pipe_stream.hpp>
 #include <co_async/iostream/socket_stream.hpp>
 #include <co_async/iostream/string_stream.hpp>
-#include <co_async/iostream/pipe_stream.hpp>
 #include <co_async/iostream/zlib_stream.hpp>
+#include <co_async/net/http_protocol.hpp>
 #include <co_async/net/http_string_utils.hpp>
-#include <co_async/utils/string_utils.hpp>
-#include <co_async/generic/task_group.hpp>
-#include <co_async/platform/process.hpp>
-#include <co_async/platform/fs.hpp>
 #include <co_async/net/uri.hpp>
-
+#include <co_async/platform/fs.hpp>
+#include <co_async/platform/process.hpp>
+#include <co_async/utils/expected.hpp>
+#include <co_async/utils/simple_map.hpp>
+#include <co_async/utils/string_utils.hpp>
 namespace co_async {
-
 HTTPContentEncoding
 HTTPProtocolVersion11::httpContentEncodingByName(std::string_view name) {
     using namespace std::string_view_literals;
@@ -31,7 +29,6 @@ HTTPProtocolVersion11::httpContentEncodingByName(std::string_view name) {
     }
     return HTTPContentEncoding::Identity;
 }
-
 Task<Expected<>> HTTPProtocolVersion11::parseHeaders(HTTPHeaders &headers) {
     using namespace std::string_view_literals;
     std::string line;
@@ -58,7 +55,6 @@ Task<Expected<>> HTTPProtocolVersion11::parseHeaders(HTTPHeaders &headers) {
     headers.erase("connection"sv);
     co_return {};
 }
-
 Task<Expected<>>
 HTTPProtocolVersion11::dumpHeaders(HTTPHeaders const &headers) {
     using namespace std::string_view_literals;
@@ -71,12 +67,11 @@ HTTPProtocolVersion11::dumpHeaders(HTTPHeaders const &headers) {
     co_await co_await sock.puts("connection: keep-alive\r\n"sv);
     co_return {};
 }
-
 void HTTPProtocolVersion11::handleContentEncoding(HTTPHeaders &headers) {
     using namespace std::string_view_literals;
     mContentEncoding = HTTPContentEncoding::Identity;
-    mContentLength = std::nullopt;
-    bool needLength = true;
+    mContentLength   = std::nullopt;
+    bool needLength  = true;
     if (auto transEnc = headers.get("transfer-encoding"sv)) {
         if (*transEnc == "chunked") [[likely]] {
             needLength = false;
@@ -94,7 +89,6 @@ void HTTPProtocolVersion11::handleContentEncoding(HTTPHeaders &headers) {
         headers.erase("content-length"sv);
     }
 }
-
 void HTTPProtocolVersion11::handleAcceptEncoding(HTTPHeaders &headers) {
     using namespace std::string_view_literals;
     if (auto acceptEnc = headers.get("accept-encoding"sv)) {
@@ -104,7 +98,6 @@ void HTTPProtocolVersion11::handleAcceptEncoding(HTTPHeaders &headers) {
         mAcceptEncoding.clear();
     }
 }
-
 void HTTPProtocolVersion11::negotiateAcceptEncoding(
     HTTPHeaders &headers, std::span<HTTPContentEncoding const> encodings) {
     using namespace std::string_view_literals;
@@ -125,13 +118,12 @@ void HTTPProtocolVersion11::negotiateAcceptEncoding(
         }
     }
 }
-
 Task<Expected<>> HTTPProtocolVersion11::writeChunked(BorrowedStream &body) {
     using namespace std::string_view_literals;
     bool hadHeader = false;
     do {
         auto bufSpan = body.peekbuf();
-        auto n = bufSpan.size();
+        auto n       = bufSpan.size();
         /* debug(), std::string_view(bufSpan.data(), n); */
         if (n > 0) {
             char buf[sizeof(n) * 2 + 2] = {}, *ep = buf;
@@ -161,7 +153,6 @@ Task<Expected<>> HTTPProtocolVersion11::writeChunked(BorrowedStream &body) {
     co_await co_await sock.flush();
     co_return {};
 }
-
 Task<Expected<>>
 HTTPProtocolVersion11::writeChunkedString(std::string_view body) {
     using namespace std::string_view_literals;
@@ -175,7 +166,6 @@ HTTPProtocolVersion11::writeChunkedString(std::string_view body) {
     }
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::readChunked(BorrowedStream &body) {
     using namespace std::string_view_literals;
     if (mContentLength) {
@@ -205,7 +195,6 @@ Task<Expected<>> HTTPProtocolVersion11::readChunked(BorrowedStream &body) {
     }
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::readChunkedString(std::string &body) {
     using namespace std::string_view_literals;
     if (mContentLength) {
@@ -227,7 +216,6 @@ Task<Expected<>> HTTPProtocolVersion11::readChunkedString(std::string &body) {
     }
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::writeEncoded(BorrowedStream &body) {
     using namespace std::string_view_literals;
     switch (mContentEncoding) {
@@ -250,7 +238,7 @@ Task<Expected<>> HTTPProtocolVersion11::writeEncoded(BorrowedStream &body) {
     case HTTPContentEncoding::Gzip: {
         co_await co_await sock.puts("content-encoding: gzip\r\n"sv);
         OwningStream pin, pout;
-        auto pid = co_await co_await ProcessBuilder()
+        auto         pid = co_await co_await ProcessBuilder()
                        .path("gzip"sv)
                        .arg("-"sv)
                        .pipe_in(0, pin)
@@ -265,7 +253,6 @@ Task<Expected<>> HTTPProtocolVersion11::writeEncoded(BorrowedStream &body) {
     };
     co_return {};
 }
-
 Task<Expected<>>
 HTTPProtocolVersion11::writeEncodedString(std::string_view body) {
     using namespace std::string_view_literals;
@@ -280,7 +267,6 @@ HTTPProtocolVersion11::writeEncodedString(std::string_view body) {
     };
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::readEncoded(BorrowedStream &body) {
     using namespace std::string_view_literals;
     switch (mContentEncoding) {
@@ -303,7 +289,7 @@ Task<Expected<>> HTTPProtocolVersion11::readEncoded(BorrowedStream &body) {
     } break;
     case HTTPContentEncoding::Gzip: {
         OwningStream pin, pout;
-        auto pid = co_await co_await ProcessBuilder()
+        auto         pid = co_await co_await ProcessBuilder()
                        .path("gzip"sv)
                        .arg("-d"sv)
                        .arg("-"sv)
@@ -324,7 +310,6 @@ Task<Expected<>> HTTPProtocolVersion11::readEncoded(BorrowedStream &body) {
     };
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::readEncodedString(std::string &body) {
     using namespace std::string_view_literals;
     switch (mContentEncoding) {
@@ -338,7 +323,6 @@ Task<Expected<>> HTTPProtocolVersion11::readEncodedString(std::string &body) {
     };
     co_return {};
 }
-
 #if CO_ASYNC_DEBUG
 void HTTPProtocolVersion11::checkPhase(int from, int to) {
     // debug(), from, to, this;
@@ -350,37 +334,31 @@ void HTTPProtocolVersion11::checkPhase(int from, int to) {
     }
     mPhase = to;
 }
-
 #else
 void HTTPProtocolVersion11::checkPhase(int from, int to) {}
 #endif
-
 Task<Expected<>> HTTPProtocolVersion11::writeBodyStream(BorrowedStream &body) {
     checkPhase(1, 0);
     co_await co_await writeEncoded(body);
     co_await co_await sock.flush();
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::writeBody(std::string_view body) {
     checkPhase(1, 0);
     co_await co_await writeEncodedString(body);
     co_await co_await sock.flush();
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::readBodyStream(BorrowedStream &body) {
     checkPhase(-1, 0);
     co_await co_await readEncoded(body);
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::readBody(std::string &body) {
     checkPhase(-1, 0);
     co_await co_await readEncodedString(body);
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::writeRequest(HTTPRequest const &req) {
     checkPhase(0, 1);
     using namespace std::string_view_literals;
@@ -392,19 +370,16 @@ Task<Expected<>> HTTPProtocolVersion11::writeRequest(HTTPRequest const &req) {
     mContentEncoding = HTTPContentEncoding::Identity;
     co_return {};
 }
-
 void HTTPProtocolVersion11::initServerState() {
 #if CO_ASYNC_DEBUG
     mPhase = 0;
 #endif
 }
-
 void HTTPProtocolVersion11::initClientState() {
 #if CO_ASYNC_DEBUG
     mPhase = 0;
 #endif
 }
-
 Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
@@ -417,18 +392,16 @@ Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
         co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
     }
     req.method = line.substr(0, pos);
-    auto pos2 = line.find(' ', pos + 1);
+    auto pos2  = line.find(' ', pos + 1);
     if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
         co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
     }
     req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
-
     co_await co_await parseHeaders(req.headers);
     handleContentEncoding(req.headers);
     handleAcceptEncoding(req.headers);
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::writeResponse(HTTPResponse const &res) {
     checkPhase(0, 1);
     using namespace std::string_view_literals;
@@ -441,7 +414,6 @@ Task<Expected<>> HTTPProtocolVersion11::writeResponse(HTTPResponse const &res) {
     mContentEncoding = HTTPContentEncoding::Identity;
     co_return {};
 }
-
 Task<Expected<>> HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
@@ -462,10 +434,7 @@ Task<Expected<>> HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     handleContentEncoding(res.headers);
     co_return {};
 }
-
 HTTPProtocolVersion11::HTTPProtocolVersion11(OwningStream sock)
     : HTTPProtocol(std::move(sock)) {}
-
 HTTPProtocolVersion11::~HTTPProtocolVersion11() = default;
-
 } // namespace co_async

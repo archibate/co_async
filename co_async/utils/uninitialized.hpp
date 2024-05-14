@@ -1,10 +1,7 @@
 #pragma once
-
 #include <co_async/std.hpp>
 #include <co_async/utils/non_void_helper.hpp>
-
 namespace co_async {
-
 template <class T>
 struct Uninitialized {
     union {
@@ -13,11 +10,8 @@ struct Uninitialized {
 #if CO_ASYNC_DEBUG
     bool mHasValue = false;
 #endif
-
     Uninitialized() noexcept {}
-
     Uninitialized(Uninitialized &&) = delete;
-
     ~Uninitialized() {
 #if CO_ASYNC_DEBUG
         if (mHasValue) [[unlikely]] {
@@ -25,7 +19,6 @@ struct Uninitialized {
         }
 #endif
     }
-
     T const &refValue() const noexcept {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
@@ -35,7 +28,6 @@ struct Uninitialized {
 #endif
         return mValue;
     }
-
     T &refValue() noexcept {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
@@ -45,7 +37,6 @@ struct Uninitialized {
 #endif
         return mValue;
     }
-
     void destroyValue() {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
@@ -58,7 +49,6 @@ struct Uninitialized {
         mHasValue = false;
 #endif
     }
-
     T moveValue() {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
@@ -73,7 +63,6 @@ struct Uninitialized {
 #endif
         return ret;
     }
-
     template <class... Ts>
         requires std::constructible_from<T, Ts...>
     void putValue(Ts &&...args) {
@@ -89,28 +78,20 @@ struct Uninitialized {
 #endif
     }
 };
-
 template <>
 struct Uninitialized<void> {
     void refValue() const noexcept {}
-
     void destroyValue() {}
-
     Void moveValue() {
         return Void();
     }
-
     void putValue(Void) {}
-
     void putValue() {}
 };
-
 template <>
 struct Uninitialized<Void> : Uninitialized<void> {};
-
 template <class T>
 struct Uninitialized<T const> : Uninitialized<T> {};
-
 template <class T>
 struct Uninitialized<T &> : Uninitialized<std::reference_wrapper<T>> {
 private:
@@ -120,16 +101,13 @@ public:
     T const &refValue() const noexcept {
         return Base::refValue().get();
     }
-
     T &refValue() noexcept {
         return Base::refValue().get();
     }
-
     T &moveValue() {
         return Base::moveValue().get();
     }
 };
-
 template <class T>
 struct Uninitialized<T &&> : Uninitialized<T &> {
 private:
@@ -140,5 +118,4 @@ public:
         return std::move(Base::moveValue().get());
     }
 };
-
 } // namespace co_async

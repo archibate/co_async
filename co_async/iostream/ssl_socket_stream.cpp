@@ -1,24 +1,21 @@
+#include <bearssl.h>
+#include <co_async/awaiter/task.hpp>
+#include <co_async/iostream/socket_stream.hpp>
 #include <co_async/iostream/ssl_socket_stream.hpp>
-#include <co_async/utils/pimpl.hpp>
+#include <co_async/iostream/stream_base.hpp>
+#include <co_async/net/socket_proxy.hpp>
 #include <co_async/platform/error_handling.hpp>
 #include <co_async/platform/fs.hpp>
-#include <co_async/platform/socket.hpp>
-#include <co_async/net/socket_proxy.hpp>
 #include <co_async/platform/platform_io.hpp>
-#include <co_async/awaiter/task.hpp>
+#include <co_async/platform/socket.hpp>
+#include <co_async/utils/pimpl.hpp>
 #include <co_async/utils/string_utils.hpp>
-#include <co_async/iostream/socket_stream.hpp>
-#include <co_async/iostream/stream_base.hpp>
-#include <bearssl.h>
-
 namespace co_async {
-
 std::error_category const &bearSSLCategory() {
     static struct : std::error_category {
         virtual char const *name() const noexcept {
             return "BearSSL";
         }
-
         virtual std::string message(int e) const {
             static std::pair<int, char const *> errors[] = {
                 {
@@ -268,26 +265,21 @@ std::error_category const &bearSSLCategory() {
             return to_string(e);
         }
     } instance;
-
     return instance;
 }
-
 namespace {
-
 struct SSLPemDecoder {
 private:
     std::unique_ptr<br_pem_decoder_context> pemDec =
         std::make_unique<br_pem_decoder_context>();
-    std::string result;
-    std::string objName;
+    std::string                                      result;
+    std::string                                      objName;
     std::vector<std::pair<std::string, std::string>> objs;
-
     static void pemResultAppender(void *self, void const *buf,
                                   std::size_t len) {
         reinterpret_cast<SSLPemDecoder *>(self)->onResult(
             {reinterpret_cast<char const *>(buf), len});
     }
-
     void onResult(std::string_view s) {
         result.append(s);
     }
@@ -297,7 +289,6 @@ public:
         br_pem_decoder_init(pemDec.get());
         br_pem_decoder_setdest(pemDec.get(), pemResultAppender, this);
     }
-
     SSLPemDecoder &decode(std::string_view s) {
         while (auto n = br_pem_decoder_push(pemDec.get(), s.data(), s.size())) {
             switch (br_pem_decoder_event(pemDec.get())) {
@@ -318,11 +309,9 @@ public:
         }
         return *this;
     }
-
     std::vector<std::pair<std::string, std::string>> const &objects() const {
         return objs;
     }
-
     static std::vector<std::string> tryDecode(std::string_view s) {
         std::vector<std::string> res;
         if (s.find("-----BEGIN ") != s.npos) {
@@ -337,19 +326,16 @@ public:
         return res;
     }
 };
-
 struct SSLX509Decoder {
 private:
     std::unique_ptr<br_x509_decoder_context> x509Dec =
         std::make_unique<br_x509_decoder_context>();
     std::string result;
-
     static void x509ResultAppender(void *self, void const *buf,
                                    std::size_t len) {
         reinterpret_cast<SSLX509Decoder *>(self)->onResult(
             {reinterpret_cast<char const *>(buf), len});
     }
-
     void onResult(std::string_view s) {
         result.append(s);
     }
@@ -358,12 +344,10 @@ public:
     SSLX509Decoder() {
         br_x509_decoder_init(x509Dec.get(), x509ResultAppender, this);
     }
-
     SSLX509Decoder &decode(std::string_view s) {
         br_x509_decoder_push(x509Dec.get(), s.data(), s.size());
         return *this;
     }
-
     Expected<std::string_view> getDN() const {
         int err = br_x509_decoder_last_error(x509Dec.get());
         if (err != BR_ERR_OK) [[unlikely]] {
@@ -375,14 +359,11 @@ public:
         }
         return result;
     }
-
     br_x509_pkey *getPubKey() const {
         return br_x509_decoder_get_pkey(x509Dec.get());
     }
 };
-
 } // namespace
-
 struct SSLServerPrivateKey {
 private:
     br_skey_decoder_context skeyDec;
@@ -391,33 +372,27 @@ public:
     SSLServerPrivateKey() {
         br_skey_decoder_init(&skeyDec);
     }
-
     SSLServerPrivateKey &decodeBinary(std::string_view s) {
         br_skey_decoder_push(&skeyDec, s.data(), s.size());
         return *this;
     }
-
     SSLServerPrivateKey &set(std::string_view pkey) {
         for (auto &s: SSLPemDecoder::tryDecode(pkey)) {
             decodeBinary(s);
         }
         return *this;
     }
-
     br_ec_private_key const *getEC() const {
         return br_skey_decoder_get_ec(&skeyDec);
     }
-
     br_rsa_private_key const *getRSA() const {
         return br_skey_decoder_get_rsa(&skeyDec);
     }
 };
-
 struct SSLClientTrustAnchor {
 public:
     std::vector<br_x509_trust_anchor> trustAnchors;
-
-    Expected<> addBinary(std::string_view certX506) {
+    Expected<>                        addBinary(std::string_view certX506) {
         auto &x506 = x506Stores.emplace_back();
         x506.decode(certX506);
         auto dn = x506.getDN();
@@ -431,7 +406,6 @@ public:
         });
         return {};
     }
-
     Expected<> add(std::string_view certX506) {
         for (auto &s: SSLPemDecoder::tryDecode(certX506)) {
             if (auto e = addBinary(s); e.has_error()) {
@@ -440,11 +414,9 @@ public:
         }
         return {};
     }
-
     bool empty() const {
         return trustAnchors.empty();
     }
-
     void clear() {
         trustAnchors.clear();
     }
@@ -452,16 +424,13 @@ public:
 private:
     std::vector<SSLX509Decoder> x506Stores;
 };
-
 struct SSLServerCertificate {
 public:
     std::vector<br_x509_certificate> certificates;
-
-    void addBinary(std::string certX506) {
+    void                             addBinary(std::string certX506) {
         auto &cert = strStores.emplace_back(std::move(certX506));
         certificates.push_back({(unsigned char *)cert.data(), cert.size()});
     }
-
     void add(std::string_view certX506) {
         for (auto &s: SSLPemDecoder::tryDecode(certX506)) {
             addBinary(s);
@@ -471,23 +440,19 @@ public:
 private:
     std::vector<std::string> strStores;
 };
-
 struct SSLServerSessionCache {
     std::unique_ptr<unsigned char[]> mLruBuf;
-    br_ssl_session_cache_lru mLru;
-
+    br_ssl_session_cache_lru         mLru;
     explicit SSLServerSessionCache(std::size_t size = 512) {
         mLruBuf = std::make_unique<unsigned char[]>(size);
         br_ssl_session_cache_lru_init(&mLru, mLruBuf.get(), size);
     }
 };
-
 namespace {
-
 struct SSLSocketStream : Stream {
 private:
-    SocketStream raw;
-    br_ssl_engine_context *eng = nullptr;
+    SocketStream            raw;
+    br_ssl_engine_context  *eng = nullptr;
     std::unique_ptr<char[]> iobuf =
         std::make_unique<char[]>(BR_SSL_BUFSIZE_BIDI);
 
@@ -499,7 +464,6 @@ protected:
         eng = eng_;
         br_ssl_engine_set_buffer(eng, iobuf.get(), BR_SSL_BUFSIZE_BIDI, 1);
     }
-
     Task<Expected<>> bearSSLRunUntil(unsigned target) {
         for (;;) {
             unsigned state = br_ssl_engine_current_state(eng);
@@ -516,11 +480,9 @@ protected:
                 }
                 co_return {};
             }
-
             if (state & BR_SSL_SENDREC) {
                 unsigned char *buf;
-                std::size_t len, wlen;
-
+                std::size_t    len, wlen;
                 buf = br_ssl_engine_sendrec_buf(eng, &len);
                 if (auto e = co_await raw.raw_write({(char const *)buf, len});
                     e && *e != 0) {
@@ -529,7 +491,7 @@ protected:
                     if (!eng->shutdown_recv) [[unlikely]] {
                         if (eng->iomode != 0) {
                             eng->iomode = 0;
-                            eng->err = BR_ERR_IO;
+                            eng->err    = BR_ERR_IO;
                         }
                         if (e.has_error()) {
                             co_return Unexpected{e.error()};
@@ -543,26 +505,21 @@ protected:
                         co_return {};
                     }
                 }
-
                 br_ssl_engine_sendrec_ack(eng, wlen);
                 continue;
             }
-
             if (state & target) {
                 co_return {};
             }
-
             if (state & BR_SSL_RECVAPP) [[unlikely]] {
 #if CO_ASYNC_DEBUG
                 std::cerr << "SSL write not ready\n";
 #endif
                 throw std::runtime_error("SSL write not ready");
             }
-
             if (state & BR_SSL_RECVREC) {
                 unsigned char *buf;
-                std::size_t len, rlen;
-
+                std::size_t    len, rlen;
                 buf = br_ssl_engine_recvrec_buf(eng, &len);
                 if (auto e = co_await raw.raw_read({(char *)buf, len});
                     e && *e != 0) {
@@ -571,7 +528,7 @@ protected:
                     if (!eng->shutdown_recv) [[unlikely]] {
                         if (eng->iomode != 0) {
                             eng->iomode = 0;
-                            eng->err = BR_ERR_IO;
+                            eng->err    = BR_ERR_IO;
                         }
                         if (e.has_error()) {
                             co_return Unexpected{e.error()};
@@ -585,7 +542,6 @@ protected:
                         co_return {};
                     }
                 }
-
                 br_ssl_engine_recvrec_ack(eng, rlen);
                 continue;
             }
@@ -598,11 +554,9 @@ public:
         co_await co_await bearSSLRunUntil(BR_SSL_SENDAPP | BR_SSL_RECVAPP);
         co_return {};
     }
-
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         unsigned char *buf;
-        std::size_t alen;
-
+        std::size_t    alen;
         if (buffer.empty()) [[unlikely]] {
             co_return 0;
         }
@@ -615,12 +569,10 @@ public:
         br_ssl_engine_recvapp_ack(eng, alen);
         co_return alen;
     }
-
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         unsigned char *buf;
-        std::size_t alen;
-
+        std::size_t    alen;
         if (buffer.empty()) [[unlikely]] {
             co_return 0;
         }
@@ -633,7 +585,6 @@ public:
         br_ssl_engine_sendapp_ack(eng, alen);
         co_return alen;
     }
-
     Task<> raw_close() override {
 #if CO_ASYNC_DEBUG
         if (br_ssl_engine_current_state(eng) != BR_SSL_CLOSED) [[unlikely]] {
@@ -645,29 +596,26 @@ public:
         eng = nullptr;
         co_return;
     }
-
     void raw_timeout(std::chrono::steady_clock::duration timeout) override {
         raw.raw_timeout(timeout);
     }
-
     ~SSLSocketStream() {
         if (eng) {
             br_ssl_engine_close(eng);
         }
     }
 };
-
 struct SSLServerSocketStream : SSLSocketStream {
 private:
     std::unique_ptr<br_ssl_server_context> ctx =
         std::make_unique<br_ssl_server_context>();
 
 public:
-    explicit SSLServerSocketStream(SocketHandle file,
-                                   SSLServerCertificate const &cert,
-                                   SSLServerPrivateKey const &pkey,
+    explicit SSLServerSocketStream(SocketHandle                 file,
+                                   SSLServerCertificate const  &cert,
+                                   SSLServerPrivateKey const   &pkey,
                                    std::span<char const *const> protocols,
-                                   SSLServerSessionCache *cache = nullptr)
+                                   SSLServerSessionCache       *cache = nullptr)
         : SSLSocketStream(std::move(file)) {
         if (auto rsa = pkey.getRSA()) {
             br_ssl_server_init_full_rsa(ctx.get(), std::data(cert.certificates),
@@ -690,7 +638,6 @@ public:
         br_ssl_server_reset(ctx.get());
     }
 };
-
 struct SSLClientSocketStream : SSLSocketStream {
 private:
     std::unique_ptr<br_ssl_client_context> ctx =
@@ -699,9 +646,9 @@ private:
         std::make_unique<br_x509_minimal_context>();
 
 public:
-    explicit SSLClientSocketStream(SocketHandle file,
-                                   SSLClientTrustAnchor const &ta,
-                                   char const *host,
+    explicit SSLClientSocketStream(SocketHandle                 file,
+                                   SSLClientTrustAnchor const  &ta,
+                                   char const                  *host,
                                    std::span<char const *const> protocols)
         : SSLSocketStream(std::move(file)) {
         br_ssl_client_init_full(ctx.get(), x509Ctx.get(),
@@ -713,11 +660,9 @@ public:
             protocols.size());
         br_ssl_client_reset(ctx.get(), host, 0);
     }
-
     void ssl_reset(char const *host, bool resume) {
         br_ssl_client_reset(ctx.get(), host, resume);
     }
-
     std::string ssl_get_selected_protocol() {
         if (auto p = br_ssl_engine_get_selected_protocol(&ctx->eng)) {
             return p;
@@ -725,9 +670,7 @@ public:
         return {};
     }
 };
-
 } // namespace
-
 Task<Expected<OwningStream>>
 ssl_connect(char const *host, int port, SSLClientTrustAnchor const &ta,
             std::span<char const *const> protocols, std::string_view proxy,
@@ -739,25 +682,19 @@ ssl_connect(char const *host, int port, SSLClientTrustAnchor const &ta,
     sock.timeout(timeout);
     co_return sock;
 }
-
 OwningStream ssl_accept(SocketHandle file, SSLServerCertificate const &cert,
-                        SSLServerPrivateKey const &pkey,
+                        SSLServerPrivateKey const   &pkey,
                         std::span<char const *const> protocols,
-                        SSLServerSessionCache *cache) {
+                        SSLServerSessionCache       *cache) {
     return make_stream<SSLServerSocketStream>(std::move(file), cert, pkey,
                                               protocols, cache);
 }
-
 DefinePImpl(SSLServerPrivateKey);
-
 DefinePImpl(SSLClientTrustAnchor);
 Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add, (std::string content),
                               content);
-
 DefinePImpl(SSLServerCertificate);
 void ForwardPImplMethod(SSLServerCertificate, add, (std::string content),
                         content);
-
 DefinePImpl(SSLServerSessionCache);
-
 } // namespace co_async

@@ -1,5 +1,5 @@
 #pragma once
-
+#include <co_async/std.hpp>
 #include <co_async/awaiter/and_then.hpp>
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/details/current_coroutine.hpp>
@@ -35,10 +35,10 @@
 #include <co_async/iostream/string_stream.hpp>
 #include <co_async/iostream/zlib_stream.hpp>
 #include <co_async/net/http_client.hpp>
-#include <co_async/net/http_string_utils.hpp>
 #include <co_async/net/http_protocol.hpp>
 #include <co_async/net/http_server.hpp>
 #include <co_async/net/http_server_utils.hpp>
+#include <co_async/net/http_string_utils.hpp>
 #include <co_async/net/socket_proxy.hpp>
 #include <co_async/net/uri.hpp>
 #include <co_async/platform/error_handling.hpp>
@@ -49,7 +49,6 @@
 #include <co_async/platform/process.hpp>
 #include <co_async/platform/signal.hpp>
 #include <co_async/platform/socket.hpp>
-#include <co_async/std.hpp>
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/concurrent_queue.hpp>
 #include <co_async/utils/debug.hpp>

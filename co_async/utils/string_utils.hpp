@@ -1,26 +1,20 @@
 #pragma once
-
 #include <co_async/std.hpp>
-
 namespace co_async {
-
 template <class T>
 struct from_string_t;
-
 template <>
 struct from_string_t<std::string> {
     std::string operator()(std::string_view s) const {
         return std::string(s);
     }
 };
-
 template <>
 struct from_string_t<std::string_view> {
     std::string_view operator()(std::string_view s) const {
         return s;
     }
 };
-
 template <std::integral T>
 struct from_string_t<T> {
     std::optional<T> operator()(std::string_view s, int base = 10) const {
@@ -36,11 +30,10 @@ struct from_string_t<T> {
         return result;
     }
 };
-
 template <std::floating_point T>
 struct from_string_t<T> {
     std::optional<T>
-    operator()(std::string_view s,
+    operator()(std::string_view  s,
                std::chars_format fmt = std::chars_format::general) const {
         T result;
         auto [p, ec] =
@@ -54,20 +47,16 @@ struct from_string_t<T> {
         return result;
     }
 };
-
 template <class T>
 inline constexpr from_string_t<T> from_string;
-
 template <class T = void>
 struct to_string_t;
-
 template <>
 struct to_string_t<void> {
     template <class U>
     void operator()(std::string &result, U &&value) const {
         to_string_t<std::decay_t<U>>()(result, std::forward<U>(value));
     }
-
     template <class U>
     std::string operator()(U &&value) const {
         std::string result;
@@ -75,21 +64,18 @@ struct to_string_t<void> {
         return result;
     }
 };
-
 template <>
 struct to_string_t<std::string> {
     void operator()(std::string &result, std::string const &value) const {
         result.assign(value);
     }
 };
-
 template <>
 struct to_string_t<std::string_view> {
     void operator()(std::string &result, std::string_view value) const {
         result.assign(value);
     }
 };
-
 template <std::integral T>
 struct to_string_t<T> {
     void operator()(std::string &result, T value) const {
@@ -102,7 +88,6 @@ struct to_string_t<T> {
         result.resize(p - result.data());
     }
 };
-
 template <std::floating_point T>
 struct to_string_t<T> {
     void operator()(std::string &result, T value) const {
@@ -115,10 +100,8 @@ struct to_string_t<T> {
         result.resize(p - result.data());
     }
 };
-
 inline constexpr to_string_t<> to_string;
-
-inline std::string lower_string(std::string_view s) {
+inline std::string             lower_string(std::string_view s) {
     std::string ret;
     ret.resize(s.size());
     std::transform(s.begin(), s.end(), ret.begin(), [](char c) {
@@ -129,7 +112,6 @@ inline std::string lower_string(std::string_view s) {
     });
     return ret;
 }
-
 inline std::string upper_string(std::string_view s) {
     std::string ret;
     ret.resize(s.size());
@@ -141,7 +123,6 @@ inline std::string upper_string(std::string_view s) {
     });
     return ret;
 }
-
 inline std::string trim_string(std::string_view s,
                                std::string_view trims = {" \t\r\n", 4}) {
     auto pos = s.find_first_not_of(trims);
@@ -151,17 +132,14 @@ inline std::string trim_string(std::string_view s,
     auto end = s.find_last_not_of(trims);
     return std::string(s.substr(pos, end - pos + 1));
 }
-
 template <class Delim>
 struct SplitString {
     SplitString(std::string_view s, Delim delimiter)
         : s(s),
           delimiter(delimiter) {}
-
     struct sentinel {
         explicit sentinel() = default;
     };
-
     struct iterator {
         explicit iterator(std::string_view s, Delim delimiter) noexcept
             : s(s),
@@ -170,33 +148,26 @@ struct SplitString {
               toBeEnded(false) {
             find_next();
         }
-
         std::string_view operator*() const noexcept {
             return current;
         }
-
         std::string_view rest() const noexcept {
             return std::string_view{current.data(), current.size() + s.size()};
         }
-
         iterator &operator++() {
             find_next();
             return *this;
         }
-
         bool operator!=(sentinel) const noexcept {
             return !ended;
         }
-
         bool operator==(sentinel) const noexcept {
             return ended;
         }
-
         friend bool operator==(sentinel const &lhs,
                                iterator const &rhs) noexcept {
             return rhs == lhs;
         }
-
         friend bool operator!=(sentinel const &lhs,
                                iterator const &rhs) noexcept {
             return rhs != lhs;
@@ -206,9 +177,9 @@ struct SplitString {
         void find_next() {
             auto pos = s.find(delimiter);
             if (pos == std::string_view::npos) {
-                current = s;
-                s = {};
-                ended = toBeEnded;
+                current   = s;
+                s         = {};
+                ended     = toBeEnded;
                 toBeEnded = true;
             } else {
                 current = s.substr(0, pos);
@@ -221,22 +192,18 @@ struct SplitString {
                 }
             }
         }
-
         std::string_view s;
-        Delim delimiter;
+        Delim            delimiter;
         std::string_view current;
-        bool ended;
-        bool toBeEnded;
+        bool             ended;
+        bool             toBeEnded;
     };
-
     iterator begin() const noexcept {
         return iterator(s, delimiter);
     }
-
     sentinel end() const noexcept {
         return sentinel();
     }
-
     std::vector<std::string> collect() const {
         std::vector<std::string> result;
         for (auto &&part: *this) {
@@ -244,12 +211,11 @@ struct SplitString {
         }
         return result;
     }
-
     template <std::size_t N>
         requires(N > 0)
     std::array<std::string, N> collect() const {
         std::array<std::string, N> result;
-        std::size_t i = 0;
+        std::size_t                i = 0;
         for (auto it = begin(); it != end(); ++it, ++i) {
             if (i + 1 >= N) {
                 result[i] = std::string(it.rest());
@@ -262,16 +228,13 @@ struct SplitString {
 
 private:
     std::string_view s;
-    Delim delimiter;
+    Delim            delimiter;
 };
-
 inline SplitString<std::string_view> split_string(std::string_view s,
                                                   std::string_view delimiter) {
     return {s, delimiter};
 }
-
 inline SplitString<char> split_string(std::string_view s, char delimiter) {
     return {s, delimiter};
 }
-
 } // namespace co_async

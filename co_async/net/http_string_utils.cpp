@@ -1,21 +1,19 @@
 #include <co_async/net/http_string_utils.hpp>
 #include <co_async/utils/expected.hpp>
-
 namespace co_async {
-
 std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
-    // format chrono time point into HTTP date format, e.g.: Tue, 30 Apr 2024 07:31:38 GMT
-    std::time_t time = std::chrono::system_clock::to_time_t(tp);
-    std::tm tm = *std::gmtime(&time);
+    // format chrono time point into HTTP date format, e.g.: Tue, 30 Apr 2024
+    // 07:31:38 GMT
+    std::time_t        time = std::chrono::system_clock::to_time_t(tp);
+    std::tm            tm   = *std::gmtime(&time);
     std::ostringstream ss;
     ss.imbue(std::locale::classic());
     ss << std::put_time(&tm, "%a, %d %b %Y %H:%M:%S GMT");
     return ss.str();
 }
-
 Expected<std::chrono::system_clock::time_point>
 httpDateToTimePoint(std::string const &date) {
-    std::tm tm = {};
+    std::tm            tm = {};
     std::istringstream ss(date);
     ss.imbue(std::locale::classic());
     ss >> std::get_time(&tm, "%a, %d %b %Y %H:%M:%S GMT");
@@ -25,23 +23,20 @@ httpDateToTimePoint(std::string const &date) {
     std::time_t time = std::mktime(&tm);
     return std::chrono::system_clock::from_time_t(time);
 }
-
 std::string httpDateNow() {
-    std::time_t time = std::time(nullptr);
-    std::tm tm = *std::gmtime(&time);
+    std::time_t        time = std::time(nullptr);
+    std::tm            tm   = *std::gmtime(&time);
     std::ostringstream ss;
     ss.imbue(std::locale::classic());
     ss << std::put_time(&tm, "%a, %d %b %Y %H:%M:%S GMT");
     return ss.str();
 }
-
 std::string_view getHTTPStatusName(int status) {
     using namespace std::string_view_literals;
     static constexpr std::pair<int, std::string_view> lut[] = {
         {100, "Continue"sv},
         {101, "Switching Protocols"sv},
         {102, "Processing"sv},
-
         {200, "OK"sv},
         {201, "Created"sv},
         {202, "Accepted"sv},
@@ -52,7 +47,6 @@ std::string_view getHTTPStatusName(int status) {
         {207, "Multi-Status"sv},
         {208, "Already Reported"sv},
         {226, "IM Used"sv},
-
         {300, "Multiple Choices"sv},
         {301, "Moved Permanently"sv},
         {302, "Found"sv},
@@ -62,7 +56,6 @@ std::string_view getHTTPStatusName(int status) {
         {306, "Switch Proxy"sv},
         {307, "Temporary Redirect"sv},
         {308, "Permanent Redirect"sv},
-
         {400, "Bad Request"sv},
         {401, "Unauthorized"sv},
         {402, "Payment Required"sv},
@@ -91,7 +84,6 @@ std::string_view getHTTPStatusName(int status) {
         {429, "Too Many Requests"sv},
         {431, "Request Header Fields Too Large"sv},
         {451, "Unavailable For Legal Reasons"sv},
-
         {500, "Internal Server Error"sv},
         {501, "Not Implemented"sv},
         {502, "Bad Gateway"sv},
@@ -116,9 +108,8 @@ std::string_view getHTTPStatusName(int status) {
         return it->second;
     }
 }
-
 std::string guessContentTypeByExtension(std::string_view ext,
-                                        char const *defaultType) {
+                                        char const      *defaultType) {
     using namespace std::string_view_literals;
     using namespace std::string_literals;
     if (ext == ".html"sv || ext == ".htm"sv) {
@@ -199,7 +190,6 @@ std::string guessContentTypeByExtension(std::string_view ext,
         return std::string(defaultType);
     }
 }
-
 std::string capitalizeHTTPHeader(std::string_view key) {
     // e.g.: user-agent -> User-Agent
     std::string result(key);
@@ -216,5 +206,4 @@ std::string capitalizeHTTPHeader(std::string_view key) {
     }
     return result;
 }
-
 } // namespace co_async

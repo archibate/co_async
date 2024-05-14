@@ -1,33 +1,30 @@
-#include <co_async/net/http_server_utils.hpp>
 #include <co_async/awaiter/task.hpp>
+#include <co_async/iostream/directory_stream.hpp>
+#include <co_async/iostream/pipe_stream.hpp>
 #include <co_async/net/http_protocol.hpp>
 #include <co_async/net/http_server.hpp>
-#include <co_async/iostream/directory_stream.hpp>
-#include <co_async/platform/socket.hpp>
+#include <co_async/net/http_server_utils.hpp>
+#include <co_async/net/uri.hpp>
 #include <co_async/platform/fs.hpp>
 #include <co_async/platform/pipe.hpp>
-#include <co_async/iostream/pipe_stream.hpp>
-#include <co_async/net/uri.hpp>
-
+#include <co_async/platform/socket.hpp>
 namespace co_async {
-
 std::string HTTPServerUtils::html_encode(std::string_view str) {
     std::string res;
     res.reserve(str.size());
     for (auto c: str) {
         switch (c) {
-        case '&': res.append("&amp;"); break;
-        case '"': res.append("&quot;"); break;
+        case '&':  res.append("&amp;"); break;
+        case '"':  res.append("&quot;"); break;
         case '\'': res.append("&apos;"); break;
-        case '<': res.append("&lt;"); break;
-        case '>': res.append("&gt;"); break;
-        default: res.push_back(c);
+        case '<':  res.append("&lt;"); break;
+        case '>':  res.append("&gt;"); break;
+        default:   res.push_back(c);
         }
     }
     return res;
 }
-
-Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO &io,
+Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO  &io,
                                                    std::string_view body,
                                                    std::string contentType) {
     HTTPResponse res{
@@ -40,19 +37,19 @@ Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO &io,
     co_await co_await io.response(res, body);
     co_return {};
 }
-
 Task<Expected<>>
-HTTPServerUtils::make_response_from_directory(HTTPServer::IO &io,
+HTTPServerUtils::make_response_from_directory(HTTPServer::IO       &io,
                                               std::filesystem::path path) {
-    auto dirPath = path.generic_string();
-    std::string content = "<h1>Files in " + dirPath + ":</h1>";
-    auto parentPath = path.parent_path().generic_string();
+    auto        dirPath    = path.generic_string();
+    std::string content    = "<h1>Files in " + dirPath + ":</h1>";
+    auto        parentPath = path.parent_path().generic_string();
     content +=
         "<a href=\"/" + URI::url_encode_path(parentPath) + "\">..</a><br>";
     auto dir = co_await co_await dir_open(path);
     while (auto entry = co_await dir.next()) {
-        if (*entry == ".." || *entry == ".")
+        if (*entry == ".." || *entry == ".") {
             continue;
+        }
         content +=
             "<a href=\"/" +
             URI::url_encode_path(make_path(dirPath, *entry).generic_string()) +
@@ -61,9 +58,8 @@ HTTPServerUtils::make_response_from_directory(HTTPServer::IO &io,
     co_await co_await make_ok_response(io, content);
     co_return {};
 }
-
 Task<Expected<>> HTTPServerUtils::make_error_response(HTTPServer::IO &io,
-                                                      int status) {
+                                                      int             status) {
     auto error =
         to_string(status) + " " + std::string(getHTTPStatusName(status));
     HTTPResponse res{
@@ -79,7 +75,6 @@ Task<Expected<>> HTTPServerUtils::make_error_response(HTTPServer::IO &io,
                  "</h1></center><hr><center>co_async</center></body></html>");
     co_return {};
 }
-
 Task<Expected<>> HTTPServerUtils::make_response_from_file_or_directory(
     HTTPServer::IO &io, std::filesystem::path path) {
     auto stat = co_await fs_stat(path, STATX_MODE);
@@ -105,9 +100,8 @@ Task<Expected<>> HTTPServerUtils::make_response_from_file_or_directory(
     co_await f.close();
     co_return {};
 }
-
 Task<Expected<>>
-HTTPServerUtils::make_response_from_path(HTTPServer::IO &io,
+HTTPServerUtils::make_response_from_path(HTTPServer::IO       &io,
                                          std::filesystem::path path) {
     auto stat = co_await fs_stat(path, STATX_MODE);
     if (!stat) [[unlikely]] {
@@ -135,9 +129,8 @@ HTTPServerUtils::make_response_from_path(HTTPServer::IO &io,
     co_await f.close();
     co_return {};
 }
-
 Task<Expected<>>
-HTTPServerUtils::make_response_from_file(HTTPServer::IO &io,
+HTTPServerUtils::make_response_from_file(HTTPServer::IO       &io,
                                          std::filesystem::path path) {
     auto stat = co_await fs_stat(path, STATX_MODE);
     if (!stat || stat->is_directory()) [[unlikely]] {
@@ -159,5 +152,4 @@ HTTPServerUtils::make_response_from_file(HTTPServer::IO &io,
     co_await f.close();
     co_return {};
 }
-
 } // namespace co_async

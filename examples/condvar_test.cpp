@@ -6,13 +6,13 @@ using namespace std::literals;
 
 TimedConditionVariable cv;
 
-Task<Expected<>> func() {
+static Task<Expected<>> func() {
     (void)co_await co_sleep(1000ms);
     cv.notify();
     co_return {};
 }
 
-Task<Expected<>> amain() {
+static Task<Expected<>> amain() {
     co_spawn(func());
     auto e = co_await cv.wait(800ms);
     debug(), e;

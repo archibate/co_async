@@ -10,24 +10,29 @@
 #include <co_async/platform/socket.hpp>
 #include <co_async/utils/simple_map.hpp>
 #include <co_async/utils/string_utils.hpp>
+
 namespace co_async {
 struct HTTPServer::Impl {
     struct Route {
-        HTTPHandler              mHandler;
+        HTTPHandler mHandler;
         std::vector<std::string> mMethods;
-        bool                     checkMethod(std::string_view method) const {
+
+        bool checkMethod(std::string_view method) const {
             return std::find(mMethods.begin(), mMethods.end(), method) !=
                    mMethods.end();
         }
     };
+
     struct PrefixRoute {
-        HTTPPrefixHandler        mHandler;
-        HTTPRouteMode            mRouteMode;
+        HTTPPrefixHandler mHandler;
+        HTTPRouteMode mRouteMode;
         std::vector<std::string> mMethods;
-        bool                     checkMethod(std::string_view method) const {
+
+        bool checkMethod(std::string_view method) const {
             return std::find(mMethods.begin(), mMethods.end(), method) !=
                    mMethods.end();
         }
+
         bool checkSuffix(std::string_view &suffix) const {
             switch (mRouteMode) {
             case HTTPRouteMode::SuffixName: {
@@ -72,7 +77,8 @@ struct HTTPServer::Impl {
             }
         }
     };
-    SimpleMap<std::string, Route>                    mRoutes;
+
+    SimpleMap<std::string, Route> mRoutes;
     std::vector<std::pair<std::string, PrefixRoute>> mPrefixRoutes;
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
@@ -110,11 +116,13 @@ struct HTTPServer::Impl {
         co_return {};
     }
 };
+
 Task<Expected<>> HTTPServer::IO::readRequestHeader() {
     mHttp->initServerState();
     co_await co_await mHttp->readRequest(request);
     co_return {};
 }
+
 Task<Expected<std::string>> HTTPServer::IO::request_body() {
 #if CO_ASYNC_DEBUG
     if (mBodyRead) [[unlikely]] {
@@ -126,6 +134,7 @@ Task<Expected<std::string>> HTTPServer::IO::request_body() {
     co_await co_await mHttp->readBody(body);
     co_return body;
 }
+
 Task<Expected<>> HTTPServer::IO::request_body_stream(OwningStream &out) {
 #if CO_ASYNC_DEBUG
     if (mBodyRead) [[unlikely]] {
@@ -136,7 +145,8 @@ Task<Expected<>> HTTPServer::IO::request_body_stream(OwningStream &out) {
     co_await co_await mHttp->readBodyStream(out);
     co_return {};
 }
-Task<Expected<>> HTTPServer::IO::response(HTTPResponse     resp,
+
+Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp,
                                           std::string_view content) {
 #if CO_ASYNC_DEBUG
     mResponseSavedForDebug = resp;
@@ -150,7 +160,8 @@ Task<Expected<>> HTTPServer::IO::response(HTTPResponse     resp,
     mBodyRead = false;
     co_return {};
 }
-Task<Expected<>> HTTPServer::IO::response(HTTPResponse  resp,
+
+Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp,
                                           OwningStream &body) {
 #if CO_ASYNC_DEBUG
     mResponseSavedForDebug = resp;
@@ -164,6 +175,7 @@ Task<Expected<>> HTTPServer::IO::response(HTTPResponse  resp,
     mBodyRead = false;
     co_return {};
 }
+
 void HTTPServer::IO::builtinHeaders(HTTPResponse &res) {
     using namespace std::string_literals;
     res.headers.insert("server"s, "co_async/0.0.1"s);
@@ -171,17 +183,22 @@ void HTTPServer::IO::builtinHeaders(HTTPResponse &res) {
     res.headers.insert("accept-ranges"s, "bytes"s);
     res.headers.insert("date"s, httpDateNow());
 }
+
 HTTPServer::HTTPServer() : mImpl(std::make_unique<Impl>()) {}
+
 HTTPServer::~HTTPServer() = default;
+
 void HTTPServer::timeout(std::chrono::steady_clock::duration timeout) {
     mImpl->mTimeout = timeout;
 }
+
 void HTTPServer::route(std::string_view methods, std::string_view path,
                        HTTPHandler handler) {
     mImpl->mRoutes.insert_or_assign(
         std::string(path),
         {handler, split_string(upper_string(methods), ' ').collect()});
 }
+
 void HTTPServer::route(std::string_view methods, std::string_view prefix,
                        HTTPRouteMode mode, HTTPPrefixHandler handler) {
     auto it = std::lower_bound(mImpl->mPrefixRoutes.begin(),
@@ -194,9 +211,11 @@ void HTTPServer::route(std::string_view methods, std::string_view prefix,
         {std::string(prefix),
          {handler, mode, split_string(upper_string(methods), ' ').collect()}});
 }
+
 void HTTPServer::route(HTTPHandler handler) {
     mImpl->mDefaultRoute = handler;
 }
+
 Task<std::unique_ptr<HTTPProtocol>>
 HTTPServer::prepareHTTPS(SocketHandle handle, SSLServerState &https) const {
     using namespace std::string_view_literals;
@@ -212,12 +231,14 @@ HTTPServer::prepareHTTPS(SocketHandle handle, SSLServerState &https) const {
     /* } */
     co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
 }
+
 Task<std::unique_ptr<HTTPProtocol>>
 HTTPServer::prepareHTTP(SocketHandle handle) const {
     auto sock = make_stream<SocketStream>(std::move(handle));
     sock.timeout(mImpl->mTimeout);
     co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
 }
+
 Task<Expected<>> HTTPServer::handle_http(SocketHandle handle) const {
     /* int h = handle.fileNo(); */
     co_await co_await doHandleConnection(
@@ -225,6 +246,7 @@ Task<Expected<>> HTTPServer::handle_http(SocketHandle handle) const {
     /* co_await UringOp().prep_shutdown(h, SHUT_RDWR); */
     co_return {};
 }
+
 Task<Expected<>>
 HTTPServer::handle_http_redirect_to_https(SocketHandle handle) const {
     using namespace std::string_literals;
@@ -235,10 +257,10 @@ HTTPServer::handle_http_redirect_to_https(SocketHandle handle) const {
             break;
         }
         if (auto host = io.request.headers.get("host")) {
-            auto         location = "https://"s + *host + io.request.uri.dump();
-            HTTPResponse res      = {
-                     .status = 302,
-                     .headers =
+            auto location = "https://"s + *host + io.request.uri.dump();
+            HTTPResponse res = {
+                .status = 302,
+                .headers =
                     {
                         {"location", location},
                         {"content-type", "text/plain"},
@@ -251,7 +273,8 @@ HTTPServer::handle_http_redirect_to_https(SocketHandle handle) const {
     }
     co_return {};
 }
-Task<Expected<>> HTTPServer::handle_https(SocketHandle    handle,
+
+Task<Expected<>> HTTPServer::handle_https(SocketHandle handle,
                                           SSLServerState &https) const {
     /* int h = handle.fileNo(); */
     co_await co_await doHandleConnection(
@@ -259,6 +282,7 @@ Task<Expected<>> HTTPServer::handle_https(SocketHandle    handle,
     /* co_await UringOp().prep_shutdown(h, SHUT_RDWR); */
     co_return {};
 }
+
 Task<Expected<>>
 HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
     while (true) {
@@ -307,6 +331,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
     }
     co_return {};
 }
+
 Task<Expected<>> HTTPServer::make_error_response(IO &io, int status) {
     auto error =
         to_string(status) + " " + std::string(getHTTPStatusName(status));

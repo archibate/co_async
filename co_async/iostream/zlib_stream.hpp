@@ -7,24 +7,25 @@
 #include <co_async/iostream/stream_base.hpp>
 #include <co_async/platform/platform_io.hpp>
 #include <co_async/utils/expected.hpp>
+
 namespace co_async {
 #if CO_ASYNC_ZLIB
 // borrowed from: https://github.com/intel/zlib/blob/master/examples/zpipe.c
 inline Task<Expected<>> zlib_inflate(BorrowedStream &source,
                                      BorrowedStream &dest) {
     /* decompress */
-    int                   ret;
-    unsigned              have;
-    z_stream              strm;
+    int ret;
+    unsigned have;
+    z_stream strm;
     constexpr std::size_t chunk = kStreamBufferSize;
-    unsigned char         in[chunk];
-    unsigned char         out[chunk];
-    strm.zalloc   = Z_NULL;
-    strm.zfree    = Z_NULL;
-    strm.opaque   = Z_NULL;
+    unsigned char in[chunk];
+    unsigned char out[chunk];
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
     strm.avail_in = 0;
-    strm.next_in  = Z_NULL;
-    ret           = inflateInit(&strm);
+    strm.next_in = Z_NULL;
+    ret = inflateInit(&strm);
     if (ret != Z_OK) [[unlikely]] {
 # if CO_ASYNC_DEBUG
         std::cerr << "WARNING: inflateInit returned error\n";
@@ -49,8 +50,8 @@ inline Task<Expected<>> zlib_inflate(BorrowedStream &source,
         strm.next_in = in;
         do {
             strm.avail_out = chunk;
-            strm.next_out  = out;
-            ret            = inflate(&strm, Z_NO_FLUSH);
+            strm.next_out = out;
+            ret = inflate(&strm, Z_NO_FLUSH);
             assert(ret != Z_STREAM_ERROR);
             switch (ret) {
             case Z_NEED_DICT:  [[fallthrough]];
@@ -83,21 +84,22 @@ inline Task<Expected<>> zlib_inflate(BorrowedStream &source,
     }
     co_return {};
 }
+
 inline Task<Expected<>> zlib_deflate(BorrowedStream &source,
                                      BorrowedStream &dest) {
     /* compress */
-    int                   ret, flush;
-    unsigned              have;
-    z_stream              strm;
+    int ret, flush;
+    unsigned have;
+    z_stream strm;
     constexpr std::size_t chunk = kStreamBufferSize;
-    unsigned char         in[chunk];
-    unsigned char         out[chunk];
-    strm.zalloc   = Z_NULL;
-    strm.zfree    = Z_NULL;
-    strm.opaque   = Z_NULL;
+    unsigned char in[chunk];
+    unsigned char out[chunk];
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
     strm.avail_in = 0;
-    strm.next_in  = Z_NULL;
-    ret           = deflateInit(&strm, Z_DEFAULT_COMPRESSION);
+    strm.next_in = Z_NULL;
+    ret = deflateInit(&strm, Z_DEFAULT_COMPRESSION);
     if (ret != Z_OK) [[unlikely]] {
 # if CO_ASYNC_DEBUG
         std::cerr << "WARNING: deflateInit returned error\n";
@@ -124,8 +126,8 @@ inline Task<Expected<>> zlib_deflate(BorrowedStream &source,
         strm.next_in = in;
         do {
             strm.avail_out = chunk;
-            strm.next_out  = out;
-            ret            = deflate(&strm, flush);
+            strm.next_out = out;
+            ret = deflate(&strm, flush);
             assert(ret != Z_STREAM_ERROR);
             have = chunk - strm.avail_out;
             if (auto e = co_await dest.putspan(
@@ -149,6 +151,7 @@ inline Task<Expected<>> zlib_inflate(BorrowedStream &source,
     co_return Unexpected{
         std::make_error_code(std::errc::function_not_supported)};
 }
+
 inline Task<Expected<>> zlib_deflate(BorrowedStream &source,
                                      BorrowedStream &dest) {
     co_return Unexpected{

@@ -2,6 +2,7 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/task.hpp>
+
 namespace co_async {
 template <Awaitable A, Awaitable F>
     requires(!std::is_invocable_v<F> &&

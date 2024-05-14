@@ -4,6 +4,7 @@
 #include <co_async/platform/socket.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/utils/string_utils.hpp>
+
 namespace co_async {
 Task<Expected<SocketHandle>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
@@ -11,7 +12,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
     if (proxy.starts_with("http://")) {
         proxy.remove_prefix(7);
         std::string proxyHost;
-        int         proxyPort = 80;
+        int proxyPort = 80;
         if (auto i = proxy.rfind(':'); i != std::string_view::npos) {
             proxyHost = proxy.substr(0, i);
             if (auto portOpt = from_string<int>(proxy.substr(i + 1)))
@@ -23,12 +24,12 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         }
         auto sock =
             co_await co_await socket_connect({proxyHost.c_str(), proxyPort});
-        auto        hostName = std::string(host) + ":" + to_string(port);
-        std::string header   = "CONNECT " + hostName +
+        auto hostName = std::string(host) + ":" + to_string(port);
+        std::string header = "CONNECT " + hostName +
                              " HTTP/1.1\r\nHost: " + hostName +
                              "\r\nProxy-Connection: Keep-Alive\r\n\r\n";
         std::span<char const> buf = header;
-        std::size_t           n   = 0;
+        std::size_t n = 0;
         do {
             n = co_await co_await socket_write(sock, buf, timeout);
             if (!n) [[unlikely]] {
@@ -39,7 +40,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         } while (buf.size() > 0);
         using namespace std::string_view_literals;
         auto desiredResponse = "HTTP/1.1 200 Connection established\r\n\r\n"sv;
-        std::string     response(39, '\0');
+        std::string response(39, '\0');
         std::span<char> outbuf = response;
         do {
             n = co_await co_await socket_read(sock, outbuf, timeout);

@@ -1,6 +1,7 @@
 #pragma once
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
+
 namespace co_async {
 template <class T = void, class P = TaskPromise<T>>
 struct TaskOwnedAwaiter : Task<T, P>::Awaiter {

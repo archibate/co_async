@@ -11,36 +11,41 @@
 #include <co_async/platform/socket.hpp>
 #include <co_async/utils/simple_map.hpp>
 #include <co_async/utils/string_utils.hpp>
+
 namespace co_async {
 enum class HTTPRouteMode {
     SuffixAny = 0, // "/a-9\\*g./.."
     SuffixName,    // "/a"
     SuffixPath,    // "/a/b/c"
 };
+
 struct SSLServerState {
-    PImpl<SSLServerCertificate>  cert;
-    PImpl<SSLServerPrivateKey>   skey;
+    PImpl<SSLServerCertificate> cert;
+    PImpl<SSLServerPrivateKey> skey;
     PImpl<SSLServerSessionCache> cache;
 };
+
 struct HTTPServer {
     struct IO {
         explicit IO(HTTPProtocol *http) noexcept : mHttp(http) {}
-        HTTPRequest                 request;
-        Task<Expected<>>            readRequestHeader();
+
+        HTTPRequest request;
+        Task<Expected<>> readRequestHeader();
         Task<Expected<std::string>> request_body();
-        Task<Expected<>>            request_body_stream(OwningStream &out);
+        Task<Expected<>> request_body_stream(OwningStream &out);
         Task<Expected<>> response(HTTPResponse resp, std::string_view content);
         Task<Expected<>> response(HTTPResponse resp, OwningStream &body);
 
     private:
         HTTPProtocol *mHttp;
-        bool          mBodyRead = false;
+        bool mBodyRead = false;
 #if CO_ASYNC_DEBUG
         HTTPResponse mResponseSavedForDebug{};
         friend HTTPServer;
 #endif
         void builtinHeaders(HTTPResponse &res);
     };
+
     using HTTPHandler = std::function<Task<Expected<>>(IO &)>;
     using HTTPPrefixHandler =
         std::function<Task<Expected<>>(IO &, std::string_view)>;
@@ -56,9 +61,9 @@ struct HTTPServer {
     Task<std::unique_ptr<HTTPProtocol>>
     prepareHTTPS(SocketHandle handle, SSLServerState &https) const;
     Task<std::unique_ptr<HTTPProtocol>> prepareHTTP(SocketHandle handle) const;
-    Task<Expected<>>                    handle_http(SocketHandle handle) const;
+    Task<Expected<>> handle_http(SocketHandle handle) const;
     Task<Expected<>> handle_http_redirect_to_https(SocketHandle handle) const;
-    Task<Expected<>> handle_https(SocketHandle    handle,
+    Task<Expected<>> handle_https(SocketHandle handle,
                                   SSLServerState &https) const;
     Task<Expected<>>
     doHandleConnection(std::unique_ptr<HTTPProtocol> http) const;

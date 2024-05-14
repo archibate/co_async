@@ -13,15 +13,16 @@
 #include <co_async/platform/fs.hpp>
 #include <co_async/platform/socket.hpp>
 #include <co_async/utils/string_utils.hpp>
+
 namespace co_async {
 struct HTTPConnection {
 private:
     struct HTTPProtocolFactory {
     protected:
-        std::string                         mHost;
-        int                                 mPort;
-        std::string                         mHostName;
-        std::string                         mProxy;
+        std::string mHost;
+        int mPort;
+        std::string mHostName;
+        std::string mProxy;
         std::chrono::steady_clock::duration mTimeout;
 
     public:
@@ -33,28 +34,33 @@ private:
               mHostName(hostName),
               mProxy(std::move(proxy)),
               mTimeout(timeout) {}
+
         virtual Task<Expected<std::unique_ptr<HTTPProtocol>>>
-        createConnection()             = 0;
+        createConnection() = 0;
         virtual ~HTTPProtocolFactory() = default;
+
         std::string const &hostName() const noexcept {
             return mHostName;
         }
     };
+
     struct HTTPProtocolFactoryHTTPS : HTTPProtocolFactory {
         using HTTPProtocolFactory::HTTPProtocolFactory;
+
         static PImpl<SSLClientTrustAnchor> &trustAnchors() {
             static PImpl<SSLClientTrustAnchor> instance;
             return instance;
         }
+
         Task<Expected<std::unique_ptr<HTTPProtocol>>>
         createConnection() override {
-            static CallOnce          taInitializeOnce;
+            static CallOnce taInitializeOnce;
             static char const *const protocols[] = {
                 /* "h2", */
                 "http/1.1",
             };
             if (auto locked = co_await taInitializeOnce.call_once()) {
-                auto path    = make_path("/etc/ssl/certs/ca-certificates.crt");
+                auto path = make_path("/etc/ssl/certs/ca-certificates.crt");
                 auto content = co_await co_await file_read(path);
                 co_await trustAnchors().add(content);
                 locked.set_ready();
@@ -65,8 +71,10 @@ private:
             co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
         }
     };
+
     struct HTTPProtocolFactoryHTTP : HTTPProtocolFactory {
         using HTTPProtocolFactory::HTTPProtocolFactory;
+
         Task<Expected<std::unique_ptr<HTTPProtocol>>>
         createConnection() override {
             auto sock = co_await co_await tcp_connect(mHost.c_str(), mPort,
@@ -74,25 +82,31 @@ private:
             co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
         }
     };
-    std::unique_ptr<HTTPProtocol>        mHttp;
+
+    std::unique_ptr<HTTPProtocol> mHttp;
     std::unique_ptr<HTTPProtocolFactory> mHttpFactory;
     friend struct HTTPConnectionPool;
+
     void terminateLifetime() {
-        mHttp        = nullptr;
+        mHttp = nullptr;
         mHttpFactory = nullptr;
     }
+
     struct RAIIPointerResetter {
         std::unique_ptr<HTTPProtocol> *mHttp;
         RAIIPointerResetter &operator=(RAIIPointerResetter &&) = delete;
-        void                 neverMind() {
+
+        void neverMind() {
             mHttp = nullptr;
         }
+
         ~RAIIPointerResetter() {
             if (mHttp) [[unlikely]] {
                 *mHttp = nullptr;
             }
         }
     };
+
     void builtinHeaders(HTTPRequest &req) {
         using namespace std::string_literals;
         req.headers.insert("host"s, mHttpFactory->hostName());
@@ -104,8 +118,9 @@ private:
         req.headers.insert("accept-encoding"s, "gzip"s);
 #endif
     }
+
     Task<Expected<>> tryWriteRequestAndBody(HTTPRequest const &request,
-                                            std::string_view   body) {
+                                            std::string_view body) {
         std::error_code ec;
         for (std::size_t n = 0; n < 3; ++n) {
             if (!mHttp) {
@@ -127,6 +142,7 @@ private:
         }
         co_return Unexpected{ec};
     }
+
     /* Task<Expected<>> */
     /* tryWriteRequestAndBodyStream(HTTPRequest const &request, */
     /*                              BorrowedStream &bodyStream) { */
@@ -158,7 +174,7 @@ private:
 private:
     static std::tuple<std::string, int>
     parseHostAndPort(std::string_view hostName, int defaultPort) {
-        int  port = defaultPort;
+        int port = defaultPort;
         auto host = hostName;
         if (auto i = host.rfind(':'); i != host.npos) {
             if (auto portOpt = from_string<int>(host.substr(i + 1)))
@@ -171,9 +187,9 @@ private:
     }
 
 public:
-    Expected<> doConnect(std::string_view                    host,
+    Expected<> doConnect(std::string_view host,
                          std::chrono::steady_clock::duration timeout,
-                         bool                                followProxy) {
+                         bool followProxy) {
         terminateLifetime();
         if (host.starts_with("https://")) {
             host.remove_prefix(8);
@@ -183,7 +199,7 @@ public:
                     proxy = p;
                 }
             }
-            auto [h, p]  = parseHostAndPort(host, 443);
+            auto [h, p] = parseHostAndPort(host, 443);
             mHttpFactory = std::make_unique<HTTPProtocolFactoryHTTPS>(
                 std::move(h), p, host, std::move(proxy), timeout);
             return {};
@@ -195,7 +211,7 @@ public:
                     proxy = p;
                 }
             }
-            auto [h, p]  = parseHostAndPort(host, 80);
+            auto [h, p] = parseHostAndPort(host, 80);
             mHttpFactory = std::make_unique<HTTPProtocolFactoryHTTP>(
                 std::move(h), p, host, std::move(proxy), timeout);
             return {};
@@ -204,26 +220,29 @@ public:
                 std::make_error_code(std::errc::protocol_not_supported)};
         }
     }
+
     HTTPConnection() = default;
+
     Task<Expected<std::tuple<HTTPResponse, std::string>>>
     request(HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
         HTTPResponse res;
-        std::string  body;
+        std::string body;
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBody(body);
         reset.neverMind();
         co_return std::tuple{std::move(res), std::move(body)};
     }
+
     Task<Expected<std::tuple<HTTPResponse, OwningStream>>>
     requestStreamed(HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
         HTTPResponse res;
-        std::string  body;
+        std::string body;
         co_await co_await mHttp->readResponse(res);
         auto [r, w] = co_await co_await pipe_stream();
         co_spawn(pipe_bind(std::move(w),
@@ -235,43 +254,50 @@ public:
         co_return std::tuple{res, std::move(r)};
     }
 };
+
 struct HTTPConnectionPool {
 private:
     struct alignas(hardware_destructive_interference_size) PoolEntry {
-        HTTPConnection                        mHttp;
-        std::atomic_bool                      mInuse{false};
-        bool                                  mValid{false};
+        HTTPConnection mHttp;
+        std::atomic_bool mInuse{false};
+        bool mValid{false};
         std::chrono::steady_clock::time_point mLastAccess;
-        std::string                           mHostName;
+        std::string mHostName;
     };
-    std::vector<PoolEntry>                mPool;
-    ConditionVariable                     mFreeSlot;
-    std::chrono::steady_clock::duration   mTimeout;
-    std::chrono::steady_clock::duration   mKeepAlive;
+
+    std::vector<PoolEntry> mPool;
+    ConditionVariable mFreeSlot;
+    std::chrono::steady_clock::duration mTimeout;
+    std::chrono::steady_clock::duration mKeepAlive;
     std::chrono::steady_clock::time_point mLastGC;
-    bool                                  mFollowProxy;
+    bool mFollowProxy;
 
 public:
     struct HTTPConnectionPtr {
     private:
-        PoolEntry          *mEntry;
+        PoolEntry *mEntry;
         HTTPConnectionPool *mPool;
-        explicit HTTPConnectionPtr(PoolEntry          *entry,
+
+        explicit HTTPConnectionPtr(PoolEntry *entry,
                                    HTTPConnectionPool *pool) noexcept
             : mEntry(entry),
               mPool(pool) {}
+
         friend HTTPConnectionPool;
 
     public:
         HTTPConnectionPtr() noexcept : mEntry(nullptr) {}
+
         HTTPConnectionPtr(HTTPConnectionPtr &&that) noexcept
             : mEntry(std::exchange(that.mEntry, nullptr)),
               mPool(std::exchange(that.mPool, nullptr)) {}
+
         HTTPConnectionPtr &operator=(HTTPConnectionPtr &&that) noexcept {
             std::swap(mEntry, that.mEntry);
             std::swap(mPool, that.mPool);
             return *this;
         }
+
         ~HTTPConnectionPtr() {
             if (mEntry) {
                 mEntry->mLastAccess = std::chrono::steady_clock::now();
@@ -279,18 +305,21 @@ public:
                 mPool->mFreeSlot.notify_one();
             }
         }
+
         HTTPConnection &operator*() const noexcept {
             return mEntry->mHttp;
         }
+
         HTTPConnection *operator->() const noexcept {
             return &mEntry->mHttp;
         }
     };
+
     explicit HTTPConnectionPool(
-        std::size_t                         poolSize  = 256,
-        std::chrono::steady_clock::duration timeout   = std::chrono::seconds(5),
+        std::size_t poolSize = 256,
+        std::chrono::steady_clock::duration timeout = std::chrono::seconds(5),
         std::chrono::steady_clock::duration keepAlive = std::chrono::minutes(3),
-        bool                                followProxy = true)
+        bool followProxy = true)
         : mPool(poolSize),
           mTimeout(timeout),
           mKeepAlive(keepAlive),
@@ -309,9 +338,9 @@ private:
                         e.has_error()) [[unlikely]] {
                         return Unexpected{e.error()};
                     }
-                    entry.mHostName   = host;
+                    entry.mHostName = host;
                     entry.mLastAccess = std::chrono::steady_clock::now();
-                    entry.mValid      = true;
+                    entry.mValid = true;
                 } else {
                     if (entry.mHostName == host) {
                         entry.mLastAccess = std::chrono::steady_clock::now();
@@ -337,6 +366,7 @@ private:
         }
         return std::nullopt;
     }
+
     void garbageCollect() /* MT-safe */ {
         auto now = std::chrono::steady_clock::now();
         if ((now - mLastGC) * 2 > mKeepAlive) {

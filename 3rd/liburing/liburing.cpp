@@ -1,6 +1,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wall"
 #pragma GCC diagnostic ignored "-Wextra"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
 #ifndef IOURINGEXTERN
 #ifdef __cplusplus
@@ -2030,7 +2032,7 @@ static int io_uring_alloc_huge(unsigned entries, struct io_uring_params *p,
 	return (int) mem_used;
 }
 
-int __io_uring_queue_init_params(unsigned entries, struct io_uring *ring,
+IOURINGEXTERN int __io_uring_queue_init_params(unsigned entries, struct io_uring *ring,
 				 struct io_uring_params *p, void *buf,
 				 size_t buf_size)
 {

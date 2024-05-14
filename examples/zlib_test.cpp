@@ -4,7 +4,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<Expected<>> amain(bool decomp) {
+static Task<Expected<>> amain(bool decomp) {
     co_await co_await (decomp ? zlib_inflate : zlib_deflate)(stdio(), stdio());
     co_return {};
 }

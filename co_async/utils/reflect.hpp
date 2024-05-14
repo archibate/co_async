@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+
 namespace reflect {
 #if __cpp_constexpr >= 201'703L
 # define REFLECT__CONSTEXPR17 constexpr
@@ -160,38 +161,41 @@ namespace reflect {
 # define REFLECT_GLOBAL(T, ...) \
      template <class ReflectorT> \
      REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector, \
-                                                T          &object){ \
+                                                T &object){ \
          REFLECT__PP_FOREACH(REFLECT__GLOBAL_ON_EACH, \
                              __VA_ARGS__)} REFLECT_GLOBAL__EXTRA(__VA_ARGS__)
 # define REFLECT_GLOBAL_TEMPLATED(T, Tmpls, TmplsClassed, ...) \
      template <class ReflectorT, REFLECT__PP_UNWRAP_BRACE(TmplsClassed)> \
      REFLECT__CONSTEXPR17 void REFLECT__MEMBERS( \
-         ReflectorT                         &reflector, \
+         ReflectorT &reflector, \
          T<REFLECT__PP_UNWRAP_BRACE(Tmpls)> &object){REFLECT__PP_FOREACH( \
          REFLECT__GLOBAL_ON_EACH, \
          __VA_ARGS__)} REFLECT_GLOBAL_TEMPLATED__EXTRA(__VA_ARGS__)
 #endif
 struct JsonValue {
-    using Ptr     = std::unique_ptr<JsonValue>;
-    using Null    = std::monostate;
-    using String  = std::string;
-    using Dict    = std::map<std::string, JsonValue::Ptr>;
-    using Array   = std::vector<JsonValue::Ptr>;
+    using Ptr = std::unique_ptr<JsonValue>;
+    using Null = std::monostate;
+    using String = std::string;
+    using Dict = std::map<std::string, JsonValue::Ptr>;
+    using Array = std::vector<JsonValue::Ptr>;
     using Integer = std::int64_t;
-    using Real    = double;
+    using Real = double;
     using Boolean = bool;
     using Union =
         std::variant<Null, String, Dict, Array, Integer, Real, Boolean>;
     Union inner;
+
     template <class T>
     explicit JsonValue(std::in_place_type_t<T>, T &&value)
         : inner(std::in_place_type<T>, std::move(value)) {}
+
     template <class T>
     static Ptr make(T value) {
         return std::make_unique<JsonValue>(std::in_place_type<T>,
                                            std::move(value));
     }
 };
+
 template <class T>
 struct NoDefault {
 private:
@@ -207,36 +211,46 @@ public:
     /* } */
     NoDefault(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>)
         : value(std::move(value)) {}
+
     NoDefault(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>)
         : value(value) {}
+
     template <class U, class = std::enable_if_t<std::is_convertible_v<U, T>>>
     NoDefault(U &&value) noexcept(std::is_nothrow_convertible_v<U, T>)
         : value(std::forward<U>(value)) {}
+
     template <class = std::enable_if_t<std::is_convertible_v<
                   std::initializer_list<typename T::value_type>, T>>>
     NoDefault(std::initializer_list<typename T::value_type> value) noexcept(
         std::is_nothrow_convertible_v<
             std::initializer_list<typename T::value_type>, T>)
         : value(std::move(value)) {}
-    NoDefault(NoDefault const &)            = default;
+
+    NoDefault(NoDefault const &) = default;
     NoDefault &operator=(NoDefault const &) = default;
-    NoDefault(NoDefault &&)                 = default;
-    NoDefault &operator=(NoDefault &&)      = default;
-    T         &operator*() noexcept {
+    NoDefault(NoDefault &&) = default;
+    NoDefault &operator=(NoDefault &&) = default;
+
+    T &operator*() noexcept {
         return value;
     }
+
     T const &operator*() const noexcept {
         return value;
     }
+
     T *operator->() noexcept {
         return std::addressof(value);
     }
+
     T const *operator->() const noexcept {
         return std::addressof(value);
     }
+
     using value_type = T;
 };
 struct JsonEncoder;
+
 template <class T, class = void>
 struct JsonTrait {
     static void putValue(JsonEncoder *encoder, T const &value) {
@@ -244,6 +258,7 @@ struct JsonTrait {
                       "the given type contains members that are not reflected, "
                       "please add REFLECT macro to it");
     }
+
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
         static_assert(!std::is_same_v<T, T>,
@@ -252,19 +267,24 @@ struct JsonTrait {
         return false;
     }
 };
+
 struct JsonEncoder {
     std::string json;
-    void        put(char c) {
+
+    void put(char c) {
         json.push_back(c);
     }
+
     void put(char const *s, std::size_t len) {
         json.append(s, len);
     }
+
     void putLiterialString(char const *name) {
         put('"');
         json.append(name);
         put('"');
     }
+
     void putString(char const *name, std::size_t len) {
         put('"');
         for (char const *it = name, *ep = name + len; it != ep; ++it) {
@@ -290,10 +310,12 @@ struct JsonEncoder {
         }
         put('"');
     }
+
     template <class T>
     void putArithmetic(T const &value) {
         json.append(std::to_string(value));
     }
+
     template <class T>
     void putValue(T const &value) {
         JsonTrait<T>::putValue(this, value);
@@ -310,11 +332,13 @@ enum class JsonError : int {
     InvalidNumberFormat,
     NotImplemented,
 };
+
 inline std::error_category const &jsonCategory() {
     static struct : std::error_category {
         virtual char const *name() const noexcept {
             return "reflect::json";
         }
+
         virtual std::string message(int e) const {
             using namespace std::string_literals;
             switch (static_cast<JsonError>(e)) {
@@ -333,15 +357,18 @@ inline std::error_category const &jsonCategory() {
             }
         }
     } instance;
+
     return instance;
 }
+
 inline std::error_code make_error_code(JsonError e) {
     return std::error_code(static_cast<int>(e), jsonCategory());
 }
+
 inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
     using namespace std::string_view_literals;
     JsonValue::Ptr current;
-    auto           nonempty = json.find_first_not_of(" \t\n\r\0"sv);
+    auto nonempty = json.find_first_not_of(" \t\n\r\0"sv);
     if (nonempty == json.npos) {
         ec = make_error_code(JsonError::UnexpectedEnd);
         return nullptr;
@@ -350,11 +377,11 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
     char c = json.front();
     if (c == '"') {
         json.remove_prefix(1);
-        std::string  str;
-        unsigned int phase  = 0;
-        bool         hisorr = false;
-        unsigned int hex    = 0;
-        std::size_t  i;
+        std::string str;
+        unsigned int phase = 0;
+        bool hisorr = false;
+        unsigned int hex = 0;
+        std::size_t i;
         for (i = 0;; ++i) {
             if (i == json.size()) {
                 ec = make_error_code(JsonError::NonTerminatedString);
@@ -370,8 +397,8 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                 }
             } else if (phase == 1) {
                 if (c == 'u') {
-                    phase  = 2;
-                    hex    = 0;
+                    phase = 2;
+                    hex = 0;
                     hisorr = false;
                     continue;
                 } else if (c == 'n') {
@@ -406,7 +433,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                 if (phase == 5) {
                     if (0xD800 <= hex && hex < 0xDC00) {
                         if (!hisorr) {
-                            phase  = 2;
+                            phase = 2;
                             hisorr = true;
                             continue;
                         } else {
@@ -418,7 +445,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                             hex = 0x10000 + (hex - 0xD800) * 0x400 +
                                   (json[i] - 0xDC00);
                             hisorr = false;
-                            phase  = 0;
+                            phase = 0;
                         } else {
                             ec = make_error_code(JsonError::InvalidUTF16String);
                             return nullptr;
@@ -577,9 +604,11 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
     }
     return current;
 }
+
 struct ReflectorJsonEncode {
     JsonEncoder *encoder;
-    bool         comma = false;
+    bool comma = false;
+
     template <class T>
     void member(char const *name, T &value) {
         if (!comma) {
@@ -592,10 +621,12 @@ struct ReflectorJsonEncode {
         encoder->putValue(value);
     }
 };
+
 struct ReflectorJsonDecode {
     JsonValue::Dict *currentDict;
-    std::error_code  ec;
-    bool             failed = false;
+    std::error_code ec;
+    bool failed = false;
+
     template <class T>
     void member(char const *name, T &value) {
         if (failed) {
@@ -609,6 +640,7 @@ struct ReflectorJsonDecode {
             failed = !JsonTrait<T>::getValue(it->second->inner, value, ec);
         }
     }
+
     static void typeMismatch(char const *expect, JsonValue::Union const &inner,
                              std::error_code &ec) {
         char const *got = "???";
@@ -640,6 +672,7 @@ struct ReflectorJsonDecode {
         ec = make_error_code(JsonError::TypeMismatch);
     }
 };
+
 struct JsonTraitArrayLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
@@ -657,6 +690,7 @@ struct JsonTraitArrayLike {
         }
         encoder->put(']');
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
@@ -677,6 +711,7 @@ struct JsonTraitArrayLike {
         }
     }
 };
+
 struct JsonTraitDictLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
@@ -696,6 +731,7 @@ struct JsonTraitDictLike {
         }
         encoder->put('}');
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
@@ -716,11 +752,13 @@ struct JsonTraitDictLike {
         }
     }
 };
+
 struct JsonTraitStringLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
         encoder->putString(value.data(), value.size());
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
@@ -733,11 +771,13 @@ struct JsonTraitStringLike {
         }
     }
 };
+
 struct JsonTraitNullLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
         encoder->put("null", 4);
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
@@ -749,6 +789,7 @@ struct JsonTraitNullLike {
         }
     }
 };
+
 struct JsonTraitOptionalLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
@@ -758,6 +799,7 @@ struct JsonTraitOptionalLike {
             encoder->put("null", 4);
         }
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
@@ -770,6 +812,7 @@ struct JsonTraitOptionalLike {
         }
     }
 };
+
 struct JsonTraitBooleanLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
@@ -779,6 +822,7 @@ struct JsonTraitBooleanLike {
             encoder->put("false", 5);
         }
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
@@ -791,11 +835,13 @@ struct JsonTraitBooleanLike {
         }
     }
 };
+
 struct JsonTraitArithmeticLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
         encoder->putArithmetic(value);
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
@@ -811,11 +857,13 @@ struct JsonTraitArithmeticLike {
         }
     }
 };
+
 struct JsonTraitVariantLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
         std::visit([&](auto const &arg) { encoder->putValue(arg); }, value);
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
@@ -828,11 +876,13 @@ struct JsonTraitVariantLike {
         /* }, data.inner); */
     }
 };
+
 struct JsonTraitJsonValueLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
         encoder->putValue(value.inner);
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, JsonValue &value,
                          std::error_code &ec) {
@@ -840,6 +890,7 @@ struct JsonTraitJsonValueLike {
         return true;
     }
 };
+
 struct JsonTraitObjectLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
@@ -848,6 +899,7 @@ struct JsonTraitObjectLike {
         reflect_members(reflector, const_cast<T &>(value));
         encoder->put('}');
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
@@ -865,77 +917,100 @@ struct JsonTraitObjectLike {
         }
     }
 };
+
 struct JsonTraitWrapperLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
         return JsonTrait<typename T::value_type>::putValue(encoder, *value);
     }
+
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
         return JsonTrait<typename T::value_type>::getValue(data, *value, ec);
     }
 };
+
 template <class T, std::size_t N>
 struct JsonTrait<std::array<T, N>> : JsonTraitArrayLike {};
+
 template <class T, class Alloc>
 struct JsonTrait<std::vector<T, Alloc>> : JsonTraitArrayLike {};
+
 template <class K, class V, class Cmp, class Alloc>
 struct JsonTrait<std::map<K, V, Cmp, Alloc>> : JsonTraitDictLike {};
+
 template <class K, class V, class Hash, class Eq, class Alloc>
 struct JsonTrait<std::unordered_map<K, V, Hash, Eq, Alloc>>
     : JsonTraitDictLike {};
+
 template <class Traits, class Alloc>
 struct JsonTrait<std::basic_string<char, Traits, Alloc>> : JsonTraitStringLike {
 };
+
 template <class Traits>
 struct JsonTrait<std::basic_string_view<char, Traits>> : JsonTraitStringLike {};
+
 template <class... Ts>
 struct JsonTrait<std::variant<Ts...>> : JsonTraitVariantLike {};
+
 template <class T>
 struct JsonTrait<std::optional<T>> : JsonTraitOptionalLike {};
+
 template <>
 struct JsonTrait<std::nullptr_t> : JsonTraitNullLike {};
+
 template <>
 struct JsonTrait<std::nullopt_t> : JsonTraitNullLike {};
+
 template <>
 struct JsonTrait<std::monostate> : JsonTraitNullLike {};
+
 template <>
 struct JsonTrait<bool> : JsonTraitBooleanLike {};
+
 template <class T>
 struct JsonTrait<NoDefault<T>> : JsonTraitWrapperLike {};
+
 template <class T>
 struct JsonTrait<T, std::enable_if_t<std::is_arithmetic_v<T>>>
     : JsonTraitArithmeticLike {};
+
 template <class Reflector, class T>
 inline std::void_t<
     decltype(std::declval<T &>().REFLECT__MEMBERS(std::declval<Reflector &>()))>
 reflect_members(Reflector &reflector, T &value) {
     value.REFLECT__MEMBERS(reflector);
 }
+
 template <class Reflector, class T,
           class = std::void_t<decltype(REFLECT__MEMBERS(
               std::declval<T &>(), std::declval<Reflector &>()))>>
 inline void reflect_members(Reflector &reflector, T &value) {
     value.REFLECT__MEMBERS(value, reflector);
 }
+
 template <class T>
 struct JsonTrait<T, JsonValue> : JsonTraitJsonValueLike {};
+
 template <class T>
 struct JsonTrait<
     T, std::void_t<decltype(reflect_members(
            std::declval<ReflectorJsonEncode &>(), std::declval<T &>()))>>
     : JsonTraitObjectLike {};
+
 template <class T>
 inline std::string json_encode(T const &value) {
     JsonEncoder encoder;
     encoder.putValue(value);
     return encoder.json;
 }
+
 template <class T>
 inline bool json_decode(JsonValue &root, T &value, std::error_code &ec) {
     return JsonTrait<T>::getValue(root.inner, value, ec);
 }
+
 template <class T>
 inline bool json_decode(std::string_view json, T &value, std::error_code &ec) {
     auto root = jsonParse(json, ec);
@@ -944,18 +1019,20 @@ inline bool json_decode(std::string_view json, T &value, std::error_code &ec) {
     }
     return json_decode(*root, value, ec);
 }
+
 template <class T>
 inline T json_decode(JsonValue root) {
-    T               value;
+    T value;
     std::error_code ec;
     if (!json_decode(root, value, ec)) {
         throw std::system_error(ec, "json_decode");
     }
     return value;
 }
+
 template <class T>
 inline T json_decode(std::string_view json) {
-    T               value;
+    T value;
     std::error_code ec;
     if (!json_decode(json, value, ec)) {
         throw std::system_error(ec, "json_decode");

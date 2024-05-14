@@ -4,7 +4,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<Expected<>> amain() {
+static Task<Expected<>> amain() {
     HTTPConnectionPool pool;
     std::vector<FutureSource<Expected<>>> res;
     for (std::string path: {"index.html", "style.css", "koru-icon.png", "mtk_2021_200.png"}) {

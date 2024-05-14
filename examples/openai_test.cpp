@@ -85,7 +85,7 @@ struct ChatCompletionResult {
     REFLECT(id, choices, created, model, usage);
 };
 
-Task<Expected<>> amain() {
+static Task<Expected<>> amain() {
     std::string authorization;
     if (auto p = std::getenv("DEEPSEEK_API_KEY")) {
         authorization.append("Bearer ");

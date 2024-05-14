@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
 namespace co_async {
 struct SignalingContextMT {
     static void startMain(std::stop_token stop) {
@@ -31,25 +32,33 @@ struct SignalingContextMT {
             }
         }
     }
+
     struct SignalAwaiter {
         bool await_ready() const noexcept {
             return false;
         }
+
         void await_suspend(std::coroutine_handle<> coroutine) const {
             std::lock_guard lock(instance->mMutex);
             instance->mWaitingSignals[mSigno].push_back(coroutine);
         }
+
         void await_resume() const noexcept {}
-        int  mSigno;
+
+        int mSigno;
     };
+
     static SignalAwaiter waitSignal(int signo) {
         return SignalAwaiter(signo);
     }
+
     static void start() {
         instance->mWorker =
             std::jthread([](std::stop_token stop) { startMain(stop); });
     }
+
     static inline SignalingContextMT *instance;
+
     SignalingContextMT() {
         if (instance) {
             throw std::logic_error(
@@ -58,14 +67,16 @@ struct SignalingContextMT {
         instance = this;
         start();
     }
+
     SignalingContextMT(SignalingContextMT &&) = delete;
+
     ~SignalingContextMT() {
         instance = nullptr;
     }
 
 private:
     std::map<int, std::deque<std::coroutine_handle<>>> mWaitingSignals;
-    std::mutex                                         mMutex;
-    std::jthread                                       mWorker;
+    std::mutex mMutex;
+    std::jthread mWorker;
 };
 } // namespace co_async

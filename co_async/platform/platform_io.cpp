@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
 namespace co_async {
 void PlatformIOContext::schedSetThreadAffinity(int cpu) {
     cpu_set_t cpu_set;
@@ -17,17 +18,21 @@ void PlatformIOContext::schedSetThreadAffinity(int cpu) {
     throwingErrorErrno(
         sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpu_set));
 }
+
 PlatformIOContext::PlatformIOContext(std::size_t entries) {
     throwingError(io_uring_queue_init(entries, &mRing, 0));
 }
+
 PlatformIOContext::~PlatformIOContext() {
     io_uring_queue_exit(&mRing);
 }
+
 thread_local PlatformIOContext *PlatformIOContext::instance;
-bool                            PlatformIOContext::waitEventsFor(
-    std::size_t                                        numBatch,
+
+bool PlatformIOContext::waitEventsFor(
+    std::size_t numBatch,
     std::optional<std::chrono::steady_clock::duration> timeout) {
-    struct io_uring_cqe     *cqe;
+    struct io_uring_cqe *cqe;
     struct __kernel_timespec ts, *tsp;
     if (timeout) {
         tsp = &(ts = durationToKernelTimespec(*timeout));

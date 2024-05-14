@@ -4,7 +4,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<Expected<>> amain() {
+static Task<Expected<>> amain() {
     auto path = make_path(".");
     auto w = co_await co_await FileWatch().watch(/*path=*/path, /*event=*/FileWatch::OnWriteFinished, /*recursive=*/true).wait();
     co_await co_await stdio().putline(w.path.string());

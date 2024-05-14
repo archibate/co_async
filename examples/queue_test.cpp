@@ -7,7 +7,7 @@ using namespace std::literals;
 
 TimedQueue<int, 15> q;
 
-Task<Expected<>> func() {
+static Task<Expected<>> func() {
     (void)co_await co_sleep(1000ms);
     debug(), "PUSH 42";
     co_await q.push(42);
@@ -17,7 +17,7 @@ Task<Expected<>> func() {
     co_return {};
 }
 
-Task<Expected<>> amain() {
+static Task<Expected<>> amain() {
     TaskGroup<Expected<>> group;
     group.add(func());
     for (int i = 0; i < 8; i++) {

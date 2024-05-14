@@ -4,7 +4,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<> amain() {
+static Task<> amain() {
     auto i = co_await fs_nop();
     std::cout << "fs_nop result: " << i << '\n';
 }

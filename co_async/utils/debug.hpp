@@ -418,26 +418,32 @@
 #  endif
 # endif
 DEBUG_NAMESPACE_BEGIN
+
 struct DEBUG_NODISCARD debug {
 private:
 # ifndef DEBUG_SOURCE_LOCATION
     struct debug_source_location {
         char const *fn;
-        int         ln;
-        int         col;
+        int ln;
+        int col;
         char const *fun;
+
         char const *file_name() const noexcept {
             return fn;
         }
+
         int line() const noexcept {
             return ln;
         }
+
         int column() const noexcept {
             return col;
         }
+
         char const *function_name() const noexcept {
             return fun;
         }
+
         static debug_source_location current() noexcept {
             return {"???", 0, 0, "?"};
         }
@@ -483,8 +489,10 @@ private:
         }
         oss << quote;
     }
+
     template <class T>
     struct debug_is_char_array : std::false_type {};
+
     template <std::size_t N>
     struct debug_is_char_array<char[N]> : std::true_type {};
 # ifdef DEBUG_CUSTOM_DEMANGLE
@@ -494,8 +502,8 @@ private:
 # else
     static std::string debug_demangle(char const *name) {
 #  ifdef DEBUG_HAS_CXXABI_H
-        int         status;
-        char       *p = abi::__cxa_demangle(name, 0, 0, &status);
+        int status;
+        char *p = abi::__cxa_demangle(name, 0, 0, &status);
         std::string s = p ? p : name;
         std::free(p);
 #  else
@@ -507,6 +515,7 @@ private:
 public:
     struct debug_formatter {
         std::ostream &os;
+
         template <class T>
         debug_formatter &operator<<(T const &value) {
             debug_format(os, value);
@@ -755,12 +764,14 @@ private:
     struct debug_void {
         using type = void;
     };
+
     template <bool v>
     struct debug_bool_constant {
         enum {
             value = v
         };
     };
+
 #  define DEBUG_COND(n, ...) \
       template <class T, class = void> \
       struct debug_cond_##n : std::false_type {}; \
@@ -786,11 +797,14 @@ private:
     DEBUG_COND(is_adl_repr_debug, DEBUG_FORMATTER_REPR_NAME(
                                       std::declval<debug_formatter const &>(),
                                       std::declval<T const &>()));
+
     struct variant_test_lambda {
         std::ostream &oss;
+
         template <class T>
         void operator()(T const &) const {}
     };
+
     DEBUG_COND(is_variant, std::variant_size<T>::value);
     DEBUG_COND(is_smart_pointer, static_cast<void const volatile *>(
                                      std::declval<T const &>().get()));
@@ -833,10 +847,12 @@ private:
     DEBUG_CON(enum, std::is_enum<T>::value);
     template <class T, class = void>
     struct debug_format_trait;
+
     template <class T>
     static void debug_format(std::ostream &oss, T const &t) {
         debug_format_trait<T>()(oss, t);
     }
+
     template <class T, class>
     struct debug_format_trait {
         void operator()(std::ostream &oss, T const &t) const {
@@ -847,6 +863,7 @@ private:
             oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<debug_is_char_array<T>::value>::type> {
@@ -854,6 +871,7 @@ private:
             oss << t;
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -864,6 +882,7 @@ private:
             debug_quotes(oss, s, '"');
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -873,6 +892,7 @@ private:
             debug_quotes(oss, t, '"');
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<!debug_is_char_array<T>::value &&
@@ -884,6 +904,7 @@ private:
             oss.flags(f);
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -893,6 +914,7 @@ private:
             debug_quotes(oss, {reinterpret_cast<char const *>(&t), 1}, '\'');
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -911,6 +933,7 @@ private:
             oss.flags(f);
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -933,6 +956,7 @@ private:
             oss.flags(f);
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -946,6 +970,7 @@ private:
                 static_cast<typename std::make_unsigned<T>::type>(t));
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -962,6 +987,7 @@ private:
             oss.flags(f);
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -1007,6 +1033,7 @@ private:
             }
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -1023,6 +1050,7 @@ private:
             debug_format(oss, t.get());
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -1040,6 +1068,7 @@ private:
             oss << t;
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -1071,6 +1100,7 @@ private:
             }
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T, typename std::enable_if<
@@ -1089,8 +1119,8 @@ private:
         void operator()(std::ostream &oss, T const &t) const {
             oss << DEBUG_RANGE_BRACE[0];
             bool add_comma = false;
-            auto b         = begin(t);
-            auto e         = end(t);
+            auto b = begin(t);
+            auto e = end(t);
             for (auto it = b; it != e; ++it) {
                 if (add_comma) {
                     oss << DEBUG_RANGE_COMMA;
@@ -1106,6 +1136,7 @@ private:
     static void debug_apply_impl(F &&f, Tuple &&t, std::index_sequence<I...>) {
         std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
     }
+
     template <class F, class Tuple, std::size_t... I>
     static void debug_apply(F &&f, Tuple &&t) {
         debug_apply_impl(
@@ -1116,15 +1147,19 @@ private:
 #  else
     template <std::size_t... I>
     struct debug_index_sequence {};
+
     template <std::size_t N, std::size_t... I>
     struct debug_make_index_sequence
         : debug_make_index_sequence<N - 1, I..., N - 1> {};
+
     template <std::size_t... I>
     struct debug_make_index_sequence<0, I...> : debug_index_sequence<I...> {};
+
     template <class F, class Tuple, std::size_t... I>
     static void debug_apply_impl(F &&f, Tuple &&t, debug_index_sequence<I...>) {
         return std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
     }
+
     template <class F, class Tuple, std::size_t... I>
     static void debug_apply(F &&f, Tuple &&t) {
         return debug_apply_impl(
@@ -1135,7 +1170,8 @@ private:
 #  endif
     struct debug_apply_lambda {
         std::ostream &oss;
-        bool         &add_comma;
+        bool &add_comma;
+
         template <class Arg>
         void call(Arg &&arg) const {
             if (add_comma) {
@@ -1144,12 +1180,14 @@ private:
             add_comma = true;
             debug_format(oss, std::forward<decltype(arg)>(arg));
         }
+
         template <class... Args>
         void operator()(Args &&...args) const {
             int unused[] = {(call<Args>(std::forward<Args>(args)), 0)...};
             (void)unused;
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1172,6 +1210,7 @@ private:
             oss << DEBUG_TUPLE_BRACE[1];
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1198,12 +1237,14 @@ private:
 #  endif
         }
     };
+
     template <class V>
     struct debug_format_trait<std::type_info, V> {
         void operator()(std::ostream &oss, std::type_info const &t) const {
             oss << debug_demangle(t.name());
         }
     };
+
     template <class V>
     struct debug_format_trait<std::errc, V> {
         void operator()(std::ostream &oss, std::errc const &t) const {
@@ -1221,6 +1262,7 @@ private:
             oss << DEBUG_ERROR_CODE_BRACE[1];
         }
     };
+
     template <class V>
     struct debug_format_trait<std::error_code, V> {
         void operator()(std::ostream &oss, std::error_code const &t) const {
@@ -1237,9 +1279,10 @@ private:
             oss << DEBUG_ERROR_CODE_BRACE[1];
         }
     };
+
     template <class V>
     struct debug_format_trait<std::error_condition, V> {
-        void operator()(std::ostream               &oss,
+        void operator()(std::ostream &oss,
                         std::error_condition const &t) const {
             oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
             if (t) {
@@ -1251,6 +1294,7 @@ private:
             oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1271,6 +1315,7 @@ private:
             debug_format(oss, raw_repr_if_string(t.DEBUG_REPR_NAME()));
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1292,6 +1337,7 @@ private:
             t.DEBUG_REPR_NAME(oss);
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1314,6 +1360,7 @@ private:
             debug_format(oss, raw_repr_if_string(DEBUG_REPR_NAME(t)));
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1337,6 +1384,7 @@ private:
             DEBUG_REPR_NAME(oss, t);
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1361,6 +1409,7 @@ private:
             t.DEBUG_FORMATTER_REPR_NAME(debug_formatter{oss});
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1386,13 +1435,16 @@ private:
             DEBUG_FORMATTER_REPR_NAME(debug_formatter{oss}, t);
         }
     };
+
     struct debug_visit_lambda {
         std::ostream &oss;
+
         template <class T>
         void operator()(T const &t) const {
             debug_format(oss, t);
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1417,6 +1469,7 @@ private:
             visit(debug_visit_lambda{oss}, t);
         }
     };
+
     template <class T>
     struct debug_format_trait<
         T,
@@ -1448,12 +1501,14 @@ private:
     };
 # endif
     std::ostringstream oss;
+
     enum {
-        silent  = 0,
-        print   = 1,
-        panic   = 2,
+        silent = 0,
+        print = 1,
+        panic = 2,
         supress = 3,
     } state;
+
     DEBUG_SOURCE_LOCATION loc;
 # if DEBUG_SHOW_TIMESTAMP == 2
 #  if __cpp_inline_variables
@@ -1473,9 +1528,9 @@ private:
         oss << (tv.tv_usec / 1000) % 1000;
         oss.flags(flags);
 #  else
-        auto        tp  = std::chrono::system_clock::now();
-        std::time_t t   = std::chrono::system_clock::to_time_t(tp);
-        std::tm     now = *std::gmtime(&t);
+        auto tp = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(tp);
+        std::tm now = *std::gmtime(&t);
         oss << std::put_time(&now, "%H:%M:%S.");
         auto flags = oss.flags();
         oss << std::setw(3) << std::setfill('0');
@@ -1518,7 +1573,7 @@ private:
 # if DEBUG_SHOW_SOURCE_CODE_LINE
         {
             static thread_local std::unordered_map<std::string, std::string>
-                 fileCache;
+                fileCache;
             auto key = std::to_string(loc.line()) + loc.file_name();
             if (auto it = fileCache.find(key);
                 it != fileCache.end() && !it->second.empty()) {
@@ -1567,11 +1622,13 @@ private:
         oss << ' ';
         return *this;
     }
+
     template <class T>
     struct DEBUG_NODISCARD debug_condition {
     private:
-        debug   &d;
+        debug &d;
         T const &t;
+
         template <class U>
         debug &check(bool cond, U const &u, char const *sym) {
             if (!cond) {
@@ -1584,31 +1641,38 @@ private:
 
     public:
         explicit debug_condition(debug &d, T const &t) noexcept : d(d), t(t) {}
+
         template <class U>
         debug &operator<(U const &u) {
             return check(t < u, u, "<");
         }
+
         template <class U>
         debug &operator>(U const &u) {
             return check(t > u, u, ">");
         }
+
         template <class U>
         debug &operator<=(U const &u) {
             return check(t <= u, u, "<=");
         }
+
         template <class U>
         debug &operator>=(U const &u) {
             return check(t >= u, u, ">=");
         }
+
         template <class U>
         debug &operator==(U const &u) {
             return check(t == u, u, "==");
         }
+
         template <class U>
         debug &operator!=(U const &u) {
             return check(t != u, u, "!=");
         }
     };
+
     debug &on_error(char const *msg) {
         if (state != supress) {
             state = panic;
@@ -1619,6 +1683,7 @@ private:
         oss << msg;
         return *this;
     }
+
     template <class T>
     debug &on_print(T const &t) {
         if (state == supress) {
@@ -1654,7 +1719,7 @@ private:
     }
 # endif
 public:
-    explicit debug(bool                         enable = true,
+    explicit debug(bool enable = true,
                    DEBUG_SOURCE_LOCATION const &loc =
                        DEBUG_SOURCE_LOCATION::current()) noexcept
         : state(enable
@@ -1665,27 +1730,33 @@ public:
                     : supress),
           loc(loc) {
     }
+
     debug &setloc(DEBUG_SOURCE_LOCATION const &newloc =
                       DEBUG_SOURCE_LOCATION::current()) noexcept {
         loc = newloc;
         return *this;
     }
+
     debug &noloc() noexcept {
         if (state == silent) {
             state = print;
         }
         return *this;
     }
-    debug(debug &&)      = delete;
+
+    debug(debug &&) = delete;
     debug(debug const &) = delete;
+
     template <class T>
     debug_condition<T> check(T const &t) noexcept {
         return debug_condition<T>{*this, t};
     }
+
     template <class T>
     debug_condition<T> operator>>(T const &t) noexcept {
         return debug_condition<T>{*this, t};
     }
+
     debug &fail(bool fail = true) {
         if (fail) {
             DEBUG_UNLIKELY {
@@ -1696,6 +1767,7 @@ public:
         }
         return *this;
     }
+
     debug &on(bool enable) {
         if (!enable) {
             DEBUG_LIKELY {
@@ -1704,14 +1776,17 @@ public:
         }
         return *this;
     }
+
     template <class T>
     debug &operator<<(T const &t) {
         return on_print(t);
     }
+
     template <class T>
     debug &operator,(T const &t) {
         return on_print(t);
     }
+
     ~debug()
 # if DEBUG_PANIC_METHOD == 0
         noexcept(false)
@@ -1757,15 +1832,15 @@ public:
         }
 # if DEBUG_STEPPING == 1
         static std::mutex mutex;
-        std::lock_guard   lock(mutex);
+        std::lock_guard lock(mutex);
 #  ifdef DEBUG_CUSTOM_STEPPING
         DEBUG_CUSTOM_STEPPING(msg);
 #  elif DEBUG_STEPPING_HAS_TERMIOS
         struct termios tc, oldtc;
-        bool           tty = isatty(0);
+        bool tty = isatty(0);
         if (tty) {
             tcgetattr(0, &oldtc);
-            tc          = oldtc;
+            tc = oldtc;
             tc.c_lflag &= ~ICANON;
             tc.c_lflag &= ~ECHO;
             tcsetattr(0, TCSANOW, &tc);
@@ -1801,35 +1876,43 @@ public:
 #  endif
 # endif
     }
+
     operator std::string() {
         std::string ret = oss.str();
-        state           = supress;
+        state = supress;
         return ret;
     }
+
     template <class T>
     struct named_member_t {
         char const *name;
-        T const    &value;
-        void        DEBUG_REPR_NAME(std::ostream &os) const {
+        T const &value;
+
+        void DEBUG_REPR_NAME(std::ostream &os) const {
             os << name << DEBUG_NAMED_MEMBER_MARK;
             debug_format(os, value);
         }
     };
+
     template <class T>
     static named_member_t<T> named_member(char const *name, T const &value) {
         return {name, value};
     }
+
     template <class T>
     struct raw_repr_t {
         T const &value;
-        void     DEBUG_REPR_NAME(std::ostream &os) const {
+
+        void DEBUG_REPR_NAME(std::ostream &os) const {
             os << value;
         }
     };
+
     template <class T>
     static raw_repr_t<T> raw_repr(T const &value) {
         return {value};
     }
+
     template <class T, std::enable_if_t<
                            std::is_convertible<T, std::string>::value ||
                                std::is_convertible<T, DEBUG_STRING_VIEW>::value,
@@ -1837,6 +1920,7 @@ public:
     static raw_repr_t<T> raw_repr_if_string(T const &value) {
         return {value};
     }
+
     template <class T, std::enable_if_t<
                            !(std::is_convertible<T, std::string>::value ||
                              std::is_convertible<T, DEBUG_STRING_VIEW>::value),
@@ -1993,7 +2077,7 @@ public:
 #  define DEBUG_REPR_GLOBAL(T, ...) \
       template <class debug_formatter> \
       void DEBUG_FORMATTER_REPR_NAME(debug_formatter formatter, \
-                                     T const        &object) { \
+                                     T const &object) { \
           formatter.os << DEBUG_TUPLE_BRACE[0]; \
           bool add_comma = false; \
           DEBUG_PP_FOREACH(DEBUG_REPR_GLOBAL_ON_EACH, __VA_ARGS__) \
@@ -2002,7 +2086,7 @@ public:
 #  define DEBUG_REPR_GLOBAL_TEMPLATED(T, Tmpls, TmplsClassed, ...) \
       template <class debug_formatter, DEBUG_PP_UNWRAP_BRACE(TmplsClassed)> \
       void DEBUG_FORMATTER_REPR_NAME( \
-          debug_formatter                        formatter, \
+          debug_formatter formatter, \
           T<DEBUG_PP_UNWRAP_BRACE(Tmpls)> const &object) { \
           formatter.os << DEBUG_TUPLE_BRACE[0]; \
           bool add_comma = false; \
@@ -2014,50 +2098,64 @@ DEBUG_NAMESPACE_END
 #else
 # include <string>
 DEBUG_NAMESPACE_BEGIN
+
 struct debug {
     debug(bool = true, char const * = nullptr) noexcept {}
-    debug(debug &&)      = delete;
+
+    debug(debug &&) = delete;
     debug(debug const &) = delete;
+
     template <class T>
     debug &operator,(T const &) {
         return *this;
     }
+
     template <class T>
     debug &operator<<(T const &) {
         return *this;
     }
+
     debug &on(bool) {
         return *this;
     }
+
     debug &fail(bool = true) {
         return *this;
     }
+
     ~debug() noexcept(false) {}
 
 private:
     struct debug_condition {
         debug &d;
+
         explicit debug_condition(debug &d) : d(d) {}
+
         template <class U>
         debug &operator<(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator>(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator<=(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator>=(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator==(U const &) {
             return d;
         }
+
         template <class U>
         debug &operator!=(U const &) {
             return d;
@@ -2069,42 +2167,52 @@ public:
     debug &setloc(Ts &&...ts) noexcept {
         return *this;
     }
+
     debug &noloc() noexcept {
         return *this;
     }
+
     template <class T>
     debug_condition check(T const &) noexcept {
         return debug_condition{*this};
     }
+
     template <class T>
     debug_condition operator>>(T const &) noexcept {
         return debug_condition{*this};
     }
+
     operator std::string() {
         return {};
     }
+
     template <class T>
     struct named_member_t {
         char const *name;
-        T const    &value;
+        T const &value;
     };
+
     template <class T>
     static named_member_t<T> named_member(char const *name, T const &value) {
         return {name, value};
     }
+
     template <class T>
     struct raw_repr_t {
         T const &value;
     };
+
     template <class T>
     static raw_repr_t<T> raw_repr(T const &value) {
         return {value};
     }
+
     template <class T>
     static T raw_repr_if_string(T const &value) {
         return value;
     }
 };
+
 # define DEBUG_REPR(...)
 DEBUG_NAMESPACE_END
 #endif

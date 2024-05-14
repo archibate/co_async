@@ -10,6 +10,8 @@ LineEnding: LF
 InsertNewlineAtEOF: true
 UseTab: Never
 TabWidth: 4
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: true
 IndentCaseLabels: false
 IndentCaseBlocks: false
 IndentRequiresClause: true
@@ -22,13 +24,13 @@ IntegerLiteralSeparator:
   Hex: 4
   HexMinDigits: 9
 AlignConsecutiveAssignments:
-  Enabled: true
+  Enabled: false
   AcrossEmptyLines: false
   AcrossComments: false
   AlignCompound: true
   PadOperators: false
 AlignConsecutiveDeclarations:
-  Enabled: true
+  Enabled: false
   AcrossEmptyLines: false
   AcrossComments: false
   AlignCompound: true
@@ -63,7 +65,11 @@ IndentWrappedFunctionNames: false
 InsertBraces: true
 FixNamespaceComments: true
 SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
 SpaceBeforeRangeBasedForLoopColon: false
+SpaceBeforeInheritanceColon: true
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeParens: ControlStatements
 SpaceInEmptyBlock: false
@@ -79,9 +85,20 @@ BraceWrapping:
   AfterFunction: false
   AfterControlStatement: false
   AfterCaseLabel: false
-  SplitEmptyFunction: false
+  AfterNamespace: false
+  AfterExternBlock: false
   BeforeCatch: false
   BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+  BeforeCatch: false
+  BeforeElse: false
+CompactNamespaces: false
+BreakAfterAttributes: Never
 IndentPPDirectives: AfterHash
 PPIndentWidth: 1
 AlignTrailingComments:
@@ -89,7 +106,7 @@ AlignTrailingComments:
   OverEmptyLines: 1
 KeepEmptyLinesAtTheStartOfBlocks: false
 KeepEmptyLinesAtEOF: false
-MaxEmptyLinesToKeep: 0
+MaxEmptyLinesToKeep: 1
 SortIncludes: CaseSensitive
 IncludeBlocks: Merge
 SortUsingDeclarations: LexicographicNumeric

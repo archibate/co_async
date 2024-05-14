@@ -4,6 +4,7 @@
 #include <co_async/iostream/stream_base.hpp>
 #include <co_async/net/socket_proxy.hpp>
 #include <co_async/platform/socket.hpp>
+
 namespace co_async {
 struct SocketStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
@@ -15,6 +16,7 @@ struct SocketStream : Stream {
         }
         co_return ret;
     }
+
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         auto ret = co_await socket_write(mFile, buffer, mTimeout);
@@ -25,21 +27,26 @@ struct SocketStream : Stream {
         }
         co_return ret;
     }
+
     SocketHandle release() noexcept {
         return std::move(mFile);
     }
+
     SocketHandle &get() noexcept {
         return mFile;
     }
+
     explicit SocketStream(SocketHandle file) : mFile(std::move(file)) {}
+
     void raw_timeout(std::chrono::steady_clock::duration timeout) override {
         mTimeout = timeout;
     }
 
 private:
-    SocketHandle                        mFile;
+    SocketHandle mFile;
     std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(10);
 };
+
 inline Task<Expected<OwningStream>>
 tcp_connect(char const *host, int port, std::string_view proxy,
             std::chrono::steady_clock::duration timeout) {
@@ -49,11 +56,12 @@ tcp_connect(char const *host, int port, std::string_view proxy,
     sock.timeout(timeout);
     co_return sock;
 }
+
 inline Task<Expected<OwningStream>>
-tcp_accept(SocketListener                     &listener,
+tcp_accept(SocketListener &listener,
            std::chrono::steady_clock::duration timeout) {
-    auto         handle = co_await co_await listener_accept(listener);
-    OwningStream sock   = make_stream<SocketStream>(std::move(handle));
+    auto handle = co_await co_await listener_accept(listener);
+    OwningStream sock = make_stream<SocketStream>(std::move(handle));
     sock.timeout(timeout);
     co_return sock;
 }

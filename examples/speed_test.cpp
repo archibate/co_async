@@ -5,15 +5,15 @@
 using namespace co_async;
 using namespace std::literals;
 
-[[gnu::noinline]] void empty_func() {
+[[gnu::noinline]] static void empty_func() {
     return;
 }
 
-Task<> empty_coroutine() {
+static Task<> empty_coroutine() {
     co_return;
 }
 
-Task<> amain() {
+static Task<> amain() {
     constexpr std::size_t n = 1;
     for (std::size_t i = 0; i < n; i++) {
         Perf _;

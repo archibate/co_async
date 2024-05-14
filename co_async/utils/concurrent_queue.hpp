@@ -1,5 +1,6 @@
 #pragma once
 #include <co_async/std.hpp>
+
 namespace co_async {
 inline void assume(bool v) {
 #if defined(__GNUC__) && __has_builtin(__builtin_unreachable)
@@ -12,17 +13,19 @@ inline void assume(bool v) {
     }
 #endif
 }
+
 template <class T, std::size_t Capacity = 0>
 struct ConcurrentQueue {
     static constexpr std::size_t Shift = std::bit_width(Capacity);
-    using Stamp                        = std::conditional_t<
+    using Stamp = std::conditional_t<
         Shift <= 4, std::uint8_t,
         std::conditional_t<
             Shift <= 8, std::uint16_t,
             std::conditional_t<Shift <= 16, std::uint32_t, std::uint64_t>>>;
     static_assert(Shift * 2 <= sizeof(Stamp) * 8);
     static_assert(Capacity < (1 << Shift));
-    static constexpr Stamp         kSize = 1 << Shift;
+    static constexpr Stamp kSize = 1 << Shift;
+
     [[nodiscard]] std::optional<T> pop() {
         auto s = mStamp.load(std::memory_order_acquire);
         if (!canRead(s)) {
@@ -37,6 +40,7 @@ struct ConcurrentQueue {
         }
         return mHead[offsetRead(s)];
     }
+
     [[nodiscard]] bool push(T value) {
         auto s = mStamp.load(std::memory_order_acquire);
         if (!canWrite(s)) [[unlikely]] {
@@ -51,34 +55,42 @@ struct ConcurrentQueue {
         mHead[offsetWrite(s)] = std::move(value);
         return true;
     }
-    ConcurrentQueue()                   = default;
+
+    ConcurrentQueue() = default;
     ConcurrentQueue(ConcurrentQueue &&) = delete;
 
 private:
     inline Stamp offsetRead(Stamp s) const {
         return s >> Shift;
     }
+
     inline Stamp offsetWrite(Stamp s) const {
         return s & (kSize - 1);
     }
+
     inline bool canRead(Stamp s) const {
         return offsetRead(s) != offsetWrite(s);
     }
+
     inline bool canWrite(Stamp s) const {
         return (offsetRead(s) & (kSize - 1)) !=
                ((offsetWrite(s) + (kSize - Capacity)) & (kSize - 1));
     }
+
     inline Stamp advectRead(Stamp s) const {
         return ((((s >> Shift) + 1) & (kSize - 1)) << Shift) |
                (s & (kSize - 1));
     }
+
     inline Stamp advectWrite(Stamp s) const {
         return (((s & (kSize - 1)) + 1) & (kSize - 1)) |
                (s & ((kSize - 1) << Shift));
     }
+
     std::unique_ptr<T[]> mHead = std::make_unique<T[]>(kSize);
-    std::atomic<Stamp>   mStamp{0};
+    std::atomic<Stamp> mStamp{0};
 };
+
 template <class T>
 struct ConcurrentQueue<T, 0> {
     std::optional<T> pop() {
@@ -90,6 +102,7 @@ struct ConcurrentQueue<T, 0> {
         mQueue.pop_front();
         return p;
     }
+
     bool push(T p) {
         std::lock_guard lck(mMutex);
         mQueue.push_back(p);
@@ -98,6 +111,6 @@ struct ConcurrentQueue<T, 0> {
 
 private:
     std::deque<T> mQueue;
-    std::mutex    mMutex;
+    std::mutex mMutex;
 };
 } // namespace co_async

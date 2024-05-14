@@ -4,8 +4,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-Task<Expected<>> amain(std::string serveAt, std::string targetHost,
-                       std::string headers) {
+static Task<Expected<>> amain(std::string serveAt, std::string targetHost, std::string headers) {
     co_await co_await stdio().putline("listening at: "s + serveAt);
     auto listener = co_await co_await listener_bind(
         SocketAddress::parseCommaSeperated(serveAt, 80));

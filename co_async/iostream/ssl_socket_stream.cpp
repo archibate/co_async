@@ -635,12 +635,6 @@ public:
     void raw_timeout(std::chrono::steady_clock::duration timeout) override {
         raw.raw_timeout(timeout);
     }
-
-    ~SSLSocketStream() {
-        if (eng) {
-            br_ssl_engine_close(eng);
-        }
-    }
 };
 
 struct SSLServerSocketStream : SSLSocketStream {

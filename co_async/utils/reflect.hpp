@@ -202,13 +202,6 @@ private:
     T value;
 
 public:
-    /* template <class ...Args, class =
-     * std::enable_if_t<std::is_constructible_v<T, Args...> && sizeof...(Args)>>
-     */
-    /* explicit NoDefault(Args &&...args)
-     * noexcept(std::is_nothrow_constructible_v<T, Args...>) :
-     * value(std::forward<Args>(args)...) { */
-    /* } */
     NoDefault(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>)
         : value(std::move(value)) {}
 
@@ -249,6 +242,7 @@ public:
 
     using value_type = T;
 };
+
 struct JsonEncoder;
 
 template <class T, class = void>
@@ -624,7 +618,7 @@ struct ReflectorJsonEncode {
 
 struct ReflectorJsonDecode {
     JsonValue::Dict *currentDict;
-    std::error_code ec;
+    std::error_code ec{};
     bool failed = false;
 
     template <class T>
@@ -1022,7 +1016,7 @@ inline bool json_decode(std::string_view json, T &value, std::error_code &ec) {
 
 template <class T>
 inline T json_decode(JsonValue root) {
-    T value;
+    T value{};
     std::error_code ec;
     if (!json_decode(root, value, ec)) {
         throw std::system_error(ec, "json_decode");
@@ -1032,7 +1026,7 @@ inline T json_decode(JsonValue root) {
 
 template <class T>
 inline T json_decode(std::string_view json) {
-    T value;
+    T value{};
     std::error_code ec;
     if (!json_decode(json, value, ec)) {
         throw std::system_error(ec, "json_decode");

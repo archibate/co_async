@@ -12,17 +12,17 @@ struct ChatCompletionRequest {
         REFLECT(role, content);
     };
 
-    reflect::NoDefault<std::vector<Message>> messages;
-    reflect::NoDefault<std::string> model;
-    std::optional<double> frequency_penalty;
-    std::optional<int> max_tokens;
-    std::optional<double> persence_penalty;
-    std::optional<std::vector<std::string>> stop;
-    std::optional<double> temperature;
-    std::optional<double> top_p;
-    std::optional<bool> logprobs;
-    std::optional<int> top_logprobs;
-    std::optional<bool> stream;
+    std::vector<Message> messages;
+    std::string model;
+    std::optional<double> frequency_penalty{};
+    std::optional<int> max_tokens{};
+    std::optional<double> persence_penalty{};
+    std::optional<std::vector<std::string>> stop{};
+    std::optional<double> temperature{};
+    std::optional<double> top_p{};
+    std::optional<bool> logprobs{};
+    std::optional<int> top_logprobs{};
+    std::optional<bool> stream{};
 
     REFLECT(messages, model, frequency_penalty, max_tokens, persence_penalty, stop, temperature, top_p, logprobs, top_logprobs, stream);
 };

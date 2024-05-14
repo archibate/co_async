@@ -18,7 +18,7 @@ struct Void final {
     friend constexpr void operator|(Void, Void) {}
 
     char const *repr() const noexcept {
-        return "Void";
+        return "void";
     }
 
     /* static void *operator new(std::size_t) noexcept { */

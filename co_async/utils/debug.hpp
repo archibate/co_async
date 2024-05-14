@@ -454,6 +454,22 @@ private:
 #  endif
 #  define DEBUG_SOURCE_LOCATION debug::debug_source_location
 # endif
+    template <class T>
+    static auto debug_deref_avoid(T const &t) -> std::enable_if_t<!std::is_void_v<decltype(*t)>, decltype(*t)> {
+        return *t;
+    }
+
+    struct debug_special_void {
+        const char (&repr())[5] {
+            return "void";
+        }
+    };
+
+    template <class T>
+    static auto debug_deref_avoid(T const &t) -> std::enable_if_t<std::is_void_v<decltype(*t)>, debug_special_void> {
+        return debug_special_void();
+    }
+
     static void debug_quotes(std::ostream &oss, DEBUG_STRING_VIEW sv,
                              char quote) {
         oss << quote;
@@ -747,7 +763,7 @@ private:
                                  (void)(bool)t;
                              }) {
             if ((bool)t) {
-                debug_format(oss, *t);
+                debug_format(oss, debug_deref_avoid(t));
             } else {
                 oss << DEBUG_NULLOPT_STRING;
             }
@@ -1493,7 +1509,7 @@ private:
             debug_cond_is_optional<T>::value>::type> {
         void operator()(std::ostream &oss, T const &t) const {
             if ((bool)t) {
-                debug_format(oss, *t);
+                debug_format(oss, debug_deref_avoid(t));
             } else {
                 oss << DEBUG_NULLOPT_STRING;
             }

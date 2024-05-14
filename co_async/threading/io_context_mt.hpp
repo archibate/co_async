@@ -54,14 +54,17 @@ public:
         if (numWorkers == 0) {
             instance->mSetAffinity = true;
             numWorkers = std::thread::hardware_concurrency();
+        } else {
+            instance->mSetAffinity = false;
         }
         instance->mWorkers = std::make_unique<IOContext[]>(numWorkers);
         instance->mNumWorkers = numWorkers;
+        std::span<IOContext> peerSpan(instance->mWorkers.get(), instance->mNumWorkers);
         for (std::size_t i = 0; i < instance->mNumWorkers; ++i) {
             if (instance->mSetAffinity) {
                 options.threadAffinity = i;
             }
-            instance->mWorkers[i].start(options);
+            instance->mWorkers[i].start(options, peerSpan);
         }
     }
 

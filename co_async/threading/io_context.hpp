@@ -43,15 +43,39 @@ public:
 
     IOContext(IOContext &&) = delete;
 
-    void startHere(std::stop_token stop, PlatformIOContextOptions options) {
+    void startHere(std::stop_token stop, PlatformIOContextOptions options, std::span<IOContext> peerContexts) {
         IOContextGuard guard(this);
-        PlatformIOContext::instance->startMain(stop, options);
+        if (options.threadAffinity) {
+            PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
+        }
+        auto maxSleep = options.maxSleep;
+        while (!stop.stop_requested()) [[likely]] {
+            auto duration = GenericIOContext::instance->runDuration();
+            if (maxSleep && (!duration || *duration > maxSleep)) {
+                duration = maxSleep;
+            }
+            bool hasEvent = PlatformIOContext::instance->waitEventsFor(1, duration);
+            if (options.maxSleep) {
+                if (hasEvent) {
+                    maxSleep = *options.maxSleep + options.maxSleepInc;
+                } else {
+                    maxSleep = options.maxSleep;
+                }
+            }
+#if CO_ASYNC_STEAL
+            if (!hasEvent && !peerContexts.empty()) {
+                for (IOContext *p = peerContexts.data(); p != peerContexts.data() + peerContexts.size(); ++p) {
+                    if (p->mGenericIO.runComputeOnly()) break;
+                }
+            }
+#endif
+        }
     }
 
-    void start(PlatformIOContextOptions options = {}) {
+    void start(PlatformIOContextOptions options = {}, std::span<IOContext> peerContexts = {}) {
         mThread = std::jthread(
-            [this, options = std::move(options)](std::stop_token stop) {
-                this->startHere(stop, options);
+            [this, options = std::move(options), peerContexts](std::stop_token stop) {
+                this->startHere(stop, options, peerContexts);
             });
     }
 

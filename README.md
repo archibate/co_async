@@ -159,3 +159,15 @@ Running 20s test @ http://127.0.0.1:8080/
 Requests/sec: 1258548.22
 Transfer/sec:    144.03MB
 ```
+
+```
+$ wrk -t16 -c1000 -d20s http://127.0.0.1:8080/
+Running 20s test @ http://127.0.0.1:8080/
+  16 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.28ms    1.47ms  25.98ms   85.06%
+    Req/Sec    66.57k     5.10k  137.28k    75.87%
+  21245436 requests in 20.10s, 4.27GB read
+Requests/sec: 1057009.27
+Transfer/sec:    217.74MB
+```

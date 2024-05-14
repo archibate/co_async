@@ -12,7 +12,8 @@ Task<Expected<>> amain(std::string serveAt) {
         IOContextMT::nth_worker(i).spawn(co_bind([&]() -> Task<> {
             HTTPServer server;
             server.route("GET", "/", HTTPRouteMode::SuffixPath, [](HTTPServer::IO &io, std::string_view suffix) -> Task<Expected<>> {
-                co_await co_await HTTPServerUtils::make_response_from_path(io, make_path(".", suffix));
+                /* co_await co_await HTTPServerUtils::make_response_from_path(io, make_path(".", suffix)); */
+                co_await co_await HTTPServerUtils::make_ok_response(io, "<h1>It works!</h1>");
                 co_return {};
             });
             while (true) {

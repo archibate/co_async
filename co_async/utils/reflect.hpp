@@ -274,6 +274,7 @@ struct JsonTrait {
         static_assert(!std::is_same_v<T, T>,
                       "the given type contains members that are not reflected, "
                       "please add REFLECT macro to it");
+        return false;
     }
 };
 

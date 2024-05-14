@@ -24,11 +24,9 @@ private:
         PerfThreadLocal(PerfThreadLocal &&) = delete;
 
         ~PerfThreadLocal() {
-            gather(table);
+            gather(*this);
         }
     };
-
-    static inline thread_local PerfThreadLocal perthread;
 
     struct PerfGather {
         PerfGather() {
@@ -109,30 +107,36 @@ private:
 
             std::string o;
             auto oit = std::back_inserter(o);
-            std::format_to(oit, "{:>{}}:{:<4} {:^6} {:^6} {:^6} {:^{}}\n",
-                           "file", w, "line", "min", "avg", "max", "nr",
+            std::format_to(oit, "{:>{}}:{:<4} {:^6} {:^6} {:^6} {:^6} {:^{}}\n",
+                           "file", w, "line", "min", "avg", "max", "sum", "nr",
                            nw + 1);
             for (auto const &[loc, e]: sorted) {
-                std::format_to(oit, "{:>{}}:{:<4} {:>6} {:>6} {:>6} {:>{}}x\n",
+                std::format_to(oit, "{:>{}}:{:<4} {:>6} {:>6} {:>6} {:>6} {:>{}}x\n",
                                p(loc.first), w, loc.second, t(e.min),
-                               t(e.sum / e.nr), t(e.max), e.nr, nw);
+                               t(e.sum / e.nr), t(e.max), t(e.sum), e.nr, nw);
             }
-            printf("%s", o.c_str());
+            fprintf(stderr, "%s", o.c_str());
         }
 
         ~PerfGather() {
+            for (auto *thread: threads) {
+                gather(*thread);
+            }
             dump();
         }
 
         std::deque<PerfTableEntry> table;
+        std::set<PerfThreadLocal *> threads;
         std::mutex lock;
     };
 
     static inline PerfGather gathered;
+    static inline thread_local PerfThreadLocal perthread;
 
-    static void gather(std::deque<PerfTableEntry> const &table) {
+    static void gather(PerfThreadLocal &perthread) {
         std::lock_guard guard(gathered.lock);
-        gathered.table.insert(gathered.table.end(), table.begin(), table.end());
+        gathered.table.insert(gathered.table.end(), perthread.table.begin(), perthread.table.end());
+        gathered.threads.erase(&perthread);
     }
 
 public:

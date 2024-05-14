@@ -13,6 +13,8 @@
 
 namespace co_async {
 
+struct IOContext;
+
 struct GenericIOContext {
     struct TimerNode : CustomPromise<Expected<>, TimerNode>, RbTree<TimerNode>::NodeType {
         using RbTree<TimerNode>::NodeType::destructiveErase;
@@ -60,14 +62,38 @@ struct GenericIOContext {
         };
     };
 
+    bool runComputeOnly() {
+#if CO_ASYNC_STEAL
+        if (auto coroutine = mQueue.pop()) {
+            coroutine->resume();
+            return true;
+        }
+#else
+        if (!mQueue.empty()) {
+            auto coroutine = mQueue.front();
+            mQueue.pop_front();
+            coroutine.resume();
+            return true;
+        }
+#endif
+        return false;
+    }
+
     std::optional<std::chrono::steady_clock::duration> runDuration() {
         while (true) {
+#if CO_ASYNC_STEAL
+            if (auto coroutine = mQueue.pop()) {
+                coroutine->resume();
+                continue;
+            }
+#else
             if (!mQueue.empty()) {
                 auto coroutine = mQueue.front();
                 mQueue.pop_front();
                 coroutine.resume();
                 continue;
             }
+#endif
             if (mTimers.empty()) return std::nullopt;
             auto &promise = mTimers.front();
             std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
@@ -82,7 +108,18 @@ struct GenericIOContext {
     }
 
     void enqueueJob(std::coroutine_handle<> coroutine) {
+#if CO_ASYNC_STEAL
+        if (!mQueue.push(coroutine)) [[unlikely]] {
+#if CO_ASYNC_DEBUG
+            std::cerr << "WARNING: coroutine queue overrun\n";
+#endif
+            while (!mQueue.push(coroutine)) {
+                std::this_thread::yield();
+            }
+        }
+#else
         mQueue.push_back(coroutine);
+#endif
     }
 
     void enqueueTimerNode(TimerNode &promise) {
@@ -105,7 +142,11 @@ struct GenericIOContext {
     static inline thread_local GenericIOContext *instance;
 
 private:
+#if CO_ASYNC_STEAL
+    ConcurrentQueue<std::coroutine_handle<>, (1 << 12) - 1> mQueue;
+#else
     std::deque<std::coroutine_handle<>> mQueue;
+#endif
     RbTree<TimerNode> mTimers;
 };
 

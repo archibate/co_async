@@ -92,7 +92,7 @@ private:
 public:
     Perf mPerf;
 
-    Promise(std::source_location loc = std::source_location::current())
+    TaskPromise(std::source_location loc = std::source_location::current())
         : mPerf(loc) {}
 #endif
 };
@@ -116,7 +116,7 @@ struct TaskPromise<void> : PromiseBase {
 #if CO_ASYNC_PERF
     Perf mPerf;
 
-    Promise(std::source_location loc = std::source_location::current())
+    TaskPromise(std::source_location loc = std::source_location::current())
         : mPerf(loc) {}
 #endif
 };
@@ -241,7 +241,7 @@ private:
 public:
     Perf mPerf;
 
-    Promise(std::source_location loc = std::source_location::current())
+    TaskPromise(std::source_location loc = std::source_location::current())
         : mPerf(loc) {}
 #endif
 };
@@ -355,12 +355,13 @@ template <class F, class... Args>
     requires(Awaitable<std::invoke_result_t<F, Args...>>)
 inline auto co_bind(F &&f, Args &&...args) {
     return [](auto f) mutable -> std::invoke_result_t<F, Args...> {
-        std::optional o(std::move(f));
-        decltype(auto) r = (co_await std::move(*o)(), Void());
-        o.reset();
-        co_return
-            typename AwaitableTraits<std::invoke_result_t<F, Args...>>::RetType(
-                std::forward<decltype(r)>(r));
+        co_return co_await std::move(f)();
+        /* std::optional o(std::move(f)); */
+        /* decltype(auto) r = co_await std::move(*o)(); */
+        /* o.reset(); */
+        /* co_return */
+        /*     typename AwaitableTraits<std::invoke_result_t<F, Args...>>::RetType( */
+        /*         std::forward<decltype(r)>(r)); */
     }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 }
 

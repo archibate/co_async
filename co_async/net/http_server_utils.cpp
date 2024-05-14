@@ -27,7 +27,9 @@ std::string HTTPServerUtils::html_encode(std::string_view str) {
     return res;
 }
 
-Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO &io, std::string_view body, std::string contentType) {
+Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO &io,
+                                                   std::string_view body,
+                                                   std::string contentType) {
     HTTPResponse res{
         .status = 200,
         .headers =

@@ -50,11 +50,14 @@ public:
         co_return;
     }
 
-    Task<Expected<>> push(T value, std::chrono::steady_clock::duration timeout) {
-        return push(std::move(value), std::chrono::steady_clock::now() + timeout);
+    Task<Expected<>> push(T value,
+                          std::chrono::steady_clock::duration timeout) {
+        return push(std::move(value),
+                    std::chrono::steady_clock::now() + timeout);
     }
 
-    Task<Expected<>> push(T value, std::chrono::steady_clock::time_point expires) {
+    Task<Expected<>> push(T value,
+                          std::chrono::steady_clock::time_point expires) {
         while (!mQueue.push(std::move(value))) {
             if (auto e = co_await mNonFull.wait(expires); e.has_error()) {
                 co_return Unexpected{e.error()};

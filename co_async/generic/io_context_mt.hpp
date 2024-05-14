@@ -50,7 +50,7 @@ public:
     }
 
     static void start(PlatformIOContextOptions options = {},
-               std::size_t numWorkers = 0) {
+                      std::size_t numWorkers = 0) {
         if (numWorkers == 0) {
             instance->mSetAffinity = true;
             numWorkers = std::thread::hardware_concurrency();
@@ -59,7 +59,8 @@ public:
         }
         instance->mWorkers = std::make_unique<IOContext[]>(numWorkers);
         instance->mNumWorkers = numWorkers;
-        std::span<IOContext> peerSpan(instance->mWorkers.get(), instance->mNumWorkers);
+        std::span<IOContext> peerSpan(instance->mWorkers.get(),
+                                      instance->mNumWorkers);
         for (std::size_t i = 0; i < instance->mNumWorkers; ++i) {
             if (instance->mSetAffinity) {
                 options.threadAffinity = i;

@@ -41,7 +41,7 @@ private:
         Task<> doCancel() {
             mCanceled = true;
             std::vector<Task<>> tasks;
-            mCancellers.traverseInorder([&] (CancellerBase &canceller) {
+            mCancellers.traverseInorder([&](CancellerBase &canceller) {
                 tasks.push_back(canceller.doCancel());
             });
             mCancellers.clear();
@@ -53,7 +53,8 @@ private:
         }
 
         template <class Canceller, class Awaiter>
-        Task<typename AwaitableTraits<Awaiter>::RetType> doInvoke(Awaiter &&awaiter) {
+        Task<typename AwaitableTraits<Awaiter>::RetType>
+        doInvoke(Awaiter &&awaiter) {
             typename Canceller::OpType *op = std::addressof(awaiter);
             CancellerImpl<Canceller> cancellerImpl(op);
             mCancellers.insert(static_cast<CancellerBase &>(cancellerImpl));
@@ -76,7 +77,8 @@ public:
 
     template <class Canceller>
     auto invoke(auto &&awaiter) const {
-        return mImpl->doInvoke<Canceller>(std::forward<decltype(awaiter)>(awaiter));
+        return mImpl->doInvoke<Canceller>(
+            std::forward<decltype(awaiter)>(awaiter));
     }
 
     inline CancelToken token() const;
@@ -91,11 +93,9 @@ private:
     CancelSource::Impl *mImpl;
 
 public:
-    CancelToken() noexcept
-        : mImpl(nullptr) {}
+    CancelToken() noexcept : mImpl(nullptr) {}
 
-    CancelToken(CancelSource const &that) noexcept
-        : mImpl(that.mImpl.get()) {}
+    CancelToken(CancelSource const &that) noexcept : mImpl(that.mImpl.get()) {}
 
     Task<> cancel() const {
         return mImpl->doCancel();
@@ -107,7 +107,8 @@ public:
 
     template <class Canceller>
     auto invoke(auto &&awaiter) const {
-        return mImpl->doInvoke<Canceller>(std::forward<decltype(awaiter)>(awaiter));
+        return mImpl->doInvoke<Canceller>(
+            std::forward<decltype(awaiter)>(awaiter));
     }
 };
 
@@ -115,4 +116,4 @@ inline CancelToken CancelSource::token() const {
     return *this;
 }
 
-}
+} // namespace co_async

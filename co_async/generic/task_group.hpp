@@ -23,8 +23,7 @@ struct TaskGroup {
     }
 
     template <class F, class... Args>
-        requires(
-            std::same_as<std::invoke_result_t<F, Args...>, Task<T>>)
+        requires(std::same_as<std::invoke_result_t<F, Args...>, Task<T>>)
     TaskGroup &add(F &&f, Args &&...args) {
         add(co_bind(std::forward<F>(f), std::forward<Args>(args)...));
         return *this;
@@ -45,4 +44,4 @@ struct TaskGroup {
     TaskGroup &operator=(TaskGroup &&) = default;
 };
 
-}
+} // namespace co_async

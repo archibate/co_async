@@ -751,12 +751,13 @@ OwningStream ssl_accept(SocketHandle file, SSLServerCertificate const &cert,
 DefinePImpl(SSLServerPrivateKey);
 
 DefinePImpl(SSLClientTrustAnchor);
-Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add, (std::string content), content);
+Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add, (std::string content),
+                              content);
 
 DefinePImpl(SSLServerCertificate);
-void ForwardPImplMethod(SSLServerCertificate, add, (std::string content), content);
+void ForwardPImplMethod(SSLServerCertificate, add, (std::string content),
+                        content);
 
 DefinePImpl(SSLServerSessionCache);
-
 
 } // namespace co_async

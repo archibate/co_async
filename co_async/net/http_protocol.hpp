@@ -50,6 +50,7 @@ public:
     OwningStream sock;
 
     explicit HTTPProtocol(OwningStream sock) : sock(std::move(sock)) {}
+
     HTTPProtocol(HTTPProtocol &&) = delete;
     virtual ~HTTPProtocol() = default;
 

@@ -55,9 +55,8 @@ struct SignalingContextMT {
     }
 
     static void start() {
-        instance->mWorker = std::jthread([] (std::stop_token stop) {
-            startMain(stop);
-        });
+        instance->mWorker =
+            std::jthread([](std::stop_token stop) { startMain(stop); });
     }
 
     static inline SignalingContextMT *instance;

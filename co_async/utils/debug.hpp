@@ -517,10 +517,11 @@ private:
     __cpp_lib_type_trait_variable_templates
 
 public:
-    template <class T, class U> requires std::is_same<T, U>::value
+    template <class T, class U>
+        requires std::is_same<T, U>::value
     static void debug_same_as(U &&) {}
-private:
 
+private:
     template <class T>
     static void debug_format(std::ostream &oss, T const &t) {
         using std::begin;
@@ -645,16 +646,15 @@ private:
             if (t) {
                 oss << t.category().name() << DEBUG_ERROR_CODE_INFIX
 #if DEBUG_ERROR_CODE_SHOW_NUMBER
-            << ' ' << t.value()
+                    << ' ' << t.value()
 #endif
-            << DEBUG_ERROR_CODE_POSTFIX
-            << t.message();
+                    << DEBUG_ERROR_CODE_POSTFIX << t.message();
             } else {
                 oss << DEBUG_ERROR_CODE_NO_ERROR;
             }
             oss << DEBUG_ERROR_CODE_BRACE[1];
-        } else if constexpr (requires (T const &t) {
-                             debug_same_as<typename T::type &>(t.get());
+        } else if constexpr (requires(T const &t) {
+                                 debug_same_as<typename T::type &>(t.get());
                              }) {
             debug_format(oss, t.get());
         } else if constexpr (requires(std::ostream &oss, T const &t) {
@@ -688,9 +688,7 @@ private:
                 debug_format(oss, std::forward<decltype(i)>(i));
             }
             oss << DEBUG_RANGE_BRACE[1];
-        } else if constexpr (requires {
-                                 std::tuple_size<T>::value;
-                             }) {
+        } else if constexpr (requires { std::tuple_size<T>::value; }) {
             oss << DEBUG_TUPLE_BRACE[0];
             bool add_comma = false;
             std::apply(
@@ -731,9 +729,7 @@ private:
                              }) {
             DEBUG_FORMATTER_REPR_NAME(debug_formatter{oss}, t);
 #if __cpp_lib_variant
-        } else if constexpr (requires {
-                                 std::variant_size<T>::value;
-                             }) {
+        } else if constexpr (requires { std::variant_size<T>::value; }) {
             visit([&oss](auto const &t) { debug_format(oss, t); }, t);
 #endif
         } else if constexpr (requires(T const &t) {
@@ -819,7 +815,9 @@ private:
     DEBUG_CON(error_code, std::is_same<T, std::errc>::value ||
                               std::is_same<T, std::error_code>::value ||
                               std::is_same<T, std::error_condition>::value);
-    DEBUG_CON(reference_wrapper, std::is_same<typename T::type &, decltype(std::declval<T const &>().get())>::value);
+    DEBUG_CON(reference_wrapper,
+              std::is_same<typename T::type &,
+                           decltype(std::declval<T const &>().get())>::value);
 #if __cpp_char8_t
     DEBUG_CON(unicode_char, std::is_same<T, char8_t>::value ||
                                 std::is_same<T, char16_t>::value ||
@@ -1198,7 +1196,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             debug_cond_is_tuple<T>::value>::type> {
@@ -1221,7 +1219,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value &&
@@ -1269,10 +1267,9 @@ private:
             if (t) {
                 oss << t.category().name() << DEBUG_ERROR_CODE_INFIX
 #if DEBUG_ERROR_CODE_SHOW_NUMBER
-            << ' ' << t.value()
+                    << ' ' << t.value()
 #endif
-            << DEBUG_ERROR_CODE_POSTFIX
-            << t.message();
+                    << DEBUG_ERROR_CODE_POSTFIX << t.message();
             } else {
                 oss << DEBUG_ERROR_CODE_NO_ERROR;
             }
@@ -1306,7 +1303,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1327,7 +1324,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1349,7 +1346,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1372,7 +1369,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1396,7 +1393,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1421,7 +1418,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1456,7 +1453,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1481,7 +1478,7 @@ private:
             !debug_cond_floating_point<T>::value &&
             !debug_cond_is_smart_pointer<T>::value &&
             !debug_cond_error_code<T>::value &&
-               !debug_cond_reference_wrapper<T>::value &&
+            !debug_cond_reference_wrapper<T>::value &&
             !debug_cond_is_ostream_ok<T>::value &&
             !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
             !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
@@ -1515,7 +1512,8 @@ private:
 
 #if DEBUG_SHOW_TIMESTAMP == 2
 #if __cpp_inline_variables
-    inline static const std::chrono::steady_clock::time_point tp0 = std::chrono::steady_clock::now();
+    static inline std::chrono::steady_clock::time_point const tp0 =
+        std::chrono::steady_clock::now();
 #endif
 #endif
 
@@ -1537,7 +1535,10 @@ private:
         oss << std::put_time(&now, "%H:%M:%S.");
         auto flags = oss.flags();
         oss << std::setw(3) << std::setfill('0');
-        oss << std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch()).count() % 1000;
+        oss << std::chrono::duration_cast<std::chrono::milliseconds>(
+                   tp.time_since_epoch())
+                       .count() %
+                   1000;
         oss.flags(flags);
 #endif
         oss << ' ';
@@ -1545,10 +1546,12 @@ private:
 #if __cpp_inline_variables
         auto dur = std::chrono::steady_clock::now() - tp0;
 #else
-        static const std::chrono::steady_clock::time_point tp0 = std::chrono::steady_clock::now();
+        static std::chrono::steady_clock::time_point const tp0 =
+            std::chrono::steady_clock::now();
         auto dur = std::chrono::steady_clock::now() - tp0;
 #endif
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+        auto elapsed =
+            std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
         auto flags = oss.flags();
         oss << std::setw(3) << std::setfill(' ');
         oss << (elapsed / 1000) % 1000;
@@ -1853,8 +1856,8 @@ public:
 #endif
 #elif DEBUG_STEPPING == 2
 #if defined(DEBUG_PANIC_CUSTOM_TRAP)
-                DEBUG_PANIC_CUSTOM_TRAP;
-                return;
+        DEBUG_PANIC_CUSTOM_TRAP;
+        return;
 #elif defined(_MSC_VER)
         __debugbreak();
 #elif defined(__GNUC__) && defined(__has_builtin)
@@ -1903,12 +1906,18 @@ public:
         return {value};
     }
 
-    template <class T, std::enable_if_t<std::is_convertible<T, std::string>::value || std::is_convertible<T, DEBUG_STRING_VIEW>::value, int> = 0>
+    template <class T, std::enable_if_t<
+                           std::is_convertible<T, std::string>::value ||
+                               std::is_convertible<T, DEBUG_STRING_VIEW>::value,
+                           int> = 0>
     static raw_repr_t<T> raw_repr_if_string(T const &value) {
         return {value};
     }
 
-    template <class T, std::enable_if_t<!(std::is_convertible<T, std::string>::value || std::is_convertible<T, DEBUG_STRING_VIEW>::value), int> = 0>
+    template <class T, std::enable_if_t<
+                           !(std::is_convertible<T, std::string>::value ||
+                             std::is_convertible<T, DEBUG_STRING_VIEW>::value),
+                           int> = 0>
     static T const &raw_repr_if_string(T const &value) {
         return value;
     }

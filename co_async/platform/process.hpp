@@ -42,7 +42,8 @@ inline Task<Expected<>> kill_process(Pid pid, int sig = SIGKILL) {
 inline Task<Expected<WaitProcessResult>> wait_process(Pid pid,
                                                       int options = WEXITED) {
     siginfo_t info{};
-    co_await expectError(co_await UringOp().prep_waitid(P_PID, pid, &info, options, 0));
+    co_await expectError(
+        co_await UringOp().prep_waitid(P_PID, pid, &info, options, 0));
     co_return WaitProcessResult{
         .pid = info.si_pid,
         .status = info.si_status,
@@ -51,12 +52,13 @@ inline Task<Expected<WaitProcessResult>> wait_process(Pid pid,
 }
 
 inline Task<Expected<WaitProcessResult>>
-wait_process(Pid pid, std::chrono::steady_clock::duration timeout, int options = WEXITED) {
+wait_process(Pid pid, std::chrono::steady_clock::duration timeout,
+             int options = WEXITED) {
     siginfo_t info{};
     auto ts = durationToKernelTimespec(timeout);
-    auto ret = expectError(
-        co_await UringOp::link_ops(UringOp().prep_waitid(P_PID, pid, &info, options, 0),
-                            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+    auto ret = expectError(co_await UringOp::link_ops(
+        UringOp().prep_waitid(P_PID, pid, &info, options, 0),
+        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
     if (ret == std::make_error_code(std::errc::operation_canceled)) {
         co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
     }

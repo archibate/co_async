@@ -56,7 +56,8 @@ public:
 
 template <class T>
 auto FutureSource<T>::Impl::makeAwaiter() -> FutureSource::Awaiter {
-    return FutureSource::Awaiter(static_cast<OneshotConditionVariable &>(*this).operator co_await());
+    return FutureSource::Awaiter(
+        static_cast<OneshotConditionVariable &>(*this).operator co_await());
 }
 
 template <class T>

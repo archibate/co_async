@@ -18,17 +18,20 @@ co_timeout(F &&task, Timeout timeout, Args &&...args) {
     std::optional<typename AwaitableTraits<
         std::invoke_result_t<F, Args..., CancelToken>>::AvoidRetType>
         result;
-    co_await when_all(co_bind([&]() mutable -> Task<> {
-        auto res = (co_await std::invoke(task, std::forward<Args>(args)..., ct),
-                    Void());
-        co_await cs.cancel();
-        if (!ct.is_canceled()) {
-            result = res;
-        }
-    }), co_bind([&]() mutable -> Task<> {
-        (void)co_await co_sleep(timeout, cs);
-        co_await ct.cancel();
-    }));
+    co_await when_all(
+        co_bind([&]() mutable -> Task<> {
+            auto res =
+                (co_await std::invoke(task, std::forward<Args>(args)..., ct),
+                 Void());
+            co_await cs.cancel();
+            if (!ct.is_canceled()) {
+                result = res;
+            }
+        }),
+        co_bind([&]() mutable -> Task<> {
+            (void)co_await co_sleep(timeout, cs);
+            co_await ct.cancel();
+        }));
     co_return result;
 }
 

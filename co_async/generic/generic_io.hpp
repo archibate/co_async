@@ -16,7 +16,8 @@ namespace co_async {
 struct IOContext;
 
 struct GenericIOContext {
-    struct TimerNode : CustomPromise<Expected<>, TimerNode>, RbTree<TimerNode>::NodeType {
+    struct TimerNode : CustomPromise<Expected<>, TimerNode>,
+                       RbTree<TimerNode>::NodeType {
         using RbTree<TimerNode>::NodeType::destructiveErase;
 
         std::chrono::steady_clock::time_point mExpires;
@@ -34,13 +35,15 @@ struct GenericIOContext {
                 return false;
             }
 
-            inline void await_suspend(std::coroutine_handle<TimerNode> coroutine);
+            inline void
+            await_suspend(std::coroutine_handle<TimerNode> coroutine);
 
             Expected<> await_resume() const {
                 if (!mPromise->mCancelled) {
                     return {};
                 } else {
-                    return Unexpected{std::make_error_code(std::errc::operation_canceled)};
+                    return Unexpected{
+                        std::make_error_code(std::errc::operation_canceled)};
                 }
             }
         };
@@ -57,7 +60,8 @@ struct GenericIOContext {
             }
 
             static Expected<> earlyCancelValue(OpType *op) {
-                return Unexpected{std::make_error_code(std::errc::operation_canceled)};
+                return Unexpected{
+                    std::make_error_code(std::errc::operation_canceled)};
             }
         };
     };
@@ -94,13 +98,16 @@ struct GenericIOContext {
                 continue;
             }
 #endif
-            if (mTimers.empty()) return std::nullopt;
+            if (mTimers.empty())
+                return std::nullopt;
             auto &promise = mTimers.front();
-            std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point now =
+                std::chrono::steady_clock::now();
             if (promise.mExpires <= now) {
                 promise.mCancelled = false;
                 promise.destructiveErase();
-                enqueueJob(std::coroutine_handle<TimerNode>::from_promise(promise));
+                enqueueJob(
+                    std::coroutine_handle<TimerNode>::from_promise(promise));
             } else {
                 return promise.mExpires - now;
             }
@@ -150,7 +157,8 @@ private:
     RbTree<TimerNode> mTimers;
 };
 
-inline void GenericIOContext::TimerNode::Awaiter::await_suspend(std::coroutine_handle<GenericIOContext::TimerNode> coroutine) {
+inline void GenericIOContext::TimerNode::Awaiter::await_suspend(
+    std::coroutine_handle<GenericIOContext::TimerNode> coroutine) {
     mPromise = &coroutine.promise();
     mPromise->mExpires = mExpires;
     GenericIOContext::instance->enqueueTimerNode(*mPromise);
@@ -174,19 +182,24 @@ inline void co_spawn(std::coroutine_handle<> coroutine) {
     GenericIOContext::instance->enqueueJob(coroutine);
 }
 
-inline Task<Expected<>, GenericIOContext::TimerNode> co_sleep(std::chrono::steady_clock::time_point expires) {
+inline Task<Expected<>, GenericIOContext::TimerNode>
+co_sleep(std::chrono::steady_clock::time_point expires) {
     co_return co_await GenericIOContext::TimerNode::Awaiter(expires);
 }
 
-inline Task<Expected<>, GenericIOContext::TimerNode> co_sleep(std::chrono::steady_clock::time_point expires, CancelToken cancel) {
-    co_return co_await cancel.invoke<GenericIOContext::TimerNode::Canceller>(co_sleep(expires));
+inline Task<Expected<>, GenericIOContext::TimerNode>
+co_sleep(std::chrono::steady_clock::time_point expires, CancelToken cancel) {
+    co_return co_await cancel.invoke<GenericIOContext::TimerNode::Canceller>(
+        co_sleep(expires));
 }
 
-inline Task<Expected<>, GenericIOContext::TimerNode> co_sleep(std::chrono::steady_clock::duration timeout) {
+inline Task<Expected<>, GenericIOContext::TimerNode>
+co_sleep(std::chrono::steady_clock::duration timeout) {
     return co_sleep(std::chrono::steady_clock::now() + timeout);
 }
 
-inline Task<Expected<>, GenericIOContext::TimerNode> co_sleep(std::chrono::steady_clock::duration timeout, CancelToken cancel) {
+inline Task<Expected<>, GenericIOContext::TimerNode>
+co_sleep(std::chrono::steady_clock::duration timeout, CancelToken cancel) {
     return co_sleep(std::chrono::steady_clock::now() + timeout, cancel);
 }
 
@@ -225,7 +238,8 @@ inline Task<> co_forever(CancelToken cancel) {
         std::coroutine_handle<> mPrevious;
     };
 
-    co_return co_await cancel.invoke<ForeverAwaiter::Canceller>(ForeverAwaiter());
+    co_return co_await cancel.invoke<ForeverAwaiter::Canceller>(
+        ForeverAwaiter());
 }
 
 inline auto co_resume() {

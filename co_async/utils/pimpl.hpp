@@ -13,9 +13,9 @@ struct PImplConstruct {
 };
 
 #define StructPImpl(T) \
-struct T; \
-template <> \
-struct PImplMethod<T> \
+    struct T;          \
+    template <>        \
+    struct PImplMethod<T>
 
 #define DefinePImpl(T)                                  \
     template <>                                         \
@@ -24,9 +24,9 @@ struct PImplMethod<T> \
     }
 
 #define ForwardPImplMethod(T, func, args, ...) \
-PImplMethod<T>::func args { \
-    return pimpl(this).func(__VA_ARGS__); \
-}
+    PImplMethod<T>::func args {                \
+        return pimpl(this).func(__VA_ARGS__);  \
+    }
 
 template <class T>
 struct PImpl : PImplMethod<T> {

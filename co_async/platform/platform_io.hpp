@@ -126,31 +126,32 @@ public:
         return std::move(*this);
     }
 
-    UringOp &&prep_openat(int dirfd, char const *path, int flags, mode_t mode) && {
+    UringOp &&prep_openat(int dirfd, char const *path, int flags,
+                          mode_t mode) && {
         io_uring_prep_openat(mSqe, dirfd, path, flags, mode);
         return std::move(*this);
     }
 
     UringOp &&prep_openat_direct(int dirfd, char const *path, int flags,
-                                mode_t mode, int file_index) && {
+                                 mode_t mode, int file_index) && {
         io_uring_prep_openat_direct(mSqe, dirfd, path, flags, mode, file_index);
         return std::move(*this);
     }
 
     UringOp &&prep_socket(int domain, int type, int protocol,
-                         unsigned int flags) && {
+                          unsigned int flags) && {
         io_uring_prep_socket(mSqe, domain, type, protocol, flags);
         return std::move(*this);
     }
 
     UringOp &&prep_accept(int fd, struct sockaddr *addr, socklen_t *addrlen,
-                         int flags) && {
+                          int flags) && {
         io_uring_prep_accept(mSqe, fd, addr, addrlen, flags);
         return std::move(*this);
     }
 
     UringOp &&prep_connect(int fd, const struct sockaddr *addr,
-                          socklen_t addrlen) && {
+                           socklen_t addrlen) && {
         io_uring_prep_connect(mSqe, fd, addr, addrlen);
         return std::move(*this);
     }
@@ -161,13 +162,13 @@ public:
     }
 
     UringOp &&prep_linkat(int olddirfd, char const *oldpath, int newdirfd,
-                         char const *newpath, int flags) && {
+                          char const *newpath, int flags) && {
         io_uring_prep_linkat(mSqe, olddirfd, oldpath, newdirfd, newpath, flags);
         return std::move(*this);
     }
 
     UringOp &&prep_renameat(int olddirfd, char const *oldpath, int newdirfd,
-                           char const *newpath, int flags) && {
+                            char const *newpath, int flags) && {
         io_uring_prep_renameat(mSqe, olddirfd, oldpath, newdirfd, newpath,
                                flags);
         return std::move(*this);
@@ -179,13 +180,13 @@ public:
     }
 
     UringOp &&prep_symlinkat(char const *target, int newdirfd,
-                            char const *linkpath) && {
+                             char const *linkpath) && {
         io_uring_prep_symlinkat(mSqe, target, newdirfd, linkpath);
         return std::move(*this);
     }
 
     UringOp &&prep_statx(int dirfd, char const *path, int flags,
-                        unsigned int mask, struct statx *statxbuf) && {
+                         unsigned int mask, struct statx *statxbuf) && {
         io_uring_prep_statx(mSqe, dirfd, path, flags, mask, statxbuf);
         return std::move(*this);
     }
@@ -196,33 +197,33 @@ public:
     }
 
     UringOp &&prep_write(int fd, std::span<char const> buf,
-                        std::uint64_t offset) && {
+                         std::uint64_t offset) && {
         io_uring_prep_write(mSqe, fd, buf.data(), buf.size(), offset);
         return std::move(*this);
     }
 
     UringOp &&prep_read_fixed(int fd, std::span<char> buf, std::uint64_t offset,
-                             int buf_index) && {
+                              int buf_index) && {
         io_uring_prep_read_fixed(mSqe, fd, buf.data(), buf.size(), offset,
                                  buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_write_fixed(int fd, std::span<char const> buf,
-                              std::uint64_t offset, int buf_index) && {
+                               std::uint64_t offset, int buf_index) && {
         io_uring_prep_write_fixed(mSqe, fd, buf.data(), buf.size(), offset,
                                   buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_readv(int fd, std::span<struct iovec const> buf,
-                        std::uint64_t offset, int flags) && {
+                         std::uint64_t offset, int flags) && {
         io_uring_prep_readv2(mSqe, fd, buf.data(), buf.size(), offset, flags);
         return std::move(*this);
     }
 
     UringOp &&prep_writev(int fd, std::span<struct iovec const> buf,
-                         std::uint64_t offset, int flags) && {
+                          std::uint64_t offset, int flags) && {
         io_uring_prep_writev2(mSqe, fd, buf.data(), buf.size(), offset, flags);
         return std::move(*this);
     }
@@ -278,25 +279,25 @@ public:
     }
 
     UringOp &&prep_waitid(idtype_t idtype, id_t id, siginfo_t *infop,
-                         int options, unsigned int flags) && {
+                          int options, unsigned int flags) && {
         io_uring_prep_waitid(mSqe, idtype, id, infop, options, flags);
         return std::move(*this);
     }
 
     UringOp &&prep_timeout(struct __kernel_timespec *ts, unsigned int count,
-                          unsigned int flags) && {
+                           unsigned int flags) && {
         io_uring_prep_timeout(mSqe, ts, count, flags);
         return std::move(*this);
     }
 
     UringOp &&prep_link_timeout(struct __kernel_timespec *ts,
-                               unsigned int flags) && {
+                                unsigned int flags) && {
         io_uring_prep_link_timeout(mSqe, ts, flags);
         return std::move(*this);
     }
 
     UringOp &&prep_timeout_update(UringOp *op, struct __kernel_timespec *ts,
-                                 unsigned int flags) && {
+                                  unsigned int flags) && {
         io_uring_prep_timeout_update(
             mSqe, ts, reinterpret_cast<std::uintptr_t>(op), flags);
         return std::move(*this);
@@ -309,8 +310,8 @@ public:
     }
 
     UringOp &&prep_splice(int fd_in, std::int64_t off_in, int fd_out,
-                         std::int64_t off_out, std::size_t nbytes,
-                         unsigned int flags) && {
+                          std::int64_t off_out, std::size_t nbytes,
+                          unsigned int flags) && {
         io_uring_prep_splice(mSqe, fd_in, off_in, fd_out, off_out, nbytes,
                              flags);
         return std::move(*this);

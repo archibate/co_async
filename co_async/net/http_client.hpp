@@ -70,8 +70,7 @@ private:
             auto sock = co_await co_await ssl_connect(mHost.c_str(), mPort,
                                                       trustAnchors(), protocols,
                                                       mProxy, mTimeout);
-            co_return std::make_unique<HTTPProtocolVersion11>(
-                std::move(sock));
+            co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
         }
     };
 
@@ -194,7 +193,8 @@ private:
 
 public:
     Expected<> doConnect(std::string_view host,
-                         std::chrono::steady_clock::duration timeout, bool followProxy) {
+                         std::chrono::steady_clock::duration timeout,
+                         bool followProxy) {
         terminateLifetime();
         if (host.starts_with("https://")) {
             host.remove_prefix(8);
@@ -344,13 +344,11 @@ private:
                         return Unexpected{e.error()};
                     }
                     entry.mHostName = host;
-                    entry.mLastAccess =
-                        std::chrono::steady_clock::now();
+                    entry.mLastAccess = std::chrono::steady_clock::now();
                     entry.mValid = true;
                 } else {
                     if (entry.mHostName == host) {
-                        entry.mLastAccess =
-                            std::chrono::steady_clock::now();
+                        entry.mLastAccess = std::chrono::steady_clock::now();
                     } else {
                         if (exactReuse) {
                             entry.mInuse.store(false,

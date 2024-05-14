@@ -14,15 +14,13 @@ StructPImpl(SSLClientTrustAnchor) {
     Expected<> add(std::string content);
 };
 
-StructPImpl(SSLServerPrivateKey) {
-};
+StructPImpl(SSLServerPrivateKey){};
 
 StructPImpl(SSLServerCertificate) {
     void add(std::string content);
 };
 
-StructPImpl(SSLServerSessionCache) {
-};
+StructPImpl(SSLServerSessionCache){};
 
 Task<Expected<OwningStream>>
 ssl_connect(char const *host, int port, SSLClientTrustAnchor const &ta,

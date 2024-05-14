@@ -12,7 +12,8 @@ namespace co_async {
 
 struct TimedConditionVariable {
 private:
-    struct PromiseNode : CustomPromise<void, PromiseNode>, RbTree<PromiseNode>::NodeType {
+    struct PromiseNode : CustomPromise<void, PromiseNode>,
+                         RbTree<PromiseNode>::NodeType {
         bool operator<(PromiseNode const &that) const {
             if (!mExpires) {
                 return false;
@@ -42,8 +43,7 @@ private:
             mThat->pushWaiting(coroutine.promise());
         }
 
-        void await_resume() const noexcept {
-        }
+        void await_resume() const noexcept {}
 
         TimedConditionVariable *mThat;
     };
@@ -69,11 +69,11 @@ private:
             co_return;
         }
 
-        static void earlyCancelValue(OpType *op) noexcept {
-        }
+        static void earlyCancelValue(OpType *op) noexcept {}
     };
 
-    Task<> waitCancellable(std::chrono::steady_clock::time_point expires, CancelToken cancel) {
+    Task<> waitCancellable(std::chrono::steady_clock::time_point expires,
+                           CancelToken cancel) {
         auto waiter = wait();
         waiter.get().promise().mExpires = expires;
         co_await cancel.invoke<Canceller>(waiter);
@@ -85,30 +85,37 @@ public:
     }
 
     Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
-        auto res = co_await co_timeout(&TimedConditionVariable::waitCancellable, expires, this, expires);
+        auto res = co_await co_timeout(&TimedConditionVariable::waitCancellable,
+                                       expires, this, expires);
         if (!res) {
-            co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+            co_return Unexpected{
+                std::make_error_code(std::errc::stream_timeout)};
         }
         co_return {};
     }
 
     Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
-        auto res = co_await co_timeout(&TimedConditionVariable::waitCancellable, timeout, this, std::chrono::steady_clock::now() + timeout);
+        auto res = co_await co_timeout(
+            &TimedConditionVariable::waitCancellable, timeout, this,
+            std::chrono::steady_clock::now() + timeout);
         if (!res) {
-            co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+            co_return Unexpected{
+                std::make_error_code(std::errc::stream_timeout)};
         }
         co_return {};
     }
 
     void notify() {
         while (auto promise = popWaiting()) {
-            co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*promise));
+            co_spawn(
+                std::coroutine_handle<PromiseNode>::from_promise(*promise));
         }
     }
 
     void notify_one() {
         if (auto promise = popWaiting()) {
-            co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*promise));
+            co_spawn(
+                std::coroutine_handle<PromiseNode>::from_promise(*promise));
         }
     }
 };
@@ -171,7 +178,9 @@ public:
         void await_suspend(std::coroutine_handle<> coroutine) const {
 #if CO_ASYNC_DEBUG
             if (mThat->mWaitingCoroutine) [[unlikely]] {
-                throw std::logic_error("please do not co_await on the same OneshotConditionVariable or Future for multiple times");
+                throw std::logic_error(
+                    "please do not co_await on the same "
+                    "OneshotConditionVariable or Future for multiple times");
             }
 #endif
             mThat->mWaitingCoroutine = coroutine;
@@ -180,7 +189,8 @@ public:
         void await_resume() const noexcept {
 #if CO_ASYNC_DEBUG
             if (!mThat->mReady) [[unlikely]] {
-                throw std::logic_error("OneshotConditionVariable or Future waked up but not ready");
+                throw std::logic_error("OneshotConditionVariable or Future "
+                                       "waked up but not ready");
             }
 #endif
             mThat->mReady = false;

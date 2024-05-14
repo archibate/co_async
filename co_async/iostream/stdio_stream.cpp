@@ -52,7 +52,7 @@ FileHandle &stdFileHandle() {
     return h;
 }
 
-}
+} // namespace
 
 OwningStream &stdio() {
     static thread_local OwningStream s = make_stream<StdioStream>(

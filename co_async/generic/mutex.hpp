@@ -13,7 +13,8 @@ struct BasicMutex {
 
     bool try_lock() {
         bool expect = false;
-        return mLocked.compare_exchange_strong(expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+        return mLocked.compare_exchange_strong(
+            expect, true, std::memory_order_acquire, std::memory_order_relaxed);
     }
 
     Task<> lock() {
@@ -34,7 +35,8 @@ struct BasicTimedMutex {
 
     bool try_lock() {
         bool expect = false;
-        return mLocked.compare_exchange_strong(expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+        return mLocked.compare_exchange_strong(
+            expect, true, std::memory_order_acquire, std::memory_order_relaxed);
     }
 
     Task<> lock() {
@@ -49,7 +51,8 @@ struct BasicTimedMutex {
 
     Task<bool> try_lock(std::chrono::steady_clock::time_point expires) {
         while (!try_lock()) {
-            if (std::chrono::steady_clock::now() > expires || !co_await mReady.wait(expires)) [[unlikely]] {
+            if (std::chrono::steady_clock::now() > expires ||
+                !co_await mReady.wait(expires)) [[unlikely]] {
                 co_return false;
             }
         }
@@ -97,7 +100,8 @@ public:
             }
         }
 
-        Locked(Locked &&that) noexcept : mImpl(std::exchange(that.mImpl, nullptr)) {}
+        Locked(Locked &&that) noexcept
+            : mImpl(std::exchange(that.mImpl, nullptr)) {}
 
         Locked &operator=(Locked &&that) noexcept {
             std::swap(mImpl, that.mImpl);
@@ -126,12 +130,14 @@ public:
     }
 
     Task<Locked> try_lock_for(std::chrono::steady_clock::duration timeout) {
-        if (!co_await mMutex.try_lock_for(timeout)) co_return Locked();
+        if (!co_await mMutex.try_lock_for(timeout))
+            co_return Locked();
         co_return Locked(this);
     }
 
     Task<Locked> try_lock_until(std::chrono::steady_clock::time_point expires) {
-        if (!co_await mMutex.try_lock_for(expires)) co_return Locked();
+        if (!co_await mMutex.try_lock_for(expires))
+            co_return Locked();
         co_return Locked(this);
     }
 
@@ -153,8 +159,7 @@ public:
 };
 
 template <class M>
-struct MutexImpl<M, void> : MutexImpl<M, Void> {
-};
+struct MutexImpl<M, void> : MutexImpl<M, Void> {};
 
 template <class T = void>
 struct Mutex : MutexImpl<BasicMutex, T> {};
@@ -170,7 +175,9 @@ private:
 public:
     struct Locked {
     private:
-        explicit Locked(Mutex<>::Locked locked, CallOnce *impl) noexcept : mLocked(std::move(locked)), mImpl(impl) {}
+        explicit Locked(Mutex<>::Locked locked, CallOnce *impl) noexcept
+            : mLocked(std::move(locked)),
+              mImpl(impl) {}
 
         friend CallOnce;
 
@@ -199,7 +206,6 @@ public:
             co_return Locked();
         }
         co_return std::move(locked);
-
     }
 };
 

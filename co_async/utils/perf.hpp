@@ -30,7 +30,8 @@ private:
 
     struct PerfGather {
         PerfGather() {
-            signal(SIGINT, +[](int signo) { std::exit(130); });
+            signal(
+                SIGINT, +[](int signo) { std::exit(130); });
         }
 
         PerfGather(PerfGather &&) = delete;
@@ -111,7 +112,8 @@ private:
                            "file", w, "line", "min", "avg", "max", "sum", "nr",
                            nw + 1);
             for (auto const &[loc, e]: sorted) {
-                std::format_to(oit, "{:>{}}:{:<4} {:>6} {:>6} {:>6} {:>6} {:>{}}x\n",
+                std::format_to(oit,
+                               "{:>{}}:{:<4} {:>6} {:>6} {:>6} {:>6} {:>{}}x\n",
                                p(loc.first), w, loc.second, t(e.min),
                                t(e.sum / e.nr), t(e.max), t(e.sum), e.nr, nw);
             }
@@ -135,7 +137,8 @@ private:
 
     static void gather(PerfThreadLocal &perthread) {
         std::lock_guard guard(gathered.lock);
-        gathered.table.insert(gathered.table.end(), perthread.table.begin(), perthread.table.end());
+        gathered.table.insert(gathered.table.end(), perthread.table.begin(),
+                              perthread.table.end());
         gathered.threads.erase(&perthread);
     }
 

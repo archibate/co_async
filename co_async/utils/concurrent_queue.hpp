@@ -19,7 +19,11 @@ inline void assume(bool v) {
 template <class T, std::size_t Capacity = 0>
 struct ConcurrentQueue {
     static constexpr std::size_t Shift = std::bit_width(Capacity);
-    using Stamp = std::conditional_t<Shift <= 4, std::uint8_t, std::conditional_t<Shift <= 8, std::uint16_t, std::conditional_t<Shift <= 16, std::uint32_t, std::uint64_t>>>;
+    using Stamp = std::conditional_t<
+        Shift <= 4, std::uint8_t,
+        std::conditional_t<
+            Shift <= 8, std::uint16_t,
+            std::conditional_t<Shift <= 16, std::uint32_t, std::uint64_t>>>;
 
     static_assert(Shift * 2 <= sizeof(Stamp) * 8);
     static_assert(Capacity < (1 << Shift));
@@ -73,7 +77,8 @@ private:
     }
 
     inline bool canWrite(Stamp s) const {
-        return (offsetRead(s) & (kSize - 1)) != ((offsetWrite(s) + (kSize - Capacity)) & (kSize - 1));
+        return (offsetRead(s) & (kSize - 1)) !=
+               ((offsetWrite(s) + (kSize - Capacity)) & (kSize - 1));
     }
 
     inline Stamp advectRead(Stamp s) const {

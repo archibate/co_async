@@ -128,8 +128,7 @@ Task<Expected<>> HTTPServer::IO::readRequestHeader() {
 Task<Expected<std::string>> HTTPServer::IO::request_body() {
 #if CO_ASYNC_DEBUG
     if (mBodyRead) [[unlikely]] {
-        throw std::runtime_error(
-            "request_body() may only be called once");
+        throw std::runtime_error("request_body() may only be called once");
     }
 #endif
     mBodyRead = true;
@@ -141,8 +140,7 @@ Task<Expected<std::string>> HTTPServer::IO::request_body() {
 Task<Expected<>> HTTPServer::IO::request_body_stream(OwningStream &out) {
 #if CO_ASYNC_DEBUG
     if (mBodyRead) [[unlikely]] {
-        throw std::runtime_error(
-            "request_body() may only be called once");
+        throw std::runtime_error("request_body() may only be called once");
     }
 #endif
     mBodyRead = true;
@@ -150,7 +148,8 @@ Task<Expected<>> HTTPServer::IO::request_body_stream(OwningStream &out) {
     co_return {};
 }
 
-Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp, std::string_view content) {
+Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp,
+                                          std::string_view content) {
 #if CO_ASYNC_DEBUG
     mResponseSavedForDebug = resp;
 #endif
@@ -164,7 +163,8 @@ Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp, std::string_view co
     co_return {};
 }
 
-Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp, OwningStream &body) {
+Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp,
+                                          OwningStream &body) {
 #if CO_ASYNC_DEBUG
     mResponseSavedForDebug = resp;
 #endif
@@ -178,7 +178,6 @@ Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp, OwningStream &body)
     co_return {};
 }
 
-
 void HTTPServer::IO::builtinHeaders(HTTPResponse &res) {
     using namespace std::string_literals;
     res.headers.insert("server"s, "co_async/0.0.1"s);
@@ -188,6 +187,7 @@ void HTTPServer::IO::builtinHeaders(HTTPResponse &res) {
 }
 
 HTTPServer::HTTPServer() : mImpl(std::make_unique<Impl>()) {}
+
 HTTPServer::~HTTPServer() = default;
 
 void HTTPServer::timeout(std::chrono::steady_clock::duration timeout) {
@@ -203,15 +203,15 @@ void HTTPServer::route(std::string_view methods, std::string_view path,
 
 void HTTPServer::route(std::string_view methods, std::string_view prefix,
                        HTTPRouteMode mode, HTTPPrefixHandler handler) {
-    auto it =
-        std::lower_bound(mImpl->mPrefixRoutes.begin(), mImpl->mPrefixRoutes.end(), prefix,
-                         [](auto const &item, auto const &prefix) {
-                         return item.first.size() > prefix.size();
-                         });
+    auto it = std::lower_bound(mImpl->mPrefixRoutes.begin(),
+                               mImpl->mPrefixRoutes.end(), prefix,
+                               [](auto const &item, auto const &prefix) {
+                                   return item.first.size() > prefix.size();
+                               });
     mImpl->mPrefixRoutes.insert(
-        it, {std::string(prefix),
-            {handler, mode,
-                split_string(upper_string(methods), ' ').collect()}});
+        it,
+        {std::string(prefix),
+         {handler, mode, split_string(upper_string(methods), ' ').collect()}});
 }
 
 void HTTPServer::route(HTTPHandler handler) {
@@ -225,7 +225,8 @@ HTTPServer::prepareHTTPS(SocketHandle handle, SSLServerState &https) const {
         /* "h2", */
         "http/1.1",
     };
-    auto sock = ssl_accept(std::move(handle), https.cert, https.skey, protocols, &https.cache);
+    auto sock = ssl_accept(std::move(handle), https.cert, https.skey, protocols,
+                           &https.cache);
     sock.timeout(mImpl->mTimeout);
     /* if (auto peek = co_await sock.peekn(2); peek && *peek == "h2"sv) { */
     /*     co_return std::make_unique<HTTPProtocolVersion2>(std::move(sock)); */
@@ -233,7 +234,8 @@ HTTPServer::prepareHTTPS(SocketHandle handle, SSLServerState &https) const {
     co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
 }
 
-Task<std::unique_ptr<HTTPProtocol>> HTTPServer::prepareHTTP(SocketHandle handle) const {
+Task<std::unique_ptr<HTTPProtocol>>
+HTTPServer::prepareHTTP(SocketHandle handle) const {
     auto sock = make_stream<SocketStream>(std::move(handle));
     sock.timeout(mImpl->mTimeout);
     co_return std::make_unique<HTTPProtocolVersion11>(std::move(sock));
@@ -247,7 +249,8 @@ Task<Expected<>> HTTPServer::handle_http(SocketHandle handle) const {
     co_return {};
 }
 
-Task<Expected<>> HTTPServer::handle_http_redirect_to_https(SocketHandle handle) const {
+Task<Expected<>>
+HTTPServer::handle_http_redirect_to_https(SocketHandle handle) const {
     using namespace std::string_literals;
     auto http = co_await prepareHTTP(std::move(handle));
     while (true) {
@@ -259,10 +262,10 @@ Task<Expected<>> HTTPServer::handle_http_redirect_to_https(SocketHandle handle) 
             HTTPResponse res = {
                 .status = 302,
                 .headers =
-                {
-                    {"location", location},
-                    {"content-type", "text/plain"},
-                },
+                    {
+                        {"location", location},
+                        {"content-type", "text/plain"},
+                    },
             };
             co_await co_await io.response(res, location);
         } else {
@@ -290,15 +293,14 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
 #if CO_ASYNC_DEBUG
         std::chrono::steady_clock::time_point t0;
         if (mLogRequests) {
-            std::clog << io.request.method + ' ' + io.request.uri.dump() +
-                '\n';
+            std::clog << io.request.method + ' ' + io.request.uri.dump() + '\n';
             for (auto [k, v]: io.request.headers) {
                 if (k == "cookie" || k == "set-cookie" ||
                     k == "authorization") {
                     v = "*****";
                 }
-                std::clog
-                    << "      " + capitalizeHTTPHeader(k) + ": " + v + '\n';
+                std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
+                                 '\n';
             }
             t0 = std::chrono::steady_clock::now();
         }
@@ -307,23 +309,22 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
 #if CO_ASYNC_DEBUG
         if (mLogRequests) {
             auto dt = std::chrono::steady_clock::now() - t0;
-            std::clog
-                << io.request.method + ' ' + io.request.uri.dump() + ' ' +
-                std::to_string(io.mResponseSavedForDebug.status) +
-                ' ' +
-                std::string(getHTTPStatusName(
-                    io.mResponseSavedForDebug.status)) +
-                ' ' +
-                std::to_string(std::chrono::duration_cast<
-                               std::chrono::milliseconds>(dt)
-                               .count()) +
-                "ms\n";
+            std::clog << io.request.method + ' ' + io.request.uri.dump() + ' ' +
+                             std::to_string(io.mResponseSavedForDebug.status) +
+                             ' ' +
+                             std::string(getHTTPStatusName(
+                                 io.mResponseSavedForDebug.status)) +
+                             ' ' +
+                             std::to_string(std::chrono::duration_cast<
+                                                std::chrono::milliseconds>(dt)
+                                                .count()) +
+                             "ms\n";
             for (auto [k, v]: io.mResponseSavedForDebug.headers) {
                 if (k == "cookie" || k == "set-cookie") {
                     v = "***";
                 }
-                std::clog
-                    << "      " + capitalizeHTTPHeader(k) + ": " + v + '\n';
+                std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
+                                 '\n';
             }
         }
 #endif
@@ -337,15 +338,14 @@ Task<Expected<>> HTTPServer::make_error_response(IO &io, int status) {
     HTTPResponse res{
         .status = status,
         .headers =
-        {
-            {"content-type", "text/html;charset=utf-8"},
-        },
+            {
+                {"content-type", "text/html;charset=utf-8"},
+            },
     };
     co_await co_await io.response(
-        res,
-        "<html><head><title>" + error +
-        "</title></head><body><center><h1>" + error +
-        "</h1></center><hr><center>co_async</center></body></html>");
+        res, "<html><head><title>" + error +
+                 "</title></head><body><center><h1>" + error +
+                 "</h1></center><hr><center>co_async</center></body></html>");
     co_return {};
 }
 

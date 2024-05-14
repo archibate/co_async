@@ -15,8 +15,8 @@ private:
 
     struct IOContextGuard {
         explicit IOContextGuard(IOContext *that) {
-            if (IOContext::instance || GenericIOContext::instance || PlatformIOContext::instance)
-                [[unlikely]] {
+            if (IOContext::instance || GenericIOContext::instance ||
+                PlatformIOContext::instance) [[unlikely]] {
                 throw std::logic_error(
                     "each thread may contain only one IOContextGuard");
             }
@@ -43,7 +43,8 @@ public:
 
     IOContext(IOContext &&) = delete;
 
-    void startHere(std::stop_token stop, PlatformIOContextOptions options, std::span<IOContext> peerContexts) {
+    void startHere(std::stop_token stop, PlatformIOContextOptions options,
+                   std::span<IOContext> peerContexts) {
         IOContextGuard guard(this);
         if (options.threadAffinity) {
             PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
@@ -54,7 +55,8 @@ public:
             if (maxSleep && (!duration || *duration > maxSleep)) {
                 duration = maxSleep;
             }
-            bool hasEvent = PlatformIOContext::instance->waitEventsFor(1, duration);
+            bool hasEvent =
+                PlatformIOContext::instance->waitEventsFor(1, duration);
             if (options.maxSleep) {
                 if (hasEvent) {
                     maxSleep = *options.maxSleep + options.maxSleepInc;
@@ -64,19 +66,22 @@ public:
             }
 #if CO_ASYNC_STEAL
             if (!hasEvent && !peerContexts.empty()) {
-                for (IOContext *p = peerContexts.data(); p != peerContexts.data() + peerContexts.size(); ++p) {
-                    if (p->mGenericIO.runComputeOnly()) break;
+                for (IOContext *p = peerContexts.data();
+                     p != peerContexts.data() + peerContexts.size(); ++p) {
+                    if (p->mGenericIO.runComputeOnly())
+                        break;
                 }
             }
 #endif
         }
     }
 
-    void start(PlatformIOContextOptions options = {}, std::span<IOContext> peerContexts = {}) {
-        mThread = std::jthread(
-            [this, options = std::move(options), peerContexts](std::stop_token stop) {
-                this->startHere(stop, options, peerContexts);
-            });
+    void start(PlatformIOContextOptions options = {},
+               std::span<IOContext> peerContexts = {}) {
+        mThread = std::jthread([this, options = std::move(options),
+                                peerContexts](std::stop_token stop) {
+            this->startHere(stop, options, peerContexts);
+        });
     }
 
     void spawn(std::coroutine_handle<> coroutine) {
@@ -101,10 +106,10 @@ public:
 
 template <class T, class P>
 inline Task<> contextJoinHelper(Task<T, P> task, std::condition_variable &cv,
-                         Uninitialized<T> &result
+                                Uninitialized<T> &result
 #if CO_ASYNC_EXCEPT
-                         ,
-                         std::exception_ptr exception
+                                ,
+                                std::exception_ptr exception
 #endif
 ) {
 #if CO_ASYNC_EXCEPT
@@ -132,10 +137,10 @@ T contextJoin(IOContext &context, Task<T, P> task) {
 #endif
     context.spawn(contextJoinHelper(std::move(task), cv, result
 #if CO_ASYNC_EXCEPT
-                            ,
-                            exception
+                                    ,
+                                    exception
 #endif
-                            ));
+                                    ));
     std::unique_lock lck(mtx);
     cv.wait(lck);
     lck.unlock();

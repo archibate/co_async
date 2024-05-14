@@ -46,7 +46,9 @@ public:
 
     protected:
         void destructiveErase() {
-            static_assert(std::is_base_of_v<NodeType, Value>, "Value type must be derived from RbTree<Value>::NodeType");
+            static_assert(
+                std::is_base_of_v<NodeType, Value>,
+                "Value type must be derived from RbTree<Value>::NodeType");
 
             if (this->rbTree) {
                 this->rbTree->doErase(this);
@@ -318,7 +320,8 @@ public:
 
     template <class Visitor>
     void traverseInorder(Visitor &&visitor) {
-        doTraverseInorder(root, [visitor = std::forward<Visitor>(visitor)] (RbNode *node) mutable {
+        doTraverseInorder(root, [visitor = std::forward<Visitor>(visitor)](
+                                    RbNode *node) mutable {
             visitor(static_cast<Value &>(*node));
         });
     }
@@ -349,10 +352,13 @@ public:
 
     protected:
         bool destructiveErase() {
-            static_assert(std::is_base_of_v<NodeType, Value>, "Value type must be derived from RbTree<Value>::NodeType");
+            static_assert(
+                std::is_base_of_v<NodeType, Value>,
+                "Value type must be derived from RbTree<Value>::NodeType");
 
             if (this->rbTree) {
-                auto lock = static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
+                auto lock =
+                    static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
                 if (this->rbTree) [[likely]] {
                     lock->erase(static_cast<Value &>(*this));
                     this->rbTree = nullptr;
@@ -368,8 +374,9 @@ public:
         BaseTree *mThat;
         std::unique_lock<std::mutex> mGuard;
 
-        explicit LockGuard(ConcurrentRbTree *that) noexcept : mThat(that), mGuard(that->mMutex) {
-        }
+        explicit LockGuard(ConcurrentRbTree *that) noexcept
+            : mThat(that),
+              mGuard(that->mMutex) {}
 
         friend ConcurrentRbTree;
 

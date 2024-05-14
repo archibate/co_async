@@ -196,7 +196,8 @@ inline Expected<> socketSetOption(SocketHandle &sock, int level, int opt,
 }
 
 inline Task<Expected<SocketHandle>> createSocket(int family, int type) {
-    int fd = co_await expectError(co_await UringOp().prep_socket(family, type, 0, 0));
+    int fd = co_await expectError(
+        co_await UringOp().prep_socket(family, type, 0, 0));
     SocketHandle sock(fd);
     co_return sock;
 }
@@ -210,25 +211,30 @@ inline Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr) {
 }
 
 inline Task<Expected<SocketHandle>>
-socket_connect(SocketAddress const &addr, std::chrono::steady_clock::duration timeout) {
+socket_connect(SocketAddress const &addr,
+               std::chrono::steady_clock::duration timeout) {
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
     auto ts = durationToKernelTimespec(timeout);
     co_await expectError(co_await UringOp::link_ops(
-        UringOp().prep_connect(sock.fileNo(), (const struct sockaddr *)&addr.mAddr,
-                      addr.mAddrLen),
+        UringOp().prep_connect(
+            sock.fileNo(), (const struct sockaddr *)&addr.mAddr, addr.mAddrLen),
         UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
     co_return sock;
 }
 
-inline Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr, CancelToken cancel) {
+inline Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
+                                                   CancelToken cancel) {
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
     if (cancel.is_canceled()) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::operation_canceled)};
+        co_return Unexpected{
+            std::make_error_code(std::errc::operation_canceled)};
     }
-    co_await expectError(co_await cancel.invoke<UringOpCanceller>(UringOp().prep_connect(
-        sock.fileNo(), (const struct sockaddr *)&addr.mAddr, addr.mAddrLen)));
+    co_await expectError(co_await cancel.invoke<UringOpCanceller>(
+        UringOp().prep_connect(sock.fileNo(),
+                               (const struct sockaddr *)&addr.mAddr,
+                               addr.mAddrLen)));
     co_return sock;
 }
 
@@ -248,20 +254,22 @@ inline Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
 }
 
 inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener) {
-    int fd = co_await expectError(co_await UringOp().prep_accept(
-        listener.fileNo(), nullptr, nullptr, 0));
+    int fd = co_await expectError(
+        co_await UringOp().prep_accept(listener.fileNo(), nullptr, nullptr, 0));
     SocketHandle sock(fd);
     co_return sock;
 }
 
-inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener, CancelToken cancel) {
-    int fd = co_await expectError(co_await cancel.invoke<UringOpCanceller>(UringOp().prep_accept(
-        listener.fileNo(), nullptr, nullptr, 0)));
+inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
+                                                    CancelToken cancel) {
+    int fd = co_await expectError(co_await cancel.invoke<UringOpCanceller>(
+        UringOp().prep_accept(listener.fileNo(), nullptr, nullptr, 0)));
     SocketHandle sock(fd);
     co_return sock;
 }
 
-inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener, SocketAddress &peerAddr) {
+inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
+                                                    SocketAddress &peerAddr) {
     int fd = co_await expectError(co_await UringOp().prep_accept(
         listener.fileNo(), (struct sockaddr *)&peerAddr.mAddr,
         &peerAddr.mAddrLen, 0));
@@ -269,10 +277,13 @@ inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener, So
     co_return sock;
 }
 
-inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener, SocketAddress &peerAddr, CancelToken cancel) {
-    int fd = co_await expectError(co_await cancel.invoke<UringOpCanceller>(UringOp().prep_accept(
-        listener.fileNo(), (struct sockaddr *)&peerAddr.mAddr,
-        &peerAddr.mAddrLen, 0)));
+inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
+                                                    SocketAddress &peerAddr,
+                                                    CancelToken cancel) {
+    int fd = co_await expectError(co_await cancel.invoke<UringOpCanceller>(
+        UringOp().prep_accept(listener.fileNo(),
+                              (struct sockaddr *)&peerAddr.mAddr,
+                              &peerAddr.mAddrLen, 0)));
     SocketHandle sock(fd);
     co_return sock;
 }
@@ -288,31 +299,34 @@ inline Task<Expected<std::size_t>> socket_read(SocketHandle &sock,
 }
 
 inline Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
-                                                std::span<char const> buf, CancelToken cancel) {
-    co_return expectError(co_await cancel.invoke<UringOpCanceller>(UringOp().prep_send(sock.fileNo(), buf, 0)));
+                                                std::span<char const> buf,
+                                                CancelToken cancel) {
+    co_return expectError(co_await cancel.invoke<UringOpCanceller>(
+        UringOp().prep_send(sock.fileNo(), buf, 0)));
 }
 
-inline Task<Expected<std::size_t>> socket_read(SocketHandle &sock,
-                                               std::span<char> buf, CancelToken cancel) {
-    co_return expectError(co_await cancel.invoke<UringOpCanceller>(UringOp().prep_recv(sock.fileNo(), buf, 0)));
+inline Task<Expected<std::size_t>>
+socket_read(SocketHandle &sock, std::span<char> buf, CancelToken cancel) {
+    co_return expectError(co_await cancel.invoke<UringOpCanceller>(
+        UringOp().prep_recv(sock.fileNo(), buf, 0)));
 }
 
 inline Task<Expected<std::size_t>>
 socket_write(SocketHandle &sock, std::span<char const> buf,
              std::chrono::steady_clock::duration timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return co_await expectError(
-        co_await UringOp::link_ops(UringOp().prep_send(sock.fileNo(), buf, 0),
-                            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+    co_return co_await expectError(co_await UringOp::link_ops(
+        UringOp().prep_send(sock.fileNo(), buf, 0),
+        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
 }
 
 inline Task<Expected<std::size_t>>
 socket_read(SocketHandle &sock, std::span<char> buf,
             std::chrono::steady_clock::duration timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return expectError(
-        co_await UringOp::link_ops(UringOp().prep_recv(sock.fileNo(), buf, 0),
-                            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+    co_return expectError(co_await UringOp::link_ops(
+        UringOp().prep_recv(sock.fileNo(), buf, 0),
+        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
 }
 
 inline Task<Expected<>> socket_shutdown(SocketHandle &sock,

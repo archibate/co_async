@@ -19,4 +19,4 @@ public:
 template <class T, class P>
 TaskOwnedAwaiter(Task<T, P>) -> TaskOwnedAwaiter<T, P>;
 
-}
+} // namespace co_async

@@ -167,8 +167,8 @@ inline std::filesystem::path make_path(Ts &&...chunks) {
 inline Task<Expected<FileHandle>> fs_open(DirFilePath path, OpenMode mode,
                                           mode_t access = 0644) {
     int oflags = (int)mode;
-    int fd = co_await expectError(
-        co_await UringOp().prep_openat(path.dir_file(), path.c_str(), oflags, access));
+    int fd = co_await expectError(co_await UringOp().prep_openat(
+        path.dir_file(), path.c_str(), oflags, access));
     FileHandle file(fd);
     co_return file;
 }
@@ -187,7 +187,7 @@ inline Task<Expected<>> fs_mkdir(DirFilePath path, mode_t access = 0755) {
 inline Task<Expected<>> fs_link(DirFilePath oldpath, DirFilePath newpath) {
     co_return expectError(
         co_await UringOp().prep_linkat(oldpath.dir_file(), oldpath.c_str(),
-                              newpath.dir_file(), newpath.c_str(), 0));
+                                       newpath.dir_file(), newpath.c_str(), 0));
 }
 
 inline Task<Expected<>> fs_symlink(DirFilePath target, DirFilePath linkpath) {
@@ -201,15 +201,15 @@ inline Task<Expected<>> fs_unlink(DirFilePath path) {
 }
 
 inline Task<Expected<>> fs_rmdir(DirFilePath path) {
-    co_return expectError(
-        co_await UringOp().prep_unlinkat(path.dir_file(), path.c_str(), AT_REMOVEDIR));
+    co_return expectError(co_await UringOp().prep_unlinkat(
+        path.dir_file(), path.c_str(), AT_REMOVEDIR));
 }
 
 inline Task<Expected<FileStat>>
 fs_stat(DirFilePath path, int mask = STATX_BASIC_STATS | STATX_BTIME) {
     FileStat ret;
-    co_await expectError(co_await UringOp().prep_statx(path.dir_file(), path.c_str(), 0,
-                                              mask, ret.getNativeStatx()));
+    co_await expectError(co_await UringOp().prep_statx(
+        path.dir_file(), path.c_str(), 0, mask, ret.getNativeStatx()));
     co_return ret;
 }
 
@@ -234,7 +234,8 @@ inline Task<Expected<std::size_t>> fs_write(FileHandle &file,
 }
 
 inline Task<Expected<>> fs_truncate(FileHandle &file, std::uint64_t size = 0) {
-    co_return expectError(co_await UringOp().prep_ftruncate(file.fileNo(), size));
+    co_return expectError(
+        co_await UringOp().prep_ftruncate(file.fileNo(), size));
 }
 
 inline Task<Expected<std::size_t>>

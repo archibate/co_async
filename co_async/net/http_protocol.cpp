@@ -355,24 +355,21 @@ void HTTPProtocolVersion11::checkPhase(int from, int to) {
 void HTTPProtocolVersion11::checkPhase(int from, int to) {}
 #endif
 
-Task<Expected<>>
-HTTPProtocolVersion11::writeBodyStream(BorrowedStream &body) {
+Task<Expected<>> HTTPProtocolVersion11::writeBodyStream(BorrowedStream &body) {
     checkPhase(1, 0);
     co_await co_await writeEncoded(body);
     co_await co_await sock.flush();
     co_return {};
 }
 
-Task<Expected<>>
-HTTPProtocolVersion11::writeBody(std::string_view body) {
+Task<Expected<>> HTTPProtocolVersion11::writeBody(std::string_view body) {
     checkPhase(1, 0);
     co_await co_await writeEncodedString(body);
     co_await co_await sock.flush();
     co_return {};
 }
 
-Task<Expected<>>
-HTTPProtocolVersion11::readBodyStream(BorrowedStream &body) {
+Task<Expected<>> HTTPProtocolVersion11::readBodyStream(BorrowedStream &body) {
     checkPhase(-1, 0);
     co_await co_await readEncoded(body);
     co_return {};
@@ -384,8 +381,7 @@ Task<Expected<>> HTTPProtocolVersion11::readBody(std::string &body) {
     co_return {};
 }
 
-Task<Expected<>>
-HTTPProtocolVersion11::writeRequest(HTTPRequest const &req) {
+Task<Expected<>> HTTPProtocolVersion11::writeRequest(HTTPRequest const &req) {
     checkPhase(0, 1);
     using namespace std::string_view_literals;
     co_await co_await sock.puts(req.method);
@@ -433,8 +429,7 @@ Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
     co_return {};
 }
 
-Task<Expected<>>
-HTTPProtocolVersion11::writeResponse(HTTPResponse const &res) {
+Task<Expected<>> HTTPProtocolVersion11::writeResponse(HTTPResponse const &res) {
     checkPhase(0, 1);
     using namespace std::string_view_literals;
     co_await co_await sock.puts("HTTP/1.1 "sv);
@@ -447,8 +442,7 @@ HTTPProtocolVersion11::writeResponse(HTTPResponse const &res) {
     co_return {};
 }
 
-Task<Expected<>>
-HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
+Task<Expected<>> HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
     std::string line;
@@ -469,7 +463,8 @@ HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     co_return {};
 }
 
-HTTPProtocolVersion11::HTTPProtocolVersion11(OwningStream sock) : HTTPProtocol(std::move(sock)) {}
+HTTPProtocolVersion11::HTTPProtocolVersion11(OwningStream sock)
+    : HTTPProtocol(std::move(sock)) {}
 
 HTTPProtocolVersion11::~HTTPProtocolVersion11() = default;
 

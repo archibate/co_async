@@ -3,8 +3,7 @@
 
 namespace co_async {
 
-std::string
-timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
+std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
     // format chrono time point into HTTP date format, e.g.: Tue, 30 Apr 2024 07:31:38 GMT
     std::time_t time = std::chrono::system_clock::to_time_t(tp);
     std::tm tm = *std::gmtime(&time);
@@ -118,7 +117,8 @@ std::string_view getHTTPStatusName(int status) {
     }
 }
 
-std::string guessContentTypeByExtension(std::string_view ext, char const *defaultType) {
+std::string guessContentTypeByExtension(std::string_view ext,
+                                        char const *defaultType) {
     using namespace std::string_view_literals;
     using namespace std::string_literals;
     if (ext == ".html"sv || ext == ".htm"sv) {

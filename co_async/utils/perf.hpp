@@ -5,7 +5,7 @@ namespace co_async {
 struct Perf {
 private:
     char const *file;
-    int line;
+    std::uint_least32_t line;
     std::chrono::steady_clock::time_point t0;
 
     struct PerfTableEntry {
@@ -65,7 +65,7 @@ private:
             for (auto const &e: table) {
                 m[{e.file, e.line}] += e.duration;
             }
-            auto t = [](long d) -> std::string {
+            auto t = [](std::uint64_t d) -> std::string {
                 if (d < 10000) {
                     return std::format("{}ns", d);
                 } else if (d < 10'000'000) {

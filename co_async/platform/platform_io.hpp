@@ -19,8 +19,8 @@ durationToKernelTimespec(std::chrono::duration<Rep, Period> dur) {
     auto secs = std::chrono::duration_cast<std::chrono::seconds>(dur);
     auto nsecs =
         std::chrono::duration_cast<std::chrono::nanoseconds>(dur - secs);
-    ts.tv_sec = static_cast<std::uint64_t>(secs.count());
-    ts.tv_nsec = static_cast<std::uint64_t>(nsecs.count());
+    ts.tv_sec = static_cast<__kernel_time64_t>(secs.count());
+    ts.tv_nsec = static_cast<__kernel_time64_t>(nsecs.count());
     return ts;
 }
 
@@ -127,7 +127,7 @@ public:
     }
 
     UringOp &&prep_openat_direct(int dirfd, char const *path, int flags,
-                                 mode_t mode, int file_index) && {
+                                 mode_t mode, unsigned int file_index) && {
         io_uring_prep_openat_direct(mSqe, dirfd, path, flags, mode, file_index);
         return std::move(*this);
     }
@@ -162,7 +162,7 @@ public:
     }
 
     UringOp &&prep_renameat(int olddirfd, char const *oldpath, int newdirfd,
-                            char const *newpath, int flags) && {
+                            char const *newpath, unsigned int flags) && {
         io_uring_prep_renameat(mSqe, olddirfd, oldpath, newdirfd, newpath,
                                flags);
         return std::move(*this);
@@ -186,39 +186,39 @@ public:
     }
 
     UringOp &&prep_read(int fd, std::span<char> buf, std::uint64_t offset) && {
-        io_uring_prep_read(mSqe, fd, buf.data(), buf.size(), offset);
+        io_uring_prep_read(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset);
         return std::move(*this);
     }
 
     UringOp &&prep_write(int fd, std::span<char const> buf,
                          std::uint64_t offset) && {
-        io_uring_prep_write(mSqe, fd, buf.data(), buf.size(), offset);
+        io_uring_prep_write(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset);
         return std::move(*this);
     }
 
     UringOp &&prep_read_fixed(int fd, std::span<char> buf, std::uint64_t offset,
                               int buf_index) && {
-        io_uring_prep_read_fixed(mSqe, fd, buf.data(), buf.size(), offset,
+        io_uring_prep_read_fixed(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset,
                                  buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_write_fixed(int fd, std::span<char const> buf,
                                std::uint64_t offset, int buf_index) && {
-        io_uring_prep_write_fixed(mSqe, fd, buf.data(), buf.size(), offset,
+        io_uring_prep_write_fixed(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset,
                                   buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_readv(int fd, std::span<struct iovec const> buf,
                          std::uint64_t offset, int flags) && {
-        io_uring_prep_readv2(mSqe, fd, buf.data(), buf.size(), offset, flags);
+        io_uring_prep_readv2(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset, flags);
         return std::move(*this);
     }
 
     UringOp &&prep_writev(int fd, std::span<struct iovec const> buf,
                           std::uint64_t offset, int flags) && {
-        io_uring_prep_writev2(mSqe, fd, buf.data(), buf.size(), offset, flags);
+        io_uring_prep_writev2(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset, flags);
         return std::move(*this);
     }
 
@@ -262,7 +262,7 @@ public:
         return std::move(*this);
     }
 
-    UringOp &&prep_cancel(UringOp *op, unsigned int flags) && {
+    UringOp &&prep_cancel(UringOp *op, int flags) && {
         io_uring_prep_cancel(mSqe, op, flags);
         return std::move(*this);
     }
@@ -306,7 +306,7 @@ public:
     UringOp &&prep_splice(int fd_in, std::int64_t off_in, int fd_out,
                           std::int64_t off_out, std::size_t nbytes,
                           unsigned int flags) && {
-        io_uring_prep_splice(mSqe, fd_in, off_in, fd_out, off_out, nbytes,
+        io_uring_prep_splice(mSqe, fd_in, off_in, fd_out, off_out, (unsigned int)nbytes,
                              flags);
         return std::move(*this);
     }

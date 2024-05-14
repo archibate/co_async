@@ -20,7 +20,7 @@ void PlatformIOContext::schedSetThreadAffinity(int cpu) {
 }
 
 PlatformIOContext::PlatformIOContext(std::size_t entries) {
-    throwingError(io_uring_queue_init(entries, &mRing, 0));
+    throwingError(io_uring_queue_init((unsigned int)entries, &mRing, 0));
 }
 
 PlatformIOContext::~PlatformIOContext() {
@@ -40,7 +40,7 @@ bool PlatformIOContext::waitEventsFor(
         tsp = nullptr;
     }
     int res =
-        io_uring_submit_and_wait_timeout(&mRing, &cqe, numBatch, tsp, nullptr);
+        io_uring_submit_and_wait_timeout(&mRing, &cqe, (unsigned int)numBatch, tsp, nullptr);
     if (res == -EINTR) [[unlikely]] {
         return false;
     }

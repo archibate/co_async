@@ -95,7 +95,7 @@ struct to_string_t<T> {
         if (ec != std::errc()) [[unlikely]] {
             throw std::system_error(std::make_error_code(ec), "to_chars");
         }
-        result.resize(p - result.data());
+        result.resize(std::size_t(p - result.data()));
     }
 };
 

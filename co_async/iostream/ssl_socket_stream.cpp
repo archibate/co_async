@@ -591,7 +591,7 @@ public:
         unsigned char *buf;
         std::size_t alen;
         if (buffer.empty()) [[unlikely]] {
-            co_return 0;
+            co_return std::size_t(0);
         }
         co_await co_await bearSSLRunUntil(BR_SSL_RECVAPP);
         buf = br_ssl_engine_recvapp_buf(eng, &alen);
@@ -608,7 +608,7 @@ public:
         unsigned char *buf;
         std::size_t alen;
         if (buffer.empty()) [[unlikely]] {
-            co_return 0;
+            co_return std::size_t(0);
         }
         co_await co_await bearSSLRunUntil(BR_SSL_SENDAPP);
         buf = br_ssl_engine_sendapp_buf(eng, &alen);

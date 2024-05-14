@@ -73,18 +73,18 @@ private:
     }
 
     inline bool canWrite(Stamp s) const {
-        return (offsetRead(s) & (kSize - 1)) !=
-               ((offsetWrite(s) + (kSize - Capacity)) & (kSize - 1));
+        return (offsetRead(s) & (Stamp)(kSize - 1)) !=
+        ((offsetWrite(s) + (Stamp)(kSize - Capacity)) & (Stamp)(kSize - 1));
     }
 
     inline Stamp advectRead(Stamp s) const {
-        return ((((s >> Shift) + 1) & (kSize - 1)) << Shift) |
-               (s & (kSize - 1));
+        return (Stamp)((((Stamp)(s >> Shift) + (Stamp)1) & (Stamp)(kSize - 1)) << Shift) |
+        (s & (Stamp)(kSize - 1));
     }
 
     inline Stamp advectWrite(Stamp s) const {
-        return (((s & (kSize - 1)) + 1) & (kSize - 1)) |
-               (s & ((kSize - 1) << Shift));
+        return (((s & (Stamp)(kSize - 1)) + (Stamp)1) & (Stamp)(kSize - 1)) |
+        (Stamp)(s & ((Stamp)(kSize - 1) << Shift));
     }
 
     std::unique_ptr<T[]> mHead = std::make_unique<T[]>(kSize);

@@ -43,7 +43,7 @@ struct OPipeStream : Stream {
     raw_write(std::span<char const> buffer) override {
         if (auto p = mPipe.lock()) [[likely]] {
             if (buffer.empty()) [[unlikely]] {
-                co_return 0;
+                co_return std::size_t(0);
             }
             while (!p->mChunks.push(std::string(buffer.data(), buffer.size())))
                 [[unlikely]] {

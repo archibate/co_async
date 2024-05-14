@@ -66,6 +66,13 @@
 extern "C" {
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic ignored "-Wextra"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#pragma GCC diagnostic ignored "-Wconversion"
+
 /*
  * IO submission data structure (Submission Queue Entry)
  */
@@ -2404,6 +2411,8 @@ IOURINGEXTERN bool io_uring_check_version(int major, int minor);
   (major > IO_URING_VERSION_MAJOR ||        \
    (major == IO_URING_VERSION_MAJOR &&      \
     minor >= IO_URING_VERSION_MINOR))
+
+#pragma GCC diagnostic pop
 
 #ifdef __cplusplus
 }

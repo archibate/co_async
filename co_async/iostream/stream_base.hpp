@@ -319,7 +319,7 @@ struct BorrowedStream {
     again:
         if (std::size_t(pe - p) <= mOutBufSize - mOutIndex) {
             auto b = mOutBuffer.get() + mOutIndex;
-            mOutIndex += pe - p;
+            mOutIndex += std::size_t(pe - p);
             while (p < pe) {
                 *b++ = *p++;
             }
@@ -344,10 +344,10 @@ struct BorrowedStream {
         auto p = s.data();
         auto const pe = s.data() + s.size();
         auto nMax = mOutBufSize - mOutIndex;
-        std::size_t n(pe - p);
+        auto n = std::size_t(pe - p);
         if (n <= nMax) {
             auto b = mOutBuffer.get() + mOutIndex;
-            mOutIndex += pe - p;
+            mOutIndex += std::size_t(pe - p);
             while (p < pe) {
                 *b++ = *p++;
             }

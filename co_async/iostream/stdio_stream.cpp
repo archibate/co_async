@@ -12,8 +12,8 @@ struct StdioStream : Stream {
         if (isatty(mFileIn.fileNo())) {
             struct termios tc;
             tcgetattr(mFileIn.fileNo(), &tc);
-            tc.c_lflag &= ~ICANON;
-            tc.c_lflag &= ~ECHO;
+            tc.c_lflag &= ~(tcflag_t)ICANON;
+            tc.c_lflag &= ~(tcflag_t)ECHO;
             tcsetattr(mFileIn.fileNo(), TCSANOW, &tc);
         }
     }

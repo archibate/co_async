@@ -186,39 +186,43 @@ public:
     }
 
     UringOp &&prep_read(int fd, std::span<char> buf, std::uint64_t offset) && {
-        io_uring_prep_read(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset);
+        io_uring_prep_read(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                           offset);
         return std::move(*this);
     }
 
     UringOp &&prep_write(int fd, std::span<char const> buf,
                          std::uint64_t offset) && {
-        io_uring_prep_write(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset);
+        io_uring_prep_write(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                            offset);
         return std::move(*this);
     }
 
     UringOp &&prep_read_fixed(int fd, std::span<char> buf, std::uint64_t offset,
                               int buf_index) && {
-        io_uring_prep_read_fixed(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset,
-                                 buf_index);
+        io_uring_prep_read_fixed(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                                 offset, buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_write_fixed(int fd, std::span<char const> buf,
                                std::uint64_t offset, int buf_index) && {
-        io_uring_prep_write_fixed(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset,
-                                  buf_index);
+        io_uring_prep_write_fixed(mSqe, fd, buf.data(),
+                                  (unsigned int)buf.size(), offset, buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_readv(int fd, std::span<struct iovec const> buf,
                          std::uint64_t offset, int flags) && {
-        io_uring_prep_readv2(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset, flags);
+        io_uring_prep_readv2(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                             offset, flags);
         return std::move(*this);
     }
 
     UringOp &&prep_writev(int fd, std::span<struct iovec const> buf,
                           std::uint64_t offset, int flags) && {
-        io_uring_prep_writev2(mSqe, fd, buf.data(), (unsigned int)buf.size(), offset, flags);
+        io_uring_prep_writev2(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                              offset, flags);
         return std::move(*this);
     }
 
@@ -306,8 +310,8 @@ public:
     UringOp &&prep_splice(int fd_in, std::int64_t off_in, int fd_out,
                           std::int64_t off_out, std::size_t nbytes,
                           unsigned int flags) && {
-        io_uring_prep_splice(mSqe, fd_in, off_in, fd_out, off_out, (unsigned int)nbytes,
-                             flags);
+        io_uring_prep_splice(mSqe, fd_in, off_in, fd_out, off_out,
+                             (unsigned int)nbytes, flags);
         return std::move(*this);
     }
 };

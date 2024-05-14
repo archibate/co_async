@@ -219,15 +219,16 @@ inline Task<Expected<std::uint64_t>> fs_stat_size(DirFilePath path) {
 }
 
 inline Task<Expected<std::size_t>>
-fs_read(FileHandle &file, std::span<char> buffer, std::uint64_t offset = (std::uint64_t)-1) {
-    co_return (std::size_t)co_await expectError(
+fs_read(FileHandle &file, std::span<char> buffer,
+        std::uint64_t offset = (std::uint64_t)-1) {
+    co_return (std::size_t) co_await expectError(
         co_await UringOp().prep_read(file.fileNo(), buffer, offset));
 }
 
-inline Task<Expected<std::size_t>> fs_write(FileHandle &file,
-                                            std::span<char const> buffer,
-                                            std::uint64_t offset = (std::uint64_t)-1) {
-    co_return (std::size_t)co_await expectError(
+inline Task<Expected<std::size_t>>
+fs_write(FileHandle &file, std::span<char const> buffer,
+         std::uint64_t offset = (std::uint64_t)-1) {
+    co_return (std::size_t) co_await expectError(
         co_await UringOp().prep_write(file.fileNo(), buffer, offset));
 }
 
@@ -239,7 +240,7 @@ inline Task<Expected<>> fs_truncate(FileHandle &file, std::uint64_t size = 0) {
 inline Task<Expected<std::size_t>>
 fs_splice(FileHandle &fileIn, FileHandle &fileOut, std::size_t size,
           std::int64_t offsetIn = -1, std::int64_t offsetOut = -1) {
-    co_return (std::size_t)co_await expectError(co_await UringOp().prep_splice(
+    co_return (std::size_t) co_await expectError(co_await UringOp().prep_splice(
         fileIn.fileNo(), offsetIn, fileOut.fileNo(), offsetOut, size, 0));
 }
 
@@ -249,7 +250,7 @@ inline Task<Expected<std::size_t>> fs_getdents(FileHandle &dirFile,
     if (res < 0) [[unlikely]] {
         res = -errno;
     }
-    co_return (std::size_t)co_await expectError(res);
+    co_return (std::size_t) co_await expectError(res);
 }
 
 inline Task<int> fs_nop() {

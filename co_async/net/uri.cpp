@@ -1,6 +1,7 @@
 #include <co_async/net/uri.hpp>
 #include <co_async/utils/simple_map.hpp>
 #include <co_async/utils/string_utils.hpp>
+
 namespace co_async {
 namespace {
 std::uint8_t fromHex(char c) {
@@ -121,16 +122,17 @@ void URI::dump(std::string &r) const {
     r.append(path);
     char queryChar = '?';
     for (auto &[k, v]: params) {
-                r.push_back(queryChar);
-                url_encode(r, k);
-                r.push_back('=');
-                url_encode(r, v);
-                queryChar = '&';
-            }
-        }
-        std::string URI::dump() const {
-            std::string r;
-            dump(r);
-            return r;
-        }
+        r.push_back(queryChar);
+        url_encode(r, k);
+        r.push_back('=');
+        url_encode(r, v);
+        queryChar = '&';
+    }
+}
+
+std::string URI::dump() const {
+    std::string r;
+    dump(r);
+    return r;
+}
 } // namespace co_async

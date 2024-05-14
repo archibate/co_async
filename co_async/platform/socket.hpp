@@ -286,32 +286,36 @@ inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
 
 inline Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                                 std::span<char const> buf) {
-    co_return (std::size_t)co_await expectError(co_await UringOp().prep_send(sock.fileNo(), buf, 0));
+    co_return (std::size_t) co_await expectError(
+        co_await UringOp().prep_send(sock.fileNo(), buf, 0));
 }
 
 inline Task<Expected<std::size_t>> socket_read(SocketHandle &sock,
                                                std::span<char> buf) {
-    co_return (std::size_t)co_await expectError(co_await UringOp().prep_recv(sock.fileNo(), buf, 0));
+    co_return (std::size_t) co_await expectError(
+        co_await UringOp().prep_recv(sock.fileNo(), buf, 0));
 }
 
 inline Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                                 std::span<char const> buf,
                                                 CancelToken cancel) {
-    co_return (std::size_t)co_await expectError(co_await cancel.invoke<UringOpCanceller>(
-        UringOp().prep_send(sock.fileNo(), buf, 0)));
+    co_return (std::size_t) co_await expectError(
+        co_await cancel.invoke<UringOpCanceller>(
+            UringOp().prep_send(sock.fileNo(), buf, 0)));
 }
 
 inline Task<Expected<std::size_t>>
 socket_read(SocketHandle &sock, std::span<char> buf, CancelToken cancel) {
-    co_return (std::size_t)co_await expectError(co_await cancel.invoke<UringOpCanceller>(
-        UringOp().prep_recv(sock.fileNo(), buf, 0)));
+    co_return (std::size_t) co_await expectError(
+        co_await cancel.invoke<UringOpCanceller>(
+            UringOp().prep_recv(sock.fileNo(), buf, 0)));
 }
 
 inline Task<Expected<std::size_t>>
 socket_write(SocketHandle &sock, std::span<char const> buf,
              std::chrono::steady_clock::duration timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return (std::size_t)co_await expectError(co_await UringOp::link_ops(
+    co_return (std::size_t) co_await expectError(co_await UringOp::link_ops(
         UringOp().prep_send(sock.fileNo(), buf, 0),
         UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
 }
@@ -320,7 +324,7 @@ inline Task<Expected<std::size_t>>
 socket_read(SocketHandle &sock, std::span<char> buf,
             std::chrono::steady_clock::duration timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return (std::size_t)co_await expectError(co_await UringOp::link_ops(
+    co_return (std::size_t) co_await expectError(co_await UringOp::link_ops(
         UringOp().prep_recv(sock.fileNo(), buf, 0),
         UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
 }

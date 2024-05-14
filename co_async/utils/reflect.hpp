@@ -438,7 +438,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                     } else if (0xDC00 <= hex && hex < 0xE000) {
                         if (lasthex) {
                             hex = 0x10000 + (lasthex - 0xD800) * 0x400 +
-                                (hex - 0xDC00);
+                                  (hex - 0xDC00);
                             lasthex = false;
                             phase = 0;
                         } else {
@@ -450,16 +450,24 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                         str.push_back((char)(unsigned char)(hex));
                     } else if (hex <= 0x7FF) {
                         str.push_back((char)(unsigned char)(0xC0 | (hex >> 6)));
-                        str.push_back((char)(unsigned char)(0x80 | (hex & 0x3F)));
+                        str.push_back(
+                            (char)(unsigned char)(0x80 | (hex & 0x3F)));
                     } else if (hex <= 0xFFFF) {
-                        str.push_back((char)(unsigned char)(0xE0 | (hex >> 12)));
-                        str.push_back((char)(unsigned char)(0x80 | ((hex >> 6) & 0x3F)));
-                        str.push_back((char)(unsigned char)(0x80 | (hex & 0x3F)));
+                        str.push_back(
+                            (char)(unsigned char)(0xE0 | (hex >> 12)));
+                        str.push_back(
+                            (char)(unsigned char)(0x80 | ((hex >> 6) & 0x3F)));
+                        str.push_back(
+                            (char)(unsigned char)(0x80 | (hex & 0x3F)));
                     } else if (hex <= 0x10FFFF) {
-                        str.push_back((char)(unsigned char)(0xF0 | (hex >> 18)));
-                        str.push_back((char)(unsigned char)(0x80 | ((hex >> 12) & 0x3F)));
-                        str.push_back((char)(unsigned char)(0x80 | ((hex >> 6) & 0x3F)));
-                        str.push_back((char)(unsigned char)(0x80 | (hex & 0x3F)));
+                        str.push_back(
+                            (char)(unsigned char)(0xF0 | (hex >> 18)));
+                        str.push_back(
+                            (char)(unsigned char)(0x80 | ((hex >> 12) & 0x3F)));
+                        str.push_back(
+                            (char)(unsigned char)(0x80 | ((hex >> 6) & 0x3F)));
+                        str.push_back(
+                            (char)(unsigned char)(0x80 | (hex & 0x3F)));
                     } else {
                         ec = make_error_code(JsonError::InvalidUTF16String);
                         return nullptr;

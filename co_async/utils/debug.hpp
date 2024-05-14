@@ -75,8 +75,9 @@
 // `#define DEBUG_STEPPING 0` (default) - no step debugging
 // `#define DEBUG_STEPPING 1` - enable step debugging, stops whenever debug
 // output generated, manually press ENTER to continue
-// `#define DEBUG_STEPPING 2` - enable debug output, like 1, but trigger a
+// `#define DEBUG_STEPPING 2` - enable step debugging, like 1, but trigger a
 // 'trap' interrupt for debugger to catch instead
+//
 // `#define DEBUG_SHOW_TIMESTAMP 0` - do not print timestamp
 // `#define DEBUG_SHOW_TIMESTAMP 1` - enable printing a timestamp for each line
 // of debug output (e.g. "09:57:32")
@@ -455,18 +456,20 @@ private:
 #  define DEBUG_SOURCE_LOCATION debug::debug_source_location
 # endif
     template <class T>
-    static auto debug_deref_avoid(T const &t) -> std::enable_if_t<!std::is_void_v<decltype(*t)>, decltype(*t)> {
+    static auto debug_deref_avoid(T const &t)
+        -> std::enable_if_t<!std::is_void_v<decltype(*t)>, decltype(*t)> {
         return *t;
     }
 
     struct debug_special_void {
-        const char (&repr())[5] {
+        char const (&repr())[5] const {
             return "void";
         }
     };
 
     template <class T>
-    static auto debug_deref_avoid(T const &t) -> std::enable_if_t<std::is_void_v<decltype(*t)>, debug_special_void> {
+    static auto debug_deref_avoid(T const &t)
+        -> std::enable_if_t<std::is_void_v<decltype(*t)>, debug_special_void> {
         return debug_special_void();
     }
 

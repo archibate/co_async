@@ -39,8 +39,8 @@ bool PlatformIOContext::waitEventsFor(
     } else {
         tsp = nullptr;
     }
-    int res =
-        io_uring_submit_and_wait_timeout(&mRing, &cqe, (unsigned int)numBatch, tsp, nullptr);
+    int res = io_uring_submit_and_wait_timeout(
+        &mRing, &cqe, (unsigned int)numBatch, tsp, nullptr);
     if (res == -EINTR) [[unlikely]] {
         return false;
     }

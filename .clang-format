@@ -87,8 +87,6 @@ BraceWrapping:
   AfterCaseLabel: false
   AfterNamespace: false
   AfterExternBlock: false
-  BeforeCatch: false
-  BeforeElse: false
   BeforeLambdaBody: false
   BeforeWhile: false
   IndentBraces: false

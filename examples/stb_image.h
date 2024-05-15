@@ -128,6 +128,13 @@ RECENT REVISION HISTORY:
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic ignored "-Wextra"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#pragma GCC diagnostic ignored "-Wconversion"
+
 // DOCUMENTATION
 //
 // Limitations:
@@ -541,9 +548,16 @@ STBIDEF int   stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const ch
 //
 //
 ////   end header file   /////////////////////////////////////////////////////
+#pragma GCC diagnostic pop
 #endif // STBI_INCLUDE_STB_IMAGE_H
 
 #ifdef STB_IMAGE_IMPLEMENTATION
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic ignored "-Wextra"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#pragma GCC diagnostic ignored "-Wconversion"
 
 #if defined(STBI_ONLY_JPEG) || defined(STBI_ONLY_PNG) || defined(STBI_ONLY_BMP) \
   || defined(STBI_ONLY_TGA) || defined(STBI_ONLY_GIF) || defined(STBI_ONLY_PSD) \
@@ -7756,6 +7770,7 @@ STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *c, void *user
    return stbi__is_16_main(&s);
 }
 
+#pragma GCC diagnostic pop
 #endif // STB_IMAGE_IMPLEMENTATION
 
 /*

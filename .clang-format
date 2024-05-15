@@ -20,7 +20,7 @@ IntegerLiteralSeparator:
   Binary: 4
   BinaryMinDigits: 6
   Decimal: 3
-  DecimalMinDigits: 6
+  DecimalMinDigits: 7
   Hex: 4
   HexMinDigits: 9
 AlignConsecutiveAssignments:

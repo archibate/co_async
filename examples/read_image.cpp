@@ -14,7 +14,7 @@ static Task<Expected<>> amain() {
     std::string buffer = co_await file.getall();
     int nx, ny, comp;
     std::shared_ptr<stbi_uc[]> image(
-        stbi_load_from_memory((stbi_uc const *)buffer.data(), buffer.size(),
+        stbi_load_from_memory((stbi_uc const *)buffer.data(), (int)buffer.size(),
                               &nx, &ny, &comp, 0),
         stbi_image_free);
     co_await co_await stdio().putline("image size: " + to_string(nx) + "x" +

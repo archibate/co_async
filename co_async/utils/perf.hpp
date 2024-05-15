@@ -25,12 +25,12 @@ private:
     };
 
     struct PerfGather {
-        PerfGather() {
-            signal(
-                SIGINT, +[](int signo) { std::exit(130); });
-        }
+        /* PerfGather() { */
+        /*     signal( */
+        /*         SIGINT, +[](int signo) { std::exit(130); }); */
+        /* } */
 
-        PerfGather(PerfGather &&) = delete;
+        PerfGather &operator=(PerfGather &&) = delete;
 
         void dump() const {
             if (table.empty()) {

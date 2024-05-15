@@ -298,7 +298,7 @@
 #  include <unordered_map>
 # endif
 # ifndef DEBUG_SOURCE_LOCATION
-#  if __cplusplus >= 202'002L
+#  if __cplusplus >= 202002L
 #   if defined(__has_include)
 #    if __has_include(<source_location>)
 #     include <source_location>
@@ -310,7 +310,7 @@
 #  endif
 # endif
 # ifndef DEBUG_SOURCE_LOCATION
-#  if __cplusplus >= 201'505L
+#  if __cplusplus >= 201505L
 #   if defined(__has_include)
 #    if __has_include(<experimental/source_location>)
 #     include <experimental/source_location>
@@ -359,7 +359,7 @@
 # endif
 # ifndef DEBUG_STRING_VIEW
 #  if defined(__has_include)
-#   if __cplusplus >= 201'703L
+#   if __cplusplus >= 201703L
 #    if __has_include(<string_view>)
 #     include <string_view>
 #     if __cpp_lib_string_view
@@ -373,7 +373,7 @@
 #  include <string>
 #  define DEBUG_STRING_VIEW std::string
 # endif
-# if __cplusplus >= 202'002L
+# if __cplusplus >= 202002L
 #  if defined(__has_cpp_attribute)
 #   if __has_cpp_attribute(unlikely)
 #    define DEBUG_UNLIKELY [[unlikely]]

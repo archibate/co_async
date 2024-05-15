@@ -13,7 +13,7 @@
 #include <vector>
 
 namespace reflect {
-#if __cpp_constexpr >= 201'703L
+#if __cpp_constexpr >= 201703L
 # define REFLECT__CONSTEXPR17 constexpr
 #else
 # define REFLECT__CONSTEXPR17

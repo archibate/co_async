@@ -5,6 +5,8 @@
 #include <co_async/generic/future.hpp>
 #include <co_async/generic/mutex.hpp>
 #include <co_async/iostream/cached_stream.hpp>
+#include <co_async/iostream/file_stream.hpp>
+#include <co_async/iostream/pipe_stream.hpp>
 #include <co_async/iostream/socket_stream.hpp>
 #include <co_async/iostream/ssl_socket_stream.hpp>
 #include <co_async/net/http_protocol.hpp>

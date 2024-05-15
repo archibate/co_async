@@ -20,9 +20,11 @@ static Task<> amain() {
         empty_func();
     }
     for (std::size_t i = 0; i < n; i++) {
+        Perf _;
         co_await empty_coroutine();
     }
     for (std::size_t i = 0; i < n; i++) {
+        Perf _;
         co_await fs_nop();
     }
 }

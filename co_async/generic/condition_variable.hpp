@@ -93,14 +93,7 @@ public:
     }
 
     Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
-        auto res = co_await co_timeout(
-            &TimedConditionVariable::waitCancellable, timeout, this,
-            std::chrono::steady_clock::now() + timeout);
-        if (!res) {
-            co_return Unexpected{
-                std::make_error_code(std::errc::stream_timeout)};
-        }
-        co_return {};
+        return wait(std::chrono::steady_clock::now() + timeout);
     }
 
     void notify() {

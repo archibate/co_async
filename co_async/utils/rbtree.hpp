@@ -3,7 +3,7 @@
 
 namespace co_async {
 template <class Value, class Compare = std::less<>>
-struct RbTree {
+struct RbTree : private Compare {
 private:
     enum RbColor {
         RED,
@@ -55,10 +55,9 @@ public:
 
 private:
     RbNode *root;
-    Compare comp;
 
     bool compare(RbNode *left, RbNode *right) const noexcept {
-        return comp(static_cast<Value &>(*left), static_cast<Value &>(*right));
+        return static_cast<Compare const &>(*this)(static_cast<Value &>(*left), static_cast<Value &>(*right));
     }
 
     void rotateLeft(RbNode *node) noexcept {
@@ -260,11 +259,10 @@ private:
     }
 
 public:
-    RbTree() noexcept : root(nullptr) {}
+    RbTree() noexcept(noexcept(Compare())) : Compare(), root(nullptr) {}
 
     explicit RbTree(Compare comp) noexcept(noexcept(Compare(comp)))
-        : root(nullptr),
-          comp(comp) {}
+        : Compare(comp), root(nullptr) {}
 
     RbTree(RbTree &&) = delete;
 

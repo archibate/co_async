@@ -50,7 +50,7 @@ struct BasicTimedMutex {
     Task<bool> try_lock(std::chrono::steady_clock::time_point expires) {
         while (!try_lock()) {
             if (std::chrono::steady_clock::now() > expires ||
-                !co_await mReady.wait(expires)) [[unlikely]] {
+                !co_await mReady.wait(expires)) {
                 co_return false;
             }
         }

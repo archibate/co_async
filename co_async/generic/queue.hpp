@@ -4,47 +4,50 @@
 #include <co_async/generic/condition_variable.hpp>
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/non_void_helper.hpp>
+#include <co_async/utils/ring_queue.hpp>
 
 namespace co_async {
-template <class T, std::size_t Capacity = 0>
+template <class T>
 struct Queue {
 private:
-    ConcurrentQueue<T, Capacity> mQueue;
-    ConditionVariable mNonFull;
-    ConditionVariable mNonEmpty;
+    RingQueue<T> mQueue;
+    ConditionVariable mChanged;
 
 public:
+    explicit Queue(std::size_t size) : mQueue(size) {}
+
     Task<> push(T value) {
         while (!mQueue.push(std::move(value))) {
-            co_await mNonEmpty;
+            co_await mChanged;
         }
-        mNonFull.notify_one();
+        mChanged.notify_one();
     }
 
     Task<T> pop(T value) {
         while (true) {
             if (auto value = mQueue.pop()) {
-                mNonEmpty.notify_one();
+                mChanged.notify_one();
                 co_return std::move(*value);
             }
-            co_await mNonFull;
+            co_await mChanged;
         }
     }
 };
 
-template <class T, std::size_t Capacity = 0>
+template <class T>
 struct TimedQueue {
 private:
-    ConcurrentQueue<T, Capacity> mQueue;
-    TimedConditionVariable mNonEmpty;
-    TimedConditionVariable mNonFull;
+    RingQueue<T> mQueue;
+    TimedConditionVariable mChanged;
 
 public:
+    explicit TimedQueue(std::size_t size) : mQueue(size) {}
+
     Task<> push(T value) {
         while (!mQueue.push(std::move(value))) {
-            co_await mNonFull.wait();
+            co_await mChanged.wait();
         }
-        mNonEmpty.notify_one();
+        mChanged.notify_one();
         co_return;
     }
 
@@ -57,21 +60,21 @@ public:
     Task<Expected<>> push(T value,
                           std::chrono::steady_clock::time_point expires) {
         while (!mQueue.push(std::move(value))) {
-            if (auto e = co_await mNonFull.wait(expires); e.has_error()) {
+            if (auto e = co_await mChanged.wait(expires); e.has_error()) {
                 co_return Unexpected{e.error()};
             }
         }
-        mNonEmpty.notify_one();
+        mChanged.notify_one();
         co_return;
     }
 
     Task<T> pop() {
         while (true) {
             if (auto value = mQueue.pop()) {
-                mNonFull.notify_one();
+                mChanged.notify_one();
                 co_return std::move(*value);
             }
-            co_await mNonEmpty.wait();
+            co_await mChanged.wait();
         }
     }
 
@@ -82,10 +85,10 @@ public:
     Task<Expected<T>> pop(std::chrono::steady_clock::time_point expires) {
         while (true) {
             if (auto value = mQueue.pop()) {
-                mNonFull.notify_one();
+                mChanged.notify_one();
                 co_return std::move(*value);
             }
-            if (auto e = co_await mNonEmpty.wait(expires); e.has_error()) {
+            if (auto e = co_await mChanged.wait(expires); e.has_error()) {
                 co_return Unexpected{e.error()};
             }
         }

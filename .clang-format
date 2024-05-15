@@ -56,7 +56,7 @@ AllowShortLambdasOnASingleLine: Inline
 AllowAllArgumentsOnNextLine: true
 AllowShortFunctionsOnASingleLine: Empty
 AlignOperands: true
-LambdaBodyIndentation: OuterScope
+LambdaBodyIndentation: Signature
 NamespaceIndentation: None
 PackConstructorInitializers: CurrentLine
 EmptyLineBeforeAccessModifier: LogicalBlock

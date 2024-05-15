@@ -26,9 +26,9 @@ public:
 
     bool try_acquire() {
         auto count = mCounter;
-        if (count < mMaxCount) {
-            mCounter = count + 1;
-            if (count == 0) {
+        if (count > 0) {
+            mCounter = count - 1;
+            if (count == mMaxCount) {
                 mChanged.notify_one();
             }
             return true;
@@ -38,9 +38,9 @@ public:
 
     bool try_release() {
         auto count = mCounter;
-        if (count > 0) {
-            mCounter = count - 1;
-            if (count == mMaxCount) {
+        if (count < mMaxCount) {
+            mCounter = count + 1;
+            if (count == 0) {
                 mChanged.notify_one();
             }
             return true;
@@ -83,9 +83,9 @@ public:
 
     bool try_acquire() {
         auto count = mCounter;
-        if (count < mMaxCount) {
-            mCounter = count + 1;
-            if (count == 0) {
+        if (count > 0) {
+            mCounter = count - 1;
+            if (count == mMaxCount) {
                 mChanged.notify_one();
             }
             return true;
@@ -95,9 +95,9 @@ public:
 
     bool try_release() {
         auto count = mCounter;
-        if (count > 0) {
-            mCounter = count - 1;
-            if (count == mMaxCount) {
+        if (count < mMaxCount) {
+            mCounter = count + 1;
+            if (count == 0) {
                 mChanged.notify_one();
             }
             return true;

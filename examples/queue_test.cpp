@@ -5,7 +5,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-TimedQueue<int, 15> q;
+TimedQueue<int> q(4);
 
 static Task<Expected<>> func() {
     (void)co_await co_sleep(1000ms);

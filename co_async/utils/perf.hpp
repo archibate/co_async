@@ -90,8 +90,8 @@ private:
                 sorted(m.begin(), m.end());
             std::sort(sorted.begin(), sorted.end(),
                       [](auto const &lhs, auto const &rhs) {
-                return lhs.second.sum > rhs.second.sum;
-            });
+                          return lhs.second.sum > rhs.second.sum;
+                      });
             std::size_t w = 0, nw = 1;
             for (auto const &[loc, e]: sorted) {
                 w = std::max(w, p(loc.first).size());

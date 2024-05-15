@@ -5,7 +5,9 @@
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/cancel.hpp>
 #include <co_async/utils/cacheline.hpp>
-#include <co_async/utils/concurrent_queue.hpp>
+#if CO_ASYNC_STEAL
+# include <co_async/utils/concurrent_queue.hpp>
+#endif
 #include <co_async/utils/non_void_helper.hpp>
 #include <co_async/utils/rbtree.hpp>
 #include <co_async/utils/uninitialized.hpp>
@@ -186,7 +188,7 @@ co_sleep(std::chrono::steady_clock::time_point expires) {
 
 inline Task<Expected<>, GenericIOContext::TimerNode>
 co_sleep(std::chrono::steady_clock::time_point expires, CancelToken cancel) {
-    co_return co_await cancel.invoke<GenericIOContext::TimerNode::Canceller>(
+    co_return co_await cancel.guard<GenericIOContext::TimerNode::Canceller>(
         co_sleep(expires));
 }
 
@@ -235,7 +237,7 @@ inline Task<> co_forever(CancelToken cancel) {
         std::coroutine_handle<> mPrevious;
     };
 
-    co_return co_await cancel.invoke<ForeverAwaiter::Canceller>(
+    co_return co_await cancel.guard<ForeverAwaiter::Canceller>(
         ForeverAwaiter());
 }
 

@@ -2,18 +2,6 @@
 #include <co_async/std.hpp>
 
 namespace co_async {
-inline void assume(bool v) {
-#if defined(__GNUC__) && __has_builtin(__builtin_unreachable)
-    if (!v) [[unlikely]] {
-# if CO_ASYNC_DEBUG
-        throw std::logic_error("assumption failed");
-# else
-        __builtin_unreachable();
-# endif
-    }
-#endif
-}
-
 template <class T, std::size_t Capacity = 0>
 struct ConcurrentQueue {
     static constexpr std::size_t Shift = std::bit_width(Capacity);
@@ -114,5 +102,61 @@ struct ConcurrentQueue<T, 0> {
 private:
     std::deque<T> mQueue;
     std::mutex mMutex;
+};
+
+template <class T>
+struct RingQueue {
+    std::unique_ptr<T[]> mHead;
+    T *mTail;
+    T *mRead;
+    T *mWrite;
+
+    explicit RingQueue(std::size_t size)
+        : mHead(std::make_unique<T[]>(size)),
+          mTail(mHead.get() + size),
+          mRead(mHead.get()),
+          mWrite(mHead.get()) {}
+
+    std::size_t size() const noexcept {
+        return mTail - mHead.get();
+    }
+
+    std::optional<T> pop() {
+        if (mRead == mWrite) {
+            return std::nullopt;
+        }
+        T p = std::move(*mRead);
+        mRead = mRead == mTail ? mHead.get() : mRead + 1;
+        return p;
+    }
+
+    bool push(T p) {
+        T *nextWrite = mWrite == mTail ? mHead.get() : mWrite + 1;
+        if (nextWrite == mRead) {
+            return false;
+        }
+        *mWrite = std::move(p);
+        mWrite = nextWrite;
+        return true;
+    }
+};
+
+template <class T>
+struct InfinityQueue {
+    std::optional<T> pop() {
+        if (mQueue.empty()) {
+            return std::nullopt;
+        }
+        T p = std::move(mQueue.front());
+        mQueue.pop_front();
+        return p;
+    }
+
+    void push(T p) {
+        mQueue.push_back(p);
+    }
+
+private:
+    std::deque<T> mQueue;
 };
 } // namespace co_async

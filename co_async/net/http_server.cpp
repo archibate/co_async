@@ -204,8 +204,8 @@ void HTTPServer::route(std::string_view methods, std::string_view prefix,
     auto it = std::lower_bound(mImpl->mPrefixRoutes.begin(),
                                mImpl->mPrefixRoutes.end(), prefix,
                                [](auto const &item, auto const &prefix) {
-        return item.first.size() > prefix.size();
-    });
+                                   return item.first.size() > prefix.size();
+                               });
     mImpl->mPrefixRoutes.insert(
         it,
         {std::string(prefix),

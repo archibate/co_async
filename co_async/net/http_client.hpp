@@ -249,9 +249,9 @@ public:
         auto [r, w] = co_await co_await pipe_stream();
         co_spawn(pipe_bind(std::move(w),
                            [this](OwningStream &w) -> Task<Expected<>> {
-            co_await co_await mHttp->readBodyStream(w);
-            co_return {};
-        }));
+                               co_await co_await mHttp->readBodyStream(w);
+                               co_return {};
+                           }));
         reset.neverMind();
         co_return std::tuple{res, std::move(r)};
     }

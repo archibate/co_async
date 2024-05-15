@@ -57,7 +57,8 @@ private:
     RbNode *root;
 
     bool compare(RbNode *left, RbNode *right) const noexcept {
-        return static_cast<Compare const &>(*this)(static_cast<Value &>(*left), static_cast<Value &>(*right));
+        return static_cast<Compare const &>(*this)(
+            static_cast<Value &>(*left), static_cast<Value &>(*right));
     }
 
     void rotateLeft(RbNode *node) noexcept {
@@ -262,7 +263,8 @@ public:
     RbTree() noexcept(noexcept(Compare())) : Compare(), root(nullptr) {}
 
     explicit RbTree(Compare comp) noexcept(noexcept(Compare(comp)))
-        : Compare(comp), root(nullptr) {}
+        : Compare(comp),
+          root(nullptr) {}
 
     RbTree(RbTree &&) = delete;
 

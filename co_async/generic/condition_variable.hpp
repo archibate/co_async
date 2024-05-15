@@ -4,7 +4,6 @@
 #include <co_async/generic/cancel.hpp>
 #include <co_async/generic/generic_io.hpp>
 #include <co_async/generic/timeout.hpp>
-#include <co_async/utils/concurrent_queue.hpp>
 #include <co_async/utils/rbtree.hpp>
 
 namespace co_async {
@@ -25,6 +24,10 @@ private:
         void doCancel() {
             this->destructiveErase();
             co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
+        }
+
+        bool isCanceled() const noexcept {
+            return this->rbTree == nullptr;
         }
 
         std::optional<std::chrono::steady_clock::time_point> mExpires;
@@ -74,12 +77,22 @@ private:
                            CancelToken cancel) {
         auto waiter = wait();
         waiter.get().promise().mExpires = expires;
-        co_await cancel.invoke<Canceller>(waiter);
+        co_await cancel.guard<Canceller>(waiter);
     }
 
 public:
     Task<void, PromiseNode> wait() {
         co_await Awaiter(this);
+    }
+
+    Task<Expected<>> wait(CancelToken cancel) {
+        auto waiter = wait();
+        co_await cancel.guard<Canceller>(waiter);
+        if (waiter.get().promise().isCanceled()) {
+            co_return Unexpected{
+                std::make_error_code(std::errc::operation_canceled)};
+        }
+        co_return {};
     }
 
     Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
@@ -94,6 +107,33 @@ public:
 
     Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
         return wait(std::chrono::steady_clock::now() + timeout);
+    }
+
+    Task<> wait_condition(std::invocable<> auto &&pred) {
+        while (!std::invoke(pred)) {
+            co_await wait();
+        }
+    }
+
+    Task<Expected<>> wait_condition(std::invocable<> auto &&pred, std::chrono::steady_clock::time_point expires) {
+        while (!std::invoke(pred)) {
+            if (std::chrono::steady_clock::now() > expires || !co_await wait(expires)) {
+                co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+            }
+        }
+        co_return {};
+    }
+
+    Task<Expected<>> wait_condition(std::invocable<> auto &&pred, std::chrono::steady_clock::duration timeout) {
+        return wait_condition(std::forward<decltype(pred)>(pred), std::chrono::steady_clock::now() + timeout);
+    }
+
+    Task<Expected<>> wait_condition(std::invocable<> auto &&pred, CancelToken cancel) {
+        while (!std::invoke(pred)) {
+            if (cancel.is_canceled() || !co_await wait(cancel)) {
+                co_return Unexpected{std::make_error_code(std::errc::operation_canceled)};
+            }
+        }
     }
 
     void notify() {

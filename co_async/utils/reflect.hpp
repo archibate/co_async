@@ -649,23 +649,23 @@ struct ReflectorJsonDecode {
         char const *got = "???";
         std::visit(
             [&](auto &&arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, JsonValue::Null>) {
-                got = "null";
-            } else if constexpr (std::is_same_v<T, JsonValue::String>) {
-                got = "string";
-            } else if constexpr (std::is_same_v<T, JsonValue::Dict>) {
-                got = "dict";
-            } else if constexpr (std::is_same_v<T, JsonValue::Array>) {
-                got = "array";
-            } else if constexpr (std::is_same_v<T, JsonValue::Integer>) {
-                got = "integer";
-            } else if constexpr (std::is_same_v<T, JsonValue::Real>) {
-                got = "real";
-            } else if constexpr (std::is_same_v<T, JsonValue::Boolean>) {
-                got = "boolean";
-            }
-        },
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, JsonValue::Null>) {
+                    got = "null";
+                } else if constexpr (std::is_same_v<T, JsonValue::String>) {
+                    got = "string";
+                } else if constexpr (std::is_same_v<T, JsonValue::Dict>) {
+                    got = "dict";
+                } else if constexpr (std::is_same_v<T, JsonValue::Array>) {
+                    got = "array";
+                } else if constexpr (std::is_same_v<T, JsonValue::Integer>) {
+                    got = "integer";
+                } else if constexpr (std::is_same_v<T, JsonValue::Real>) {
+                    got = "real";
+                } else if constexpr (std::is_same_v<T, JsonValue::Boolean>) {
+                    got = "boolean";
+                }
+            },
             inner);
 #if DEBUG_LEVEL
         std::cerr << std::string(

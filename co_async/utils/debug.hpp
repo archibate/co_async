@@ -722,15 +722,15 @@ private:
             bool add_comma = false;
             std::apply(
                 [&](auto &&...args) {
-                (([&] {
-                    if (add_comma) {
-                        oss << DEBUG_TUPLE_COMMA;
-                    }
-                    add_comma = true;
-                    debug_format(oss, std::forward<decltype(args)>(args));
-                }()),
-                 ...);
-            },
+                    (([&] {
+                         if (add_comma) {
+                             oss << DEBUG_TUPLE_COMMA;
+                         }
+                         add_comma = true;
+                         debug_format(oss, std::forward<decltype(args)>(args));
+                     }()),
+                     ...);
+                },
                 t);
             oss << DEBUG_TUPLE_BRACE[1];
         } else if constexpr (std::is_enum<T>::value) {

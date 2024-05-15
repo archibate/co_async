@@ -51,7 +51,7 @@ private:
 
         template <class Canceller, class Awaiter>
         Task<typename AwaitableTraits<Awaiter>::RetType>
-        doInvoke(Awaiter &&awaiter) {
+        doGuard(Awaiter &&awaiter) {
             typename Canceller::OpType *op = std::addressof(awaiter);
             CancellerImpl<Canceller> cancellerImpl(op);
             mCancellers.insert(static_cast<CancellerBase &>(cancellerImpl));
@@ -73,7 +73,7 @@ public:
 
     template <class Canceller>
     auto invoke(auto &&awaiter) const {
-        return mImpl->doInvoke<Canceller>(
+        return mImpl->doGuard<Canceller>(
             std::forward<decltype(awaiter)>(awaiter));
     }
 
@@ -100,9 +100,16 @@ public:
         return mImpl->doIsCanceled();
     }
 
+    Expected<> check() {
+        if (mImpl->doIsCanceled()) [[unlikely]] {
+            return Unexpected{std::make_error_code(std::errc::operation_canceled)};
+        }
+        return {};
+    }
+
     template <class Canceller>
-    auto invoke(auto &&awaiter) const {
-        return mImpl->doInvoke<Canceller>(
+    auto guard(auto &&awaiter) const {
+        return mImpl->doGuard<Canceller>(
             std::forward<decltype(awaiter)>(awaiter));
     }
 };

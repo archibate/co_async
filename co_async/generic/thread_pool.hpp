@@ -1,7 +1,9 @@
 #pragma once
 
 #include <co_async/std.hpp>
+#include <co_async/generic/io_context.hpp>
 #include <co_async/awaiter/task.hpp>
+#include <co_async/generic/condition_variable.hpp>
 
 namespace co_async {
 
@@ -65,8 +67,7 @@ private:
     // deque 保证插入后元素的指针和引用永远不会失效：
     std::deque<Thread> mThreads;
 
-public:
-    Task<> run(std::function<void()> func) {
+    Thread *submitJob(std::function<void()> func) {
         std::unique_lock freeLock(mFreeMutex);
         if (mFreeThreads.empty()) {
             freeLock.unlock();
@@ -76,24 +77,69 @@ public:
             threadsLock.unlock();
             newThread->workOn(std::move(func));
             std::lock_guard workingLock(mWorkingMutex);
-            mWorkingThreads.push_back(std::move(newThread));
+            mWorkingThreads.push_back(newThread);
+            return newThread;
         } else {
             Thread *freeThread = std::move(mFreeThreads.front());
             mFreeThreads.pop_front();
             freeLock.unlock();
             freeThread->workOn(std::move(func));
             std::lock_guard workingLock(mWorkingMutex);
-            mWorkingThreads.push_back(std::move(freeThread));
+            mWorkingThreads.push_back(freeThread);
+            return freeThread;
         }
+    }
+
+public:
+    Task<> run(std::function<void()> func) {
+        auto cv = std::make_shared<ConditionVariable>();
+        submitJob([cv, ctx = IOContext::instance, func = std::move(func)] () mutable {
+            func();
+            if (auto coroutine = cv->notify_pop_coroutine()) [[likely]] {
+                debug(), coroutine;
+                ctx->spawn_mt(coroutine);
+            }
+        });
+        co_await *cv;
         co_return;
     }
 
-    std::size_t threads_count() const {
+    Task<> run(std::function<void(std::stop_token)> func, CancelToken cancel) {
+        auto cv = std::make_shared<ConditionVariable>();
+        std::stop_source stop;
+        submitJob([cv, ctx = IOContext::instance, func = std::move(func), stop = stop.get_token()] () mutable {
+            func(stop);
+            if (auto p = cv->notify_pop_coroutine()) [[likely]] {
+                ctx->spawn_mt(p);
+            }
+        });
+        struct Awaitable {
+            ConditionVariable &cv;
+            std::stop_source &stop;
+
+            auto operator co_await() const noexcept {
+                return cv.operator co_await();
+            }
+
+            struct Canceller {
+                using OpType = Awaitable;
+
+                static Task<> doCancel(OpType *op) {
+                    op->stop.request_stop();
+                    co_return;
+                }
+            };
+        };
+        co_await cancel.guard(Awaitable(*cv, stop));
+        co_return;
+    }
+
+    std::size_t threads_count() {
         std::lock_guard lock(mThreadsMutex);
         return mThreads.size();
     }
 
-    std::size_t working_threads_count() const {
+    std::size_t working_threads_count() {
         std::lock_guard lock(mWorkingMutex);
         return mWorkingThreads.size();
     }

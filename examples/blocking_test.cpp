@@ -9,6 +9,7 @@ ThreadPool pool;
 static Task<> func() {
     co_await pool.run([] { std::this_thread::sleep_for(1s); });
     /* std::this_thread::sleep_for(1s); */
+    co_return;
 }
 
 static Task<Expected<>> amain() {

@@ -102,7 +102,8 @@ public:
 
     Expected<> check() {
         if (mImpl->doIsCanceled()) [[unlikely]] {
-            return Unexpected{std::make_error_code(std::errc::operation_canceled)};
+            return Unexpected{
+                std::make_error_code(std::errc::operation_canceled)};
         }
         return {};
     }
@@ -110,6 +111,11 @@ public:
     template <class Canceller>
     auto guard(auto &&awaiter) const {
         return mImpl->doGuard<Canceller>(
+            std::forward<decltype(awaiter)>(awaiter));
+    }
+
+    auto guard(auto &&awaiter) const {
+        return guard<typename std::decay_t<decltype(awaiter)>::Canceller>(
             std::forward<decltype(awaiter)>(awaiter));
     }
 };

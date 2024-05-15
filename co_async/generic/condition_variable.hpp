@@ -109,13 +109,13 @@ public:
         return wait(std::chrono::steady_clock::now() + timeout);
     }
 
-    Task<> wait_condition(std::invocable<> auto &&pred) {
+    Task<> wait_until(std::invocable<> auto &&pred) {
         while (!std::invoke(pred)) {
             co_await wait();
         }
     }
 
-    Task<Expected<>> wait_condition(std::invocable<> auto &&pred, std::chrono::steady_clock::time_point expires) {
+    Task<Expected<>> wait_until(std::invocable<> auto &&pred, std::chrono::steady_clock::time_point expires) {
         while (!std::invoke(pred)) {
             if (std::chrono::steady_clock::now() > expires || !co_await wait(expires)) {
                 co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
@@ -124,11 +124,11 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> wait_condition(std::invocable<> auto &&pred, std::chrono::steady_clock::duration timeout) {
-        return wait_condition(std::forward<decltype(pred)>(pred), std::chrono::steady_clock::now() + timeout);
+    Task<Expected<>> wait_until(std::invocable<> auto &&pred, std::chrono::steady_clock::duration timeout) {
+        return wait_until(std::forward<decltype(pred)>(pred), std::chrono::steady_clock::now() + timeout);
     }
 
-    Task<Expected<>> wait_condition(std::invocable<> auto &&pred, CancelToken cancel) {
+    Task<Expected<>> wait_until(std::invocable<> auto &&pred, CancelToken cancel) {
         while (!std::invoke(pred)) {
             if (cancel.is_canceled() || !co_await wait(cancel)) {
                 co_return Unexpected{std::make_error_code(std::errc::operation_canceled)};
@@ -148,6 +148,13 @@ public:
             co_spawn(
                 std::coroutine_handle<PromiseNode>::from_promise(*promise));
         }
+    }
+
+    std::coroutine_handle<> notify_pop_coroutine() {
+        if (auto promise = popWaiting()) {
+            return std::coroutine_handle<PromiseNode>::from_promise(*promise);
+        }
+        return nullptr;
     }
 };
 
@@ -192,6 +199,15 @@ public:
             mWaitingList.pop_front();
             co_spawn(coroutine);
         }
+    }
+
+    std::coroutine_handle<> notify_pop_coroutine() {
+        if (!mWaitingList.empty()) {
+            auto coroutine = mWaitingList.front();
+            mWaitingList.pop_front();
+            return coroutine;
+        }
+        return nullptr;
     }
 };
 
@@ -244,6 +260,15 @@ public:
             mWaitingCoroutine = nullptr;
             co_spawn(coroutine);
         }
+    }
+
+    std::coroutine_handle<> notify_pop_coroutine() {
+        mReady = true;
+        if (auto coroutine = mWaitingCoroutine) {
+            mWaitingCoroutine = nullptr;
+            return coroutine;
+        }
+        return nullptr;
     }
 };
 } // namespace co_async

@@ -51,17 +51,22 @@ public:
         auto maxSleep = options.maxSleep;
         while (!stop.stop_requested()) [[likely]] {
             auto duration = GenericIOContext::instance->runDuration();
-            if (maxSleep && (!duration || *duration > maxSleep)) {
+            if (GenericIOContext::instance->runMTQueue()) {
+                continue;
+            }
+            if (!duration || *duration > maxSleep) {
                 duration = maxSleep;
             }
             bool hasEvent =
                 PlatformIOContext::instance->waitEventsFor(1, duration);
-            if (options.maxSleep) {
-                if (hasEvent) {
-                    maxSleep = *options.maxSleep + options.maxSleepInc;
-                } else {
-                    maxSleep = options.maxSleep;
+            if (hasEvent) {
+                auto t = maxSleep + options.maxSleepInc;
+                if (t > options.maxSleepLimit) {
+                    t = options.maxSleepLimit;
                 }
+                maxSleep = t;
+            } else {
+                maxSleep = options.maxSleep;
             }
 #if CO_ASYNC_STEAL
             if (!hasEvent && !peerContexts.empty()) {
@@ -86,6 +91,10 @@ public:
 
     void spawn(std::coroutine_handle<> coroutine) {
         mGenericIO.enqueueJob(coroutine);
+    }
+
+    void spawn_mt(std::coroutine_handle<> coroutine) /* MT-safe */ {
+        mGenericIO.enqueueJobMT(coroutine);
     }
 
     template <class T, class P>

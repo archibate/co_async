@@ -9,8 +9,7 @@ namespace co_async {
 struct IOContextMT {
 private:
     std::unique_ptr<IOContext[]> mWorkers;
-    std::size_t mNumWorkers{0};
-    bool mSetAffinity = false;
+    std::size_t mNumWorkers = 0;
 
 public:
     explicit IOContextMT(std::in_place_t) {
@@ -49,18 +48,21 @@ public:
 
     static void start(PlatformIOContextOptions options = {},
                       std::size_t numWorkers = 0) {
+        bool setAffinity;
         if (numWorkers == 0) {
-            instance->mSetAffinity = true;
+            setAffinity = true;
             numWorkers = std::thread::hardware_concurrency();
+            if (!numWorkers) [[unlikely]] throw std::logic_error(
+                "failed to detect number of hardware threads");
         } else {
-            instance->mSetAffinity = false;
+            setAffinity = false;
         }
         instance->mWorkers = std::make_unique<IOContext[]>(numWorkers);
         instance->mNumWorkers = numWorkers;
         std::span<IOContext> peerSpan(instance->mWorkers.get(),
                                       instance->mNumWorkers);
         for (std::size_t i = 0; i < instance->mNumWorkers; ++i) {
-            if (instance->mSetAffinity) {
+            if (setAffinity) {
                 options.threadAffinity = i;
             }
             instance->mWorkers[i].start(options, peerSpan);
@@ -69,6 +71,10 @@ public:
 
     static void spawn(std::coroutine_handle<> coroutine) {
         instance->mWorkers[0].spawn(coroutine);
+    }
+
+    static void spawn_mt(std::coroutine_handle<> coroutine) {
+        instance->mWorkers[0].spawn_mt(coroutine);
     }
 
     template <class T, class P>

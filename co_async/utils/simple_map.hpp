@@ -14,8 +14,8 @@ struct SimpleMap {
             k < key;
             key < k;
         })
-    V *at(Key &&key) noexcept {
-        auto it = mData.find(std::forward<Key>(key));
+    V *at(Key const &key) noexcept {
+        auto it = mData.find(key);
         if (it == mData.end()) {
             return nullptr;
         }
@@ -50,13 +50,20 @@ struct SimpleMap {
         return std::invoke(func, it->second);
     }
 
-    V &insert_or_assign(K key, V value) {
-        return mData.insert_or_assign(std::move(key), std::move(value))
+    template <std::convertible_to<K> Key>
+    V &insert_or_assign(Key &&key, V value) {
+        return mData.insert_or_assign(K(std::forward<Key>(key)), std::move(value))
             .first->second;
     }
 
-    V &insert(K key, V value) {
-        return mData.emplace(std::move(key), std::move(value)).first->second;
+    template <std::convertible_to<K> Key>
+    V &insert(Key &&key, V value) {
+        return mData.emplace(K(std::forward<Key>(key)), std::move(value)).first->second;
+    }
+
+    template <std::convertible_to<K> Key, class ...Args> requires std::constructible_from<V, Args...>
+    V &emplace(Key &&key, Args &&...args) {
+        return mData.emplace(K(std::forward<Key>(key)), std::forward<Args>(args)...).first->second;
     }
 
     template <class Key>

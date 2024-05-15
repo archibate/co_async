@@ -1,43 +1,18 @@
-#include <co_async/co_async.hpp>
 #include <co_async/std.hpp>
+#include <co_async/co_async.hpp>
 
 using namespace co_async;
 using namespace std::literals;
 
-TimedSemaphore sem(2);
+ThreadPool pool;
 
-static Task<Expected<>> func() {
-    (void)co_await co_sleep(1000ms);
-    debug(), sem.count();
-    co_await sem.release();
-    debug(), sem.count();
-    (void)co_await co_sleep(1000ms);
-    debug(), sem.count();
-    co_await sem.release();
-    debug(), sem.count();
-    co_await sem.release();
-    debug(), sem.count();
-    co_await sem.release();
-    debug(), sem.count();
-    co_return {};
+static Task<> func() {
+    co_await pool.run([] { std::this_thread::sleep_for(1s); });
+    /* std::this_thread::sleep_for(1s); */
 }
 
 static Task<Expected<>> amain() {
-    co_spawn(func());
-    auto success = co_await sem.try_acquire(800ms);
-    debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
-    debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
-    debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
-    debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
-    debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
-    debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
-    debug(), success, sem.count();
+    co_await when_all(func(), func(), func());
     co_return {};
 }
 

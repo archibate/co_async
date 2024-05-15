@@ -1,5 +1,4 @@
 #pragma once
-#include <co_async/std.hpp>
 #include <co_async/awaiter/and_then.hpp>
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/details/current_coroutine.hpp>
@@ -23,6 +22,7 @@
 #include <co_async/generic/queue.hpp>
 #include <co_async/generic/semaphore.hpp>
 #include <co_async/generic/task_group.hpp>
+#include <co_async/generic/thread_pool.hpp>
 #include <co_async/generic/timeout.hpp>
 #include <co_async/iostream/cached_stream.hpp>
 #include <co_async/iostream/directory_stream.hpp>
@@ -49,6 +49,7 @@
 #include <co_async/platform/process.hpp>
 #include <co_async/platform/signal.hpp>
 #include <co_async/platform/socket.hpp>
+#include <co_async/std.hpp>
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/debug.hpp>
 #include <co_async/utils/expected.hpp>
@@ -57,6 +58,7 @@
 #include <co_async/utils/pimpl.hpp>
 #include <co_async/utils/rbtree.hpp>
 #include <co_async/utils/reflect.hpp>
+#include <co_async/utils/ring_queue.hpp>
 #include <co_async/utils/simple_map.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <co_async/utils/uninitialized.hpp>

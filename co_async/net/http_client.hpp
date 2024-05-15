@@ -264,24 +264,30 @@ private:
         std::atomic_bool mInuse{false};
         bool mValid{false};
         std::chrono::steady_clock::time_point mLastAccess;
-        std::string mHostName;
     };
 
-    std::vector<PoolEntry> mPool;
-    ConditionVariable mFreeSlot;
+    struct HostPool {
+        std::vector<PoolEntry> mPool;
+        TimedConditionVariable mFreeSlot;
+
+        explicit HostPool(std::size_t size) : mPool(size) {}
+    };
+
+    std::shared_mutex mMutex;
+    SimpleMap<std::string, HostPool> mPools;
     std::chrono::steady_clock::duration mTimeout;
     std::chrono::steady_clock::duration mKeepAlive;
     std::chrono::steady_clock::time_point mLastGC;
+    std::size_t mConnPerHost;
     bool mFollowProxy;
 
 public:
     struct HTTPConnectionPtr {
     private:
         PoolEntry *mEntry;
-        HTTPConnectionPool *mPool;
+        HostPool *mPool;
 
-        explicit HTTPConnectionPtr(PoolEntry *entry,
-                                   HTTPConnectionPool *pool) noexcept
+        explicit HTTPConnectionPtr(PoolEntry *entry, HostPool *pool) noexcept
             : mEntry(entry),
               mPool(pool) {}
 
@@ -318,73 +324,78 @@ public:
     };
 
     explicit HTTPConnectionPool(
-        std::size_t poolSize = 256,
+        std::size_t connPerHost = 8,
         std::chrono::steady_clock::duration timeout = std::chrono::seconds(5),
         std::chrono::steady_clock::duration keepAlive = std::chrono::minutes(3),
         bool followProxy = true)
-        : mPool(poolSize),
-          mTimeout(timeout),
+        : mTimeout(timeout),
           mKeepAlive(keepAlive),
+          mConnPerHost(connPerHost),
           mFollowProxy(followProxy) {}
 
 private:
     std::optional<Expected<HTTPConnectionPtr>>
-    lookForFreeSlot(bool exactReuse, std::string_view host) /* MT-safe */ {
-        for (auto &entry: mPool) {
+    lookForFreeSlot(std::string_view host) /* MT-safe */ {
+        std::shared_lock lock(mMutex);
+        auto *pool = mPools.at(host);
+        lock.unlock();
+        if (!pool) {
+            std::lock_guard wlock(mMutex);
+            pool = mPools.at(host);
+            if (!pool) [[likely]] {
+                pool =
+                    &mPools.emplace(std::string(host), mConnPerHost);
+            }
+        }
+        for (auto &entry: pool->mPool) {
             bool expected = false;
             if (entry.mInuse.compare_exchange_strong(
                     expected, true, std::memory_order_acq_rel)) {
                 if (!entry.mValid) {
+                    entry.mLastAccess = std::chrono::steady_clock::now();
+                } else {
                     if (auto e =
                             entry.mHttp.doConnect(host, mTimeout, mFollowProxy);
                         e.has_error()) [[unlikely]] {
                         return Unexpected{e.error()};
                     }
-                    entry.mHostName = host;
                     entry.mLastAccess = std::chrono::steady_clock::now();
                     entry.mValid = true;
-                } else {
-                    if (entry.mHostName == host) {
-                        entry.mLastAccess = std::chrono::steady_clock::now();
-                    } else {
-                        if (exactReuse) {
-                            entry.mInuse.store(false,
-                                               std::memory_order_release);
-                            continue;
-                        } else {
-                            if (auto e = entry.mHttp.doConnect(host, mTimeout,
-                                                               mFollowProxy);
-                                e.has_error()) [[unlikely]] {
-                                return Unexpected{e.error()};
-                            }
-                            entry.mHostName = host;
-                            entry.mLastAccess =
-                                std::chrono::steady_clock::now();
-                        }
-                    }
                 }
-                return HTTPConnectionPtr(&entry, this);
+                return HTTPConnectionPtr(&entry, pool);
             }
         }
         return std::nullopt;
     }
 
+    Task<> waitForFreeSlot(std::string_view host) /* MT-safe */ {
+        std::shared_lock lock(mMutex);
+        auto *pool = mPools.at(host);
+        lock.unlock();
+        if (pool) [[likely]] {
+            (void)co_await pool->mFreeSlot.wait(std::chrono::milliseconds(100));
+        }
+    }
+
     void garbageCollect() /* MT-safe */ {
         auto now = std::chrono::steady_clock::now();
         if ((now - mLastGC) * 2 > mKeepAlive) {
-            for (auto &entry: mPool) {
-                bool expected = false;
-                if (entry.mInuse.compare_exchange_strong(
-                        expected, true, std::memory_order_acq_rel)) {
-                    if (entry.mValid && now - entry.mLastAccess > mKeepAlive) {
-                        entry.mHttp.terminateLifetime();
-                        entry.mHostName.clear();
-                        entry.mValid = false;
+            std::shared_lock lock(mMutex);
+            for (auto &[_, pool]: mPools) {
+                for (auto &entry: pool.mPool) {
+                    bool expected = false;
+                    if (entry.mInuse.compare_exchange_strong(
+                            expected, true, std::memory_order_acq_rel)) {
+                        if (entry.mValid &&
+                            now - entry.mLastAccess > mKeepAlive) {
+                            entry.mHttp.terminateLifetime();
+                            entry.mValid = false;
+                        }
+                        entry.mInuse.store(false, std::memory_order_release);
                     }
-                    entry.mInuse.store(false, std::memory_order_release);
                 }
+                mLastGC = now;
             }
-            mLastGC = now;
         }
     }
 
@@ -393,15 +404,10 @@ public:
     connect(std::string_view host) /* MT-safe */ {
     again:
         garbageCollect();
-        if (auto conn = lookForFreeSlot(true, host)) {
-            co_return std::move(*conn);
-        } else if (auto conn = lookForFreeSlot(false, host)) {
+        if (auto conn = lookForFreeSlot(host)) {
             co_return std::move(*conn);
         }
-#if CO_ASYNC_DEBUG
-        std::cerr << "WARNING: connection pool run out of free slot\n";
-#endif
-        co_await mFreeSlot;
+        co_await waitForFreeSlot(host);
         goto again;
     }
 };

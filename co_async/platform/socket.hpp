@@ -147,7 +147,7 @@ private:
         struct sockaddr_in saddr = {};
         saddr.sin_family = AF_INET;
         std::memcpy(&saddr.sin_addr, &host, sizeof(saddr.sin_addr));
-        saddr.sin_port = htons(port);
+        saddr.sin_port = htons((uint16_t)port);
         std::memcpy(&mAddrIpv4, &saddr, sizeof(saddr));
         mAddrLen = sizeof(saddr);
     }
@@ -156,7 +156,7 @@ private:
         struct sockaddr_in6 saddr = {};
         saddr.sin6_family = AF_INET6;
         std::memcpy(&saddr.sin6_addr, &host, sizeof(saddr.sin6_addr));
-        saddr.sin6_port = htons(port);
+        saddr.sin6_port = htons((uint16_t)port);
         std::memcpy(&mAddrIpv6, &saddr, sizeof(saddr));
         mAddrLen = sizeof(saddr);
     }

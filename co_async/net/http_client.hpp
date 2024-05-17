@@ -111,6 +111,11 @@ private:
 
     void builtinHeaders(HTTPRequest &req) {
         using namespace std::string_literals;
+#if CO_ASYNC_DEBUG
+        if (!mHttpFactory) [[unlikely]] {
+            throw std::logic_error("http factory not initialized");
+        }
+#endif
         req.headers.insert("host"s, mHttpFactory->hostName());
         req.headers.insert("user-agent"s, "co_async/0.0.1"s);
         req.headers.insert("accept"s, "*/*"s);
@@ -351,7 +356,7 @@ private:
             bool expected = false;
             if (entry.mInuse.compare_exchange_strong(
                     expected, true, std::memory_order_acq_rel)) {
-                if (!entry.mValid) {
+                if (entry.mValid) {
                     entry.mLastAccess = std::chrono::steady_clock::now();
                 } else {
                     if (auto e =

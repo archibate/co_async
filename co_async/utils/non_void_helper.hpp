@@ -20,13 +20,6 @@ struct Void final {
     char const *repr() const noexcept {
         return "void";
     }
-
-    /* static void *operator new(std::size_t) noexcept { */
-    /*     static char unused[sizeof(Void)]; */
-    /*     return &unused; */
-    /* } */
-    /*  */
-    /* static void operator delete(void *) noexcept {} */
 };
 
 template <class T = void>

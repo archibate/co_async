@@ -11,19 +11,8 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout) {
     if (proxy.starts_with("http://")) {
         proxy.remove_prefix(7);
-        std::string proxyHost;
-        int proxyPort = 80;
-        if (auto i = proxy.rfind(':'); i != std::string_view::npos) {
-            proxyHost = proxy.substr(0, i);
-            if (auto portOpt = from_string<int>(proxy.substr(i + 1)))
-                [[likely]] {
-                proxyPort = *portOpt;
-            }
-        } else {
-            proxyHost.assign(proxy);
-        }
         auto sock =
-            co_await co_await socket_connect({proxyHost.c_str(), proxyPort});
+            co_await co_await socket_connect(co_await SocketAddress::parse(proxy, 80));
         auto hostName = std::string(host) + ":" + to_string(port);
         std::string header = "CONNECT " + hostName +
                              " HTTP/1.1\r\nHost: " + hostName +
@@ -50,7 +39,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
                              "connection: [" +
                                  response.substr(0, response.size() -
                                                         outbuf.size()) +
-                                 "]";
+                                 "]\n";
 #endif
                 co_return Unexpected{
                     std::make_error_code(std::errc::connection_reset)};
@@ -62,14 +51,19 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: proxy server seems failed to establish "
                          "connection: [" +
-                             response + "]";
+                             response + "]\n";
 #endif
             co_return Unexpected{
                 std::make_error_code(std::errc::connection_reset)};
         }
         co_return sock;
     } else {
-        co_return co_await socket_connect({host, port});
+#if CO_ASYNC_DEBUG
+        if (!proxy.empty()) {
+            std::cerr << "WARNING: unsupported proxy scheme [" + proxy + "]\n";
+        }
+#endif
+        co_return co_await socket_connect(co_await SocketAddress::parse(proxy));
     }
 }
 } // namespace co_async

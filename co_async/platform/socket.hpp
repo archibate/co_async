@@ -7,6 +7,7 @@
 #include <co_async/platform/fs.hpp>
 #include <co_async/platform/platform_io.hpp>
 #include <co_async/utils/string_utils.hpp>
+#include <co_async/utils/finally.hpp>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -16,37 +17,69 @@
 #include <unistd.h>
 
 namespace co_async {
-struct IpAddress {
-    explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
+inline std::error_category const &getAddrInfoCategory() {
+    static struct : std::error_category {
+        virtual char const *name() const noexcept {
+            return "getaddrinfo";
+        }
 
+        virtual std::string message(int e) const {
+            return gai_strerror(e);
+        }
+    } instance;
+
+    return instance;
+}
+
+struct IpAddress {
+    IpAddress() noexcept : mAddr() {}
+    explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
 
-    IpAddress(char const *ip) {
+    static Expected<IpAddress> parse(std::string_view host, bool allowIpv6 = true) {
+        return parse(std::string(host).c_str(), allowIpv6);
+    }
+
+    static Expected<IpAddress> parse(char const *host, bool allowIpv6 = true) {
         struct in_addr addr = {};
         struct in6_addr addr6 = {};
-        if (throwingErrorErrno(inet_pton(AF_INET, ip, &addr))) {
-            mAddr = addr;
-            return;
+        if (1 == inet_pton(AF_INET, host, &addr)) {
+            return IpAddress(addr);
         }
-        if (throwingErrorErrno(inet_pton(AF_INET6, ip, &addr6))) {
-            mAddr = addr6;
-            return;
+        if (allowIpv6 && 1 == inet_pton(AF_INET6, host, &addr6)) {
+            return IpAddress(addr6);
         }
-        struct hostent *hent = gethostbyname(ip);
-        for (int i = 0; hent->h_addr_list[i]; i++) {
-            if (hent->h_addrtype == AF_INET) {
-                std::memcpy(&addr, hent->h_addr_list[i], sizeof(in_addr));
-                mAddr = addr;
-                return;
-            } else if (hent->h_addrtype == AF_INET6) {
-                std::memcpy(&addr6, hent->h_addr_list[i], sizeof(in6_addr));
-                mAddr = addr6;
-                return;
+        // gethostbyname is deprecated, let's use getaddrinfo instead:
+        struct addrinfo hints = {};
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        struct addrinfo *result;
+        int err = getaddrinfo(host, NULL, &hints, &result);
+        if (err) [[unlikely]] {
+#if CO_ASYNC_DEBUG
+            std::cerr << ip << ": " << gai_strerror(err) << '\n';
+#endif
+            return Unexpected{std::error_code(err, getAddrInfoCategory())};
+        }
+        Finally fin = [&] { freeaddrinfo(result); };
+        for (struct addrinfo *rp = result; rp != NULL; rp = rp->ai_next) {
+            if (rp->ai_family == AF_INET) {
+                std::memcpy(&addr, &((struct sockaddr_in *)rp->ai_addr)->sin_addr,
+                            sizeof(in_addr));
+                return IpAddress(addr);
+            } else if (allowIpv6 && rp->ai_family == AF_INET6) {
+                std::memcpy(&addr6,
+                            &((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr,
+                            sizeof(in6_addr));
+                return IpAddress(addr6);
             }
         }
+        [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << "invalid domain name or ip address\n";
+            std::cerr << ip << ": no matching host address with ipv4 or ipv6\n";
 #endif
+            return Unexpected{std::make_error_code(std::errc::bad_address)};
+        }
     }
 
     std::string toString() const {
@@ -77,9 +110,8 @@ struct IpAddress {
 struct SocketAddress {
     SocketAddress() = default;
 
-    static SocketAddress parseCommaSeperated(std::string_view host,
-                                             int defaultPort) {
-        auto pos = host.find(':');
+    static Expected<SocketAddress> parse(std::string_view host, int defaultPort = -1) {
+        auto pos = host.rfind(':');
         std::string hostPart(host);
         std::optional<int> port;
         if (pos != std::string_view::npos) {
@@ -89,11 +121,20 @@ struct SocketAddress {
                 port = std::nullopt;
             }
         }
-        return SocketAddress(IpAddress(hostPart.c_str()),
-                             port.value_or(defaultPort));
+        if (!port) {
+            if (defaultPort == -1) [[unlikely]] {
+                return Unexpected{std::make_error_code(std::errc::bad_address)};
+            }
+            port = defaultPort;
+        }
+        auto ip = IpAddress::parse(hostPart.c_str());
+        if (ip.has_error()) [[unlikely]] {
+            return Unexpected{ip.error()};
+        }
+        return SocketAddress(*ip, *port);
     }
 
-    SocketAddress(IpAddress ip, int port) {
+    explicit SocketAddress(IpAddress ip, int port) {
         std::visit([&](auto const &addr) { initFromHostPort(addr, port); },
                    ip.mAddr);
     }
@@ -276,6 +317,11 @@ inline Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
         serv.fileNo(), (struct sockaddr const *)&addr.mAddr, addr.mAddrLen));
     co_await expectError(listen(serv.fileNo(), backlog));
     co_return serv;
+}
+
+inline Task<Expected<SocketListener>> listener_bind(std::pair<std::string, int> const &addr,
+                                                    int backlog = SOMAXCONN) {
+    co_return co_await listener_bind(co_await SocketAddress::parse(addr.first, addr.second));
 }
 
 inline Task<Expected<SocketHandle>> listener_accept(SocketListener &listener) {

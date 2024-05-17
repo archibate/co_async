@@ -6,8 +6,7 @@ using namespace std::literals;
 
 static Task<Expected<>> amain(std::string serveAt, std::string targetHost, std::string headers) {
     co_await co_await stdio().putline("listening at: "s + serveAt);
-    auto listener = co_await co_await listener_bind(
-        SocketAddress::parseCommaSeperated(serveAt, 80));
+    auto listener = co_await co_await listener_bind(co_await SocketAddress::parse(serveAt, 80));
     HTTPConnectionPool pool;
     for (std::size_t i = 0; i < IOContextMT::num_workers(); ++i) {
         IOContextMT::nth_worker(i).spawn(co_bind([&]() -> Task<> {
@@ -47,7 +46,7 @@ static Task<Expected<>> amain(std::string serveAt, std::string targetHost, std::
                         .uri = io.request.uri,
                         .headers = io.request.headers,
                     };
-                    debug(), request.method, request.uri;
+                    /* debug(), request.method, request.uri; */
                     request.headers.insert_or_assign(
                         "host"s,
                         std::string(host.substr(host.find("://"sv) + 3)));

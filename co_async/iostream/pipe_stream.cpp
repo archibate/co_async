@@ -10,16 +10,14 @@ namespace co_async {
 namespace {
 
 struct PipeStreamBuffer {
-    RingQueue<std::string> mChunks{8};
+    InfinityQueue<std::string> mChunks;
     ConditionVariable mNonEmpty;
-    ConditionVariable mNonFull;
 };
 
 struct IPipeStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         while (true) {
             if (auto chunk = mPipe->mChunks.pop()) {
-                mPipe->mNonFull.notify_one();
                 auto n = std::min(buffer.size(), chunk->size());
                 std::memcpy(buffer.data(), chunk->data(), n);
                 co_return n;
@@ -47,10 +45,7 @@ struct OPipeStream : Stream {
             if (buffer.empty()) [[unlikely]] {
                 co_return std::size_t(0);
             }
-            while (!p->mChunks.push(std::string(buffer.data(), buffer.size())))
-                [[unlikely]] {
-                co_await p->mNonFull;
-            }
+            p->mChunks.push(std::string(buffer.data(), buffer.size()));
             p->mNonEmpty.notify_one();
             co_return buffer.size();
         } else {
@@ -59,19 +54,16 @@ struct OPipeStream : Stream {
     }
 
     Task<> raw_close() override {
-        if (auto p = mPipe.lock()) [[likely]] {
-            while (!p->mChunks.push(std::string())) [[unlikely]] {
-                co_await p->mNonFull;
-            }
+        if (auto p = mPipe.lock()) {
+            p->mChunks.push(std::string());
             p->mNonEmpty.notify_one();
         }
-        mPipe.reset();
         co_return;
     }
 
     ~OPipeStream() override {
         if (auto p = mPipe.lock()) {
-            (void)p->mChunks.push(std::string());
+            p->mChunks.push(std::string());
             p->mNonEmpty.notify_one();
         }
     }

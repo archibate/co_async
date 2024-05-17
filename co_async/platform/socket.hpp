@@ -32,7 +32,6 @@ inline std::error_category const &getAddrInfoCategory() {
 }
 
 struct IpAddress {
-    IpAddress() noexcept : mAddr() {}
     explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
 
@@ -83,13 +82,13 @@ struct IpAddress {
     }
 
     std::string toString() const {
-        if (mAddr.index() == 2) {
+        if (mAddr.index() == 1) {
             char buf[INET6_ADDRSTRLEN + 1] = {};
-            inet_ntop(AF_INET6, &std::get<2>(mAddr), buf, sizeof(buf));
+            inet_ntop(AF_INET6, &std::get<1>(mAddr), buf, sizeof(buf));
             return buf;
-        } else if (mAddr.index() == 1) {
+        } else if (mAddr.index() == 0) {
             char buf[INET_ADDRSTRLEN + 1] = {};
-            inet_ntop(AF_INET, &std::get<1>(mAddr), buf, sizeof(buf));
+            inet_ntop(AF_INET, &std::get<0>(mAddr), buf, sizeof(buf));
             return buf;
         } else {
             return "[invalid ip address or domain name]";
@@ -104,7 +103,7 @@ struct IpAddress {
         return mAddr.index() != 0;
     }
 
-    std::variant<std::monostate, struct in_addr, struct in6_addr> mAddr;
+    std::variant<struct in_addr, struct in6_addr> mAddr;
 };
 
 struct SocketAddress {
@@ -146,10 +145,6 @@ struct SocketAddress {
     };
 
     socklen_t mAddrLen;
-
-    explicit operator bool() const noexcept {
-        return mAddr.sa_family != AF_UNSPEC;
-    }
 
     sa_family_t family() const noexcept {
         return mAddr.sa_family;
@@ -200,10 +195,6 @@ private:
         saddr.sin6_port = htons((uint16_t)port);
         std::memcpy(&mAddrIpv6, &saddr, sizeof(saddr));
         mAddrLen = sizeof(saddr);
-    }
-
-    void initFromHostPort(std::monostate, int) {
-        mAddr.sa_family = AF_UNSPEC;
     }
 };
 
@@ -257,9 +248,6 @@ inline Task<Expected<SocketHandle>> createSocket(int family, int type) {
 }
 
 inline Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr) {
-    if (!addr) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::bad_address)};
-    }
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
     co_await expectError(co_await UringOp().prep_connect(
@@ -270,9 +258,6 @@ inline Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr) {
 inline Task<Expected<SocketHandle>>
 socket_connect(SocketAddress const &addr,
                std::chrono::steady_clock::duration timeout) {
-    if (!addr) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::bad_address)};
-    }
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
     auto ts = durationToKernelTimespec(timeout);
@@ -285,9 +270,6 @@ socket_connect(SocketAddress const &addr,
 
 inline Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
                                                    CancelToken cancel) {
-    if (!addr) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::bad_address)};
-    }
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
     if (cancel.is_canceled()) [[unlikely]] {
@@ -303,9 +285,6 @@ inline Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
 
 inline Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
                                                     int backlog = SOMAXCONN) {
-    if (!addr) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::bad_address)};
-    }
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
     co_await socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);

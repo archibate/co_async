@@ -117,11 +117,11 @@ struct RingQueue {
           mRead(mHead.get()),
           mWrite(mHead.get()) {}
 
-    std::size_t size() const noexcept {
+    [[nodiscard]] std::size_t size() const noexcept {
         return mTail - mHead.get();
     }
 
-    std::optional<T> pop() {
+    [[nodiscard]] std::optional<T> pop() {
         if (mRead == mWrite) {
             return std::nullopt;
         }
@@ -130,7 +130,7 @@ struct RingQueue {
         return p;
     }
 
-    bool push(T p) {
+    [[nodiscard]] bool push(T p) {
         T *nextWrite = mWrite == mTail ? mHead.get() : mWrite + 1;
         if (nextWrite == mRead) {
             return false;
@@ -143,7 +143,7 @@ struct RingQueue {
 
 template <class T>
 struct InfinityQueue {
-    std::optional<T> pop() {
+    [[nodiscard]] std::optional<T> pop() {
         if (mQueue.empty()) {
             return std::nullopt;
         }
@@ -152,8 +152,9 @@ struct InfinityQueue {
         return p;
     }
 
-    void push(T p) {
+    bool push(T p) {
         mQueue.push_back(p);
+        return true;
     }
 
 private:

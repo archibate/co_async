@@ -78,7 +78,7 @@ ThreadPool::Thread *ThreadPool::submitJob(std::function<void()> func) {
     }
 }
 
-Task<> ThreadPool::run(std::function<void()> func) {
+Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
     auto cv = std::make_shared<ConditionVariable>();
     std::exception_ptr ep;
     submitJob(
@@ -89,7 +89,6 @@ Task<> ThreadPool::run(std::function<void()> func) {
                 ep = std::current_exception();
             }
             if (auto coroutine = cv->notify_pop_coroutine()) [[likely]] {
-                debug(), coroutine;
                 ctx->spawn_mt(coroutine);
             }
         });
@@ -97,10 +96,10 @@ Task<> ThreadPool::run(std::function<void()> func) {
     if (ep) [[unlikely]] {
         std::rethrow_exception(ep);
     }
-    co_return;
+    co_return {};
 }
 
-Task<Expected<>> ThreadPool::run(std::function<void(std::stop_token)> func,
+Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
                                  CancelToken cancel) {
     auto cv = std::make_shared<ConditionVariable>();
     std::stop_source stop;

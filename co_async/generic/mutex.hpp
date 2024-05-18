@@ -188,7 +188,7 @@ public:
             return (bool)mLocked;
         }
 
-        void set_ready() {
+        void set_ready() const {
             mImpl->mCalled.store(true, std::memory_order_relaxed);
         }
 

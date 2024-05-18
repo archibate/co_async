@@ -21,17 +21,16 @@ private:
     Thread *submitJob(std::function<void()> func);
 
 public:
-    Task<> run(std::function<void()> func) /* MT-safe */;
-
-    Task<Expected<>> run(std::function<void(std::stop_token)> func,
+    Task<Expected<>> rawRun(std::function<void()> func) /* MT-safe */;
+    Task<Expected<>> rawRun(std::function<void(std::stop_token)> func,
                          CancelToken cancel) /* MT-safe */;
 
-    template <class T>
-    Task<Expected<T>> run(std::function<T()> func) /* MT-safe */ {
-        std::optional<T> res;
-        auto e = co_await run(
-            [&res, func = std::move(func)]() mutable { res = func(); });
-        if (e.has_error()) {
+    auto run(std::invocable auto func) /* MT-safe */
+    -> Task<Expected<std::invoke_result_t<decltype(func)>>> {
+        std::optional<Avoid<std::invoke_result_t<decltype(func)>>> res;
+        auto e = co_await rawRun(
+            [&res, func = std::move(func)]() mutable { res = (func(), Void()); });
+        if (e.has_error()) [[unlikely]] {
             co_return Unexpected{e.error()};
         }
         if (!res) [[unlikely]] {
@@ -41,18 +40,18 @@ public:
         co_return std::move(*res);
     }
 
-    template <class T>
-    Task<Expected<T>> run(std::function<T(std::stop_token)> func,
-                          CancelToken cancel) /* MT-safe */ {
-        std::optional<T> res;
-        auto e = co_await run(
+    auto run(std::invocable<std::stop_token> auto func,
+                          CancelToken cancel) /* MT-safe */
+    -> Task<Expected<std::invoke_result_t<decltype(func), std::stop_token>>> {
+        std::optional<Avoid<std::invoke_result_t<decltype(func), std::stop_token>>> res;
+        auto e = co_await rawRun(
             [&res, func = std::move(func)](std::stop_token stop) mutable {
-                res = func(stop);
+                res = (func(stop), Void());
             });
         if (e.has_error()) {
             co_return Unexpected{e.error()};
         }
-        if (!res) [[unlikely]] {
+        if (!res) {
             co_return Unexpected{
                 std::make_error_code(std::errc::operation_canceled)};
         }

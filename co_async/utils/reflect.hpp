@@ -317,6 +317,7 @@ struct JsonEncoder {
 };
 enum class JsonError : int {
     Success = 0,
+    NullEntry,
     TypeMismatch,
     UnexpectedEnd,
     UnexpectedToken,
@@ -337,6 +338,7 @@ inline std::error_category const &jsonCategory() {
             using namespace std::string_literals;
             switch (static_cast<JsonError>(e)) {
             case JsonError::Success:         return "success"s;
+            case JsonError::NullEntry:       return "no such entry"s;
             case JsonError::TypeMismatch:    return "type mismatch"s;
             case JsonError::UnexpectedEnd:   return "unexpected end"s;
             case JsonError::UnexpectedToken: return "unexpected token"s;
@@ -646,33 +648,42 @@ struct ReflectorJsonDecode {
 
     static void typeMismatch(char const *expect, JsonValue::Union const &inner,
                              std::error_code &ec) {
-        char const *got = "???";
-        std::visit(
-            [&](auto &&arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, JsonValue::Null>) {
-                    got = "null";
-                } else if constexpr (std::is_same_v<T, JsonValue::String>) {
-                    got = "string";
-                } else if constexpr (std::is_same_v<T, JsonValue::Dict>) {
-                    got = "dict";
-                } else if constexpr (std::is_same_v<T, JsonValue::Array>) {
-                    got = "array";
-                } else if constexpr (std::is_same_v<T, JsonValue::Integer>) {
-                    got = "integer";
-                } else if constexpr (std::is_same_v<T, JsonValue::Real>) {
-                    got = "real";
-                } else if constexpr (std::is_same_v<T, JsonValue::Boolean>) {
-                    got = "boolean";
-                }
-            },
-            inner);
+        if (std::holds_alternative<JsonValue::Null>(inner)) {
 #if DEBUG_LEVEL
-        std::cerr << std::string(
-                         "reflect::json_decode type mismatch (expect ") +
-                         expect + ", got " + got + ")\n";
+            std::cerr << std::string(
+                             "reflect::json_decode no such entry (expect ") +
+                             expect + ", got null)\n";
 #endif
-        ec = make_error_code(JsonError::TypeMismatch);
+            ec = make_error_code(JsonError::NullEntry);
+        } else {
+            char const *got = "???";
+            std::visit(
+                [&](auto &&arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, JsonValue::Null>) {
+                        got = "null";
+                    } else if constexpr (std::is_same_v<T, JsonValue::String>) {
+                        got = "string";
+                    } else if constexpr (std::is_same_v<T, JsonValue::Dict>) {
+                        got = "dict";
+                    } else if constexpr (std::is_same_v<T, JsonValue::Array>) {
+                        got = "array";
+                    } else if constexpr (std::is_same_v<T, JsonValue::Integer>) {
+                        got = "integer";
+                    } else if constexpr (std::is_same_v<T, JsonValue::Real>) {
+                        got = "real";
+                    } else if constexpr (std::is_same_v<T, JsonValue::Boolean>) {
+                        got = "boolean";
+                    }
+                },
+                inner);
+#if DEBUG_LEVEL
+            std::cerr << std::string(
+                             "reflect::json_decode type mismatch (expect ") +
+                             expect + ", got " + got + ")\n";
+#endif
+            ec = make_error_code(JsonError::TypeMismatch);
+        }
     }
 };
 

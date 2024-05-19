@@ -45,8 +45,7 @@ public:
                    std::span<IOContext> peerContexts) {
         IOContextGuard guard(this);
         if (options.threadAffinity) {
-            PlatformIOContext::schedSetThreadAffinity(
-                (int)*options.threadAffinity);
+            PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
         }
         auto maxSleep = options.maxSleep;
         while (!stop.stop_requested()) [[likely]] {

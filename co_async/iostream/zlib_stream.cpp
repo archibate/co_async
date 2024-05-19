@@ -1,4 +1,4 @@
-#include <co_async/std.hpp>
+#include <co_async/iostream/zlib_stream.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/iostream/stream_base.hpp>
 #include <co_async/platform/platform_io.hpp>

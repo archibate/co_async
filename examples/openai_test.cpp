@@ -111,7 +111,7 @@ static Task<Expected<>> amain() {
             .model = "deepseek-coder",
             .stream = true,
         };
-        auto [res, body] = co_await co_await conn->requestStreamed(req, reflect::json_encode(compReq));
+        auto [res, body] = co_await co_await conn->requestStreamed(req, json_encode(compReq));
         while (auto tmp = co_await body.getline('\n')) {
             std::string_view line = *tmp;
             if (line.starts_with("data: "sv)) {
@@ -120,7 +120,7 @@ static Task<Expected<>> amain() {
                     break;
                 }
                 /* std::cerr << line << '\n'; */
-                auto compRes = reflect::json_decode<ChatCompletionResult>(line);
+                auto compRes = co_await json_decode<ChatCompletionResult>(line);
                 /* debug(), compRes; */
                 co_await co_await stdio().puts(compRes.choices.at(0).delta.value().content.value_or(""));
                 co_await co_await stdio().flush();

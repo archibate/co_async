@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 namespace co_async {
-void PlatformIOContext::schedSetThreadAffinity(int cpu) {
+void PlatformIOContext::schedSetThreadAffinity(size_t cpu) {
     cpu_set_t cpu_set;
     CPU_ZERO(&cpu_set);
     CPU_SET(cpu, &cpu_set);

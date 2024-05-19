@@ -6,14 +6,14 @@ using namespace std::literals;
 
 ThreadPool pool;
 
-static Task<> func() {
-    co_await pool.run([] { std::this_thread::sleep_for(1s); });
+static Task<Expected<>> func() {
+    co_await co_await pool.run([] { std::this_thread::sleep_for(1s); });
     /* std::this_thread::sleep_for(1s); */
-    co_return;
+    co_return {};
 }
 
 static Task<Expected<>> amain() {
-    co_await when_all(func(), func(), func());
+    co_await co_await when_all(func(), func(), func());
     co_return {};
 }
 

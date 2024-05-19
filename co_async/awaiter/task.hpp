@@ -165,7 +165,7 @@ struct TaskPromise<Expected<T, E>> : PromiseBase {
         if constexpr (std::is_void_v<T2>) {
             return ValueAwaiter<void>(std::in_place);
         } else {
-            return ValueAwaiter<T2>(std::in_place, std::move(*e));
+            return ValueAwaiter<T2>(std::in_place, *std::move(e));
         }
     }
 
@@ -212,7 +212,7 @@ struct TaskPromise<Expected<T, E>> : PromiseBase {
         std::vector<T2> ret;
         ret.reserve(e.size());
         for (std::size_t i = 0; i < e.size(); ++i) {
-            ret.emplace_back(std::move(*e[i]));
+            ret.emplace_back(*std::move(e[i]));
         }
         return ValueAwaiter<std::vector<T2>>(std::in_place, std::move(ret));
     }
@@ -220,6 +220,41 @@ struct TaskPromise<Expected<T, E>> : PromiseBase {
     template <class T2, class E2>
     ValueAwaiter<std::vector<T2>>
     await_transform(std::vector<Expected<T2, E2>> &e) noexcept {
+        return await_transform(std::move(e));
+    }
+
+    template <class... Ts, class E2>
+    ValueAwaiter<std::tuple<Avoid<Ts>...>>
+    await_transform(std::tuple<Expected<Ts, E2>...> &&e) noexcept {
+        return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+            if (!([&] {
+                    if (std::get<Is>(e).has_error()) [[unlikely]] {
+                        if constexpr (std::is_void_v<E>) {
+                            mResult.putValue(Unexpected<E>());
+                        } else {
+                            static_assert(
+                                std::same_as<E2, E>,
+                                "co_await'ing Expected's error type mismatch");
+                            mResult.putValue(Unexpected<E>(
+                                std::move(std::get<Is>(e).error())));
+                        }
+                        return false;
+                    }
+                    return true;
+                }() &&
+                  ...)) {
+                return ValueAwaiter<std::tuple<Avoid<Ts>...>>(mPrevious);
+            }
+            return ValueAwaiter<std::tuple<Avoid<Ts>...>>(
+                std::in_place, [&]() -> decltype(auto) {
+                    return *std::move(std::get<Is>(e)), Void();
+                }()...);
+        }(std::make_index_sequence<sizeof...(Ts)>());
+    }
+
+    template <class... Ts, class E2>
+    ValueAwaiter<std::tuple<Avoid<Ts>...>>
+    await_transform(std::tuple<Expected<Ts, E2>...> &e) noexcept {
         return await_transform(std::move(e));
     }
 

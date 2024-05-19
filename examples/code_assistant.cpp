@@ -121,7 +121,7 @@ static Task<Expected<OwningStream>> evaluate(std::string prompt) {
         .model = "deepseek-coder",
         .stream = true,
     };
-    auto [res, body] = co_await co_await conn->requestStreamed(req, reflect::json_encode(compReq));
+    auto [res, body] = co_await co_await conn->requestStreamed(req, json_encode(compReq));
     auto [r, w] = co_await co_await pipe_stream();
     co_spawn(pipe_bind(std::move(w), [conn = std::move(conn), body = std::move(body)] (OwningStream &w) mutable -> Task<Expected<>> {
         while (auto tmp = co_await body.getline('\n')) {
@@ -131,7 +131,7 @@ static Task<Expected<OwningStream>> evaluate(std::string prompt) {
                 if (line == "[DONE]"sv) {
                     break;
                 }
-                auto compRes = reflect::json_decode<ChatCompletionResult>(line);
+                auto compRes = co_await json_decode<ChatCompletionResult>(line);
                 auto delta = compRes.choices.at(0).delta.value().content.value_or("");
                 co_await co_await w.putchunk(delta);
             }

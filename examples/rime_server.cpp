@@ -63,66 +63,69 @@ struct RPC_get_candidates {
             co_return Unexpected{std::make_error_code(std::errc::io_error)};
         }
 
-        /* co_return co_await co_await pool.run([this, session_id]() */
-        /*                                          -> Expected<Result> { */
-            if (!RimeSimulateKeySequence(session_id, key_sequence.c_str())) {
-                RimeDestroySession(session_id);
-                co_return Unexpected{std::make_error_code(std::errc::io_error)};
-            }
+        /* co_return co_await co_await pool.run([this, session_id]() ->
+         * Expected<Result> { */
+        if (!RimeSimulateKeySequence(session_id, key_sequence.c_str())) {
+            RimeDestroySession(session_id);
+            co_return Unexpected{std::make_error_code(std::errc::io_error)};
+        }
 
-            RIME_STRUCT(RimeContext, context);
-            if (!RimeGetContext(session_id, &context)) {
-                RimeDestroySession(session_id);
-                co_return Unexpected{std::make_error_code(std::errc::io_error)};
-            }
+        RIME_STRUCT(RimeContext, context);
+        if (!RimeGetContext(session_id, &context)) {
+            RimeDestroySession(session_id);
+            co_return Unexpected{std::make_error_code(std::errc::io_error)};
+        }
 
-            if (!context.menu.candidates) {
-                RimeFreeContext(&context);
-                RimeDestroySession(session_id);
-                co_return Result{};
-            }
+        if (!context.menu.candidates) {
+            RimeFreeContext(&context);
+            RimeDestroySession(session_id);
+            co_return Result{};
+        }
 
-            std::vector<Result::Candidate> result;
-            while (true) {
-                for (int i = 0; i < context.menu.num_candidates; i++) {
-                    RimeCandidate candidate = context.menu.candidates[i];
-                    result.push_back({candidate.text, candidate.comment});
-                    if (result.size() >= max_candidates) {
-                        RimeFreeContext(&context);
-                        RimeDestroySession(session_id);
-                        co_return Result{.candidates = std::move(result)};
-                    }
-                }
-
-                if (context.menu.is_last_page) {
+        std::vector<Result::Candidate> result;
+        while (true) {
+            for (int i = 0; i < context.menu.num_candidates; i++) {
+                RimeCandidate candidate = context.menu.candidates[i];
+                result.push_back({candidate.text,
+                                  candidate.comment ? candidate.comment : ""});
+                if (result.size() >= max_candidates) {
                     RimeFreeContext(&context);
                     RimeDestroySession(session_id);
-                    co_return Result{.candidates = std::move(result)};
-                }
-
-                RimeProcessKey(session_id, (int)'=', 0);
-                if (!RimeGetContext(session_id, &context)) {
-                    co_return Result{.candidates = std::move(result)};
+                    goto out;
                 }
             }
+
+            if (context.menu.is_last_page) {
+                RimeFreeContext(&context);
+                RimeDestroySession(session_id);
+                goto out;
+            }
+
+            RimeProcessKey(session_id, (int)'=', 0);
+            if (!RimeGetContext(session_id, &context)) {
+                goto out;
+            }
+        }
+    out:
+        co_return Result{.candidates = std::move(result)};
         /* }); */
     }
 };
 
 static Task<Expected<>> amain(std::string addr) {
     co_await co_await stdio().putline("listening at: "s + addr);
-    auto listener = co_await co_await listener_bind(co_await SocketAddress::parse(addr));
+    auto listener =
+        co_await co_await listener_bind(co_await SocketAddress::parse(addr));
     HTTPServer server;
-    server.route(
-        "POST", "/rpc/get_candidates",
-        [](HTTPServer::IO &io) -> Task<Expected<>> {
-            auto body = reflect::json_encode(
-                co_await co_await reflect::json_decode<RPC_get_candidates>(
-                    co_await co_await io.request_body())());
-            co_await co_await HTTPServerUtils::make_ok_response(
-                io, body, "application/json");
-            co_return {};
-        });
+    server.route("POST", "/rpc/get_candidates",
+                 [](HTTPServer::IO &io) -> Task<Expected<>> {
+                     auto body = json_encode(co_await co_await (
+                         co_await json_decode<RPC_get_candidates>(
+                             co_await co_await io.request_body()))());
+                     co_await co_await HTTPServerUtils::make_ok_response(
+                         io, body, "application/json");
+                     co_return {};
+                 });
 
     while (true) {
         if (auto income = co_await listener_accept(listener)) {

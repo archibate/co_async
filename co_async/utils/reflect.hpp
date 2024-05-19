@@ -1,23 +1,21 @@
 #pragma once
-#include <array>
-#include <cstddef>
-#include <cstdint>
-#include <map>
-#include <memory>
-#include <optional>
-#include <string>
-#include <string_view>
-#include <type_traits>
-#include <unordered_map>
-#include <variant>
-#include <vector>
+#include <co_async/std.hpp>
+#include <co_async/utils/expected.hpp>
 
-namespace reflect {
-#if __cpp_constexpr >= 201703L
-# define REFLECT__CONSTEXPR17 constexpr
-#else
-# define REFLECT__CONSTEXPR17
-#endif
+/* #include <array> */
+/* #include <cstddef> */
+/* #include <cstdint> */
+/* #include <map> */
+/* #include <memory> */
+/* #include <optional> */
+/* #include <string> */
+/* #include <string_view> */
+/* #include <type_traits> */
+/* #include <unordered_map> */
+/* #include <variant> */
+/* #include <vector> */
+
+namespace co_async {
 #if defined(_MSC_VER) && (!defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL)
 # define REFLECT(...) \
      __pragma(message("Please turn on /Zc:preprocessor before using " \
@@ -150,23 +148,22 @@ namespace reflect {
 #  define REFLECT_GLOBAL__EXTRA(...)
 #  define REFLECT_GLOBAL_TEMPLATED__EXTRA(...)
 # endif
-# define REFLECT__ON_EACH(x) reflector.member(#x, x);
+# define REFLECT__ON_EACH(x) reflector(#x, x);
 # define REFLECT(...) \
      template <class ReflectorT> \
-     REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector){ \
+     constexpr void REFLECT__MEMBERS(ReflectorT &reflector){ \
          REFLECT__PP_FOREACH(REFLECT__ON_EACH, \
                              __VA_ARGS__)} REFLECT__EXTRA(__VA_ARGS__)
 # define REFLECT__GLOBAL_ON_EACH(x) \
-     reflector.member(#x##_REFLECT__static_string, object.x);
+     reflector(#x##_REFLECT__static_string, object.x);
 # define REFLECT_GLOBAL(T, ...) \
      template <class ReflectorT> \
-     REFLECT__CONSTEXPR17 void REFLECT__MEMBERS(ReflectorT &reflector, \
-                                                T &object){ \
+     constexpr void REFLECT__MEMBERS(ReflectorT &reflector, T &object){ \
          REFLECT__PP_FOREACH(REFLECT__GLOBAL_ON_EACH, \
                              __VA_ARGS__)} REFLECT_GLOBAL__EXTRA(__VA_ARGS__)
 # define REFLECT_GLOBAL_TEMPLATED(T, Tmpls, TmplsClassed, ...) \
      template <class ReflectorT, REFLECT__PP_UNWRAP_BRACE(TmplsClassed)> \
-     REFLECT__CONSTEXPR17 void REFLECT__MEMBERS( \
+     constexpr void REFLECT__MEMBERS( \
          ReflectorT &reflector, \
          T<REFLECT__PP_UNWRAP_BRACE(Tmpls)> &object){REFLECT__PP_FOREACH( \
          REFLECT__GLOBAL_ON_EACH, \
@@ -196,52 +193,55 @@ struct JsonValue {
     }
 };
 
-template <class T>
-struct NoDefault {
-private:
-    T value;
-
-public:
-    NoDefault(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>)
-        : value(std::move(value)) {}
-
-    NoDefault(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>)
-        : value(value) {}
-
-    template <class U, class = std::enable_if_t<std::is_convertible_v<U, T>>>
-    NoDefault(U &&value) noexcept(std::is_nothrow_convertible_v<U, T>)
-        : value(std::forward<U>(value)) {}
-
-    template <class = std::enable_if_t<std::is_convertible_v<
-                  std::initializer_list<typename T::value_type>, T>>>
-    NoDefault(std::initializer_list<typename T::value_type> value) noexcept(
-        std::is_nothrow_convertible_v<
-            std::initializer_list<typename T::value_type>, T>)
-        : value(std::move(value)) {}
-
-    NoDefault(NoDefault const &) = default;
-    NoDefault &operator=(NoDefault const &) = default;
-    NoDefault(NoDefault &&) = default;
-    NoDefault &operator=(NoDefault &&) = default;
-
-    T &operator*() noexcept {
-        return value;
-    }
-
-    T const &operator*() const noexcept {
-        return value;
-    }
-
-    T *operator->() noexcept {
-        return std::addressof(value);
-    }
-
-    T const *operator->() const noexcept {
-        return std::addressof(value);
-    }
-
-    using value_type = T;
-};
+/* template <class T> */
+/* struct NoDefault { */
+/* private: */
+/*     T value; */
+/*  */
+/* public: */
+/*     NoDefault(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>) */
+/*         : value(std::move(value)) {} */
+/*  */
+/*     NoDefault(T const &value)
+ * noexcept(std::is_nothrow_copy_constructible_v<T>) */
+/*         : value(value) {} */
+/*  */
+/*     template <class U, class = std::enable_if_t<std::is_convertible_v<U, T>>>
+ */
+/*     NoDefault(U &&value) noexcept(std::is_nothrow_convertible_v<U, T>) */
+/*         : value(std::forward<U>(value)) {} */
+/*  */
+/*     template <class = std::enable_if_t<std::is_convertible_v< */
+/*                   std::initializer_list<typename T::value_type>, T>>> */
+/*     NoDefault(std::initializer_list<typename T::value_type> value) noexcept(
+ */
+/*         std::is_nothrow_convertible_v< */
+/*             std::initializer_list<typename T::value_type>, T>) */
+/*         : value(std::move(value)) {} */
+/*  */
+/*     NoDefault(NoDefault const &) = default; */
+/*     NoDefault &operator=(NoDefault const &) = default; */
+/*     NoDefault(NoDefault &&) = default; */
+/*     NoDefault &operator=(NoDefault &&) = default; */
+/*  */
+/*     T &operator*() noexcept { */
+/*         return value; */
+/*     } */
+/*  */
+/*     T const &operator*() const noexcept { */
+/*         return value; */
+/*     } */
+/*  */
+/*     T *operator->() noexcept { */
+/*         return std::addressof(value); */
+/*     } */
+/*  */
+/*     T const *operator->() const noexcept { */
+/*         return std::addressof(value); */
+/*     } */
+/*  */
+/*     using value_type = T; */
+/* }; */
 
 struct JsonEncoder;
 
@@ -331,7 +331,7 @@ enum class JsonError : int {
 inline std::error_category const &jsonCategory() {
     static struct : std::error_category {
         virtual char const *name() const noexcept {
-            return "reflect::json";
+            return "json";
         }
 
         virtual std::string message(int e) const {
@@ -615,7 +615,7 @@ struct ReflectorJsonEncode {
     bool comma = false;
 
     template <class T>
-    void member(char const *name, T &value) {
+    void operator()(char const *name, T &value) {
         if (!comma) {
             comma = true;
         } else {
@@ -633,7 +633,7 @@ struct ReflectorJsonDecode {
     bool failed = false;
 
     template <class T>
-    void member(char const *name, T &value) {
+    void operator()(char const *name, T &value) {
         if (failed) {
             return;
         }
@@ -650,8 +650,7 @@ struct ReflectorJsonDecode {
                              std::error_code &ec) {
         if (std::holds_alternative<JsonValue::Null>(inner)) {
 #if DEBUG_LEVEL
-            std::cerr << std::string(
-                             "reflect::json_decode no such entry (expect ") +
+            std::cerr << std::string("json_decode no such entry (expect ") +
                              expect + ", got null)\n";
 #endif
             ec = make_error_code(JsonError::NullEntry);
@@ -668,22 +667,43 @@ struct ReflectorJsonDecode {
                         got = "dict";
                     } else if constexpr (std::is_same_v<T, JsonValue::Array>) {
                         got = "array";
-                    } else if constexpr (std::is_same_v<T, JsonValue::Integer>) {
+                    } else if constexpr (std::is_same_v<T,
+                                                        JsonValue::Integer>) {
                         got = "integer";
                     } else if constexpr (std::is_same_v<T, JsonValue::Real>) {
                         got = "real";
-                    } else if constexpr (std::is_same_v<T, JsonValue::Boolean>) {
+                    } else if constexpr (std::is_same_v<T,
+                                                        JsonValue::Boolean>) {
                         got = "boolean";
                     }
                 },
                 inner);
 #if DEBUG_LEVEL
-            std::cerr << std::string(
-                             "reflect::json_decode type mismatch (expect ") +
+            std::cerr << std::string("json_decode type mismatch (expect ") +
                              expect + ", got " + got + ")\n";
 #endif
             ec = make_error_code(JsonError::TypeMismatch);
         }
+    }
+};
+
+struct JsonTraitPointerLike {
+    template <class T>
+    static void putValue(JsonEncoder *encoder, T const &value) {
+        if (value == nullptr) {
+            encoder->put("null", 4);
+        } else {
+            JsonTrait<typename std::pointer_traits<T>::element_type>::putValue(
+                encoder, *value);
+        }
+    }
+
+    template <class T>
+    static bool getValue(JsonValue::Union const &inner, T &value,
+                         std::error_code &ec) {
+        JsonTrait<typename std::pointer_traits<T>::element_type>::getValue(
+            inner, *value, ec);
+        return !ec;
     }
 };
 
@@ -945,6 +965,32 @@ struct JsonTraitWrapperLike {
     }
 };
 
+template <>
+struct JsonTrait<JsonValue> {
+    template <class T>
+    static void putValue(JsonEncoder *encoder, T const &value) {
+        std::visit([&]<class U>(
+                       U const &arg) { JsonTrait<U>::getValue(encoder, arg); },
+                   value);
+    }
+
+    template <class T>
+    static bool getValue(JsonValue::Union &data, JsonValue &value,
+                         std::error_code &ec) {
+        value.inner = std::move(data);
+        return true;
+    }
+};
+
+template <class T>
+struct JsonTrait<T *> : JsonTraitPointerLike {};
+
+template <class T, class Deleter>
+struct JsonTrait<std::unique_ptr<T, Deleter>> : JsonTraitPointerLike {};
+
+template <class T>
+struct JsonTrait<std::shared_ptr<T>> : JsonTraitPointerLike {};
+
 template <class T, std::size_t N>
 struct JsonTrait<std::array<T, N>> : JsonTraitArrayLike {};
 
@@ -983,8 +1029,8 @@ struct JsonTrait<std::monostate> : JsonTraitNullLike {};
 template <>
 struct JsonTrait<bool> : JsonTraitBooleanLike {};
 
-template <class T>
-struct JsonTrait<NoDefault<T>> : JsonTraitWrapperLike {};
+/* template <class T> */
+/* struct JsonTrait<NoDefault<T>> : JsonTraitWrapperLike {}; */
 
 template <class T>
 struct JsonTrait<T, std::enable_if_t<std::is_arithmetic_v<T>>>
@@ -1035,22 +1081,22 @@ inline bool json_decode(std::string_view json, T &value, std::error_code &ec) {
 }
 
 template <class T>
-inline T json_decode(JsonValue root) {
+inline Expected<T> json_decode(JsonValue &root) {
     T value{};
     std::error_code ec;
-    if (!json_decode(root, value, ec)) {
-        throw std::system_error(ec, "json_decode");
+    if (!json_decode(root, value, ec)) [[unlikely]] {
+        return Unexpected{ec};
     }
-    return value;
+    return std::move(value);
 }
 
 template <class T>
-inline T json_decode(std::string_view json) {
+inline Expected<T> json_decode(std::string_view json) {
     T value{};
     std::error_code ec;
-    if (!json_decode(json, value, ec)) {
-        throw std::system_error(ec, "json_decode");
+    if (!json_decode(json, value, ec)) [[unlikely]] {
+        return Unexpected{ec};
     }
-    return value;
+    return std::move(value);
 }
-} // namespace reflect
+} // namespace co_async

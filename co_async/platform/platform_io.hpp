@@ -41,7 +41,7 @@ struct PlatformIOContextOptions {
 };
 
 struct PlatformIOContext {
-    static void schedSetThreadAffinity(int cpu);
+    static void schedSetThreadAffinity(size_t cpu);
     bool
     waitEventsFor(std::size_t numBatch,
                   std::optional<std::chrono::steady_clock::duration> timeout);

@@ -108,7 +108,11 @@ build/server  # 对应于 examples/server.cpp
 #include <co_async/co_async.hpp>
 ```
 
-编译选项：`g++ -std=c++20 你的项目.cpp -I 本项目根目录 -luring -lbearssl -lz`
+Linux 编译选项：`-std=c++20 -I 本项目根目录 -luring -lbearssl -lz`
+
+- liburing >= 2.6
+- bearssl >= 0.6
+- zlib >= 1.2
 
 ### 作为普通库导入
 

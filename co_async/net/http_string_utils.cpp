@@ -3,8 +3,8 @@
 
 namespace co_async {
 std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
-    // format chrono time point into HTTP date format, e.g.: Tue, 30 Apr 2024
-    // 07:31:38 GMT
+    // format chrono time point into HTTP date format, e.g.:
+    // Tue, 30 Apr 2024 07:31:38 GMT
     std::time_t time = std::chrono::system_clock::to_time_t(tp);
     std::tm tm = *std::gmtime(&time);
     std::ostringstream ss;

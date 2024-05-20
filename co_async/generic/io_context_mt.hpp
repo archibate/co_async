@@ -52,8 +52,10 @@ public:
         if (numWorkers == 0) {
             setAffinity = true;
             numWorkers = std::thread::hardware_concurrency();
-            if (!numWorkers) [[unlikely]] throw std::logic_error(
-                "failed to detect number of hardware threads");
+            if (!numWorkers) [[unlikely]] {
+                throw std::logic_error(
+                    "failed to detect number of hardware threads");
+            }
         } else {
             setAffinity = false;
         }

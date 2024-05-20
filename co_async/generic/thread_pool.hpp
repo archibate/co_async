@@ -23,13 +23,14 @@ private:
 public:
     Task<Expected<>> rawRun(std::function<void()> func) /* MT-safe */;
     Task<Expected<>> rawRun(std::function<void(std::stop_token)> func,
-                         CancelToken cancel) /* MT-safe */;
+                            CancelToken cancel) /* MT-safe */;
 
     auto run(std::invocable auto func) /* MT-safe */
-    -> Task<Expected<std::invoke_result_t<decltype(func)>>> {
+        -> Task<Expected<std::invoke_result_t<decltype(func)>>> {
         std::optional<Avoid<std::invoke_result_t<decltype(func)>>> res;
-        auto e = co_await rawRun(
-            [&res, func = std::move(func)]() mutable { res = (func(), Void()); });
+        auto e = co_await rawRun([&res, func = std::move(func)]() mutable {
+            res = (func(), Void());
+        });
         if (e.has_error()) [[unlikely]] {
             co_return Unexpected{e.error()};
         }
@@ -41,9 +42,12 @@ public:
     }
 
     auto run(std::invocable<std::stop_token> auto func,
-                          CancelToken cancel) /* MT-safe */
-    -> Task<Expected<std::invoke_result_t<decltype(func), std::stop_token>>> {
-        std::optional<Avoid<std::invoke_result_t<decltype(func), std::stop_token>>> res;
+             CancelToken cancel) /* MT-safe */
+        -> Task<
+            Expected<std::invoke_result_t<decltype(func), std::stop_token>>> {
+        std::optional<
+            Avoid<std::invoke_result_t<decltype(func), std::stop_token>>>
+            res;
         auto e = co_await rawRun(
             [&res, func = std::move(func)](std::stop_token stop) mutable {
                 res = (func(stop), Void());

@@ -13,7 +13,9 @@ private:
 public:
     Finally(std::nullptr_t = nullptr) : enable(false) {}
 
-    Finally(std::convertible_to<F> auto &&func) : func(std::forward<decltype(func)>(func)), enable(true) {}
+    Finally(std::convertible_to<F> auto &&func)
+        : func(std::forward<decltype(func)>(func)),
+          enable(true) {}
 
     Finally(Finally &&that) : func(std::move(that.func)), enable(that.enable) {
         that.enable = false;
@@ -21,8 +23,9 @@ public:
 
     Finally &operator=(Finally &&that) {
         if (this != &that) {
-            if (enable)
+            if (enable) {
                 func();
+            }
             func = std::move(that.func);
             enable = that.enable;
             that.enable = false;
@@ -31,8 +34,9 @@ public:
     }
 
     void reset() {
-        if (enable)
+        if (enable) {
             func();
+        }
         enable = false;
     }
 
@@ -41,12 +45,13 @@ public:
     }
 
     ~Finally() {
-        if (enable)
-        func();
+        if (enable) {
+            func();
+        }
     }
 };
 
 template <class F>
 Finally(F &&) -> Finally<std::decay_t<F>>;
 
-}
+} // namespace co_async

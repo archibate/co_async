@@ -52,18 +52,23 @@ struct SimpleMap {
 
     template <std::convertible_to<K> Key>
     V &insert_or_assign(Key &&key, V value) {
-        return mData.insert_or_assign(K(std::forward<Key>(key)), std::move(value))
+        return mData
+            .insert_or_assign(K(std::forward<Key>(key)), std::move(value))
             .first->second;
     }
 
     template <std::convertible_to<K> Key>
     V &insert(Key &&key, V value) {
-        return mData.emplace(K(std::forward<Key>(key)), std::move(value)).first->second;
+        return mData.emplace(K(std::forward<Key>(key)), std::move(value))
+            .first->second;
     }
 
-    template <std::convertible_to<K> Key, class ...Args> requires std::constructible_from<V, Args...>
+    template <std::convertible_to<K> Key, class... Args>
+        requires std::constructible_from<V, Args...>
     V &emplace(Key &&key, Args &&...args) {
-        return mData.emplace(K(std::forward<Key>(key)), std::forward<Args>(args)...).first->second;
+        return mData
+            .emplace(K(std::forward<Key>(key)), std::forward<Args>(args)...)
+            .first->second;
     }
 
     template <class Key>

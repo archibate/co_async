@@ -31,8 +31,7 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
 }
 
 struct PlatformIOContextOptions {
-    std::chrono::steady_clock::duration maxSleep =
-        std::chrono::milliseconds(5);
+    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(5);
     std::chrono::steady_clock::duration maxSleepInc =
         std::chrono::milliseconds(8);
     std::chrono::steady_clock::duration maxSleepLimit =

@@ -11,8 +11,8 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout) {
     if (proxy.starts_with("http://")) {
         proxy.remove_prefix(7);
-        auto sock =
-            co_await co_await socket_connect(co_await SocketAddress::parse(proxy, 80));
+        auto sock = co_await co_await socket_connect(
+            co_await SocketAddress::parse(proxy, 80));
         auto hostName = std::string(host) + ":" + to_string(port);
         std::string header = "CONNECT " + hostName +
                              " HTTP/1.1\r\nHost: " + hostName +

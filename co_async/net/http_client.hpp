@@ -348,8 +348,7 @@ private:
             std::lock_guard wlock(mMutex);
             pool = mPools.at(host);
             if (!pool) [[likely]] {
-                pool =
-                    &mPools.emplace(std::string(host), mConnPerHost);
+                pool = &mPools.emplace(std::string(host), mConnPerHost);
             }
         }
         for (auto &entry: pool->mPool) {

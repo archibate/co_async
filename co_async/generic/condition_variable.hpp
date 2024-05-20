@@ -115,23 +115,30 @@ public:
         }
     }
 
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred, std::chrono::steady_clock::time_point expires) {
+    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+                                std::chrono::steady_clock::time_point expires) {
         while (!std::invoke(pred)) {
-            if (std::chrono::steady_clock::now() > expires || !co_await wait(expires)) {
-                co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+            if (std::chrono::steady_clock::now() > expires ||
+                !co_await wait(expires)) {
+                co_return Unexpected{
+                    std::make_error_code(std::errc::stream_timeout)};
             }
         }
         co_return {};
     }
 
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred, std::chrono::steady_clock::duration timeout) {
-        return wait_until(std::forward<decltype(pred)>(pred), std::chrono::steady_clock::now() + timeout);
+    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+                                std::chrono::steady_clock::duration timeout) {
+        return wait_until(std::forward<decltype(pred)>(pred),
+                          std::chrono::steady_clock::now() + timeout);
     }
 
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred, CancelToken cancel) {
+    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+                                CancelToken cancel) {
         while (!std::invoke(pred)) {
             if (cancel.is_canceled() || !co_await wait(cancel)) {
-                co_return Unexpected{std::make_error_code(std::errc::operation_canceled)};
+                co_return Unexpected{
+                    std::make_error_code(std::errc::operation_canceled)};
             }
         }
     }

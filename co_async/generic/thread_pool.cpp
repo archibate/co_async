@@ -100,7 +100,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
 }
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
-                                 CancelToken cancel) {
+                                    CancelToken cancel) {
     auto cv = std::make_shared<ConditionVariable>();
     std::stop_source stop;
     bool stopped = false;

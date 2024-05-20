@@ -1,11 +1,11 @@
 #pragma once
 #include <co_async/std.hpp>
-#include <co_async/utils/ring_queue.hpp>
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/details/ignore_return_promise.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/cancel.hpp>
 #include <co_async/utils/cacheline.hpp>
+#include <co_async/utils/ring_queue.hpp>
 #if CO_ASYNC_STEAL
 # include <co_async/utils/concurrent_queue.hpp>
 #endif
@@ -99,7 +99,8 @@ struct GenericIOContext {
                 if (promise.mExpires <= now) {
                     promise.mCancelled = false;
                     promise.destructiveErase();
-                    auto coroutine = std::coroutine_handle<TimerNode>::from_promise(promise);
+                    auto coroutine =
+                        std::coroutine_handle<TimerNode>::from_promise(promise);
                     enqueueJob(coroutine);
                     continue;
                 } else {
@@ -112,9 +113,9 @@ struct GenericIOContext {
 
     void enqueueJob(std::coroutine_handle<> coroutine) {
         if (!mQueue.push(coroutine)) [[unlikely]] {
-# if CO_ASYNC_DEBUG
+#if CO_ASYNC_DEBUG
             std::cerr << "WARNING: coroutine queue overrun\n";
-# endif
+#endif
             std::lock_guard lock(mMTMutex);
             mMTQueue.push_back(coroutine);
         }
@@ -136,7 +137,9 @@ struct GenericIOContext {
     void startMain(std::stop_token stop) {
         while (!stop.stop_requested()) [[likely]] {
             auto duration = runDuration();
-            if (runMTQueue()) continue;
+            if (runMTQueue()) {
+                continue;
+            }
             if (duration) {
                 std::this_thread::sleep_for(*duration);
             } else {
@@ -146,6 +149,7 @@ struct GenericIOContext {
     }
 
     GenericIOContext() : mQueue(1 << 8) {}
+
     GenericIOContext(GenericIOContext &&) = delete;
     static inline thread_local GenericIOContext *instance;
 

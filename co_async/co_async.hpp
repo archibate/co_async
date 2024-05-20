@@ -1,4 +1,5 @@
 #pragma once
+#include <co_async/std.hpp>
 #include <co_async/awaiter/and_then.hpp>
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/details/current_coroutine.hpp>
@@ -49,7 +50,6 @@
 #include <co_async/platform/process.hpp>
 #include <co_async/platform/signal.hpp>
 #include <co_async/platform/socket.hpp>
-#include <co_async/std.hpp>
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/debug.hpp>
 #include <co_async/utils/expected.hpp>

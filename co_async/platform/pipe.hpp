@@ -16,8 +16,7 @@ struct PipeHandlePair {
     FileHandle mWriter;
 
     std::array<OwningStream, 2> stream() {
-        return {file_from_handle(reader()),
-                file_from_handle(writer())};
+        return {file_from_handle(reader()), file_from_handle(writer())};
     }
 
     FileHandle reader() {

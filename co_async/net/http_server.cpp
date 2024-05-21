@@ -292,7 +292,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
         }
 #if CO_ASYNC_DEBUG
         std::chrono::steady_clock::time_point t0;
-        if (mLogRequests) {
+        if (mImpl->mLogRequests) {
             std::clog << io.request.method + ' ' + io.request.uri.dump() + '\n';
             for (auto [k, v]: io.request.headers) {
                 if (k == "cookie" || k == "set-cookie" ||
@@ -307,7 +307,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
 #endif
         co_await co_await mImpl->doHandleRequest(io);
 #if CO_ASYNC_DEBUG
-        if (mLogRequests) {
+        if (mImpl->mLogRequests) {
             auto dt = std::chrono::steady_clock::now() - t0;
             std::clog << io.request.method + ' ' + io.request.uri.dump() + ' ' +
                              std::to_string(io.mResponseSavedForDebug.status) +

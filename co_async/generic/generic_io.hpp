@@ -148,7 +148,11 @@ struct GenericIOContext {
         }
     }
 
+#if CO_ASYNC_STEAL
+    GenericIOContext()  = default;
+#else
     GenericIOContext() : mQueue(1 << 8) {}
+#endif
 
     GenericIOContext(GenericIOContext &&) = delete;
     static inline thread_local GenericIOContext *instance;

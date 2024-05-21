@@ -7,7 +7,7 @@
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/ring_queue.hpp>
 #if CO_ASYNC_STEAL
-# include <co_async/utils/concurrent_queue.hpp>
+# include <co_async/utils/ring_queue.hpp>
 #endif
 #include <co_async/utils/non_void_helper.hpp>
 #include <co_async/utils/rbtree.hpp>

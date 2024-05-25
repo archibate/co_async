@@ -141,11 +141,3 @@ endif()
 add_custom_target(format
     COMMAND clang-format -i ${implementation_sources} ${interface_sources}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-
-add_custom_target(make_single_header
-    COMMAND "echo '#pragma once' > single_co_async.hpp"
-    COMMAND "cat ${interface_sources} | sed '/#include/d' | sed '/#pragma once/d' >> single_co_async.hpp"
-    COMMAND "echo '#ifdef CO_ASYNC_IMPLEMENTATION' >> single_co_async.hpp"
-    COMMAND "cat ${implementation_sources} | sed '/#include/d' >> single_co_async.hpp"
-    COMMAND "echo '#endif' >> single_co_async.hpp"
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

@@ -143,6 +143,7 @@
 #  include <stdatomic.h> // IWYU pragma: export
 # endif
 #endif
-#define DEBUG_LEVEL 1
-#include <co_async/utils/debug.hpp>
-#include <co_async/utils/reflect.hpp>
+/* #ifdef CO_ASYNC_DEBUG */
+/* #define DEBUG_LEVEL 1 */
+/* #include <co_async/utils/debug.hpp> */
+/* #endif */

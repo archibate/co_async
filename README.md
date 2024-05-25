@@ -100,20 +100,6 @@ build/server  # 对应于 examples/server.cpp
 
 ## 安装与导入
 
-### 作为纯头文件导入
-
-将本项目下载到你的项目中作为子文件夹，引入即可：
-
-```cpp
-#include <co_async/co_async.hpp>
-```
-
-Linux 编译选项：`-std=c++20 -I 本项目根目录 -luring -lbearssl -lz`
-
-- liburing >= 2.6
-- bearssl >= 0.6
-- zlib >= 1.2
-
 ### 作为普通库导入
 
 将本项目下载到你的项目中作为子文件夹，引入并链接：
@@ -128,6 +114,20 @@ target_link_libraries(你的名字 PRIVATE co_async)
 ```cpp
 #include <co_async/co_async.hpp>
 ```
+
+### 作为单头文件导入
+
+下载 [scripts/single_co_async.hpp](scripts/single_co_async.hpp)，然后：
+
+```cpp
+#define CO_ASYNC_IMPLEMENTATION  // 在其中一个 cpp 文件中定义该宏
+#include <single_co_async.hpp>
+```
+
+Linux 编译选项：`-std=c++20 -I 本项目根目录 -luring -lbearssl`
+
+- liburing >= 2.6
+- bearssl >= 0.6
 
 ### 额外 CMake 选项
 

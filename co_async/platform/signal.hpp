@@ -20,9 +20,7 @@ struct SignalingContextMT {
             }
             lock.unlock();
             int signo;
-            debug(), 1;
             throwingError(-sigwait(&s, &signo));
-            debug(), 1, signo;
             lock.lock();
             std::deque<std::coroutine_handle<>> waiters;
             waiters.swap(instance->mWaitingSignals.at(signo));

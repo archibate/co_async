@@ -5,6 +5,8 @@
 #set(CO_ASYNC_ZLIB ON)
 #set(CO_ASYNC_STEAL ON)
 #set(CO_ASYNC_CUDA ON)
+set(CO_ASYNC_FIND_LIBURING ON)
+set(CO_ASYNC_FIND_BEARSSL ON)
 
 if (CO_ASYNC_MODULE)
     cmake_minimum_required(VERSION 3.28)
@@ -87,14 +89,42 @@ if (CO_ASYNC_CUDA)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    target_sources(co_async PRIVATE 3rd/liburing/liburing.cpp)
-    target_include_directories(co_async PUBLIC 3rd/liburing/include)
+    if (CO_ASYNC_FIND_LIBURING)
+        include(FindPkgConfig)
+        pkg_check_modules(LIBURING liburing)
+        if (NOT LIBURING_FOUND)
+            find_path(LIBURING_INCLUDE_DIR NAMES liburing.h)
+            find_library(LIBURING_LIBRARY NAMES liburing.a)
+            if (NOT LIBURING_INCLUDE_DIR OR NOT LIBURING_LIBRARY)
+                message(FATAL_ERROR "liburing not found")
+            endif()
+            set(LIBURING_LIBRARIES ${LIBURING_LIBRARY})
+            set(LIBURING_INCLUDE_DIRS ${LIBURING_INCLUDE_DIR})
+        endif()
+        target_link_libraries(co_async PUBLIC ${LIBURING_LIBRARIES})
+        target_include_directories(co_async PUBLIC ${LIBURING_INCLUDE_DIRS})
+    else()
+        target_sources(co_async PRIVATE 3rd/liburing/liburing.cpp)
+        target_include_directories(co_async PUBLIC 3rd/liburing/include)
+    endif()
 endif()
 
-target_include_directories(co_async PUBLIC 3rd/bearssl/include)
-
-# find_package(BearSSL REQUIRED)
-# target_link_libraries(co_async PUBLIC BearSSL::bearssl)
+if (CO_ASYNC_FIND_BEARSSL)
+    find_package(BearSSL QUIET)
+    if (TARGET BearSSL::bearssl)
+        target_link_libraries(co_async PUBLIC BearSSL::bearssl)
+    else()
+        find_path(BEARSSL_INCLUDE_DIR NAMES bearssl.h)
+        find_library(BEARSSL_LIBRARY NAMES libbearssl.so)
+        if (NOT BEARSSL_INCLUDE_DIR OR NOT BEARSSL_LIBRARY)
+            message(FATAL_ERROR "BearSSL not found")
+        endif()
+        target_link_libraries(co_async PUBLIC ${BEARSSL_LIBRARY})
+        target_include_directories(co_async PUBLIC ${BEARSSL_INCLUDE_DIR})
+    endif()
+else()
+    target_include_directories(co_async PUBLIC 3rd/bearssl/include)
+endif()
 
 if (PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     file(GLOB example_sources examples/*.cpp)
@@ -107,3 +137,15 @@ if (PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         target_link_libraries(${name} PRIVATE co_async)
     endforeach()
 endif()
+
+add_custom_target(format
+    COMMAND clang-format -i ${implementation_sources} ${interface_sources}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_custom_target(make_single_header
+    COMMAND "echo '#pragma once' > single_co_async.hpp"
+    COMMAND "cat ${interface_sources} | sed '/#include/d' | sed '/#pragma once/d' >> single_co_async.hpp"
+    COMMAND "echo '#ifdef CO_ASYNC_IMPLEMENTATION' >> single_co_async.hpp"
+    COMMAND "cat ${implementation_sources} | sed '/#include/d' >> single_co_async.hpp"
+    COMMAND "echo '#endif' >> single_co_async.hpp"
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

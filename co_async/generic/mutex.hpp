@@ -27,6 +27,28 @@ struct BasicMutex {
     }
 };
 
+struct BasicConcurrentMutex {
+    ConcurrentConditionVariable mReady;
+    std::atomic_bool mLocked;
+
+    bool try_lock() {
+        bool expect = false;
+        return mLocked.compare_exchange_strong(
+            expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+    }
+
+    Task<> lock() {
+        while (!try_lock()) {
+            co_await mReady.wait();
+        }
+    }
+
+    void unlock() {
+        mLocked.store(false, std::memory_order_release);
+        mReady.notify_one();
+    }
+};
+
 struct BasicTimedMutex {
     TimedConditionVariable mReady;
     std::atomic_bool mLocked;
@@ -165,17 +187,20 @@ template <class T = void>
 struct Mutex : MutexImpl<BasicMutex, T> {};
 
 template <class T = void>
+struct ConcurrentMutex : MutexImpl<BasicConcurrentMutex, T> {};
+
+template <class T = void>
 struct TimedMutex : MutexImpl<BasicTimedMutex, T> {};
 
 struct CallOnce {
 private:
     std::atomic_bool mCalled{false};
-    Mutex<> mMutex;
+    ConcurrentMutex<> mMutex;
 
 public:
     struct Locked {
     private:
-        explicit Locked(Mutex<>::Locked locked, CallOnce *impl) noexcept
+        explicit Locked(ConcurrentMutex<>::Locked locked, CallOnce *impl) noexcept
             : mLocked(std::move(locked)),
               mImpl(impl) {}
 
@@ -193,7 +218,7 @@ public:
         }
 
     private:
-        Mutex<>::Locked mLocked;
+        ConcurrentMutex<>::Locked mLocked;
         CallOnce *mImpl;
     };
 

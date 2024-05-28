@@ -157,7 +157,7 @@ public:
         }
     }
 
-    std::coroutine_handle<> notify_pop_coroutine() {
+    std::coroutine_handle<> notifyPopCoroutine() {
         if (auto promise = popWaiting()) {
             return std::coroutine_handle<PromiseNode>::from_promise(*promise);
         }
@@ -208,7 +208,7 @@ public:
         }
     }
 
-    std::coroutine_handle<> notify_pop_coroutine() {
+    std::coroutine_handle<> notifyPopCoroutine() {
         if (!mWaitingList.empty()) {
             auto coroutine = mWaitingList.front();
             mWaitingList.pop_front();
@@ -269,11 +269,231 @@ public:
         }
     }
 
-    std::coroutine_handle<> notify_pop_coroutine() {
+    std::coroutine_handle<> notifyPopCoroutine() {
         mReady = true;
         if (auto coroutine = mWaitingCoroutine) {
             mWaitingCoroutine = nullptr;
             return coroutine;
+        }
+        return nullptr;
+    }
+};
+
+struct ConcurrentConditionVariable {
+private:
+    struct WaitEntry {
+        std::coroutine_handle<> coroutine;
+        GenericIOContext *context;
+    };
+
+    std::deque<WaitEntry> mWaitingList;
+    std::mutex mMutex;
+
+    struct Awaiter {
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> coroutine) const {
+            std::lock_guard lock(mThat->mMutex);
+            mThat->mWaitingList.emplace_back(coroutine, GenericIOContext::instance);
+        }
+
+        void await_resume() const noexcept {}
+
+        ConcurrentConditionVariable *mThat;
+    };
+
+public:
+    Awaiter operator co_await() noexcept {
+        return Awaiter(this);
+    }
+
+    Task<> wait() {
+        co_await Awaiter(this);
+    }
+
+    void notify() {
+        while (!mWaitingList.empty()) {
+            auto waitEntry = mWaitingList.front();
+            mWaitingList.pop_front();
+            waitEntry.context->enqueueJobMT(waitEntry.coroutine);
+        }
+    }
+
+    void notify_one() {
+        if (!mWaitingList.empty()) {
+            auto waitEntry = mWaitingList.front();
+            mWaitingList.pop_front();
+            waitEntry.context->enqueueJobMT(waitEntry.coroutine);
+        }
+    }
+
+    std::optional<WaitEntry> notifyPopCoroutine() {
+        std::lock_guard lock(mMutex);
+        if (!mWaitingList.empty()) {
+            auto waitEntry = mWaitingList.front();
+            mWaitingList.pop_front();
+            return waitEntry;
+        }
+        return std::nullopt;
+    }
+};
+
+struct ConcurrentTimedConditionVariable {
+private:
+    struct PromiseNode : CustomPromise<void, PromiseNode>,
+                         ConcurrentRbTree<PromiseNode>::NodeType {
+        bool operator<(PromiseNode const &that) const {
+            if (!mExpires) {
+                return false;
+            }
+            if (!that.mExpires) {
+                return true;
+            }
+            return *mExpires < *that.mExpires;
+        }
+
+        void doCancel() {
+            this->destructiveErase();
+            co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
+        }
+
+        bool isCanceled() const noexcept {
+            return this->rbTree == nullptr;
+        }
+
+        std::optional<std::chrono::steady_clock::time_point> mExpires;
+    };
+
+    ConcurrentRbTree<PromiseNode> mWaitingList;
+
+    struct Awaiter {
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<PromiseNode> coroutine) const {
+            mThat->pushWaiting(coroutine.promise());
+        }
+
+        void await_resume() const noexcept {}
+
+        ConcurrentTimedConditionVariable *mThat;
+    };
+
+    PromiseNode *popWaiting() {
+        auto waitList = mWaitingList.lock();
+        if (waitList->empty()) {
+            return nullptr;
+        }
+        auto &promise = waitList->front();
+        waitList->erase(promise);
+        return &promise;
+    }
+
+    void pushWaiting(PromiseNode &promise) {
+        mWaitingList.lock()->insert(promise);
+    }
+
+    struct Canceller {
+        using OpType = Task<void, PromiseNode>;
+
+        static Task<> doCancel(OpType *op) {
+            op->get().promise().doCancel();
+            co_return;
+        }
+
+        static void earlyCancelValue(OpType *op) noexcept {}
+    };
+
+    Task<> waitCancellable(std::chrono::steady_clock::time_point expires,
+                           CancelToken cancel) {
+        auto waiter = wait();
+        waiter.get().promise().mExpires = expires;
+        co_await cancel.guard<Canceller>(waiter);
+    }
+
+public:
+    Task<void, PromiseNode> wait() {
+        co_await Awaiter(this);
+    }
+
+    Task<Expected<>> wait(CancelToken cancel) {
+        auto waiter = wait();
+        co_await cancel.guard<Canceller>(waiter);
+        if (waiter.get().promise().isCanceled()) {
+            co_return Unexpected{
+                std::make_error_code(std::errc::operation_canceled)};
+        }
+        co_return {};
+    }
+
+    Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
+        auto res = co_await co_timeout(&ConcurrentTimedConditionVariable::waitCancellable,
+                                       expires, this, expires);
+        if (!res) {
+            co_return Unexpected{
+                std::make_error_code(std::errc::stream_timeout)};
+        }
+        co_return {};
+    }
+
+    Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
+        return wait(std::chrono::steady_clock::now() + timeout);
+    }
+
+    Task<> wait_until(std::invocable<> auto &&pred) {
+        while (!std::invoke(pred)) {
+            co_await wait();
+        }
+    }
+
+    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+                                std::chrono::steady_clock::time_point expires) {
+        while (!std::invoke(pred)) {
+            if (std::chrono::steady_clock::now() > expires ||
+                !co_await wait(expires)) {
+                co_return Unexpected{
+                    std::make_error_code(std::errc::stream_timeout)};
+            }
+        }
+        co_return {};
+    }
+
+    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+                                std::chrono::steady_clock::duration timeout) {
+        return wait_until(std::forward<decltype(pred)>(pred),
+                          std::chrono::steady_clock::now() + timeout);
+    }
+
+    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+                                CancelToken cancel) {
+        while (!std::invoke(pred)) {
+            if (cancel.is_canceled() || !co_await wait(cancel)) {
+                co_return Unexpected{
+                    std::make_error_code(std::errc::operation_canceled)};
+            }
+        }
+    }
+
+    void notify() {
+        while (auto promise = popWaiting()) {
+            co_spawn(
+                std::coroutine_handle<PromiseNode>::from_promise(*promise));
+        }
+    }
+
+    void notify_one() {
+        if (auto promise = popWaiting()) {
+            co_spawn(
+                std::coroutine_handle<PromiseNode>::from_promise(*promise));
+        }
+    }
+
+    std::coroutine_handle<> notifyPopCoroutine() {
+        if (auto promise = popWaiting()) {
+            return std::coroutine_handle<PromiseNode>::from_promise(*promise);
         }
         return nullptr;
     }

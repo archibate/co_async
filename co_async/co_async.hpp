@@ -51,6 +51,7 @@
 #include <co_async/platform/signal.hpp>
 #include <co_async/platform/socket.hpp>
 #include <co_async/utils/cacheline.hpp>
+#include <co_async/utils/concurrent_queue.hpp>
 #include <co_async/utils/debug.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/utils/non_void_helper.hpp>

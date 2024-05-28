@@ -88,7 +88,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
             } catch (...) {
                 ep = std::current_exception();
             }
-            if (auto coroutine = cv->notify_pop_coroutine()) [[likely]] {
+            if (auto coroutine = cv->notifyPopCoroutine()) [[likely]] {
                 ctx->spawn_mt(coroutine);
             }
         });
@@ -112,7 +112,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
         } catch (...) {
             ep = std::current_exception();
         }
-        if (auto p = cv->notify_pop_coroutine()) [[likely]] {
+        if (auto p = cv->notifyPopCoroutine()) [[likely]] {
             ctx->spawn_mt(p);
         }
     });

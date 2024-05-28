@@ -90,7 +90,7 @@
 #if __cplusplus >= 201703L
 # include <any>             // IWYU pragma: export
 # include <charconv>        // IWYU pragma: export
-# include <execution>       // IWYU pragma: export
+//# include <execution>       // IWYU pragma: export
 # include <filesystem>      // IWYU pragma: export
 # include <memory_resource> // IWYU pragma: export
 # include <optional>        // IWYU pragma: export

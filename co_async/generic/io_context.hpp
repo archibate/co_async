@@ -105,6 +105,14 @@ public:
     }
 
     template <class T, class P>
+    void spawn_mt(Task<T, P> task) /* MT-safe */ {
+        auto wrapped = coSpawnStarter(std::move(task));
+        auto coroutine = wrapped.get();
+        mGenericIO.enqueueJobMT(coroutine);
+        wrapped.release();
+    }
+
+    template <class T, class P>
     T join(Task<T, P> task) {
         return contextJoin(*this, std::move(task));
     }

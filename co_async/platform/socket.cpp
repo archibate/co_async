@@ -51,7 +51,7 @@ Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
     int err = getaddrinfo(host, NULL, &hints, &result);
     if (err) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << ip << ": " << gai_strerror(err) << '\n';
+        std::cerr << host << ": " << gai_strerror(err) << '\n';
 #endif
         return Unexpected{std::error_code(err, getAddrInfoCategory())};
     }
@@ -72,7 +72,7 @@ Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
     }
     [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << ip << ": no matching host address with ipv4 or ipv6\n";
+        std::cerr << host << ": no matching host address with ipv4 or ipv6\n";
 #endif
         return Unexpected{std::make_error_code(std::errc::bad_address)};
     }

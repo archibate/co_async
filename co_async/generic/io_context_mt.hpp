@@ -71,17 +71,17 @@ public:
         }
     }
 
-    static void spawn(std::coroutine_handle<> coroutine) {
-        instance->mWorkers[0].spawn(coroutine);
+    static void spawn(std::coroutine_handle<> coroutine, std::size_t index = 0) {
+        instance->mWorkers[index].spawn(coroutine);
     }
 
-    static void spawn_mt(std::coroutine_handle<> coroutine) {
-        instance->mWorkers[0].spawn_mt(coroutine);
+    static void spawn_mt(std::coroutine_handle<> coroutine, std::size_t index = 0) /* MT-safe */ {
+        instance->mWorkers[index].spawn_mt(coroutine);
     }
 
     template <class T, class P>
-    static T join(Task<T, P> task) {
-        return instance->mWorkers[0].join(std::move(task));
+    static T join(Task<T, P> task, std::size_t index = 0) {
+        return instance->mWorkers[index].join(std::move(task));
     }
 
     static inline IOContextMT *instance;

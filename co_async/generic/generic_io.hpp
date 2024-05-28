@@ -83,7 +83,6 @@ struct GenericIOContext {
             enqueueJob(coroutine);
             return true;
         }
-        lock.unlock();
         return false;
     }
 
@@ -148,14 +147,14 @@ struct GenericIOContext {
         }
     }
 
-    GenericIOContext() : mQueue(1 << 8) {}
+    GenericIOContext() : mQueue(512) {}
 
     GenericIOContext(GenericIOContext &&) = delete;
     static inline thread_local GenericIOContext *instance;
 
 private:
 #if CO_ASYNC_STEAL
-    ConcurrentQueue<std::coroutine_handle<>, (1 << 8) - 1> mQueue;
+    ConcurrentQueue<std::coroutine_handle<>, 512 - 1> mQueue;
 #else
     RingQueue<std::coroutine_handle<>> mQueue;
 #endif

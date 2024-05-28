@@ -51,7 +51,7 @@ int main() {
 }
 ```
 
-> [examples 目录](examples) 中有更多案例。
+> [examples 目录](examples) 中有更多案例。多线程版本详见 [examples/server_mt.cpp](examples/server_mt.cpp)
 
 ## 平台要求
 
@@ -154,7 +154,7 @@ GCC 编译器：13.2.1
 - 查询文件信息 11µs
 - 读写 ~1MB 文件 80µs
 
-百万并发 HTTP 压力测试 examples/stress_test.cpp：
+百万并发 HTTP 压力测试 [examples/server_mt.cpp](examples/server_mt.cpp)：
 
 ```
 $ wrk -t16 -c1000 -d20s http://127.0.0.1:8080/

@@ -54,7 +54,7 @@ struct RingQueue {
         return p;
     }
 
-    [[nodiscard]] bool push(T value) {
+    [[nodiscard]] bool push(T &&value) {
         T *nextWrite = mWrite == mTail ? mHead.get() : mWrite + 1;
         if (nextWrite == mRead) {
             return false;
@@ -64,7 +64,7 @@ struct RingQueue {
         return true;
     }
 
-    void push_unchecked(T value) {
+    void push_unchecked(T &&value) {
         T *nextWrite = mWrite == mTail ? mHead.get() : mWrite + 1;
         *mWrite = std::move(value);
         mWrite = nextWrite;

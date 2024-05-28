@@ -111,7 +111,7 @@ struct GenericIOContext {
     }
 
     void enqueueJob(std::coroutine_handle<> coroutine) {
-        if (!mQueue.push(coroutine)) [[unlikely]] {
+        if (!mQueue.push(std::move(coroutine))) [[unlikely]] {
 #if CO_ASYNC_DEBUG
             std::cerr << "WARNING: coroutine queue overrun\n";
 #endif
@@ -154,7 +154,7 @@ struct GenericIOContext {
 
 private:
 #if CO_ASYNC_STEAL
-    ConcurrentQueue<std::coroutine_handle<>, 512 - 1> mQueue;
+    ConcurrentRingQueue<std::coroutine_handle<>, 512 - 1> mQueue;
 #else
     RingQueue<std::coroutine_handle<>> mQueue;
 #endif

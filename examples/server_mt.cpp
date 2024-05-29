@@ -14,16 +14,14 @@ static Task<Expected<>> amain(std::string serveAt) {
     incoming.set_max_size(512);
 
     for (std::size_t i = 0; i < IOContextMT::num_workers(); ++i) {
-        IOContextMT::nth_worker(i).spawn(co_bind([&, i]() -> Task<> {
-            auto consumer = incoming.consumer(i);
-            /* auto &consumer = incoming; */
+        IOContextMT::nth_worker(i).spawn(co_bind([incoming = incoming.consumer(i)]() -> Task<> {
             HTTPServer server;
             server.route("GET", "/", [](HTTPServer::IO &io) -> Task<Expected<>> {
                 co_await co_await HTTPServerUtils::make_ok_response(io, "<h1>It works!</h1>");
                 co_return {};
             });
             while (true) {
-                auto income = co_await consumer.pop();
+                auto income = co_await incoming.pop();
                 co_spawn(server.handle_http(std::move(income)));
             }
         }));

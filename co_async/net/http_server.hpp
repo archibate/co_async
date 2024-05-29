@@ -47,8 +47,9 @@ struct HTTPServer {
     };
 
     using HTTPHandler = std::function<Task<Expected<>>(IO &)>;
-    using HTTPPrefixHandler =
-        std::function<Task<Expected<>>(IO &, std::string_view)>;
+    using HTTPPrefixHandler = std::function<Task<Expected<>>(IO &, std::string_view)>;
+    /* using HTTPHandler = Task<Expected<>>(*)(IO &); */
+    /* using HTTPPrefixHandler = Task<Expected<>>(*)(IO &, std::string_view); */
     HTTPServer();
     ~HTTPServer();
     HTTPServer(HTTPServer &&) = delete;

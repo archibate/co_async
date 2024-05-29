@@ -14,7 +14,7 @@ static Task<> empty_coroutine() {
 }
 
 static Task<> amain() {
-    constexpr std::size_t n = 1;
+    constexpr std::size_t n = 1000;
     for (std::size_t i = 0; i < n; i++) {
         Perf _;
         empty_func();

@@ -26,11 +26,11 @@ extern "C" void *malloc(size_t size) {
     return __libc_malloc(size);
 }
 
-static int temp(int volatile const &x) {
+[[gnu::noinline]] static int temp(int volatile const &x) {
     return 0;
 }
 
-static int resu() {
+[[gnu::noinline]] static int resu() {
     return 8;
 }
 

@@ -70,7 +70,7 @@ struct FutureToken {
 #if CO_ASYNC_EXCEPT
     void set_exception(std::exception_ptr e) {
         mImpl->mException = e;
-        mImpl->mCondition.notify();
+        mImpl->notify();
     }
 #endif
     auto operator co_await() const noexcept {

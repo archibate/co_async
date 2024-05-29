@@ -6,6 +6,9 @@ struct Void final {
     explicit Void() = default;
 
     template <class T>
+    Void(T &&) noexcept {}
+
+    template <class T>
     friend constexpr T &&operator,(T &&t, Void) {
         return std::forward<T>(t);
     }
@@ -30,7 +33,7 @@ struct AvoidVoidTrait {
 };
 
 template <>
-struct AvoidVoidTrait<void> final {
+struct AvoidVoidTrait<void> {
     using Type = Void;
     using RefType = Void;
     using CRefType = Void;

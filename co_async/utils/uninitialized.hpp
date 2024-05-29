@@ -80,7 +80,7 @@ struct Uninitialized {
                 "Uninitialized::emplace with value already exist");
         }
 #endif
-        new (std::addressof(mValue)) T(std::forward<Ts>(args)...);
+        std::construct_at(std::addressof(mValue), std::forward<Ts>(args)...);
 #if CO_ASYNC_DEBUG
         mHasValue = true;
 #endif

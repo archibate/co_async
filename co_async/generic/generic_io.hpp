@@ -7,7 +7,7 @@
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/ring_queue.hpp>
 #if CO_ASYNC_STEAL
-# include <co_async/utils/ring_queue.hpp>
+# include <co_async/utils/concurrent_queue.hpp>
 #endif
 #include <co_async/utils/non_void_helper.hpp>
 #include <co_async/utils/rbtree.hpp>
@@ -111,13 +111,14 @@ struct GenericIOContext {
     }
 
     void enqueueJob(std::coroutine_handle<> coroutine) {
-        if (!mQueue.push(std::move(coroutine))) [[unlikely]] {
-#if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: coroutine queue overrun\n";
-#endif
-            std::lock_guard lock(mMTMutex);
-            mMTQueue.push_back(coroutine);
-        }
+        mQueue.push(std::move(coroutine));
+/*         if (!mQueue.push(std::move(coroutine))) [[unlikely]] { */
+/* #if CO_ASYNC_DEBUG */
+/*             std::cerr << "WARNING: coroutine queue overrun\n"; */
+/* #endif */
+/*             std::lock_guard lock(mMTMutex); */
+/*             mMTQueue.push_back(coroutine); */
+/*         } */
     }
 
     void enqueueJobMT(std::coroutine_handle<> coroutine) {
@@ -147,7 +148,13 @@ struct GenericIOContext {
         }
     }
 
-    GenericIOContext() : mQueue(512) {}
+    GenericIOContext() = default;
+
+/* #if CO_ASYNC_STEAL */
+/*     GenericIOContext() = default; */
+/* #else */
+/*     GenericIOContext() : mQueue(512) {} */
+/* #endif */
 
     GenericIOContext(GenericIOContext &&) = delete;
     static inline thread_local GenericIOContext *instance;
@@ -156,7 +163,8 @@ private:
 #if CO_ASYNC_STEAL
     ConcurrentRingQueue<std::coroutine_handle<>, 512 - 1> mQueue;
 #else
-    RingQueue<std::coroutine_handle<>> mQueue;
+    /* RingQueue<std::coroutine_handle<>> mQueue; */
+    InfinityQueue<std::coroutine_handle<>> mQueue;
 #endif
     RbTree<TimerNode> mTimers;
     std::mutex mMTMutex;

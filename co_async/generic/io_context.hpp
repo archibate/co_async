@@ -48,16 +48,17 @@ public:
             PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
         }
         auto maxSleep = options.maxSleep;
+        auto *genericIO = GenericIOContext::instance;
+        auto *platformIO = PlatformIOContext::instance;
         while (!stop.stop_requested()) [[likely]] {
-            auto duration = GenericIOContext::instance->runDuration();
-            if (GenericIOContext::instance->runMTQueue()) {
+            auto duration = genericIO->runDuration();
+            if (genericIO->runMTQueue()) {
                 continue;
             }
             if (!duration || *duration > maxSleep) {
                 duration = maxSleep;
             }
-            bool hasEvent =
-                PlatformIOContext::instance->waitEventsFor(1, duration);
+            bool hasEvent = platformIO->waitEventsFor(1, duration);
             if (hasEvent) {
                 auto t = maxSleep + options.maxSleepInc;
                 if (t > options.maxSleepLimit) {

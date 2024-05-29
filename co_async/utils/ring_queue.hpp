@@ -88,12 +88,7 @@ struct InfinityQueue {
         return value;
     }
 
-    bool push(T &&value) {
-        mQueue.push_back(std::move(value));
-        return true;
-    }
-
-    void push_unchecked(T &&value) {
+    void push(T &&value) {
         mQueue.push_back(std::move(value));
     }
 

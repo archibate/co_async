@@ -1,6 +1,5 @@
 #pragma once
 #include <co_async/std.hpp>
-#include <co_async/awaiter/details/task_owned_awaiter.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/when_all.hpp>
 #include <co_async/generic/future.hpp>
@@ -34,7 +33,7 @@ struct TaskGroup {
     }
 
     auto operator co_await() {
-        return TaskOwnedAwaiter(wait());
+        return wait().operator co_await();
     }
 
     TaskGroup() = default;

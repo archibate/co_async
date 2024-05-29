@@ -26,7 +26,7 @@ Task<T> ensureTask(Task<T> &&t) {
 }
 
 template <class A>
-    requires(!Awaitable<A> && std::is_invocable_v<A> &&
+    requires(!Awaitable<A> && std::invocable<A> &&
              Awaitable<std::invoke_result_t<A>>)
 Task<typename AwaitableTraits<std::invoke_result_t<A>>::RetType>
 ensureTask(A a) {

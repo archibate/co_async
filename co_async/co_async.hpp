@@ -7,7 +7,6 @@
 #include <co_async/awaiter/details/make_awaitable.hpp>
 #include <co_async/awaiter/details/previous_awaiter.hpp>
 #include <co_async/awaiter/details/return_previous.hpp>
-#include <co_async/awaiter/details/task_owned_awaiter.hpp>
 #include <co_async/awaiter/details/value_awaiter.hpp>
 #include <co_async/awaiter/generator.hpp>
 #include <co_async/awaiter/just.hpp>

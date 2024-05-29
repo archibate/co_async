@@ -1,9 +1,11 @@
+#pragma once
+
+#include <co_async/std.hpp>
+#include <co_async/awaiter/task.hpp>
 
 #if defined(__unix__) && __has_include(<cxxabi.h>)
 # include <cxxabi.h>
 #endif
-#pragma once
-#include <co_async/std.hpp>
 
 namespace co_async {
 template <class FinalAwaiter = std::suspend_always>
@@ -18,7 +20,6 @@ struct IgnoreReturnPromise {
 
     void unhandled_exception() noexcept {
 #if CO_ASYNC_EXCEPT
-        /* #if CO_ASYNC_DEBUG */
         try {
             throw;
         } catch (std::exception const &e) {
@@ -38,7 +39,6 @@ struct IgnoreReturnPromise {
             std::cerr
                 << "co_spawn coroutine terminated after thrown exception\n";
         }
-/* #endif */
 #else
         std::terminate();
 #endif
@@ -52,9 +52,10 @@ struct IgnoreReturnPromise {
         return std::coroutine_handle<IgnoreReturnPromise>::from_promise(*this);
     }
 
-    void setPrevious(std::coroutine_handle<>) noexcept {}
-
     IgnoreReturnPromise &operator=(IgnoreReturnPromise &&) = delete;
+
+    [[maybe_unused]] TaskAwaiter<void> *mAwaiter;
+
 #if CO_ASYNC_PERF
     Perf mPerf;
 

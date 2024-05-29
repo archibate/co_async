@@ -20,12 +20,12 @@ struct GeneratorPromise {
     }
 
     auto yield_value(T &&ret) {
-        mResult.putValue(std::move(ret));
+        mResult.emplace(std::move(ret));
         return PreviousAwaiter(mPrevious);
     }
 
     auto yield_value(T const &ret) {
-        mResult.putValue(ret);
+        mResult.emplace(ret);
         return PreviousAwaiter(mPrevious);
     }
 
@@ -43,7 +43,7 @@ struct GeneratorPromise {
     }
 
     T result() {
-        return mResult.moveValue();
+        return mResult.move();
     }
 
     auto get_return_object() {

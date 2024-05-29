@@ -49,7 +49,7 @@ ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
 #if CO_ASYNC_EXCEPT
     try {
 #endif
-        result.putValue(co_await std::forward<decltype(t)>(t));
+        result.emplace(co_await std::forward<decltype(t)>(t));
 #if CO_ASYNC_EXCEPT
     } catch (...) {
         control.mException = std::current_exception();
@@ -92,7 +92,7 @@ whenAllImpl(std::index_sequence<Is...>, Ts &&...ts) {
         whenAllHelper(ts, control, std::get<Is>(result))...};
     co_await WhenAllAwaiter(control, taskArray);
     co_return std::tuple<typename AwaitableTraits<Ts>::AvoidRetType...>(
-        std::get<Is>(result).moveValue()...);
+        std::get<Is>(result).move()...);
 }
 
 template <Awaitable... Ts>
@@ -135,7 +135,7 @@ when_all(std::vector<T, Alloc> const &tasks) {
             res(alloc);
         res.reserve(tasks.size());
         for (auto &r: result) {
-            res.push_back(r.moveValue());
+            res.push_back(r.move());
         }
         co_return res;
     }

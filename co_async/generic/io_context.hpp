@@ -132,7 +132,7 @@ inline Task<> contextJoinHelper(Task<T, P> task, std::condition_variable &cv,
 #if CO_ASYNC_EXCEPT
     try {
 #endif
-        result.putValue((co_await task, Void()));
+        result.emplace((co_await task, Void()));
 #if CO_ASYNC_EXCEPT
     } catch (...) {
 # if CO_ASYNC_DEBUG
@@ -167,7 +167,7 @@ T contextJoin(IOContext &context, Task<T, P> task) {
     }
 #endif
     if constexpr (!std::is_void_v<T>) {
-        return result.moveValue();
+        return result.move();
     }
 }
 

@@ -142,8 +142,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
         std::rethrow_exception(ep);
     }
     if (stopped) {
-        co_return Unexpected{
-            std::make_error_code(std::errc::operation_canceled)};
+        co_return std::errc::operation_canceled;
     }
     co_return {};
 }

@@ -63,7 +63,7 @@ public:
                           std::chrono::steady_clock::time_point expires) {
         while (!mQueue.push(std::move(value))) {
             if (auto e = co_await mNonFull.wait(expires); e.has_error()) {
-                co_return Unexpected{e.error()};
+                co_return e.error();
             }
         }
         mNonEmpty.notify_one();
@@ -91,7 +91,7 @@ public:
                 co_return std::move(*value);
             }
             if (auto e = co_await mNonEmpty.wait(expires); e.has_error()) {
-                co_return Unexpected{e.error()};
+                co_return e.error();
             }
         }
     }

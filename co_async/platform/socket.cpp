@@ -53,7 +53,7 @@ Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
 #if CO_ASYNC_DEBUG
         std::cerr << host << ": " << gai_strerror(err) << '\n';
 #endif
-        return Unexpected{std::error_code(err, getAddrInfoCategory())};
+        return std::error_code(err, getAddrInfoCategory());
     }
     Finally fin = [&] {
         freeaddrinfo(result);
@@ -74,7 +74,7 @@ Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
 #if CO_ASYNC_DEBUG
         std::cerr << host << ": no matching host address with ipv4 or ipv6\n";
 #endif
-        return Unexpected{std::make_error_code(std::errc::bad_address)};
+        return std::errc::bad_address;
     }
 }
 
@@ -106,13 +106,13 @@ Expected<SocketAddress> SocketAddress::parse(std::string_view host,
     }
     if (!port) {
         if (defaultPort == -1) [[unlikely]] {
-            return Unexpected{std::make_error_code(std::errc::bad_address)};
+            return std::errc::bad_address;
         }
         port = defaultPort;
     }
     auto ip = IpAddress::parse(hostPart.c_str());
     if (ip.has_error()) [[unlikely]] {
-        return Unexpected{ip.error()};
+        return ip.error();
     }
     return SocketAddress(*ip, *port);
 }
@@ -217,8 +217,7 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
     if (cancel.is_canceled()) [[unlikely]] {
-        co_return Unexpected{
-            std::make_error_code(std::errc::operation_canceled)};
+        co_return std::errc::operation_canceled;
     }
     co_await expectError(co_await cancel.guard<UringOpCanceller>(
         UringOp().prep_connect(sock.fileNo(),

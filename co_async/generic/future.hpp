@@ -32,7 +32,7 @@ public:
             OneshotConditionVariable::Awaiter::await_resume();
             auto impl = static_cast<Impl *>(mThat);
             if constexpr (!std::is_void_v<T>) {
-                return impl->mValue.moveValue();
+                return impl->mValue.move();
             }
         }
     };
@@ -62,8 +62,9 @@ struct FutureToken {
         : mImpl(that.mImpl.get()) {}
 
     template <class... Args>
+        requires std::constructible_from<T, Args...>
     void set_value(Args &&...args) {
-        mImpl->mValue.putValue(std::forward<Args>(args)...);
+        mImpl->mValue.emplace(std::forward<Args>(args)...);
         mImpl->notify();
     }
 #if CO_ASYNC_EXCEPT

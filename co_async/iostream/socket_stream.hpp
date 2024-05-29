@@ -11,8 +11,7 @@ struct SocketStream : Stream {
         auto ret = co_await socket_read(mFile, buffer, mTimeout);
         if (ret == std::make_error_code(std::errc::operation_canceled))
             [[unlikely]] {
-            co_return Unexpected{
-                std::make_error_code(std::errc::stream_timeout)};
+            co_return std::errc::stream_timeout;
         }
         co_return ret;
     }
@@ -22,8 +21,7 @@ struct SocketStream : Stream {
         auto ret = co_await socket_write(mFile, buffer, mTimeout);
         if (ret == std::make_error_code(std::errc::operation_canceled))
             [[unlikely]] {
-            co_return Unexpected{
-                std::make_error_code(std::errc::stream_timeout)};
+            co_return std::errc::stream_timeout;
         }
         co_return ret;
     }

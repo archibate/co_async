@@ -369,7 +369,7 @@ public:
             std::cerr << "X509 decoder error: " +
                              bearSSLCategory().message(err) + "\n";
 #endif
-            return Unexpected{std::error_code(err, bearSSLCategory())};
+            return std::error_code(err, bearSSLCategory());
         }
         return result;
     }
@@ -419,7 +419,7 @@ public:
         x506.decode(certX506);
         auto dn = x506.getDN();
         if (dn.has_error()) {
-            return Unexpected{dn.error()};
+            return dn.error();
         }
         trustAnchors.push_back({
             {(unsigned char *)dn->data(), dn->size()},
@@ -507,8 +507,7 @@ protected:
                         << "SSL error: " + bearSSLCategory().message(err) +
                                "\n";
 #endif
-                    co_return Unexpected{
-                        std::error_code(err, bearSSLCategory())};
+                    co_return std::error_code(err, bearSSLCategory());
                 }
                 co_return {};
             }
@@ -526,13 +525,12 @@ protected:
                             eng->err = BR_ERR_IO;
                         }
                         if (e.has_error()) {
-                            co_return Unexpected{e.error()};
+                            co_return e.error();
                         } else {
-                            co_return Unexpected{
-                                std::make_error_code(std::errc::broken_pipe)};
+                            co_return std::errc::broken_pipe;
                         }
                     } else if (e.has_error()) [[unlikely]] {
-                        co_return Unexpected{e.error()};
+                        co_return e.error();
                     } else {
                         co_return {};
                     }
@@ -563,13 +561,12 @@ protected:
                             eng->err = BR_ERR_IO;
                         }
                         if (e.has_error()) {
-                            co_return Unexpected{e.error()};
+                            co_return e.error();
                         } else {
-                            co_return Unexpected{
-                                std::make_error_code(std::errc::broken_pipe)};
+                            co_return std::errc::broken_pipe;
                         }
                     } else if (e.has_error()) [[unlikely]] {
-                        co_return Unexpected{e.error()};
+                        co_return e.error();
                     } else {
                         co_return {};
                     }

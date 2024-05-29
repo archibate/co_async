@@ -32,11 +32,10 @@ public:
             res = (func(), Void());
         });
         if (e.has_error()) [[unlikely]] {
-            co_return Unexpected{e.error()};
+            co_return e.error();
         }
         if (!res) [[unlikely]] {
-            co_return Unexpected{
-                std::make_error_code(std::errc::operation_canceled)};
+            co_return std::errc::operation_canceled;
         }
         co_return std::move(*res);
     }
@@ -53,11 +52,10 @@ public:
                 res = (func(stop), Void());
             });
         if (e.has_error()) {
-            co_return Unexpected{e.error()};
+            co_return e.error();
         }
         if (!res) {
-            co_return Unexpected{
-                std::make_error_code(std::errc::operation_canceled)};
+            co_return std::errc::operation_canceled;
         }
         co_return std::move(*res);
     }

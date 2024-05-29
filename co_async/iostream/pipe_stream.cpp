@@ -49,7 +49,7 @@ struct OPipeStream : Stream {
             p->mNonEmpty.notify_one();
             co_return buffer.size();
         } else {
-            co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+            co_return std::errc::broken_pipe;
         }
     }
 
@@ -93,7 +93,7 @@ Task<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out) {
         }
         auto n = co_await co_await out.write(in.peekbuf());
         if (n == 0) [[unlikely]] {
-            co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+            co_return std::errc::broken_pipe;
         }
         in.seenbuf(n);
     }

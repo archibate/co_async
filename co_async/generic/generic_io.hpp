@@ -42,8 +42,8 @@ struct GenericIOContext {
                 if (!mPromise->mCancelled) {
                     return {};
                 } else {
-                    return Unexpected{
-                        std::make_error_code(std::errc::operation_canceled)};
+                    return 
+                        std::errc::operation_canceled;
                 }
             }
         };
@@ -60,8 +60,7 @@ struct GenericIOContext {
             }
 
             static Expected<> earlyCancelValue(OpType *op) {
-                return Unexpected{
-                    std::make_error_code(std::errc::operation_canceled)};
+                return std::errc::operation_canceled;
             }
         };
     };

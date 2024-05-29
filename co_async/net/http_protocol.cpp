@@ -43,8 +43,7 @@ Task<Expected<>> HTTPProtocolVersion11::parseHeaders(HTTPHeaders &headers) {
         auto pos = line.find(':');
         if (pos == line.npos || pos == line.size() - 1 || line[pos + 1] != ' ')
             [[unlikely]] {
-            co_return Unexpected{
-                std::make_error_code(std::errc::protocol_error)};
+            co_return std::errc::protocol_error;
         }
         auto key = line.substr(0, pos);
         for (auto &c: key) {
@@ -406,16 +405,16 @@ Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
     using namespace std::string_view_literals;
     std::string line;
     if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) {
-        co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+        co_return std::errc::broken_pipe;
     }
     auto pos = line.find(' ');
     if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
+        co_return std::errc::protocol_error;
     }
     req.method = line.substr(0, pos);
     auto pos2 = line.find(' ', pos + 1);
     if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
+        co_return std::errc::protocol_error;
     }
     req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
     co_await co_await parseHeaders(req.headers);
@@ -442,16 +441,16 @@ Task<Expected<>> HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     using namespace std::string_view_literals;
     std::string line;
     if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+        co_return std::errc::broken_pipe;
     }
     if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv || line[8] != ' ')
         [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
+        co_return std::errc::protocol_error;
     }
     if (auto statusOpt = from_string<int>(line.substr(9, 3))) [[likely]] {
         res.status = *statusOpt;
     } else [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
+        co_return std::errc::protocol_error;
     }
     co_await co_await parseHeaders(res.headers);
     handleContentEncoding(res.headers);

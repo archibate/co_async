@@ -147,7 +147,7 @@ private:
             }
             mHttp = nullptr;
         }
-        co_return Unexpected{ec};
+        co_return ec;
     }
 
     /* Task<Expected<>> */
@@ -172,7 +172,7 @@ private:
     /*         (void)cachedStream.seek(0); */
     /*         mHttp = nullptr; */
     /*     } */
-    /*     co_return Unexpected{std::errc::connection_aborted}; */
+    /*     co_return std::errc::connection_aborted; */
     /* } */
     HTTPConnection(std::unique_ptr<HTTPProtocolFactory> httpFactory)
         : mHttp(nullptr),
@@ -223,8 +223,7 @@ public:
                 std::move(h), p, host, std::move(proxy), timeout);
             return {};
         } else [[unlikely]] {
-            return Unexpected{
-                std::make_error_code(std::errc::protocol_not_supported)};
+            return std::errc::protocol_not_supported;
         }
     }
 
@@ -361,7 +360,7 @@ private:
                     if (auto e =
                             entry.mHttp.doConnect(host, mTimeout, mFollowProxy);
                         e.has_error()) [[unlikely]] {
-                        return Unexpected{e.error()};
+                        return std::move(e).error();
                     }
                     entry.mLastAccess = std::chrono::steady_clock::now();
                     entry.mValid = true;

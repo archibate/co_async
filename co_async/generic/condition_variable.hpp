@@ -89,8 +89,7 @@ public:
         auto waiter = wait();
         co_await cancel.guard<Canceller>(waiter);
         if (waiter.get().promise().isCanceled()) {
-            co_return Unexpected{
-                std::make_error_code(std::errc::operation_canceled)};
+            co_return std::errc::operation_canceled;
         }
         co_return {};
     }
@@ -99,8 +98,7 @@ public:
         auto res = co_await co_timeout(&TimedConditionVariable::waitCancellable,
                                        expires, this, expires);
         if (!res) {
-            co_return Unexpected{
-                std::make_error_code(std::errc::stream_timeout)};
+            co_return std::errc::stream_timeout;
         }
         co_return {};
     }
@@ -120,8 +118,7 @@ public:
         while (!std::invoke(pred)) {
             if (std::chrono::steady_clock::now() > expires ||
                 !co_await wait(expires)) {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::stream_timeout)};
+                co_return std::errc::stream_timeout;
             }
         }
         co_return {};
@@ -137,8 +134,7 @@ public:
                                 CancelToken cancel) {
         while (!std::invoke(pred)) {
             if (cancel.is_canceled() || !co_await wait(cancel)) {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::operation_canceled)};
+                co_return std::errc::operation_canceled;
             }
         }
     }
@@ -424,8 +420,7 @@ public:
         auto waiter = wait();
         co_await cancel.guard<Canceller>(waiter);
         if (waiter.get().promise().isCanceled()) {
-            co_return Unexpected{
-                std::make_error_code(std::errc::operation_canceled)};
+            co_return std::errc::operation_canceled;
         }
         co_return {};
     }
@@ -435,8 +430,7 @@ public:
             &ConcurrentTimedConditionVariable::waitCancellable, expires, this,
             expires);
         if (!res) {
-            co_return Unexpected{
-                std::make_error_code(std::errc::stream_timeout)};
+            co_return std::errc::stream_timeout;
         }
         co_return {};
     }
@@ -456,8 +450,7 @@ public:
         while (!std::invoke(pred)) {
             if (std::chrono::steady_clock::now() > expires ||
                 !co_await wait(expires)) {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::stream_timeout)};
+                co_return std::errc::stream_timeout;
             }
         }
         co_return {};
@@ -473,8 +466,7 @@ public:
                                 CancelToken cancel) {
         while (!std::invoke(pred)) {
             if (cancel.is_canceled() || !co_await wait(cancel)) {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::operation_canceled)};
+                co_return std::errc::operation_canceled;
             }
         }
     }

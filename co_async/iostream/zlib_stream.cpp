@@ -28,8 +28,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
 # if CO_ASYNC_DEBUG
         std::cerr << "WARNING: inflateInit returned error\n";
 # endif
-        co_return Unexpected{
-            std::make_error_code(std::errc::not_enough_memory)};
+        co_return std::errc::not_enough_memory;
     }
     do {
         if (auto e = co_await source.read(std::span<char>((char *)in, chunk));
@@ -38,7 +37,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
             std::cerr << "WARNING: inflate source read failed with error\n";
 # endif
             (void)inflateEnd(&strm);
-            co_return Unexpected{e.error()};
+            co_return e.error();
         } else {
             strm.avail_in = *e;
         }
@@ -59,7 +58,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: inflate error: " + std::to_string(ret) +
                                  ": " + std::string(strm.msg) + "\n";
 # endif
-                co_return Unexpected{std::make_error_code(std::errc::io_error)};
+                co_return std::errc::io_error;
             }
             have = chunk - strm.avail_out;
             if (auto e = co_await dest.putspan(
@@ -69,7 +68,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: inflate dest write failed with error\n";
 # endif
                 (void)inflateEnd(&strm);
-                co_return Unexpected{e.error()};
+                co_return e.error();
             }
         } while (strm.avail_out == 0);
     } while (ret != Z_STREAM_END);
@@ -78,7 +77,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
 # if CO_ASYNC_DEBUG
         std::cerr << "WARNING: inflate got unexpected end of file\n";
 # endif
-        co_return Unexpected{std::make_error_code(std::errc::io_error)};
+        co_return std::errc::io_error;
     }
     co_return {};
 }
@@ -101,8 +100,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
 # if CO_ASYNC_DEBUG
         std::cerr << "WARNING: deflateInit returned error\n";
 # endif
-        co_return Unexpected{
-            std::make_error_code(std::errc::not_enough_memory)};
+        co_return std::errc::not_enough_memory;
     }
     do {
         if (auto e = co_await source.read(std::span<char>((char *)in, chunk));
@@ -111,7 +109,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
             std::cerr << "WARNING: deflate source read failed with error\n";
 # endif
             (void)deflateEnd(&strm);
-            co_return Unexpected{e.error()};
+            co_return e.error();
         } else {
             strm.avail_in = *e;
         }
@@ -134,7 +132,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: deflate dest write failed with error\n";
 # endif
                 (void)deflateEnd(&strm);
-                co_return Unexpected{e.error()};
+                co_return e.error();
             }
         } while (strm.avail_out == 0);
         assert(strm.avail_in == 0); /* all input will be used */
@@ -144,13 +142,11 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
 }
 #else
 Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
-    co_return Unexpected{
-        std::make_error_code(std::errc::function_not_supported)};
+    co_return std::errc::function_not_supported;
 }
 
 Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
-    co_return Unexpected{
-        std::make_error_code(std::errc::function_not_supported)};
+    co_return std::errc::function_not_supported;
 }
 #endif
 } // namespace co_async

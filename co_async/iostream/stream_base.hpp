@@ -10,7 +10,7 @@ struct Stream {
     virtual void raw_timeout(std::chrono::steady_clock::duration timeout) {}
 
     virtual Task<Expected<>> raw_seek(std::uint64_t pos) {
-        co_return Unexpected{std::make_error_code(std::errc::invalid_seek)};
+        co_return std::errc::invalid_seek;
     }
 
     virtual Task<Expected<>> raw_flush() {
@@ -22,12 +22,12 @@ struct Stream {
     }
 
     virtual Task<Expected<std::size_t>> raw_read(std::span<char> buffer) {
-        co_return Unexpected{std::make_error_code(std::errc::not_supported)};
+        co_return std::errc::not_supported;
     }
 
     virtual Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) {
-        co_return Unexpected{std::make_error_code(std::errc::not_supported)};
+        co_return std::errc::not_supported;
     }
 
     Stream &operator=(Stream &&) = delete;
@@ -294,7 +294,7 @@ struct BorrowedStream {
         auto n = co_await co_await mRaw->raw_read(
             std::span(mInBuffer.get() + mInIndex, mInBufSize - mInIndex));
         if (n == 0) [[unlikely]] {
-            co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+            co_return std::errc::broken_pipe;
         }
         mInEnd = mInIndex + n;
         co_return {};
@@ -405,11 +405,10 @@ struct BorrowedStream {
                 len = co_await mRaw->raw_write(buf);
             }
             if (len.has_error()) [[unlikely]] {
-                co_return Unexpected{len.error()};
+                co_return len.error();
             }
             if (*len == 0) [[unlikely]] {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::broken_pipe)};
+                co_return std::errc::broken_pipe;
             }
             mOutIndex = 0;
             co_await co_await mRaw->raw_flush();

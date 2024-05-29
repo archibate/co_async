@@ -85,7 +85,7 @@ Expected<T> socketGetOption(SocketHandle &sock, int level, int optId) {
     socklen_t len = sizeof(val);
     if (auto e =
             expectError(getsockopt(sock.fileNo(), level, optId, &val, &len))) {
-        return Unexpected{e.error()};
+        return e.error();
     }
     return val;
 }
@@ -93,8 +93,7 @@ Expected<T> socketGetOption(SocketHandle &sock, int level, int optId) {
 template <class T>
 Expected<> socketSetOption(SocketHandle &sock, int level, int opt,
                            T const &optVal) {
-    return expectError(
-        setsockopt(sock.fileNo(), level, opt, &optVal, sizeof(optVal)));
+    return expectError(setsockopt(sock.fileNo(), level, opt, &optVal, sizeof(optVal)));
 }
 
 Task<Expected<SocketHandle>> createSocket(int family, int type);

@@ -178,29 +178,33 @@ inline Task<Expected<>> fs_close(FileHandle file) {
 }
 
 inline Task<Expected<>> fs_mkdir(DirFilePath path, mode_t access = 0755) {
-    co_return expectError(
-        co_await UringOp().prep_mkdirat(path.dir_file(), path.c_str(), access));
+    co_await expectError(co_await UringOp().prep_mkdirat(path.dir_file(), path.c_str(), access));
+    co_return {};
 }
 
 inline Task<Expected<>> fs_link(DirFilePath oldpath, DirFilePath newpath) {
-    co_return expectError(
+    co_await expectError(
         co_await UringOp().prep_linkat(oldpath.dir_file(), oldpath.c_str(),
                                        newpath.dir_file(), newpath.c_str(), 0));
+    co_return {};
 }
 
 inline Task<Expected<>> fs_symlink(DirFilePath target, DirFilePath linkpath) {
-    co_return expectError(co_await UringOp().prep_symlinkat(
+    co_await expectError(co_await UringOp().prep_symlinkat(
         target.c_str(), linkpath.dir_file(), linkpath.c_str()));
+    co_return {};
 }
 
 inline Task<Expected<>> fs_unlink(DirFilePath path) {
-    co_return expectError(
+    co_await expectError(
         co_await UringOp().prep_unlinkat(path.dir_file(), path.c_str(), 0));
+    co_return {};
 }
 
 inline Task<Expected<>> fs_rmdir(DirFilePath path) {
-    co_return expectError(co_await UringOp().prep_unlinkat(
+    co_await expectError(co_await UringOp().prep_unlinkat(
         path.dir_file(), path.c_str(), AT_REMOVEDIR));
+    co_return {};
 }
 
 inline Task<Expected<FileStat>>
@@ -233,8 +237,9 @@ fs_write(FileHandle &file, std::span<char const> buffer,
 }
 
 inline Task<Expected<>> fs_truncate(FileHandle &file, std::uint64_t size = 0) {
-    co_return expectError(
+    co_await expectError(
         co_await UringOp().prep_ftruncate(file.fileNo(), (loff_t)size));
+    co_return {};
 }
 
 inline Task<Expected<std::size_t>>
@@ -258,7 +263,8 @@ inline Task<int> fs_nop() {
 }
 
 inline Task<Expected<>> fs_cancel_fd(FileHandle &file) {
-    co_return expectError(co_await UringOp().prep_cancel_fd(
+    co_await expectError(co_await UringOp().prep_cancel_fd(
         file.fileNo(), IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_ALL));
+    co_return {};
 }
 } // namespace co_async

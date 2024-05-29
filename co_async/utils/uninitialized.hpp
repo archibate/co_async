@@ -23,27 +23,27 @@ struct Uninitialized {
 #endif
     }
 
-    T const &refValue() const noexcept {
+    T const &ref() const noexcept {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
             throw std::logic_error(
-                "Uninitialized::refValue called in an unvalued slot");
+                "Uninitialized::ref called in an unvalued slot");
         }
 #endif
         return mValue;
     }
 
-    T &refValue() noexcept {
+    T &ref() noexcept {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
             throw std::logic_error(
-                "Uninitialized::refValue called in an unvalued slot");
+                "Uninitialized::ref called in an unvalued slot");
         }
 #endif
         return mValue;
     }
 
-    void destroyValue() {
+    void destroy() {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
             throw std::logic_error(
@@ -56,11 +56,11 @@ struct Uninitialized {
 #endif
     }
 
-    T moveValue() {
+    T move() {
 #if CO_ASYNC_DEBUG
         if (!mHasValue) [[unlikely]] {
             throw std::logic_error(
-                "Uninitialized::moveValue called in an unvalued slot");
+                "Uninitialized::move called in an unvalued slot");
         }
 #endif
         T ret(std::move(mValue));
@@ -73,11 +73,11 @@ struct Uninitialized {
 
     template <class... Ts>
         requires std::constructible_from<T, Ts...>
-    void putValue(Ts &&...args) {
+    void emplace(Ts &&...args) {
 #if CO_ASYNC_DEBUG
         if (mHasValue) [[unlikely]] {
             throw std::logic_error(
-                "Uninitialized::putValue with value already exist");
+                "Uninitialized::emplace with value already exist");
         }
 #endif
         new (std::addressof(mValue)) T(std::forward<Ts>(args)...);
@@ -89,17 +89,17 @@ struct Uninitialized {
 
 template <>
 struct Uninitialized<void> {
-    void refValue() const noexcept {}
+    void ref() const noexcept {}
 
-    void destroyValue() {}
+    void destroy() {}
 
-    Void moveValue() {
+    Void move() {
         return Void();
     }
 
-    void putValue(Void) {}
+    void emplace(Void) {}
 
-    void putValue() {}
+    void emplace() {}
 };
 
 template <>
@@ -114,16 +114,16 @@ private:
     using Base = Uninitialized<std::reference_wrapper<T>>;
 
 public:
-    T const &refValue() const noexcept {
-        return Base::refValue().get();
+    T const &ref() const noexcept {
+        return Base::ref().get();
     }
 
-    T &refValue() noexcept {
-        return Base::refValue().get();
+    T &ref() noexcept {
+        return Base::ref().get();
     }
 
-    T &moveValue() {
-        return Base::moveValue().get();
+    T &move() {
+        return Base::move().get();
     }
 };
 
@@ -133,8 +133,8 @@ private:
     using Base = Uninitialized<T &>;
 
 public:
-    T &&moveValue() {
-        return std::move(Base::moveValue().get());
+    T &&move() {
+        return std::move(Base::move().get());
     }
 };
 } // namespace co_async

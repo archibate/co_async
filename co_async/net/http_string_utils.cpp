@@ -20,7 +20,7 @@ httpDateToTimePoint(std::string const &date) {
     ss.imbue(std::locale::classic());
     ss >> std::get_time(&tm, "%a, %d %b %Y %H:%M:%S GMT");
     if (ss.fail()) [[unlikely]] {
-        return Unexpected{std::make_error_code(std::errc::invalid_argument)};
+        return std::errc::invalid_argument;
     }
     std::time_t time = std::mktime(&tm);
     return std::chrono::system_clock::from_time_t(time);

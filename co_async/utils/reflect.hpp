@@ -1085,7 +1085,7 @@ inline Expected<T> json_decode(JsonValue &root) {
     T value{};
     std::error_code ec;
     if (!json_decode(root, value, ec)) [[unlikely]] {
-        return Unexpected{ec};
+        return ec;
     }
     return std::move(value);
 }
@@ -1095,7 +1095,7 @@ inline Expected<T> json_decode(std::string_view json) {
     T value{};
     std::error_code ec;
     if (!json_decode(json, value, ec)) [[unlikely]] {
-        return Unexpected{ec};
+        return ec;
     }
     return std::move(value);
 }

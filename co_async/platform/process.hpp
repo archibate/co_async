@@ -58,7 +58,7 @@ wait_process(Pid pid, std::chrono::steady_clock::duration timeout,
         UringOp().prep_waitid(P_PID, (id_t)pid, &info, options, 0),
         UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
     if (ret == std::make_error_code(std::errc::operation_canceled)) {
-        co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+        co_return std::errc::stream_timeout;
     }
     co_await std::move(ret);
     co_return WaitProcessResult{
@@ -190,7 +190,7 @@ struct ProcessBuilder {
             &pid, mPath.c_str(), &mFileActions, &mAttr, argv.data(),
             mEnvpStore.empty() ? environ : envp.data());
         if (status != 0) [[unlikely]] {
-            co_return Unexpected{std::make_error_code(std::errc(errno))};
+            co_return std::errc(errno);
         }
         mPath.clear();
         mArgvStore.clear();

@@ -10,13 +10,13 @@ struct ValueAwaiter {
 
     template <class... Args>
     explicit ValueAwaiter(std::in_place_t, Args &&...args) {
-        mValue.putValue(std::forward<Args>(args)...);
+        mValue.emplace(std::forward<Args>(args)...);
     }
 
     explicit ValueAwaiter(std::in_place_t)
         requires(std::is_void_v<T>)
     {
-        mValue.putValue(Void());
+        mValue.emplace(Void());
     }
 
     explicit ValueAwaiter(std::coroutine_handle<> previous)
@@ -33,7 +33,7 @@ struct ValueAwaiter {
 
     T await_resume() noexcept {
         if constexpr (!std::is_void_v<T>) {
-            return mValue.moveValue();
+            return mValue.move();
         }
     }
 };

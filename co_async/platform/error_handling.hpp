@@ -5,7 +5,7 @@
 namespace co_async {
 inline Expected<int> expectError(int res) {
     if (res < 0) [[unlikely]] {
-        return Unexpected{std::make_error_code(std::errc(-res))};
+        return std::errc(-res);
     }
     return res;
 }

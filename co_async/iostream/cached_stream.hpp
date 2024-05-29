@@ -40,7 +40,7 @@ struct CachedStream : Stream {
             mPos = pos;
             co_return {};
         } else {
-            co_return Unexpected{std::make_error_code(std::errc::invalid_seek)};
+            co_return std::errc::invalid_seek;
         }
     }
 

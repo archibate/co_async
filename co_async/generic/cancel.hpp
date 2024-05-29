@@ -102,8 +102,7 @@ public:
 
     Expected<> check() {
         if (mImpl->doIsCanceled()) [[unlikely]] {
-            return Unexpected{
-                std::make_error_code(std::errc::operation_canceled)};
+            return std::errc::operation_canceled;
         }
         return {};
     }

@@ -22,8 +22,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         do {
             n = co_await co_await socket_write(sock, buf, timeout);
             if (!n) [[unlikely]] {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::connection_reset)};
+                co_return std::errc::connection_reset;
             }
             buf = buf.subspan(n);
         } while (buf.size() > 0);
@@ -41,8 +40,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
                                                         outbuf.size()) +
                                  "]\n";
 #endif
-                co_return Unexpected{
-                    std::make_error_code(std::errc::connection_reset)};
+                co_return std::errc::connection_reset;
             }
             outbuf = outbuf.subspan(n);
         } while (outbuf.size() > 0);
@@ -53,8 +51,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
                          "connection: [" +
                              response + "]\n";
 #endif
-            co_return Unexpected{
-                std::make_error_code(std::errc::connection_reset)};
+            co_return std::errc::connection_reset;
         }
         co_return sock;
     } else {

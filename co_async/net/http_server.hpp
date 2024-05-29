@@ -52,6 +52,9 @@ struct HTTPServer {
     HTTPServer();
     ~HTTPServer();
     HTTPServer(HTTPServer &&) = delete;
+#if CO_ASYNC_DEBUG
+    void enableLogRequests();
+#endif
     void timeout(std::chrono::steady_clock::duration timeout);
     void route(std::string_view methods, std::string_view path,
                HTTPHandler handler);

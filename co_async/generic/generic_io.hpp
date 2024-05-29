@@ -112,13 +112,13 @@ struct GenericIOContext {
 
     void enqueueJob(std::coroutine_handle<> coroutine) {
         mQueue.push(std::move(coroutine));
-/*         if (!mQueue.push(std::move(coroutine))) [[unlikely]] { */
-/* #if CO_ASYNC_DEBUG */
-/*             std::cerr << "WARNING: coroutine queue overrun\n"; */
-/* #endif */
-/*             std::lock_guard lock(mMTMutex); */
-/*             mMTQueue.push_back(coroutine); */
-/*         } */
+        /*         if (!mQueue.push(std::move(coroutine))) [[unlikely]] { */
+        /* #if CO_ASYNC_DEBUG */
+        /*             std::cerr << "WARNING: coroutine queue overrun\n"; */
+        /* #endif */
+        /*             std::lock_guard lock(mMTMutex); */
+        /*             mMTQueue.push_back(coroutine); */
+        /*         } */
     }
 
     void enqueueJobMT(std::coroutine_handle<> coroutine) {
@@ -150,11 +150,11 @@ struct GenericIOContext {
 
     GenericIOContext() = default;
 
-/* #if CO_ASYNC_STEAL */
-/*     GenericIOContext() = default; */
-/* #else */
-/*     GenericIOContext() : mQueue(512) {} */
-/* #endif */
+    /* #if CO_ASYNC_STEAL */
+    /*     GenericIOContext() = default; */
+    /* #else */
+    /*     GenericIOContext() : mQueue(512) {} */
+    /* #endif */
 
     GenericIOContext(GenericIOContext &&) = delete;
     static inline thread_local GenericIOContext *instance;

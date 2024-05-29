@@ -296,7 +296,8 @@ private:
 
         void await_suspend(std::coroutine_handle<> coroutine) const {
             std::lock_guard lock(mThat->mMutex);
-            mThat->mWaitingList.emplace_back(coroutine, GenericIOContext::instance);
+            mThat->mWaitingList.emplace_back(coroutine,
+                                             GenericIOContext::instance);
         }
 
         void await_resume() const noexcept {}
@@ -430,8 +431,9 @@ public:
     }
 
     Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
-        auto res = co_await co_timeout(&ConcurrentTimedConditionVariable::waitCancellable,
-                                       expires, this, expires);
+        auto res = co_await co_timeout(
+            &ConcurrentTimedConditionVariable::waitCancellable, expires, this,
+            expires);
         if (!res) {
             co_return Unexpected{
                 std::make_error_code(std::errc::stream_timeout)};

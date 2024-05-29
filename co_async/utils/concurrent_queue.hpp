@@ -84,7 +84,8 @@ private:
 };
 
 template <class T>
-struct alignas(hardware_destructive_interference_size) ConcurrentRingQueue<T, 0> {
+struct alignas(hardware_destructive_interference_size)
+    ConcurrentRingQueue<T, 0> {
     std::optional<T> pop() {
         std::lock_guard lck(mMutex);
         if (mQueue.empty()) {
@@ -105,4 +106,4 @@ private:
     std::deque<T> mQueue;
     std::mutex mMutex;
 };
-}
+} // namespace co_async

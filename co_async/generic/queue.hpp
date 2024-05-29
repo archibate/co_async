@@ -279,7 +279,8 @@ private:
     std::size_t mNextIndex = 0;
 
 public:
-    explicit ConcurrentStealingQueue(std::size_t numWorkers, std::size_t maxSize = 0)
+    explicit ConcurrentStealingQueue(std::size_t numWorkers,
+                                     std::size_t maxSize = 0)
         : mQueues(std::make_unique<ConcurrentTimedQueue<T>[]>(numWorkers)),
           mNumWorkers(numWorkers) {
         if (maxSize) {
@@ -325,7 +326,8 @@ public:
             }
         }
 
-        Task<T> pop(std::chrono::steady_clock::duration interval = std::chrono::milliseconds(400)) const {
+        Task<T> pop(std::chrono::steady_clock::duration interval =
+                        std::chrono::milliseconds(400)) const {
             auto *p = &mQueue;
             while (true) {
                 if (auto value = p->try_pop()) {
@@ -376,7 +378,8 @@ private:
     std::size_t mNextIndex = 0;
 
 public:
-    explicit ConcurrentRobinhoodQueue(std::size_t numWorkers, std::size_t maxSize = 0)
+    explicit ConcurrentRobinhoodQueue(std::size_t numWorkers,
+                                      std::size_t maxSize = 0)
         : mQueues(std::make_unique<ConcurrentQueue<T>[]>(numWorkers)),
           mNumWorkers(numWorkers) {
         if (maxSize) {

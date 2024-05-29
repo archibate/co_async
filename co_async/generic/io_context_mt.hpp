@@ -71,11 +71,13 @@ public:
         }
     }
 
-    static void spawn(std::coroutine_handle<> coroutine, std::size_t index = 0) {
+    static void spawn(std::coroutine_handle<> coroutine,
+                      std::size_t index = 0) {
         instance->mWorkers[index].spawn(coroutine);
     }
 
-    static void spawn_mt(std::coroutine_handle<> coroutine, std::size_t index = 0) /* MT-safe */ {
+    static void spawn_mt(std::coroutine_handle<> coroutine,
+                         std::size_t index = 0) /* MT-safe */ {
         instance->mWorkers[index].spawn_mt(coroutine);
     }
 

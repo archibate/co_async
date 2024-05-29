@@ -200,7 +200,8 @@ private:
 public:
     struct Locked {
     private:
-        explicit Locked(ConcurrentMutex<>::Locked locked, CallOnce *impl) noexcept
+        explicit Locked(ConcurrentMutex<>::Locked locked,
+                        CallOnce *impl) noexcept
             : mLocked(std::move(locked)),
               mImpl(impl) {}
 

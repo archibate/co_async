@@ -87,6 +87,7 @@ struct HTTPServer::Impl {
 #if CO_ASYNC_DEBUG
     bool mLogRequests = false;
 #endif
+
     Task<Expected<>> doHandleRequest(IO &io) const {
         if (auto route = mRoutes.at(io.request.uri.path)) {
             if (!route->checkMethod(io.request.method)) [[unlikely]] {
@@ -187,6 +188,12 @@ void HTTPServer::IO::builtinHeaders(HTTPResponse &res) {
 HTTPServer::HTTPServer() : mImpl(std::make_unique<Impl>()) {}
 
 HTTPServer::~HTTPServer() = default;
+
+#if CO_ASYNC_DEBUG
+void HTTPServer::enableLogRequests() {
+    mImpl->mLogRequests = true;
+}
+#endif
 
 void HTTPServer::timeout(std::chrono::steady_clock::duration timeout) {
     mImpl->mTimeout = timeout;

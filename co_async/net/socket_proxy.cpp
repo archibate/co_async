@@ -60,7 +60,8 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
     } else {
 #if CO_ASYNC_DEBUG
         if (!proxy.empty()) {
-            std::cerr << "WARNING: unsupported proxy scheme [" + std::string(proxy) + "]\n";
+            std::cerr << "WARNING: unsupported proxy scheme [" +
+                             std::string(proxy) + "]\n";
         }
 #endif
         co_return co_await socket_connect(co_await SocketAddress::parse(proxy));

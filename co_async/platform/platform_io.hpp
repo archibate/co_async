@@ -66,9 +66,10 @@ struct [[nodiscard]] UringOp {
     UringOp() {
         struct io_uring *ring = PlatformIOContext::instance->getRing();
         mSqe = io_uring_get_sqe(ring);
-        while (!mSqe) [[unlikely]] {
-            io_uring_submit(ring);
-            mSqe = io_uring_get_sqe(ring);
+        if (!mSqe) [[unlikely]] {
+            throw std::bad_alloc();
+            /* io_uring_submit(ring); */
+            /* mSqe = io_uring_get_sqe(ring); */
         }
         io_uring_sqe_set_data(mSqe, this);
     }

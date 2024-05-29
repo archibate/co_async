@@ -31,9 +31,9 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
 }
 
 struct PlatformIOContextOptions {
-    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(5);
+    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(20);
     std::chrono::steady_clock::duration maxSleepInc =
-        std::chrono::milliseconds(8);
+        std::chrono::milliseconds(10);
     std::chrono::steady_clock::duration maxSleepLimit =
         std::chrono::milliseconds(100);
     std::optional<std::size_t> threadAffinity = std::nullopt;
@@ -54,7 +54,7 @@ struct PlatformIOContext {
     }
 
     PlatformIOContext &operator=(PlatformIOContext &&) = delete;
-    explicit PlatformIOContext(std::size_t entries = 512);
+    explicit PlatformIOContext(std::size_t entries = 1024);
     ~PlatformIOContext();
     static thread_local PlatformIOContext *instance;
 

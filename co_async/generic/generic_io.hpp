@@ -150,20 +150,14 @@ struct GenericIOContext {
 
     GenericIOContext() = default;
 
-    /* #if CO_ASYNC_STEAL */
-    /*     GenericIOContext() = default; */
-    /* #else */
-    /*     GenericIOContext() : mQueue(512) {} */
-    /* #endif */
-
     GenericIOContext(GenericIOContext &&) = delete;
     static inline thread_local GenericIOContext *instance;
 
 private:
 #if CO_ASYNC_STEAL
-    ConcurrentRingQueue<std::coroutine_handle<>, 512 - 1> mQueue;
+    ConcurrentRingQueue<std::coroutine_handle<>, 1024 - 1> mQueue;
 #else
-    /* RingQueue<std::coroutine_handle<>> mQueue; */
+    /* RingQueue<std::coroutine_handle<>> mQueue{1024}; */
     InfinityQueue<std::coroutine_handle<>> mQueue;
 #endif
     RbTree<TimerNode> mTimers;

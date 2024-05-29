@@ -151,7 +151,7 @@ public:
         co_return std::move(value);
     }
 
-    Task<> push(T &&value) {
+    Task<> push(T value) {
         std::unique_lock lock(mMutex);
         while (mQueue.full()) {
             lock.unlock();
@@ -431,7 +431,20 @@ public:
                         std::span(mQueues.get(), mNumWorkers));
     }
 
-    Task<> push(T &&value) {
+    Task<> push_robinhood(T value) {
+        auto i = mNextIndex;
+        do {
+            if (mQueues[i].try_push(std::move(value))) {
+                goto out;
+            }
+            i = (i + 1) % mNumWorkers;
+        } while (i != mNextIndex);
+        co_await mQueues[mNextIndex].push(std::move(value));
+    out:
+        mNextIndex = (mNextIndex + 1) % mNumWorkers;
+    }
+
+    Task<> push(T value) {
         co_await mQueues[mNextIndex].push(std::move(value));
         mNextIndex = (mNextIndex + 1) % mNumWorkers;
     }

@@ -1791,7 +1791,7 @@ public:
     debug &fail(bool fail = true) {
         if (fail) {
             DEBUG_UNLIKELY {
-                on_error("failed:");
+                on_error("(failed)");
             }
         } else {
             state = supress;

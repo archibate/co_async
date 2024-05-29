@@ -9,21 +9,15 @@ struct ValueAwaiter {
     Uninitialized<T> mValue;
 
     template <class... Args>
-    explicit ValueAwaiter(std::in_place_t, Args &&...args) {
+    explicit ValueAwaiter(std::in_place_t, Args &&...args) : mPrevious() {
         mValue.emplace(std::forward<Args>(args)...);
-    }
-
-    explicit ValueAwaiter(std::in_place_t)
-        requires(std::is_void_v<T>)
-    {
-        mValue.emplace(Void());
     }
 
     explicit ValueAwaiter(std::coroutine_handle<> previous)
         : mPrevious(previous) {}
 
     bool await_ready() const noexcept {
-        return mPrevious == nullptr;
+        return !mPrevious;
     }
 
     std::coroutine_handle<>

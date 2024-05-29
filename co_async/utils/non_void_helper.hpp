@@ -5,8 +5,8 @@ namespace co_async {
 struct Void final {
     explicit Void() = default;
 
-    template <class T>
-    Void(T &&) noexcept {}
+    /* template <class T> */
+    /* Void(T &&) noexcept {} */
 
     template <class T>
     friend constexpr T &&operator,(T &&t, Void) {

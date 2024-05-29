@@ -14,6 +14,11 @@ template <class T>
 struct TaskAwaiter {
     bool await_ready() const noexcept {
 #if CO_ASYNC_SAFERET
+#if CO_ASYNC_EXCEPT
+        if (mException) [[unlikely]] {
+            return true;
+        }
+#endif
         return mResult.has_value();
 #else
         return false;
@@ -35,6 +40,8 @@ struct TaskAwaiter {
         if constexpr (!std::is_void_v<T>) {
 #if CO_ASYNC_SAFERET
 #if CO_ASYNC_DEBUG
+            if constexpr (std::same_as<Expected<>, T>) {
+            }
             return std::move(mResult.value());
 #else
             return std::move(*mResult);
@@ -92,6 +99,11 @@ template <class T, class E>
 struct GeneratorAwaiter {
     bool await_ready() const noexcept {
 #if CO_ASYNC_SAFERET
+#if CO_ASYNC_EXCEPT
+        if (mException) [[unlikely]] {
+            return true;
+        }
+#endif
         return mResult.has_value();
 #else
         return false;
@@ -104,17 +116,21 @@ struct GeneratorAwaiter {
         return mCalleeCoroutine;
     }
 
-    Expected<T> await_resume() {
+    T await_resume() {
 #if CO_ASYNC_EXCEPT
         if (mException) [[unlikely]] {
             std::rethrow_exception(mException);
         }
 #endif
         if constexpr (!std::is_void_v<T>) {
+#if CO_ASYNC_SAFERET
 #if CO_ASYNC_DEBUG
             return std::move(mResult.value());
 #else
             return std::move(*mResult);
+#endif
+#else
+            return mResult.move();
 #endif
         }
     }
@@ -152,7 +168,11 @@ struct GeneratorAwaiter {
 protected:
     std::coroutine_handle<> mCallerCoroutine;
     std::coroutine_handle<> mCalleeCoroutine;
+#if CO_ASYNC_SAFERET
     std::optional<Expected<T>> mResult;
+#else
+    Uninitialized<Expected<T>> mResult;
+#endif
 #if CO_ASYNC_EXCEPT
     std::exception_ptr mException;
 #endif
@@ -342,7 +362,7 @@ struct TaskPromise<Expected<T>> {
         return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
             if (!([&] {
                     if (std::get<Is>(e).has_error()) [[unlikely]] {
-                            mAwaiter->returnValue(std::move(std::get<Is>(e)).error());
+                        mAwaiter->returnValue(std::move(std::get<Is>(e)).error());
                         return false;
                     }
                     return true;

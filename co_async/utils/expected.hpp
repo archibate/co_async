@@ -8,7 +8,7 @@ template <class T = void>
 struct [[nodiscard("Expected<T> return values must be handled, use co_await to propagate")]] Expected {
 protected:
     static_assert(!std::is_reference_v<T>);
-    std::error_category const *mErrorCatgory{};
+    std::error_category const *mErrorCatgory;
 
     template <class>
     friend struct Expected;
@@ -20,26 +20,26 @@ protected:
 
 public:
     template <std::convertible_to<T> U>
-        requires(!std::convertible_to<T, std::error_code> &&
-                 !std::convertible_to<T, std::errc> &&
-                 !std::convertible_to<T, std::in_place_t>)
-    Expected(U &&value)
-        : mValue(std::forward<U>(value)) {}
+        requires(!std::convertible_to<U, std::error_code> &&
+                 !std::convertible_to<U, std::errc> &&
+                 !std::convertible_to<U, std::in_place_t>)
+    Expected(U &&value) noexcept(std::is_nothrow_constructible_v<T, U>)
+        : mErrorCatgory(nullptr), mValue(std::forward<U>(value)) {}
 
     template <class... Args>
         requires std::constructible_from<T, Args...>
     Expected(std::in_place_t, Args &&...args) noexcept(
         std::is_nothrow_constructible_v<T, Args...>)
-        : mValue(std::forward<Args>(args)...) {}
+        : mErrorCatgory(nullptr), mValue(std::forward<Args>(args)...) {}
 
     Expected() noexcept(std::is_nothrow_default_constructible_v<T>)
-        : mValue() {}
+        : mErrorCatgory(nullptr), mValue() {}
 
     Expected(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>)
-        : mValue(std::move(value)) {}
+        : mErrorCatgory(nullptr), mValue(std::move(value)) {}
 
     Expected(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>)
-        : mValue(value) {}
+        : mErrorCatgory(nullptr), mValue(value) {}
 
     Expected(std::error_code const &ec) noexcept
         : mErrorCatgory(&ec.category()),
@@ -113,13 +113,24 @@ public:
     }
 
     template <class U>
-        requires(!std::same_as<T, U> &&
+        requires(!std::same_as<T, Void> && !std::same_as<T, U> &&
                  (std::convertible_to<U, T> || std::constructible_from<T, U>))
     explicit(!std::convertible_to<U, T>) Expected(Expected<U> that) noexcept(
         std::is_nothrow_constructible_v<T, U>)
         : mErrorCatgory(that.mErrorCatgory) {
         if (!mErrorCatgory) {
             std::construct_at(std::addressof(mValue), std::move(that.mValue));
+        } else {
+            mErrorCode = that.mErrorCode;
+        }
+    }
+
+    template <class U>
+        requires(std::same_as<T, Void>)
+    Expected(Expected<U> that) noexcept
+        : mErrorCatgory(that.mErrorCatgory) {
+        if (!mErrorCatgory) {
+            std::construct_at(std::addressof(mValue));
         } else {
             mErrorCode = that.mErrorCode;
         }
@@ -259,8 +270,12 @@ public:
     }
 
 #if DEBUG_LEVEL
-    auto const &repr() const {
-        return mValue;
+    std::variant<std::reference_wrapper<T const>, std::error_code> repr() const {
+        if (has_error()) {
+            return std::error_code(mErrorCode, *mErrorCatgory);
+        } else {
+            return std::cref(mValue);
+        }
     }
 #endif
 };

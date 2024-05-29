@@ -1,3 +1,4 @@
+#include "co_async/utils/debug.hpp"
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/task_group.hpp>
 #include <co_async/iostream/pipe_stream.hpp>
@@ -404,7 +405,7 @@ Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
     std::string line;
-    if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) {
+    if (!co_await sock.getline(line, "\r\n"sv)) {
         co_return std::errc::broken_pipe;
     }
     auto pos = line.find(' ');
@@ -412,6 +413,9 @@ Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
         co_return std::errc::protocol_error;
     }
     req.method = line.substr(0, pos);
+    if (req.method != "GET") {
+        debug().fail(), req.method, line;
+    }
     auto pos2 = line.find(' ', pos + 1);
     if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
         co_return std::errc::protocol_error;
@@ -440,7 +444,7 @@ Task<Expected<>> HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
     std::string line;
-    if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) [[unlikely]] {
+    if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
         co_return std::errc::broken_pipe;
     }
     if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv || line[8] != ' ')

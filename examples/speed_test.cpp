@@ -1,5 +1,5 @@
-#include <co_async/co_async.hpp>
 #include <co_async/std.hpp>
+#include <co_async/co_async.hpp>
 #include <co_async/utils/perf.hpp>
 
 using namespace co_async;

@@ -476,3 +476,5 @@ inline auto co_bind(F &&f, Args &&...args) {
     }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 }
 } // namespace co_async
+
+#define co_awaits co_await co_await

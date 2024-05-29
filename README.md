@@ -21,8 +21,8 @@ using namespace std::literals;
 
 Task<Expected<>> amain() {
     // 第一下 co_await 等待 bind 操作完成，返回一个 Expected<T> 对象。
-    // Expected<T> 有两种状态：1. 正常返回 T 值；2. 返回非零错误码 std::errc
-    // 第二下 co_await 可以将 Expected<T> 的错误转化为当前函数的错误（没有错误照常返回 T）：
+    // Expected<T> 有两种状态：1. 正常返回 T 值；2. 返回错误码 std::error_code
+    // 第二下 co_await 可以将 Expected<T> 的错误转化为当前函数的错误（没有错误则照常返回 T）：
     auto listener = co_await co_await listener_bind({"127.0.0.1", 8080});
     HTTPServer server;
     server.route("GET", "/", [](HTTPServer::IO &io) -> Task<Expected<>> {

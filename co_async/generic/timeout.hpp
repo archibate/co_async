@@ -10,14 +10,14 @@ template <class F, class Timeout, class... Args>
     requires Awaitable<std::invoke_result_t<F, Args..., CancelToken>>
 inline Task<std::optional<typename AwaitableTraits<
     std::invoke_result_t<F, Args..., CancelToken>>::AvoidRetType>>
-co_timeout(F &&task, Timeout timeout, Args &&...args) {
+co_timeout_bind(F &&task, Timeout timeout, Args &&...args) {
     CancelSource cs;
     CancelSource ct;
     std::optional<typename AwaitableTraits<
         std::invoke_result_t<F, Args..., CancelToken>>::AvoidRetType>
         result;
     co_await when_all(
-        co_bind([&]() mutable -> Task<> {
+        co_bind([&, ct = ct.token()]() mutable -> Task<> {
             auto res =
                 (co_await std::invoke(task, std::forward<Args>(args)..., ct),
                  Void());

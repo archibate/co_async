@@ -5,15 +5,15 @@
 
 namespace co_async {
 
-Task<Expected<std::array<OwningStream, 2>>> pipe_stream();
-Task<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out);
+std::array<OwningStream, 2> pipe_stream();
+IOTask<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out);
 
 template <class Func, class... Args>
     requires std::invocable<Func, Args..., OwningStream &>
-inline Task<Expected<>> pipe_bind(OwningStream w, Func &&func, Args &&...args) {
+inline IOTask<Expected<>> pipe_bind(OwningStream w, Func &&func, Args &&...args) {
     return co_bind(
         [func = std::forward<decltype(func)>(func),
-         w = std::move(w)](auto &&...args) mutable -> Task<Expected<>> {
+         w = std::move(w)](auto &&...args) mutable -> IOTask<Expected<>> {
             auto e1 =
                 co_await std::invoke(std::forward<decltype(func)>(func),
                                      std::forward<decltype(args)>(args)..., w);

@@ -578,13 +578,13 @@ protected:
     }
 
 public:
-    Task<Expected<>> raw_flush() override {
+    IOTask<Expected<>> raw_flush() override {
         br_ssl_engine_flush(eng, 0);
         co_await co_await bearSSLRunUntil(BR_SSL_SENDAPP | BR_SSL_RECVAPP);
         co_return {};
     }
 
-    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
+    IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         unsigned char *buf;
         std::size_t alen;
         if (buffer.empty()) [[unlikely]] {
@@ -600,7 +600,7 @@ public:
         co_return alen;
     }
 
-    Task<Expected<std::size_t>>
+    IOTask<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         unsigned char *buf;
         std::size_t alen;

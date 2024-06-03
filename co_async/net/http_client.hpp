@@ -250,7 +250,7 @@ public:
         HTTPResponse res;
         std::string body;
         co_await co_await mHttp->readResponse(res);
-        auto [r, w] = co_await co_await pipe_stream();
+        auto [r, w] = pipe_stream();
         co_spawn(pipe_bind(std::move(w),
                            [this](OwningStream &w) -> Task<Expected<>> {
                                co_await co_await mHttp->readBodyStream(w);

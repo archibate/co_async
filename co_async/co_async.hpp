@@ -18,6 +18,7 @@
 #include <co_async/generic/generic_io.hpp>
 #include <co_async/generic/io_context.hpp>
 #include <co_async/generic/io_context_mt.hpp>
+#include <co_async/generic/io_task.hpp>
 #include <co_async/generic/mutex.hpp>
 #include <co_async/generic/queue.hpp>
 #include <co_async/generic/semaphore.hpp>

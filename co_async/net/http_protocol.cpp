@@ -235,7 +235,7 @@ Task<Expected<>> HTTPProtocolVersion11::writeEncoded(BorrowedStream &body) {
     } break;
     case HTTPContentEncoding::Deflate: {
         co_await co_await sock.puts("content-encoding: deflate\r\n"sv);
-        auto [r, w] = co_await co_await pipe_stream();
+        auto [r, w] = pipe_stream();
         TaskGroup<Expected<>> group;
         group.add([&body, w = std::move(w)]() mutable -> Task<Expected<>> {
             co_await co_await zlib_deflate(body, w);
@@ -287,7 +287,7 @@ Task<Expected<>> HTTPProtocolVersion11::readEncoded(BorrowedStream &body) {
         co_await co_await readChunked(body);
     } break;
     case HTTPContentEncoding::Deflate: {
-        auto [r, w] = co_await co_await pipe_stream();
+        auto [r, w] = pipe_stream();
         TaskGroup<Expected<>> group;
         group.add(pipe_bind(std::move(w),
                             &std::decay_t<decltype(*this)>::readChunked, this));

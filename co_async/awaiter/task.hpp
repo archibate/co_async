@@ -231,6 +231,11 @@ struct TaskPromise {
         return {};
     }
 
+    template <class U>
+    U &&await_transform(U &&u) noexcept {
+        return std::forward<U>(u);
+    }
+
     TaskPromise &operator=(TaskPromise &&) = delete;
 
     TaskAwaiter<T> *mAwaiter;
@@ -263,6 +268,11 @@ struct TaskPromise<void> {
 
     auto final_suspend() noexcept {
         return TaskFinalAwaiter();
+    }
+
+    template <class U>
+    U &&await_transform(U &&u) noexcept {
+        return std::forward<U>(u);
     }
 
     TaskPromise &operator=(TaskPromise &&) = delete;
@@ -300,46 +310,46 @@ struct TaskPromise<Expected<T>> {
     }
 
     template <class T2>
-    ValueAwaiter<T2> await_transform(Expected<T2> &&e) noexcept {
+    ValueOrReturnAwaiter<T2> await_transform(Expected<T2> &&e) noexcept {
         if (e.has_error()) [[unlikely]] {
             mAwaiter->returnValue(std::move(e).error());
-            return ValueAwaiter<T2>(mAwaiter->callerCoroutine());
+            return ValueOrReturnAwaiter<T2>(mAwaiter->callerCoroutine());
         }
         if constexpr (std::is_void_v<T2>) {
-            return ValueAwaiter<void>(std::in_place);
+            return ValueOrReturnAwaiter<void>(std::in_place);
         } else {
-            return ValueAwaiter<T2>(std::in_place, *std::move(e));
+            return ValueOrReturnAwaiter<T2>(std::in_place, *std::move(e));
         }
     }
 
     template <class T2>
-    ValueAwaiter<T2> await_transform(Expected<T2> &e) noexcept {
+    ValueOrReturnAwaiter<T2> await_transform(Expected<T2> &e) noexcept {
         return await_transform(std::move(e));
     }
 
-    ValueAwaiter<void>
+    ValueOrReturnAwaiter<void>
     await_transform(std::vector<Expected<void>> &&e) noexcept {
         for (std::size_t i = 0; i < e.size(); ++i) {
             if (e[i].has_error()) [[unlikely]] {
                 mAwaiter->returnValue(std::move(e[i]).error());
-                return ValueAwaiter<void>(mAwaiter->callerCoroutine());
+                return ValueOrReturnAwaiter<void>(mAwaiter->callerCoroutine());
             }
         }
-        return ValueAwaiter<void>(std::in_place);
+        return ValueOrReturnAwaiter<void>(std::in_place);
     }
 
-    ValueAwaiter<void>
+    ValueOrReturnAwaiter<void>
     await_transform(std::vector<Expected<void>> &e) noexcept {
         return await_transform(std::move(e));
     }
 
     template <class T2, class E2>
-    ValueAwaiter<std::vector<T2>>
+    ValueOrReturnAwaiter<std::vector<T2>>
     await_transform(std::vector<Expected<T2>> &&e) noexcept {
         for (std::size_t i = 0; i < e.size(); ++i) {
             if (e[i].has_error()) [[unlikely]] {
                     mAwaiter->returnValue(std::move(e[i]).error());
-                return ValueAwaiter<std::vector<T2>>(mAwaiter->callerCoroutine());
+                return ValueOrReturnAwaiter<std::vector<T2>>(mAwaiter->callerCoroutine());
             }
         }
         std::vector<T2> ret;
@@ -347,17 +357,17 @@ struct TaskPromise<Expected<T>> {
         for (std::size_t i = 0; i < e.size(); ++i) {
             ret.emplace_back(*std::move(e[i]));
         }
-        return ValueAwaiter<std::vector<T2>>(std::in_place, std::move(ret));
+        return ValueOrReturnAwaiter<std::vector<T2>>(std::in_place, std::move(ret));
     }
 
     template <class T2>
-    ValueAwaiter<std::vector<T2>>
+    ValueOrReturnAwaiter<std::vector<T2>>
     await_transform(std::vector<Expected<T2>> &e) noexcept {
         return await_transform(std::move(e));
     }
 
     template <class... Ts>
-    ValueAwaiter<std::tuple<Avoid<Ts>...>>
+    ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>
     await_transform(std::tuple<Expected<Ts>...> &&e) noexcept {
         return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
             if (!([&] {
@@ -368,9 +378,9 @@ struct TaskPromise<Expected<T>> {
                     return true;
                 }() &&
                   ...)) {
-                return ValueAwaiter<std::tuple<Avoid<Ts>...>>(mAwaiter->callerCoroutine());
+                return ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>(mAwaiter->callerCoroutine());
             }
-            return ValueAwaiter<std::tuple<Avoid<Ts>...>>(
+            return ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>(
                 std::in_place, [&]() -> decltype(auto) {
                     return *std::move(std::get<Is>(e)), Void();
                 }()...);
@@ -378,7 +388,7 @@ struct TaskPromise<Expected<T>> {
     }
 
     template <class... Ts>
-    ValueAwaiter<std::tuple<Avoid<Ts>...>>
+    ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>
     await_transform(std::tuple<Expected<Ts>...> &e) noexcept {
         return await_transform(std::move(e));
     }
@@ -420,10 +430,6 @@ template <class T = void, class P = TaskPromise<T>>
 struct [[nodiscard("did you forgot to co_await?")]] Task {
     using promise_type = P;
 
-    /* Task(std::coroutine_handle<promise_type> coroutine) noexcept */
-    /*     : mCoroutine(coroutine) { */
-    /* } */
-    /* Task(Task &&) = delete; */
     Task(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
         : mCoroutine(coroutine) {}
 
@@ -455,6 +461,10 @@ struct [[nodiscard("did you forgot to co_await?")]] Task {
 
     std::coroutine_handle<promise_type> release() noexcept {
         return std::exchange(mCoroutine, nullptr);
+    }
+
+    promise_type &promise() const {
+        return mCoroutine.promise();
     }
 
 private:

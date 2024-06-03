@@ -97,10 +97,10 @@ struct [[nodiscard]] UringOp {
         return Awaiter{this};
     }
 
-    static UringOp &link_ops(UringOp &&lhs, UringOp &&rhs) {
+    static UringOp &&link_ops(UringOp &&lhs, UringOp &&rhs) {
         lhs.mSqe->flags |= IOSQE_IO_LINK;
         rhs.mPrevious = std::noop_coroutine();
-        return lhs;
+        return std::move(lhs);
     }
 
     struct io_uring_sqe *getSqe() const noexcept {
@@ -317,17 +317,17 @@ public:
                              (unsigned int)nbytes, flags);
         return std::move(*this);
     }
-};
 
-struct UringOpCanceller {
-    using OpType = UringOp;
+    struct Canceller {
+        using OpType = UringOp;
 
-    static Task<> doCancel(OpType *op) {
-        co_await UringOp().prep_cancel(op, IORING_ASYNC_CANCEL_ALL);
-    }
+        static Task<> doCancel(OpType *op) {
+            co_await UringOp().prep_cancel(op, IORING_ASYNC_CANCEL_ALL);
+        }
 
-    static int earlyCancelValue(OpType *op) noexcept {
-        return -ECANCELED;
-    }
+        static int earlyCancelValue(OpType *op) noexcept {
+            return -ECANCELED;
+        }
+    };
 };
 } // namespace co_async

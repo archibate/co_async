@@ -11,11 +11,11 @@ struct DirectoryWalker {
     DirectoryWalker(DirectoryWalker &&) = default;
     DirectoryWalker &operator=(DirectoryWalker &&) = default;
     ~DirectoryWalker();
-    Task<Expected<std::string>> next();
+    IOTask<Expected<std::string>> next();
 
 private:
     OwningStream mStream;
 };
 
-Task<Expected<DirectoryWalker>> dir_open(std::filesystem::path path);
+IOTask<Expected<DirectoryWalker>> dir_open(std::filesystem::path path);
 } // namespace co_async

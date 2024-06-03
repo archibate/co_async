@@ -3,7 +3,6 @@
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/cancel.hpp>
 #include <co_async/generic/generic_io.hpp>
-#include <co_async/generic/timeout.hpp>
 #include <co_async/utils/rbtree.hpp>
 
 namespace co_async {
@@ -73,47 +72,45 @@ private:
         static void earlyCancelValue(OpType *op) noexcept {}
     };
 
-    Task<> waitCancellable(std::chrono::steady_clock::time_point expires,
-                           CancelToken cancel) {
-        auto waiter = wait();
+    IOTask<> waitCancellable(std::chrono::steady_clock::time_point expires) {
+        auto waiter = waitNotCancellable();
         waiter.get().promise().mExpires = expires;
-        co_await cancel.guard<Canceller>(waiter);
+        co_await (co_await co_cancel()).guard(std::in_place_type<Canceller>, waiter);
     }
 
 public:
-    Task<void, PromiseNode> wait() {
+    Task<void, PromiseNode> waitNotCancellable() {
         co_await Awaiter(this);
     }
 
-    Task<Expected<>> wait(CancelToken cancel) {
-        auto waiter = wait();
-        co_await cancel.guard<Canceller>(waiter);
+    IOTask<Expected<>> wait() {
+        auto waiter = waitNotCancellable();
+        co_await (co_await co_cancel()).guard(std::in_place_type<Canceller>, waiter);
         if (waiter.get().promise().isCanceled()) {
             co_return std::errc::operation_canceled;
         }
         co_return {};
     }
 
-    Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
-        auto res = co_await co_timeout(&TimedConditionVariable::waitCancellable,
-                                       expires, this, expires);
-        if (!res) {
+    IOTask<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
+        auto res = co_await when_any(waitCancellable(expires), co_sleep(expires));
+        if (res.index() != 0) {
             co_return std::errc::stream_timeout;
         }
         co_return {};
     }
 
-    Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
+    IOTask<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
         return wait(std::chrono::steady_clock::now() + timeout);
     }
 
-    Task<> wait_until(std::invocable<> auto &&pred) {
+    IOTask<Expected<>> wait_predicate(std::invocable<> auto &&pred) {
         while (!std::invoke(pred)) {
-            co_await wait();
+            co_await co_await wait();
         }
     }
 
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+    IOTask<Expected<>> wait_predicate(std::invocable<> auto &&pred,
                                 std::chrono::steady_clock::time_point expires) {
         while (!std::invoke(pred)) {
             if (std::chrono::steady_clock::now() > expires ||
@@ -124,19 +121,10 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+    IOTask<Expected<>> wait_predicate(std::invocable<> auto &&pred,
                                 std::chrono::steady_clock::duration timeout) {
-        return wait_until(std::forward<decltype(pred)>(pred),
+        return wait_predicate(std::forward<decltype(pred)>(pred),
                           std::chrono::steady_clock::now() + timeout);
-    }
-
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
-                                CancelToken cancel) {
-        while (!std::invoke(pred)) {
-            if (cancel.is_canceled() || !co_await wait(cancel)) {
-                co_return std::errc::operation_canceled;
-            }
-        }
     }
 
     void notify() {
@@ -404,48 +392,45 @@ private:
         static void earlyCancelValue(OpType *op) noexcept {}
     };
 
-    Task<> waitCancellable(std::chrono::steady_clock::time_point expires,
-                           CancelToken cancel) {
-        auto waiter = wait();
+    IOTask<> waitCancellable(std::chrono::steady_clock::time_point expires) {
+        auto waiter = waitNotCancellable();
         waiter.get().promise().mExpires = expires;
-        co_await cancel.guard<Canceller>(waiter);
+        co_await (co_await co_cancel()).guard(std::in_place_type<Canceller>, waiter);
     }
 
 public:
-    Task<void, PromiseNode> wait() {
+    Task<void, PromiseNode> waitNotCancellable() {
         co_await Awaiter(this);
     }
 
-    Task<Expected<>> wait(CancelToken cancel) {
-        auto waiter = wait();
-        co_await cancel.guard<Canceller>(waiter);
+    IOTask<Expected<>> wait() {
+        auto waiter = waitNotCancellable();
+        co_await (co_await co_cancel()).guard(std::in_place_type<Canceller>, waiter);
         if (waiter.get().promise().isCanceled()) {
             co_return std::errc::operation_canceled;
         }
         co_return {};
     }
 
-    Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
-        auto res = co_await co_timeout(
-            &ConcurrentTimedConditionVariable::waitCancellable, expires, this,
-            expires);
-        if (!res) {
+    IOTask<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
+        auto res = co_await when_any(waitCancellable(expires), co_sleep(expires));
+        if (res.index() != 0) {
             co_return std::errc::stream_timeout;
         }
         co_return {};
     }
 
-    Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
+    IOTask<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
         return wait(std::chrono::steady_clock::now() + timeout);
     }
 
-    Task<> wait_until(std::invocable<> auto &&pred) {
+    IOTask<Expected<>> wait_predicate(std::invocable<> auto &&pred) {
         while (!std::invoke(pred)) {
-            co_await wait();
+            co_await co_await wait();
         }
     }
 
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+    IOTask<Expected<>> wait_predicate(std::invocable<> auto &&pred,
                                 std::chrono::steady_clock::time_point expires) {
         while (!std::invoke(pred)) {
             if (std::chrono::steady_clock::now() > expires ||
@@ -456,16 +441,16 @@ public:
         co_return {};
     }
 
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+    IOTask<Expected<>> wait_predicate(std::invocable<> auto &&pred,
                                 std::chrono::steady_clock::duration timeout) {
-        return wait_until(std::forward<decltype(pred)>(pred),
+        return wait_predicate(std::forward<decltype(pred)>(pred),
                           std::chrono::steady_clock::now() + timeout);
     }
 
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
+    IOTask<Expected<>> wait_predicate(std::invocable<> auto &&pred,
                                 CancelToken cancel) {
         while (!std::invoke(pred)) {
-            if (cancel.is_canceled() || !co_await wait(cancel)) {
+            if (cancel.is_canceled() || !co_await wait()) {
                 co_return std::errc::operation_canceled;
             }
         }

@@ -5,15 +5,39 @@
 namespace co_async {
 template <class T>
 struct ValueAwaiter {
+private:
+    Avoid<T> mValue;
+
+public:
+    explicit ValueAwaiter(Avoid<T> value) : mValue(std::move(value)) {}
+
+    bool await_ready() const noexcept {
+        return true;
+    }
+
+    void await_suspend(std::coroutine_handle<>) const noexcept {}
+
+    T await_resume() {
+        if constexpr (!std::is_void_v<T>) {
+            return std::move(mValue);
+        }
+    }
+};
+
+template <class T>
+struct ValueOrReturnAwaiter {
+private:
     std::coroutine_handle<> mPrevious;
     Uninitialized<T> mValue;
 
+public:
     template <class... Args>
-    explicit ValueAwaiter(std::in_place_t, Args &&...args) : mPrevious() {
+    explicit ValueOrReturnAwaiter(std::in_place_t, Args &&...args)
+        : mPrevious() {
         mValue.emplace(std::forward<Args>(args)...);
     }
 
-    explicit ValueAwaiter(std::coroutine_handle<> previous)
+    explicit ValueOrReturnAwaiter(std::coroutine_handle<> previous)
         : mPrevious(previous) {}
 
     bool await_ready() const noexcept {

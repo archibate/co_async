@@ -11,7 +11,7 @@ struct CachedStream : Stream {
         return mStream;
     }
 
-    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
+    IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         if (mPos != mCache.size()) {
             auto n = std::min(mCache.size() - mPos, buffer.size());
             std::memcpy(buffer.data(), mCache.data() + mPos, n);
@@ -31,11 +31,11 @@ struct CachedStream : Stream {
         return mStream.close();
     }
 
-    Task<Expected<>> raw_flush() override {
+    IOTask<Expected<>> raw_flush() override {
         return mStream.flush();
     }
 
-    Task<Expected<>> raw_seek(std::uint64_t pos) override {
+    IOTask<Expected<>> raw_seek(std::uint64_t pos) override {
         if (pos <= mCache.size()) {
             mPos = pos;
             co_return {};

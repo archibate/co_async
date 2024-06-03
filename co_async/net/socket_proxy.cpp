@@ -1,18 +1,18 @@
-#include <co_async/awaiter/task.hpp>
 #include <co_async/net/socket_proxy.hpp>
+#include <co_async/generic/io_task.hpp>
 #include <co_async/platform/fs.hpp>
 #include <co_async/platform/socket.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/utils/string_utils.hpp>
 
 namespace co_async {
-Task<Expected<SocketHandle>>
+IOTask<Expected<SocketHandle>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout) {
     if (proxy.starts_with("http://")) {
         proxy.remove_prefix(7);
         auto sock = co_await co_await socket_connect(
-            co_await SocketAddress::parse(proxy, 80));
+            co_await SocketAddress::parse(proxy, 80), co_await co_cancel());
         auto hostName = std::string(host) + ":" + to_string(port);
         std::string header = "CONNECT " + hostName +
                              " HTTP/1.1\r\nHost: " + hostName +

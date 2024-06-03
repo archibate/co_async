@@ -1,6 +1,7 @@
 #pragma once
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
+#include <co_async/generic/io_task.hpp>
 #include <co_async/utils/expected.hpp>
 
 namespace co_async {
@@ -9,11 +10,11 @@ inline constexpr std::size_t kStreamBufferSize = 8192;
 struct Stream {
     virtual void raw_timeout(std::chrono::steady_clock::duration timeout) {}
 
-    virtual Task<Expected<>> raw_seek(std::uint64_t pos) {
+    virtual IOTask<Expected<>> raw_seek(std::uint64_t pos) {
         co_return std::errc::invalid_seek;
     }
 
-    virtual Task<Expected<>> raw_flush() {
+    virtual IOTask<Expected<>> raw_flush() {
         co_return {};
     }
 
@@ -21,11 +22,11 @@ struct Stream {
         co_return;
     }
 
-    virtual Task<Expected<std::size_t>> raw_read(std::span<char> buffer) {
+    virtual IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) {
         co_return std::errc::not_supported;
     }
 
-    virtual Task<Expected<std::size_t>>
+    virtual IOTask<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) {
         co_return std::errc::not_supported;
     }
@@ -43,7 +44,7 @@ struct BorrowedStream {
     BorrowedStream(BorrowedStream &&) = default;
     BorrowedStream &operator=(BorrowedStream &&) = default;
 
-    Task<Expected<char>> getchar() {
+    IOTask<Expected<char>> getchar() {
         if (bufempty()) {
             mInIndex = 0;
             co_await co_await fillbuf();
@@ -53,7 +54,7 @@ struct BorrowedStream {
         co_return c;
     }
 
-    Task<Expected<>> getline(std::string &s, char eol) {
+    IOTask<Expected<>> getline(std::string &s, char eol) {
         std::size_t start = mInIndex;
         while (true) {
             for (std::size_t i = start; i < mInEnd; ++i) {
@@ -70,7 +71,7 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<>> dropline(char eol) {
+    IOTask<Expected<>> dropline(char eol) {
         std::size_t start = mInIndex;
         while (true) {
             for (std::size_t i = start; i < mInEnd; ++i) {
@@ -85,7 +86,7 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<>> getline(std::string &s, std::string_view eol) {
+    IOTask<Expected<>> getline(std::string &s, std::string_view eol) {
     again:
         co_await co_await getline(s, eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
@@ -104,7 +105,7 @@ struct BorrowedStream {
         co_return {};
     }
 
-    Task<Expected<>> dropline(std::string_view eol) {
+    IOTask<Expected<>> dropline(std::string_view eol) {
     again:
         co_await co_await dropline(eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
@@ -122,19 +123,19 @@ struct BorrowedStream {
         co_return {};
     }
 
-    Task<Expected<std::string>> getline(char eol) {
+    IOTask<Expected<std::string>> getline(char eol) {
         std::string s;
         co_await co_await getline(s, eol);
         co_return s;
     }
 
-    Task<Expected<std::string>> getline(std::string_view eol) {
+    IOTask<Expected<std::string>> getline(std::string_view eol) {
         std::string s;
         co_await co_await getline(s, eol);
         co_return s;
     }
 
-    Task<Expected<>> getspan(std::span<char> s) {
+    IOTask<Expected<>> getspan(std::span<char> s) {
         auto p = s.data();
         auto n = s.size();
         std::size_t start = mInIndex;
@@ -153,7 +154,7 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<>> dropn(std::size_t n) {
+    IOTask<Expected<>> dropn(std::size_t n) {
         auto start = mInIndex;
         while (true) {
             auto end = start + n;
@@ -169,7 +170,7 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<>> getn(std::string &s, std::size_t n) {
+    IOTask<Expected<>> getn(std::string &s, std::size_t n) {
         auto start = mInIndex;
         while (true) {
             auto end = start + n;
@@ -187,20 +188,20 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<std::string>> getn(std::size_t n) {
+    IOTask<Expected<std::string>> getn(std::size_t n) {
         std::string s;
         s.reserve(n);
         co_await co_await getn(s, n);
         co_return s;
     }
 
-    Task<> dropall() {
+    IOTask<> dropall() {
         do {
             mInIndex = 0;
         } while (co_await fillbuf());
     }
 
-    Task<> getall(std::string &s) {
+    IOTask<> getall(std::string &s) {
         std::size_t start = mInIndex;
         do {
             s.append(mInBuffer.get() + start, mInEnd - start);
@@ -209,7 +210,7 @@ struct BorrowedStream {
         } while (co_await fillbuf());
     }
 
-    Task<std::string> getall() {
+    IOTask<std::string> getall() {
         std::string s;
         co_await getall(s);
         co_return s;
@@ -217,13 +218,13 @@ struct BorrowedStream {
 
     template <class T>
         requires std::is_trivial_v<T>
-    Task<Expected<>> getstruct(T &ret) {
+    IOTask<Expected<>> getstruct(T &ret) {
         return getspan(std::span<char>((char *)&ret, sizeof(T)));
     }
 
     template <class T>
         requires std::is_trivial_v<T>
-    Task<Expected<T>> getstruct() {
+    IOTask<Expected<T>> getstruct() {
         T ret;
         co_await co_await getstruct(ret);
         co_return ret;
@@ -237,7 +238,7 @@ struct BorrowedStream {
         mInIndex += n;
     }
 
-    Task<Expected<std::string>> getchunk() noexcept {
+    IOTask<Expected<std::string>> getchunk() noexcept {
         if (bufempty()) {
             mInIndex = 0;
             co_await co_await fillbuf();
@@ -256,7 +257,7 @@ struct BorrowedStream {
         return n;
     }
 
-    Task<Expected<char>> peekchar() {
+    IOTask<Expected<char>> peekchar() {
         if (bufempty()) {
             mInIndex = 0;
             co_await co_await fillbuf();
@@ -264,7 +265,7 @@ struct BorrowedStream {
         co_return mInBuffer[mInIndex];
     }
 
-    Task<Expected<>> peekn(std::string &s, std::size_t n) {
+    IOTask<Expected<>> peekn(std::string &s, std::size_t n) {
         while (mInEnd - mInIndex < n) {
             co_await co_await fillbuf();
         }
@@ -272,7 +273,7 @@ struct BorrowedStream {
         co_return {};
     }
 
-    Task<Expected<std::string>> peekn(std::size_t n) {
+    IOTask<Expected<std::string>> peekn(std::size_t n) {
         std::string s;
         co_await co_await peekn(s, n);
         co_return s;
@@ -287,7 +288,7 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<>> fillbuf() {
+    IOTask<Expected<>> fillbuf() {
         if (!mInBuffer) {
             allocinbuf();
         }
@@ -304,7 +305,7 @@ struct BorrowedStream {
         return mInIndex == mInEnd;
     }
 
-    Task<Expected<>> putchar(char c) {
+    IOTask<Expected<>> putchar(char c) {
         if (buffull()) {
             co_await co_await flush();
         }
@@ -313,7 +314,7 @@ struct BorrowedStream {
         co_return {};
     }
 
-    Task<Expected<>> putspan(std::span<char const> s) {
+    IOTask<Expected<>> putspan(std::span<char const> s) {
         auto p = s.data();
         auto const pe = s.data() + s.size();
     again:
@@ -363,22 +364,22 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<>> puts(std::string_view s) {
+    IOTask<Expected<>> puts(std::string_view s) {
         return putspan(std::span<char const>(s.data(), s.size()));
     }
 
     template <class T>
-    Task<Expected<>> putstruct(T const &s) {
+    IOTask<Expected<>> putstruct(T const &s) {
         return putspan(
             std::span<char const>((char const *)std::addressof(s), sizeof(T)));
     }
 
-    Task<Expected<>> putchunk(std::string_view s) {
+    IOTask<Expected<>> putchunk(std::string_view s) {
         co_await co_await puts(s);
         co_return co_await flush();
     }
 
-    Task<Expected<>> putline(std::string_view s) {
+    IOTask<Expected<>> putline(std::string_view s) {
         co_await co_await puts(s);
         co_await co_await putchar('\n');
         co_return co_await flush();
@@ -392,7 +393,7 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<>> flush() {
+    IOTask<Expected<>> flush() {
         if (!mOutBuffer) {
             allocoutbuf();
             co_return {};
@@ -456,7 +457,7 @@ struct BorrowedStream {
         return tryread(std::span<char>((char *)buffer, len));
     }
 
-    Task<Expected<std::size_t>> write(std::span<char const> buffer) {
+    IOTask<Expected<std::size_t>> write(std::span<char const> buffer) {
         if (!buffull()) {
             auto n = std::min(mInBufSize - mInIndex, buffer.size());
             co_await co_await putspan(buffer.subspan(0, n));
@@ -465,11 +466,11 @@ struct BorrowedStream {
         co_return co_await mRaw->raw_write(buffer);
     }
 
-    Task<Expected<std::size_t>> write(void const *buffer, std::size_t len) {
+    IOTask<Expected<std::size_t>> write(void const *buffer, std::size_t len) {
         return write(std::span<char const>((char const *)buffer, len));
     }
 
-    Task<Expected<>> putspan(void const *buffer, std::size_t len) {
+    IOTask<Expected<>> putspan(void const *buffer, std::size_t len) {
         return putspan(std::span<char const>((char const *)buffer, len));
     }
 

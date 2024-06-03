@@ -14,7 +14,8 @@ struct TaskGroup {
         return *this;
     }
 
-    TaskGroup &add(Task<T> task) {
+    template <class P>
+    TaskGroup &add(Task<T, P> task) {
         add(co_future(std::move(task)));
         return *this;
     }

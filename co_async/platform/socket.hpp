@@ -93,7 +93,8 @@ Expected<T> socketGetOption(SocketHandle &sock, int level, int optId) {
 template <class T>
 Expected<> socketSetOption(SocketHandle &sock, int level, int opt,
                            T const &optVal) {
-    return expectError(setsockopt(sock.fileNo(), level, opt, &optVal, sizeof(optVal)));
+    return expectError(
+        setsockopt(sock.fileNo(), level, opt, &optVal, sizeof(optVal)));
 }
 
 Task<Expected<SocketHandle>> createSocket(int family, int type);
@@ -130,5 +131,11 @@ socket_write(SocketHandle &sock, std::span<char const> buf,
 Task<Expected<std::size_t>>
 socket_read(SocketHandle &sock, std::span<char> buf,
             std::chrono::steady_clock::duration timeout);
+Task<Expected<std::size_t>>
+socket_write(SocketHandle &sock, std::span<char const> buf,
+             std::chrono::steady_clock::duration timeout, CancelToken cancel);
+Task<Expected<std::size_t>>
+socket_read(SocketHandle &sock, std::span<char> buf,
+            std::chrono::steady_clock::duration timeout, CancelToken cancel);
 Task<Expected<>> socket_shutdown(SocketHandle &sock, int how = SHUT_RDWR);
 } // namespace co_async

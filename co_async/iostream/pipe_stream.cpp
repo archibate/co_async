@@ -11,18 +11,18 @@ namespace {
 
 struct PipeStreamBuffer {
     InfinityQueue<std::string> mChunks;
-    ConditionVariable mNonEmpty;
+    TimedConditionVariable mNonEmpty;
 };
 
 struct IPipeStream : Stream {
-    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
+    IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         while (true) {
             if (auto chunk = mPipe->mChunks.pop()) {
                 auto n = std::min(buffer.size(), chunk->size());
                 std::memcpy(buffer.data(), chunk->data(), n);
                 co_return n;
             }
-            co_await mPipe->mNonEmpty;
+            co_await co_await mPipe->mNonEmpty.wait();
         }
     }
 
@@ -39,7 +39,7 @@ private:
 };
 
 struct OPipeStream : Stream {
-    Task<Expected<std::size_t>>
+    IOTask<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         if (auto p = mPipe.lock()) [[likely]] {
             if (buffer.empty()) [[unlikely]] {
@@ -77,14 +77,14 @@ private:
 
 } // namespace
 
-Task<Expected<std::array<OwningStream, 2>>> pipe_stream() {
+std::array<OwningStream, 2> pipe_stream() {
     auto pipePtr = std::make_shared<PipeStreamBuffer>();
     auto pipeWeakPtr = std::weak_ptr(pipePtr);
-    co_return std::array{make_stream<IPipeStream>(std::move(pipePtr)),
-                         make_stream<OPipeStream>(std::move(pipeWeakPtr))};
+    return std::array{make_stream<IPipeStream>(std::move(pipePtr)),
+                      make_stream<OPipeStream>(std::move(pipeWeakPtr))};
 }
 
-Task<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out) {
+IOTask<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out) {
     while (true) {
         if (in.bufempty()) {
             if (!co_await in.fillbuf()) {

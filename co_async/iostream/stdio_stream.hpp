@@ -4,4 +4,5 @@
 
 namespace co_async {
 OwningStream &stdio();
+OwningStream &raw_stdio();
 } // namespace co_async

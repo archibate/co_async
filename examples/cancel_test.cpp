@@ -11,7 +11,7 @@ static Task<int> compute(CancelToken cancel) {
 }
 
 static Task<> amain() {
-    auto ret = co_await co_timeout(compute, 100ms);
+    auto ret = co_await co_timeout_bind(compute, 100ms);
     debug(), "计算结果", ret;
     co_return;
 }

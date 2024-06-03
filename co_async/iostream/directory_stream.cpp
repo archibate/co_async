@@ -8,7 +8,7 @@
 namespace co_async {
 namespace {
 struct DirectoryStream : Stream {
-    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) {
+    IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) {
         co_return co_await fs_getdents(mFile, buffer);
     }
 
@@ -32,7 +32,7 @@ DirectoryWalker::DirectoryWalker(FileHandle file)
 
 DirectoryWalker::~DirectoryWalker() = default;
 
-Task<Expected<std::string>> DirectoryWalker::DirectoryWalker::next() {
+IOTask<Expected<std::string>> DirectoryWalker::DirectoryWalker::next() {
     struct LinuxDirent64 {
         int64_t d_ino;           /* 64-bit inode number */
         int64_t d_off;           /* 64-bit offset to next structure */
@@ -47,7 +47,7 @@ Task<Expected<std::string>> DirectoryWalker::DirectoryWalker::next() {
     co_return std::string(rest.data());
 }
 
-Task<Expected<DirectoryWalker>> dir_open(std::filesystem::path path) {
+IOTask<Expected<DirectoryWalker>> dir_open(std::filesystem::path path) {
     auto handle = co_await co_await fs_open(path, OpenMode::Directory);
     co_return DirectoryWalker(std::move(handle));
 }

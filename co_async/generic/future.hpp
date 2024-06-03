@@ -88,9 +88,9 @@ inline FutureToken<T> FutureSource<T>::token() const noexcept {
     return FutureToken<T>(*this);
 }
 
-template <class T>
+template <class T, class P>
 inline Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>>
-coFutureHelper(FutureToken<T> future, Task<T> task) {
+coFutureHelper(FutureToken<T> future, Task<T, P> task) {
 #if CO_ASYNC_EXCEPT
     try {
 #endif
@@ -102,8 +102,8 @@ coFutureHelper(FutureToken<T> future, Task<T> task) {
 #endif
 }
 
-template <class T>
-inline FutureSource<T> co_future(Task<T> task) {
+template <class T, class P>
+inline FutureSource<T> co_future(Task<T, P> task) {
     FutureSource<T> future;
     auto wrapped = coFutureHelper(future.token(), std::move(task));
     auto coroutine = wrapped.get();

@@ -8,25 +8,15 @@
 namespace co_async {
 namespace {
 struct StdioStream : Stream {
-    void disableTTYCanonAndEcho() {
-        if (isatty(mFileIn.fileNo())) {
-            struct termios tc;
-            tcgetattr(mFileIn.fileNo(), &tc);
-            tc.c_lflag &= ~(tcflag_t)ICANON;
-            tc.c_lflag &= ~(tcflag_t)ECHO;
-            tcsetattr(mFileIn.fileNo(), TCSANOW, &tc);
-        }
-    }
-
     explicit StdioStream(FileHandle &fileIn, FileHandle &fileOut)
         : mFileIn(fileIn),
           mFileOut(fileOut) {}
 
-    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
+    IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         co_return co_await fs_read(mFileIn, buffer);
     }
 
-    Task<Expected<std::size_t>>
+    IOTask<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         co_return co_await fs_write(mFileOut, buffer);
     }
@@ -49,11 +39,34 @@ FileHandle &stdFileHandle() {
     static FileHandle h(fileNo);
     return h;
 }
+
+int rawStdinFileHandleImpl() {
+    if (isatty(STDIN_FILENO)) {
+        struct termios tc;
+        tcgetattr(STDIN_FILENO, &tc);
+        tc.c_lflag &= ~(tcflag_t)ICANON;
+        tc.c_lflag &= ~(tcflag_t)ECHO;
+        tcsetattr(STDIN_FILENO, TCSANOW, &tc);
+    }
+    return STDIN_FILENO;
+}
+
+FileHandle &rawStdinFileHandle() {
+    static FileHandle h(rawStdinFileHandleImpl());
+    return h;
+}
+
 } // namespace
 
 OwningStream &stdio() {
     static thread_local OwningStream s = make_stream<StdioStream>(
         stdFileHandle<STDIN_FILENO>(), stdFileHandle<STDOUT_FILENO>());
+    return s;
+}
+
+OwningStream &raw_stdio() {
+    static thread_local OwningStream s = make_stream<StdioStream>(
+        rawStdinFileHandle(), stdFileHandle<STDOUT_FILENO>());
     return s;
 }
 } // namespace co_async

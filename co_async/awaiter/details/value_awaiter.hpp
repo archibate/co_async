@@ -3,7 +3,7 @@
 #include <co_async/utils/uninitialized.hpp>
 
 namespace co_async {
-template <class T>
+template <class T = void>
 struct ValueAwaiter {
 private:
     Avoid<T> mValue;
@@ -24,7 +24,7 @@ public:
     }
 };
 
-template <class T>
+template <class T = void>
 struct ValueOrReturnAwaiter {
 private:
     std::coroutine_handle<> mPrevious;

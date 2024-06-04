@@ -1,5 +1,6 @@
 #pragma once
 #include <co_async/std.hpp>
+#include <co_async/awaiter/just.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/when_all.hpp>
 #include <co_async/utils/rbtree.hpp>
@@ -7,8 +8,7 @@
 namespace co_async {
 struct CancelToken;
 
-struct [[nodiscard]] CancelSource {
-private:
+struct CancelSourceImpl {
     struct CancellerBase : RbTree<CancellerBase>::NodeType {
         virtual Task<> doCancel() = 0;
 
@@ -32,37 +32,35 @@ private:
         }
     };
 
-    struct Impl {
-        RbTree<CancellerBase> mCancellers;
-        bool mCanceled;
+    RbTree<CancellerBase> mCancellers;
+    bool mCanceled;
 
-        Task<> doCancel() {
-            if (mCanceled) {
-                co_return;
-            }
-            mCanceled = true;
-            std::vector<Task<>> tasks;
-            if (!mCancellers.empty()) {
-                mCancellers.traverseInorder([&](CancellerBase &canceller) {
-                    tasks.push_back(canceller.doCancel());
-                });
-                mCancellers.clear();
-                co_await when_all(tasks);
-            }
+    Task<> doCancel() {
+        if (mCanceled) {
+            co_return;
         }
+        mCanceled = true;
+        std::vector<Task<>> tasks;
+        if (!mCancellers.empty()) {
+            mCancellers.traverseInorder([&](CancellerBase &canceller) {
+                tasks.push_back(canceller.doCancel());
+            });
+            mCancellers.clear();
+            co_await when_all(tasks);
+        }
+    }
 
-        bool doIsCanceled() const noexcept {
-            return mCanceled;
-        }
+    bool doIsCanceled() const noexcept {
+        return mCanceled;
+    }
 
-        void doResigeter(CancellerBase &canceller) {
-            mCancellers.insert(canceller);
-        }
-    };
+    void doResigeter(CancellerBase &canceller) {
+        mCancellers.insert(canceller);
+    }
 
     template <class Canceller, class Awaiter>
     static Task<typename AwaitableTraits<Awaiter>::RetType>
-    doGuard(Impl *impl, Awaiter &&awaiter) {
+    doGuard(CancelSourceImpl *impl, Awaiter &&awaiter) {
         if (impl) {
             auto *op = std::addressof(awaiter);
             CancellerImpl<decltype(op), Canceller> canceller(op);
@@ -72,12 +70,15 @@ private:
             co_return co_await awaiter;
         }
     }
+};
 
-    std::unique_ptr<Impl> mImpl = std::make_unique<Impl>();
+struct [[nodiscard]] CancelSourceBase {
+private:
+    std::unique_ptr<CancelSourceImpl> mImpl = std::make_unique<CancelSourceImpl>();
 
     friend CancelToken;
 
-    friend struct CancelDerived;
+    friend struct CancelSource;
 
     template <class Callback>
     friend struct CancelCallback;
@@ -88,35 +89,34 @@ public:
     }
 
     inline CancelToken token() const;
-    CancelSource() = default;
-    CancelSource(CancelSource &&) = default;
-    CancelSource &operator=(CancelSource &&) = default;
-};
-
-template <class Awaiter>
-concept Cancellable = requires(Awaiter &&awaiter, CancelToken const &cancel) {
-    awaiter.promise().setCancelToken(cancel);
+    CancelSourceBase() = default;
+    CancelSourceBase(CancelSourceBase &&) = default;
+    CancelSourceBase &operator=(CancelSourceBase &&) = default;
 };
 
 struct CancelToken {
 private:
-    CancelSource::Impl *mImpl;
+    CancelSourceImpl *mImpl;
+
+    explicit CancelToken(CancelSourceImpl *impl) noexcept : mImpl(impl) {}
+
+    friend struct GetThisCancel;
 
 public:
     CancelToken() noexcept : mImpl(nullptr) {}
 
-    CancelToken(CancelSource const &that) noexcept : mImpl(that.mImpl.get()) {}
+    CancelToken(CancelSourceBase const &that) noexcept : mImpl(that.mImpl.get()) {}
 
     Task<> cancel() const {
-        return mImpl->doCancel();
+        return mImpl ? mImpl->doCancel() : just_void();
     }
 
     [[nodiscard]] bool is_canceled() const noexcept {
-        return mImpl->doIsCanceled();
+        return mImpl && mImpl->doIsCanceled();
     }
 
     [[nodiscard]] operator bool() const noexcept {
-        return mImpl->doIsCanceled();
+        return is_canceled();
     }
 
     Expected<> expect() {
@@ -129,19 +129,13 @@ public:
     template <class Awaiter,
               class Canceller = typename std::decay_t<Awaiter>::Canceller>
     auto guard(Awaiter &&awaiter) const {
-        return CancelSource::doGuard<Canceller>(
+        return CancelSourceImpl::doGuard<Canceller>(
             mImpl, std::forward<Awaiter>(awaiter));
-    }
-
-    template <Cancellable Awaiter>
-    Awaiter &&guard(Awaiter &&awaiter) const {
-        awaiter.promise().setCancelToken(*this);
-        return std::forward<Awaiter>(awaiter);
     }
 
     template <class Awaiter, class Canceller>
     auto guard(std::in_place_type_t<Canceller>, Awaiter &&awaiter) const {
-        return CancelSource::doGuard<Canceller>(
+        return CancelSourceImpl::doGuard<Canceller>(
             mImpl, std::forward<Awaiter>(awaiter));
     }
 
@@ -155,35 +149,44 @@ public:
     /*     return canceller; */
     /* } */
 
-    friend struct CancelDerived;
+    template <class T>
+    Expected<> operator()(TaskPromise<T> &promise) const {
+        if (is_canceled())
+            return std::errc::operation_canceled;
+        return {};
+    }
+
+    friend struct CancelSource;
 
     template <class Callback>
     friend struct CancelCallback;
 };
 
-inline CancelToken CancelSource::token() const {
-    return *this;
-}
-
-struct CancelDerived : private CancelSource::CancellerBase, CancelSource {
+struct CancelSource : private CancelSourceImpl::CancellerBase, public CancelSourceBase {
 private:
-    CancelSource::Impl *mDeriveImpl;
+    CancelSourceImpl *mDeriveImpl;
 
     virtual Task<> doCancel() {
         return mDeriveImpl->doCancel();
     }
 
 public:
-    explicit CancelDerived(CancelToken cancel) : mDeriveImpl(cancel.mImpl) {
+    CancelSource() noexcept : mDeriveImpl(nullptr) {}
+
+    explicit CancelSource(CancelToken cancel) : mDeriveImpl(cancel.mImpl) {
         if (mDeriveImpl) {
             mDeriveImpl->doResigeter(*this);
         }
     }
 };
 
+inline CancelToken CancelSourceBase::token() const {
+    return *this;
+}
+
 template <class Callback>
-struct CancelCallback : private CancelSource::CancellerBase {
-    explicit CancelCallback(CancelSource cancel, Callback callback) {
+struct CancelCallback : private CancelSourceImpl::CancellerBase {
+    explicit CancelCallback(CancelSourceBase cancel, Callback callback) {
         if (cancel.mImpl) {
             cancel.mImpl->doResigeter(*this);
         }
@@ -200,8 +203,8 @@ private:
 
 template <class Callback>
     requires Awaitable<std::invoke_result_t<Callback>>
-struct CancelCallback<Callback> : private CancelSource::CancellerBase {
-    explicit CancelCallback(CancelSource cancel, Callback callback)
+struct CancelCallback<Callback> : private CancelSourceImpl::CancellerBase {
+    explicit CancelCallback(CancelSourceBase cancel, Callback callback)
     : mCallback(std::move(callback)) {
         if (cancel.mImpl) {
             cancel.mImpl->doResigeter(*this);
@@ -218,5 +221,31 @@ private:
 
 template <class Callback>
 CancelCallback(Callback) -> CancelCallback<Callback>;
+
+struct GetThisCancel {
+    template <class T>
+    ValueAwaiter<CancelToken> operator()(TaskPromise<T> &promise) const {
+        return ValueAwaiter<CancelToken>(CancelToken(promise.mCancelToken));
+    }
+
+    template <class T>
+    static T &&bind(CancelToken cancel, T &&task) {
+        task.promise().mCancelToken = cancel.mImpl;
+        return std::forward<T>(task);
+    }
+
+    struct CancelThis {
+        template <class T>
+        Task<> operator()(TaskPromise<T> &promise) const {
+            return CancelToken(promise.mCancelToken).cancel();
+        }
+    };
+
+    static CancelThis cancel() {
+        return {};
+    }
+};
+
+inline constexpr GetThisCancel co_cancel;
 
 } // namespace co_async

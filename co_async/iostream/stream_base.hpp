@@ -1,7 +1,6 @@
 #pragma once
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/generic/io_task.hpp>
 #include <co_async/utils/expected.hpp>
 
 namespace co_async {

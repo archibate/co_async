@@ -10,6 +10,9 @@
 #include <co_async/utils/uninitialized.hpp>
 
 namespace co_async {
+
+struct CancelSourceImpl;
+
 template <class T>
 struct TaskAwaiter {
     bool await_ready() const noexcept {
@@ -202,6 +205,54 @@ struct TaskFinalAwaiter {
 };
 
 template <class T>
+struct TaskPromise;
+
+template <class T = void, class P = TaskPromise<T>>
+struct [[nodiscard("did you forgot to co_await?")]] Task {
+    using promise_type = P;
+
+    Task(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
+        : mCoroutine(coroutine) {}
+
+    Task(Task &&that) noexcept : mCoroutine(that.mCoroutine) {
+        that.mCoroutine = nullptr;
+    }
+
+    Task &operator=(Task &&that) noexcept {
+        std::swap(mCoroutine, that.mCoroutine);
+    }
+
+    ~Task() {
+        if (mCoroutine) {
+            mCoroutine.destroy();
+        }
+    }
+
+    auto operator co_await() const & noexcept {
+        return TaskAwaiter<T>(mCoroutine);
+    }
+
+    auto operator co_await() && noexcept {
+        return TaskOwnedAwaiter<T>(std::exchange(mCoroutine, nullptr));
+    }
+
+    std::coroutine_handle<promise_type> get() const noexcept {
+        return mCoroutine;
+    }
+
+    std::coroutine_handle<promise_type> release() noexcept {
+        return std::exchange(mCoroutine, nullptr);
+    }
+
+    promise_type &promise() const {
+        return mCoroutine.promise();
+    }
+
+private:
+    std::coroutine_handle<promise_type> mCoroutine;
+};
+
+template <class T>
 struct TaskPromise {
     void return_value(T &&ret) {
         mAwaiter->returnValue(std::move(ret));
@@ -232,6 +283,23 @@ struct TaskPromise {
     }
 
     template <class U>
+    Task<U> &&await_transform(Task<U> &&u) noexcept {
+        u.promise().mCancelToken = mCancelToken;
+        return std::move(u);
+    }
+
+    template <class U>
+    Task<U> const &await_transform(Task<U> const &u) noexcept {
+        u.promise().mCancelToken = mCancelToken;
+        return u;
+    }
+
+    template <std::invocable<TaskPromise &> U>
+    auto await_transform(U &&u) noexcept {
+        return await_transform(u(*this));
+    }
+
+    template <class U>
     U &&await_transform(U &&u) noexcept {
         return std::forward<U>(u);
     }
@@ -239,6 +307,7 @@ struct TaskPromise {
     TaskPromise &operator=(TaskPromise &&) = delete;
 
     TaskAwaiter<T> *mAwaiter;
+    CancelSourceImpl *mCancelToken;
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -271,6 +340,23 @@ struct TaskPromise<void> {
     }
 
     template <class U>
+    Task<U> &&await_transform(Task<U> &&u) noexcept {
+        u.promise().mCancelToken = mCancelToken;
+        return std::move(u);
+    }
+
+    template <class U>
+    Task<U> const &await_transform(Task<U> const &u) noexcept {
+        u.promise().mCancelToken = mCancelToken;
+        return u;
+    }
+
+    template <std::invocable<TaskPromise &> U>
+    auto await_transform(U &&u) noexcept {
+        return await_transform(u(*this));
+    }
+
+    template <class U>
     U &&await_transform(U &&u) noexcept {
         return std::forward<U>(u);
     }
@@ -278,6 +364,7 @@ struct TaskPromise<void> {
     TaskPromise &operator=(TaskPromise &&) = delete;
 
     TaskAwaiter<void> *mAwaiter;
+    CancelSourceImpl *mCancelToken;
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -394,6 +481,23 @@ struct TaskPromise<Expected<T>> {
     }
 
     template <class U>
+    Task<U> &&await_transform(Task<U> &&u) noexcept {
+        u.promise().mCancelToken = mCancelToken;
+        return std::move(u);
+    }
+
+    template <class U>
+    Task<U> const &await_transform(Task<U> const &u) noexcept {
+        u.promise().mCancelToken = mCancelToken;
+        return u;
+    }
+
+    template <std::invocable<TaskPromise &> U>
+    auto await_transform(U &&u) noexcept {
+        return await_transform(u(*this));
+    }
+
+    template <class U>
     U &&await_transform(U &&u) noexcept {
         return std::forward<U>(u);
     }
@@ -409,6 +513,7 @@ struct TaskPromise<Expected<T>> {
     TaskPromise &operator=(TaskPromise &&) = delete;
 
     TaskAwaiter<Expected<T>> *mAwaiter;
+    CancelSourceImpl *mCancelToken;
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -426,56 +531,11 @@ struct CustomPromise : TaskPromise<T> {
     }
 };
 
-template <class T = void, class P = TaskPromise<T>>
-struct [[nodiscard("did you forgot to co_await?")]] Task {
-    using promise_type = P;
-
-    Task(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
-        : mCoroutine(coroutine) {}
-
-    Task(Task &&that) noexcept : mCoroutine(that.mCoroutine) {
-        that.mCoroutine = nullptr;
-    }
-
-    Task &operator=(Task &&that) noexcept {
-        std::swap(mCoroutine, that.mCoroutine);
-    }
-
-    ~Task() {
-        if (mCoroutine) {
-            mCoroutine.destroy();
-        }
-    }
-
-    auto operator co_await() const & noexcept {
-        return TaskAwaiter<T>(mCoroutine);
-    }
-
-    auto operator co_await() && noexcept {
-        return TaskOwnedAwaiter<T>(std::exchange(mCoroutine, nullptr));
-    }
-
-    std::coroutine_handle<promise_type> get() const noexcept {
-        return mCoroutine;
-    }
-
-    std::coroutine_handle<promise_type> release() noexcept {
-        return std::exchange(mCoroutine, nullptr);
-    }
-
-    promise_type &promise() const {
-        return mCoroutine.promise();
-    }
-
-private:
-    std::coroutine_handle<promise_type> mCoroutine;
-};
-
 template <class F, class... Args>
     requires(Awaitable<std::invoke_result_t<F, Args...>>)
-inline auto co_bind(F &&f, Args &&...args) {
-    return [](auto f) mutable -> std::invoke_result_t<F, Args...> {
-        co_return co_await std::move(f)();
+inline std::invoke_result_t<F, Args...> co_bind(F f, Args ...args) {
+    return (+[](F f, Args ...args) mutable -> std::invoke_result_t<F, Args...> {
+        co_return co_await std::move(f)(std::move(args)...);
         /* std::optional o(std::move(f)); */
         /* decltype(auto) r = co_await std::move(*o)(); */
         /* o.reset(); */
@@ -483,8 +543,13 @@ inline auto co_bind(F &&f, Args &&...args) {
         /*     typename AwaitableTraits<std::invoke_result_t<F,
          * Args...>>::RetType( */
         /*         std::forward<decltype(r)>(r)); */
-    }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    })(std::move(f), std::move(args)...);
 }
+
+template <class T = void>
+using IOTask = Task<T>; // legacy type alias
+
 } // namespace co_async
 
 #define co_awaits co_await co_await
+#define co_returns co_return {}

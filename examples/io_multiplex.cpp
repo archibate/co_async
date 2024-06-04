@@ -1,17 +1,21 @@
-#define DEBUG_LEVEL 1
 #include <co_async/std.hpp>
 #include <co_async/co_async.hpp>
 
 using namespace co_async;
 using namespace std;
 
-[[maybe_unused]] static Task<> amain() {
-    /* auto res = co_await co_any([&] (CancelToken cancel) -> Task<Expected<char>> { */
-    /*     co_return co_await stdio().getchar(); */
-    /* }, [&] (CancelToken cancel) -> Task<Expected<>> { */
-    /*     co_return co_await co_sleep(1s, cancel); */
-    /* }); */
-    debug(), co_await when_any(raw_stdio().getchar(), co_sleep(1s));
+[[maybe_unused]] static Task<Expected<int>> task1() {
+    co_await co_await co_sleep(100ms);
+    co_return 1;
+}
+
+[[maybe_unused]] static Task<Expected<int>> task2() {
+    co_await co_await co_sleep(200ms);
+    co_return 2;
+}
+
+static Task<> amain() {
+    debug(), co_await when_any(task1(), task2());
 }
 
 int main() {

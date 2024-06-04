@@ -1,4 +1,3 @@
-#include "co_async/utils/debug.hpp"
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/task_group.hpp>
 #include <co_async/iostream/pipe_stream.hpp>

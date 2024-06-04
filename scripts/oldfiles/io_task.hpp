@@ -1,5 +1,6 @@
 #pragma once
 #include <co_async/std.hpp>
+#include "co_async/utils/debug.hpp"
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/when_all.hpp>
 #include <co_async/generic/cancel.hpp>

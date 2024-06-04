@@ -3,7 +3,6 @@
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/details/ignore_return_promise.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/generic/io_task.hpp>
 #include <co_async/generic/cancel.hpp>
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/ring_queue.hpp>
@@ -188,65 +187,6 @@ inline void co_spawn(A awaitable) {
 
 inline void co_spawn(std::coroutine_handle<> coroutine) {
     GenericIOContext::instance->enqueueJob(coroutine);
-}
-
-inline Task<Expected<>, GenericIOContext::TimerNode>
-coSleep(std::chrono::steady_clock::time_point expires) {
-    co_return co_await GenericIOContext::TimerNode::Awaiter(expires);
-}
-
-inline IOTask<Expected<>>
-co_sleep(std::chrono::steady_clock::time_point expires) {
-    co_return co_await (co_await co_cancel()).guard(std::in_place_type<GenericIOContext::TimerNode::Canceller>,
-        coSleep(expires));
-}
-
-inline Task<Expected<>, GenericIOContext::TimerNode>
-coSleep(std::chrono::steady_clock::duration timeout) {
-    return coSleep(std::chrono::steady_clock::now() + timeout);
-}
-
-inline IOTask<Expected<>>
-co_sleep(std::chrono::steady_clock::duration timeout) {
-    return co_sleep(std::chrono::steady_clock::now() + timeout);
-}
-
-inline Task<> coForever() {
-    co_await std::suspend_always();
-#if defined(__GNUC__) && defined(__has_builtin)
-# if __has_builtin(__builtin_unreachable)
-    __builtin_unreachable();
-# endif
-#endif
-}
-
-inline IOTask<> co_forever() {
-    struct ForeverAwaiter {
-        struct Canceller {
-            using OpType = ForeverAwaiter;
-
-            static Task<> doCancel(OpType *op) {
-                co_spawn(op->mPrevious);
-                co_return;
-            }
-
-            static void earlyCancelValue(OpType *op) noexcept {}
-        };
-
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) noexcept {
-            mPrevious = coroutine;
-        }
-
-        void await_resume() const noexcept {}
-
-        std::coroutine_handle<> mPrevious;
-    };
-
-    co_return co_await (co_await co_cancel()).guard(ForeverAwaiter());
 }
 
 inline auto co_resume() {

@@ -1,3 +1,4 @@
+#include <co_async/generic/io_context.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/iostream/file_stream.hpp>
 #include <co_async/iostream/stream_base.hpp>
@@ -7,12 +8,12 @@ namespace co_async {
 namespace {
 struct FileStream : Stream {
     IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        co_return co_await fs_read(mFile, buffer, co_await co_cancel());
+        co_return co_await fs_read(mFile, buffer, co_await co_cancel);
     }
 
     IOTask<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
-        co_return co_await fs_write(mFile, buffer, co_await co_cancel());
+        co_return co_await fs_write(mFile, buffer, co_await co_cancel);
     }
 
     Task<> raw_close() override {

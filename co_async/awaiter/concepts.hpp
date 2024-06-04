@@ -3,6 +3,7 @@
 #include <co_async/utils/non_void_helper.hpp>
 
 namespace co_async {
+
 template <class A>
 concept Awaiter = requires(A a, std::coroutine_handle<> h) {
     { a.await_ready() };
@@ -46,4 +47,5 @@ struct TypeList<First, Ts...> {
     using FirstType = First;
     using LastType = typename TypeList<Ts...>::LastType;
 };
+
 } // namespace co_async

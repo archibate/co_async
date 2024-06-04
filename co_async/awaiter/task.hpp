@@ -546,16 +546,14 @@ struct CustomPromise : TaskPromise<T> {
 template <class F, class... Args>
     requires(Awaitable<std::invoke_result_t<F, Args...>>)
 inline std::invoke_result_t<F, Args...> co_bind(F f, Args ...args) {
-    return (+[](F f, Args ...args) mutable -> std::invoke_result_t<F, Args...> {
-        co_return co_await std::move(f)(std::move(args)...);
-        /* std::optional o(std::move(f)); */
-        /* decltype(auto) r = co_await std::move(*o)(); */
-        /* o.reset(); */
-        /* co_return */
-        /*     typename AwaitableTraits<std::invoke_result_t<F,
-         * Args...>>::RetType( */
-        /*         std::forward<decltype(r)>(r)); */
-    })(std::move(f), std::move(args)...);
+    co_return co_await std::move(f)(std::move(args)...);
+    /* std::optional o(std::move(f)); */
+    /* decltype(auto) r = co_await std::move(*o)(); */
+    /* o.reset(); */
+    /* co_return */
+    /*     typename AwaitableTraits<std::invoke_result_t<F,
+     * Args...>>::RetType( */
+    /*         std::forward<decltype(r)>(r)); */
 }
 
 } // namespace co_async

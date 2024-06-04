@@ -1,5 +1,6 @@
 #pragma once
 #include <co_async/std.hpp>
+#include "co_async/utils/debug.hpp"
 #include <co_async/awaiter/just.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/when_all.hpp>
@@ -54,7 +55,7 @@ struct CancelSourceImpl {
         return mCanceled;
     }
 
-    void doResigeter(CancellerBase &canceller) {
+    void doRegister(CancellerBase &canceller) {
         mCancellers.insert(canceller);
     }
 
@@ -62,9 +63,10 @@ struct CancelSourceImpl {
     static Task<typename AwaitableTraits<Awaiter>::RetType>
     doGuard(CancelSourceImpl *impl, Awaiter &&awaiter) {
         if (impl) {
+            debug().fail(), impl;
             auto *op = std::addressof(awaiter);
             CancellerImpl<decltype(op), Canceller> canceller(op);
-            impl->doResigeter(canceller);
+            impl->doRegister(canceller);
             co_return co_await awaiter;
         } else {
             co_return co_await awaiter;
@@ -144,7 +146,7 @@ public:
     /*     std::unique_ptr<CancelSource::CancellerCallback<Callback>> canceller; */
     /*     if (mImpl) { */
     /*         canceller = std::make_unique<CancelSource::CancellerCallback>(std::move(callback)); */
-    /*         mImpl->doResigeter(*canceller); */
+    /*         mImpl->doRegister(*canceller); */
     /*     } */
     /*     return canceller; */
     /* } */
@@ -175,7 +177,7 @@ public:
 
     explicit CancelSource(CancelToken cancel) : mDeriveImpl(cancel.mImpl) {
         if (mDeriveImpl) {
-            mDeriveImpl->doResigeter(*this);
+            mDeriveImpl->doRegister(*this);
         }
     }
 };
@@ -188,7 +190,7 @@ template <class Callback>
 struct CancelCallback : private CancelSourceImpl::CancellerBase {
     explicit CancelCallback(CancelSourceBase cancel, Callback callback) {
         if (cancel.mImpl) {
-            cancel.mImpl->doResigeter(*this);
+            cancel.mImpl->doRegister(*this);
         }
     }
 
@@ -207,7 +209,7 @@ struct CancelCallback<Callback> : private CancelSourceImpl::CancellerBase {
     explicit CancelCallback(CancelSourceBase cancel, Callback callback)
     : mCallback(std::move(callback)) {
         if (cancel.mImpl) {
-            cancel.mImpl->doResigeter(*this);
+            cancel.mImpl->doRegister(*this);
         }
     }
 

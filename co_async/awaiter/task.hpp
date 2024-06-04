@@ -58,6 +58,9 @@ struct TaskAwaiter {
     template <class P>
     explicit TaskAwaiter(std::coroutine_handle<P> coroutine)
         : mCalleeCoroutine(coroutine) {
+#if CO_ASYNC_DEBUG
+        assert(!coroutine.promise().mAwaiter);
+#endif
         coroutine.promise().mAwaiter = this;
     }
 
@@ -99,7 +102,7 @@ protected:
 };
 
 template <class T, class E>
-struct GeneratorAwaiter {
+struct GeneratorAwaiter { // TODO: support generator
     bool await_ready() const noexcept {
 #if CO_ASYNC_SAFERET
 #if CO_ASYNC_EXCEPT
@@ -304,10 +307,11 @@ struct TaskPromise {
         return std::forward<U>(u);
     }
 
-    TaskPromise &operator=(TaskPromise &&) = delete;
+    TaskPromise() = default;
+    TaskPromise(TaskPromise &&) = delete;
 
-    TaskAwaiter<T> *mAwaiter;
-    CancelSourceImpl *mCancelToken;
+    TaskAwaiter<T> *mAwaiter{};
+    CancelSourceImpl *mCancelToken{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -361,10 +365,11 @@ struct TaskPromise<void> {
         return std::forward<U>(u);
     }
 
-    TaskPromise &operator=(TaskPromise &&) = delete;
+    TaskPromise() = default;
+    TaskPromise(TaskPromise &&) = delete;
 
-    TaskAwaiter<void> *mAwaiter;
-    CancelSourceImpl *mCancelToken;
+    TaskAwaiter<void> *mAwaiter{};
+    CancelSourceImpl *mCancelToken{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -482,12 +487,18 @@ struct TaskPromise<Expected<T>> {
 
     template <class U>
     Task<U> &&await_transform(Task<U> &&u) noexcept {
+#if CO_ASYNC_DEBUG
+        assert(!mCancelToken);
+#endif
         u.promise().mCancelToken = mCancelToken;
         return std::move(u);
     }
 
     template <class U>
     Task<U> const &await_transform(Task<U> const &u) noexcept {
+#if CO_ASYNC_DEBUG
+        assert(!mCancelToken);
+#endif
         u.promise().mCancelToken = mCancelToken;
         return u;
     }
@@ -510,10 +521,11 @@ struct TaskPromise<Expected<T>> {
         return TaskFinalAwaiter();
     }
 
-    TaskPromise &operator=(TaskPromise &&) = delete;
+    TaskPromise() = default;
+    TaskPromise(TaskPromise &&) = delete;
 
-    TaskAwaiter<Expected<T>> *mAwaiter;
-    CancelSourceImpl *mCancelToken;
+    TaskAwaiter<Expected<T>> *mAwaiter{};
+    CancelSourceImpl *mCancelToken{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -545,9 +557,6 @@ inline std::invoke_result_t<F, Args...> co_bind(F f, Args ...args) {
         /*         std::forward<decltype(r)>(r)); */
     })(std::move(f), std::move(args)...);
 }
-
-template <class T = void>
-using IOTask = Task<T>; // legacy type alias
 
 } // namespace co_async
 

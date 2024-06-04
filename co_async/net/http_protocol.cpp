@@ -412,9 +412,6 @@ Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
         co_return std::errc::protocol_error;
     }
     req.method = line.substr(0, pos);
-    if (req.method != "GET") {
-        debug().fail(), req.method, line;
-    }
     auto pos2 = line.find(' ', pos + 1);
     if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
         co_return std::errc::protocol_error;

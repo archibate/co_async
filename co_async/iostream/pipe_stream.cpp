@@ -15,7 +15,7 @@ struct PipeStreamBuffer {
 };
 
 struct IPipeStream : Stream {
-    IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         while (true) {
             if (auto chunk = mPipe->mChunks.pop()) {
                 auto n = std::min(buffer.size(), chunk->size());
@@ -39,7 +39,7 @@ private:
 };
 
 struct OPipeStream : Stream {
-    IOTask<Expected<std::size_t>>
+    Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         if (auto p = mPipe.lock()) [[likely]] {
             if (buffer.empty()) [[unlikely]] {
@@ -84,7 +84,7 @@ std::array<OwningStream, 2> pipe_stream() {
                       make_stream<OPipeStream>(std::move(pipeWeakPtr))};
 }
 
-IOTask<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out) {
+Task<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out) {
     while (true) {
         if (in.bufempty()) {
             if (!co_await in.fillbuf()) {

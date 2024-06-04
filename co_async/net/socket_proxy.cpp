@@ -6,7 +6,7 @@
 #include <co_async/utils/string_utils.hpp>
 
 namespace co_async {
-IOTask<Expected<SocketHandle>>
+Task<Expected<SocketHandle>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout) {
     if (proxy.starts_with("http://")) {

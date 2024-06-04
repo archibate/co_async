@@ -11,7 +11,7 @@ coSleep(std::chrono::steady_clock::time_point expires) {
     co_return co_await GenericIOContext::TimerNode::Awaiter(expires);
 }
 
-inline IOTask<Expected<>>
+inline Task<Expected<>>
 co_sleep(std::chrono::steady_clock::time_point expires) {
     co_return co_await (co_await co_cancel).guard(std::in_place_type<GenericIOContext::TimerNode::Canceller>,
         coSleep(expires));
@@ -22,7 +22,7 @@ coSleep(std::chrono::steady_clock::duration timeout) {
     return coSleep(std::chrono::steady_clock::now() + timeout);
 }
 
-inline IOTask<Expected<>>
+inline Task<Expected<>>
 co_sleep(std::chrono::steady_clock::duration timeout) {
     return co_sleep(std::chrono::steady_clock::now() + timeout);
 }
@@ -36,7 +36,7 @@ inline Task<> coForever() {
 #endif
 }
 
-inline IOTask<> co_forever() {
+inline Task<> co_forever() {
     struct ForeverAwaiter {
         struct Canceller {
             using OpType = ForeverAwaiter;

@@ -12,11 +12,11 @@ struct StdioStream : Stream {
         : mFileIn(fileIn),
           mFileOut(fileOut) {}
 
-    IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         co_return co_await fs_read(mFileIn, buffer);
     }
 
-    IOTask<Expected<std::size_t>>
+    Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         co_return co_await fs_write(mFileOut, buffer);
     }

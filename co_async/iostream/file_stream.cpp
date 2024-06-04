@@ -7,11 +7,11 @@
 namespace co_async {
 namespace {
 struct FileStream : Stream {
-    IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         co_return co_await fs_read(mFile, buffer, co_await co_cancel);
     }
 
-    IOTask<Expected<std::size_t>>
+    Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         co_return co_await fs_write(mFile, buffer, co_await co_cancel);
     }
@@ -35,7 +35,7 @@ private:
 };
 } // namespace
 
-IOTask<Expected<OwningStream>> file_open(std::filesystem::path path,
+Task<Expected<OwningStream>> file_open(std::filesystem::path path,
                                        OpenMode mode) {
     co_return make_stream<FileStream>(co_await co_await fs_open(path, mode));
 }
@@ -44,12 +44,12 @@ OwningStream file_from_handle(FileHandle handle) {
     return make_stream<FileStream>(std::move(handle));
 }
 
-IOTask<Expected<std::string>> file_read(std::filesystem::path path) {
+Task<Expected<std::string>> file_read(std::filesystem::path path) {
     auto file = co_await co_await file_open(path, OpenMode::Read);
     co_return co_await file.getall();
 }
 
-IOTask<Expected<>> file_write(std::filesystem::path path,
+Task<Expected<>> file_write(std::filesystem::path path,
                             std::string_view content) {
     auto file = co_await co_await file_open(path, OpenMode::Write);
     co_await co_await file.puts(content);
@@ -57,7 +57,7 @@ IOTask<Expected<>> file_write(std::filesystem::path path,
     co_return {};
 }
 
-IOTask<Expected<>> file_append(std::filesystem::path path,
+Task<Expected<>> file_append(std::filesystem::path path,
                              std::string_view content) {
     auto file = co_await co_await file_open(path, OpenMode::Append);
     co_await co_await file.puts(content);

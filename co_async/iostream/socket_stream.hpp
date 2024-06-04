@@ -8,7 +8,7 @@
 
 namespace co_async {
 struct SocketStream : Stream {
-    IOTask<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
+    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         auto ret = co_await socket_read(mFile, buffer, mTimeout, co_await co_cancel);
         if (ret == std::make_error_code(std::errc::operation_canceled))
             [[unlikely]] {
@@ -17,7 +17,7 @@ struct SocketStream : Stream {
         co_return ret;
     }
 
-    IOTask<Expected<std::size_t>>
+    Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
         auto ret = co_await socket_write(mFile, buffer, mTimeout, co_await co_cancel);
         if (ret == std::make_error_code(std::errc::operation_canceled))

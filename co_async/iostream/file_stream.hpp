@@ -5,12 +5,12 @@
 #include <co_async/platform/fs.hpp>
 
 namespace co_async {
-IOTask<Expected<OwningStream>> file_open(std::filesystem::path path,
+Task<Expected<OwningStream>> file_open(std::filesystem::path path,
                                        OpenMode mode);
 OwningStream file_from_handle(FileHandle handle);
-IOTask<Expected<std::string>> file_read(std::filesystem::path path);
-IOTask<Expected<>> file_write(std::filesystem::path path,
+Task<Expected<std::string>> file_read(std::filesystem::path path);
+Task<Expected<>> file_write(std::filesystem::path path,
                             std::string_view content);
-IOTask<Expected<>> file_append(std::filesystem::path path,
+Task<Expected<>> file_append(std::filesystem::path path,
                              std::string_view content);
 } // namespace co_async

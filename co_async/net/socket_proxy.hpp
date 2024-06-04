@@ -5,7 +5,7 @@
 #include <co_async/utils/expected.hpp>
 
 namespace co_async {
-IOTask<Expected<SocketHandle>>
+Task<Expected<SocketHandle>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout);
 } // namespace co_async

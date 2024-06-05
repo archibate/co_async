@@ -13,12 +13,12 @@ struct StdioStream : Stream {
           mFileOut(fileOut) {}
 
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        co_return co_await fs_read(mFileIn, buffer);
+        co_return co_await fs_read(mFileIn, buffer, co_await co_cancel);
     }
 
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
-        co_return co_await fs_write(mFileOut, buffer);
+        co_return co_await fs_write(mFileOut, buffer, co_await co_cancel);
     }
 
     FileHandle &in() const noexcept {

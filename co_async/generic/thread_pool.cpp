@@ -117,27 +117,14 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
         }
     });
 
-    struct Awaitable {
-        ConditionVariable &cv;
-        std::stop_source &stop;
-        bool &stopped;
+    {
+        CancelCallback _(cancel, [&] {
+            stopped = true;
+            stop.request_stop();
+        });
+        co_await *cv;
+    }
 
-        auto operator co_await() const noexcept {
-            return cv.operator co_await();
-        }
-
-        struct Canceller {
-            using OpType = Awaitable;
-
-            static Task<> doCancel(OpType *op) {
-                op->stopped = true;
-                op->stop.request_stop();
-                co_return;
-            }
-        };
-    };
-
-    co_await cancel.guard(Awaitable(*cv, stop, stopped));
     if (ep) [[unlikely]] {
         std::rethrow_exception(ep);
     }

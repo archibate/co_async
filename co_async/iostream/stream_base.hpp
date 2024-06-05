@@ -45,7 +45,7 @@ struct BorrowedStream {
 
     Task<Expected<char>> getchar() {
         if (bufempty()) {
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
         }
         char c = mInBuffer[mInIndex];
@@ -64,7 +64,7 @@ struct BorrowedStream {
                 }
             }
             s.append(mInBuffer.get() + start, mInEnd - start);
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
@@ -79,7 +79,7 @@ struct BorrowedStream {
                     co_return {};
                 }
             }
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
@@ -90,7 +90,7 @@ struct BorrowedStream {
         co_await co_await getline(s, eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
             if (bufempty()) {
-                mInIndex = 0;
+                mInEnd = mInIndex = 0;
                 co_await co_await fillbuf();
             }
             char c = mInBuffer[mInIndex];
@@ -109,7 +109,7 @@ struct BorrowedStream {
         co_await co_await dropline(eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
             if (bufempty()) {
-                mInIndex = 0;
+                mInEnd = mInIndex = 0;
                 co_await co_await fillbuf();
             }
             char c = mInBuffer[mInIndex];
@@ -147,7 +147,7 @@ struct BorrowedStream {
                 co_return {};
             }
             p = std::copy(mInBuffer.get() + start, mInBuffer.get() + mInEnd, p);
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
@@ -163,7 +163,7 @@ struct BorrowedStream {
             }
             auto m = mInEnd - mInIndex;
             n -= m;
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
@@ -181,7 +181,7 @@ struct BorrowedStream {
             auto m = mInEnd - mInIndex;
             n -= m;
             s.append(mInBuffer.get() + mInIndex, m);
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
@@ -196,7 +196,7 @@ struct BorrowedStream {
 
     Task<> dropall() {
         do {
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
         } while (co_await fillbuf());
     }
 
@@ -205,7 +205,7 @@ struct BorrowedStream {
         do {
             s.append(mInBuffer.get() + start, mInEnd - start);
             start = 0;
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
         } while (co_await fillbuf());
     }
 
@@ -239,7 +239,7 @@ struct BorrowedStream {
 
     Task<Expected<std::string>> getchunk() noexcept {
         if (bufempty()) {
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
         }
         auto buf = peekbuf();
@@ -258,13 +258,22 @@ struct BorrowedStream {
 
     Task<Expected<char>> peekchar() {
         if (bufempty()) {
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
         }
         co_return mInBuffer[mInIndex];
     }
 
     Task<Expected<>> peekn(std::string &s, std::size_t n) {
+        if (mInBufSize - mInIndex < n) {
+            if (mInBufSize < n) [[unlikely]] {
+                co_return std::errc::value_too_large;
+            }
+            std::memmove(mInBuffer.get(), mInBuffer.get() + mInIndex,
+                         mInEnd - mInIndex);
+            mInEnd -= mInIndex;
+            mInIndex = 0;
+        }
         while (mInEnd - mInIndex < n) {
             co_await co_await fillbuf();
         }

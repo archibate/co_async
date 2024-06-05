@@ -324,10 +324,13 @@ public:
         static Task<> doCancel(OpType *op) {
             co_await UringOp().prep_cancel(op, IORING_ASYNC_CANCEL_ALL);
         }
-
-        static int earlyCancelValue(OpType *op) noexcept {
-            return -ECANCELED;
-        }
     };
+
+    Task<int> cancelGuard(CancelToken cancel) && {
+        CancelCallback _(cancel, [this] () -> Task<> {
+            co_await UringOp().prep_cancel(this, IORING_ASYNC_CANCEL_ALL);
+        });
+        co_return co_await std::move(*this);
+    }
 };
 } // namespace co_async

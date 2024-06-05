@@ -21,7 +21,13 @@ struct GenericIOContext {
                        RbTree<TimerNode>::NodeType {
         using RbTree<TimerNode>::NodeType::destructiveErase;
         std::chrono::steady_clock::time_point mExpires;
+        CancelToken mCancelToken;
         bool mCancelled = false;
+
+        void doCancel() {
+            mCancelled = true;
+            destructiveErase();
+        }
 
         bool operator<(TimerNode const &that) const {
             return mExpires < that.mExpires;
@@ -48,21 +54,21 @@ struct GenericIOContext {
             }
         };
 
-        struct Canceller {
-            using OpType = Task<Expected<>, GenericIOContext::TimerNode>;
-
-            static Task<> doCancel(OpType *op) {
-                auto &promise = op->get().promise();
-                promise.mCancelled = true;
-                promise.destructiveErase();
-                GenericIOContext::instance->enqueueJob(op->get());
-                co_return;
-            }
-
-            static Expected<> earlyCancelValue(OpType *op) {
-                return std::errc::operation_canceled;
-            }
-        };
+        /* struct Canceller { */
+        /*     using OpType = Task<Expected<>, GenericIOContext::TimerNode>; */
+        /*  */
+        /*     static Task<> doCancel(OpType *op) { */
+        /*         auto &promise = op->get().promise(); */
+        /*         promise.mCancelled = true; */
+        /*         promise.destructiveErase(); */
+        /*         GenericIOContext::instance->enqueueJob(op->get()); */
+        /*         co_return; */
+        /*     } */
+        /*  */
+        /*     static Expected<> earlyCancelValue(OpType *op) { */
+        /*         return std::errc::operation_canceled; */
+        /*     } */
+        /* }; */
     };
 
     bool runComputeOnly() {

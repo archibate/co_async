@@ -240,14 +240,14 @@ inline Task<Expected<std::size_t>>
 fs_read(FileHandle &file, std::span<char> buffer, CancelToken cancel,
         std::uint64_t offset = (std::uint64_t)-1) {
     co_return (std::size_t) co_await expectError(
-        co_await UringOp().prep_read(file.fileNo(), buffer, offset));
+        co_await UringOp().prep_read(file.fileNo(), buffer, offset).cancelGuard(cancel));
 }
 
 inline Task<Expected<std::size_t>>
 fs_write(FileHandle &file, std::span<char const> buffer, CancelToken cancel,
          std::uint64_t offset = (std::uint64_t)-1) {
     co_return (std::size_t) co_await expectError(
-        co_await cancel.guard(UringOp().prep_write(file.fileNo(), buffer, offset)));
+        co_await UringOp().prep_write(file.fileNo(), buffer, offset).cancelGuard(cancel));
 }
 
 inline Task<Expected<>> fs_truncate(FileHandle &file, std::uint64_t size = 0) {

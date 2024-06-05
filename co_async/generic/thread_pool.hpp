@@ -26,7 +26,9 @@ public:
                             CancelToken cancel) /* MT-safe */;
 
     auto run(std::invocable auto func) /* MT-safe */
-        -> Task<Expected<std::invoke_result_t<decltype(func)>>> {
+        -> Task<Expected<std::invoke_result_t<decltype(func)>>>
+        requires(!std::invocable<decltype(func), std::stop_token>)
+    {
         std::optional<Avoid<std::invoke_result_t<decltype(func)>>> res;
         auto e = co_await rawRun([&res, func = std::move(func)]() mutable {
             res = (func(), Void());
@@ -58,6 +60,12 @@ public:
             co_return std::errc::operation_canceled;
         }
         co_return std::move(*res);
+    }
+
+    auto run(std::invocable<std::stop_token> auto func) /* MT-safe */
+        -> Task<
+            Expected<std::invoke_result_t<decltype(func), std::stop_token>>> {
+        co_return co_await run(func, co_await co_cancel);
     }
 
     std::size_t threads_count() /* MT-safe */;

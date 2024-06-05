@@ -13,13 +13,7 @@ private:
     struct PromiseNode : CustomPromise<void, PromiseNode>,
                          RbTree<PromiseNode>::NodeType {
         bool operator<(PromiseNode const &that) const {
-            if (!mExpires) {
-                return false;
-            }
-            if (!that.mExpires) {
-                return true;
-            }
-            return *mExpires < *that.mExpires;
+            return this < &that;
         }
 
         void doCancel() {
@@ -30,8 +24,6 @@ private:
         bool isCanceled() const noexcept {
             return this->rbTree == nullptr;
         }
-
-        std::optional<std::chrono::steady_clock::time_point> mExpires;
     };
 
     RbTree<PromiseNode> mWaitingList;
@@ -63,22 +55,16 @@ private:
         mWaitingList.insert(promise);
     }
 
-    struct Canceller {
-        using OpType = Task<void, PromiseNode>;
-
-        static Task<> doCancel(OpType *op) {
-            op->get().promise().doCancel();
-            co_return;
-        }
-
-        static void earlyCancelValue(OpType *op) noexcept {}
-    };
-
-    Task<> waitCancellable(std::chrono::steady_clock::time_point expires) {
-        auto waiter = waitNotCancellable();
-        waiter.get().promise().mExpires = expires;
-        co_await (co_await co_cancel).guard(std::in_place_type<Canceller>, waiter);
-    }
+    /* struct Canceller { */
+    /*     using OpType = Task<void, PromiseNode>; */
+    /*  */
+    /*     static Task<> doCancel(OpType *op) { */
+    /*         op->get().promise().doCancel(); */
+    /*         co_return; */
+    /*     } */
+    /*  */
+    /*     static void earlyCancelValue(OpType *op) noexcept {} */
+    /* }; */
 
 public:
     Task<void, PromiseNode> waitNotCancellable() {
@@ -87,7 +73,12 @@ public:
 
     Task<Expected<>> wait() {
         auto waiter = waitNotCancellable();
-        co_await (co_await co_cancel).guard(std::in_place_type<Canceller>, waiter);
+        {
+            CancelCallback _(co_await co_cancel, [&] {
+                waiter.get().promise().doCancel();
+            });
+            co_await waiter;
+        }
         if (waiter.get().promise().isCanceled()) {
             co_return std::errc::operation_canceled;
         }
@@ -96,11 +87,11 @@ public:
 
     Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
         auto res =
-            co_await when_any(waitCancellable(expires), co_sleep(expires));
-        if (res.index() != 0) {
-            co_return std::errc::stream_timeout;
+            co_await when_any(wait(), co_sleep(expires));
+        if (auto r = std::get_if<0>(&res)) {
+            co_return std::move(*r);
         }
-        co_return {};
+        co_return std::errc::stream_timeout;
     }
 
     Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
@@ -338,13 +329,7 @@ private:
     struct PromiseNode : CustomPromise<void, PromiseNode>,
                          ConcurrentRbTree<PromiseNode>::NodeType {
         bool operator<(PromiseNode const &that) const {
-            if (!mExpires) {
-                return false;
-            }
-            if (!that.mExpires) {
-                return true;
-            }
-            return *mExpires < *that.mExpires;
+            return this < &that;
         }
 
         void doCancel() {
@@ -355,8 +340,6 @@ private:
         bool isCanceled() const noexcept {
             return this->rbTree == nullptr;
         }
-
-        std::optional<std::chrono::steady_clock::time_point> mExpires;
     };
 
     ConcurrentRbTree<PromiseNode> mWaitingList;
@@ -389,22 +372,16 @@ private:
         mWaitingList.lock()->insert(promise);
     }
 
-    struct Canceller {
-        using OpType = Task<void, PromiseNode>;
-
-        static Task<> doCancel(OpType *op) {
-            op->get().promise().doCancel();
-            co_return;
-        }
-
-        static void earlyCancelValue(OpType *op) noexcept {}
-    };
-
-    Task<> waitCancellable(std::chrono::steady_clock::time_point expires) {
-        auto waiter = waitNotCancellable();
-        waiter.get().promise().mExpires = expires;
-        co_await (co_await co_cancel).guard(std::in_place_type<Canceller>, waiter);
-    }
+    /* struct Canceller { */
+    /*     using OpType = Task<void, PromiseNode>; */
+    /*  */
+    /*     static Task<> doCancel(OpType *op) { */
+    /*         op->get().promise().doCancel(); */
+    /*         co_return; */
+    /*     } */
+    /*  */
+    /*     static void earlyCancelValue(OpType *op) noexcept {} */
+    /* }; */
 
 public:
     Task<void, PromiseNode> waitNotCancellable() {
@@ -413,7 +390,12 @@ public:
 
     Task<Expected<>> wait() {
         auto waiter = waitNotCancellable();
-        co_await (co_await co_cancel).guard(std::in_place_type<Canceller>, waiter);
+        {
+            CancelCallback _(co_await co_cancel, [&] {
+                waiter.get().promise().doCancel();
+            });
+            co_await waiter;
+        }
         if (waiter.get().promise().isCanceled()) {
             co_return std::errc::operation_canceled;
         }
@@ -422,7 +404,7 @@ public:
 
     Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
         auto res =
-            co_await when_any(waitCancellable(expires), co_sleep(expires));
+            co_await when_any(wait(), co_sleep(expires));
         if (res.index() != 0) {
             co_return std::errc::stream_timeout;
         }

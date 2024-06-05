@@ -17,13 +17,12 @@ private:
         }
 
         void doCancel() {
+            mCancelled = true;
             this->destructiveErase();
             co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
         }
 
-        bool isCanceled() const noexcept {
-            return this->rbTree == nullptr;
-        }
+        bool mCancelled = false;
     };
 
     RbTree<PromiseNode> mWaitingList;
@@ -73,13 +72,11 @@ public:
 
     Task<Expected<>> wait() {
         auto waiter = waitNotCancellable();
-        {
-            CancelCallback _(co_await co_cancel, [&] {
-                waiter.get().promise().doCancel();
-            });
-            co_await waiter;
-        }
-        if (waiter.get().promise().isCanceled()) {
+        CancelCallback _(co_await co_cancel, [&] {
+            waiter.promise().doCancel();
+        });
+        co_await waiter;
+        if (waiter.promise().mCancelled) {
             co_return std::errc::operation_canceled;
         }
         co_return {};
@@ -333,13 +330,12 @@ private:
         }
 
         void doCancel() {
+            mCancelled = true;
             this->destructiveErase();
             co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
         }
 
-        bool isCanceled() const noexcept {
-            return this->rbTree == nullptr;
-        }
+        bool mCancelled = false;
     };
 
     ConcurrentRbTree<PromiseNode> mWaitingList;
@@ -390,13 +386,11 @@ public:
 
     Task<Expected<>> wait() {
         auto waiter = waitNotCancellable();
-        {
-            CancelCallback _(co_await co_cancel, [&] {
-                waiter.get().promise().doCancel();
-            });
-            co_await waiter;
-        }
-        if (waiter.get().promise().isCanceled()) {
+        CancelCallback _(co_await co_cancel, [&] {
+            waiter.promise().doCancel();
+        });
+        co_await waiter;
+        if (waiter.promise().mCancelled) {
             co_return std::errc::operation_canceled;
         }
         co_return {};

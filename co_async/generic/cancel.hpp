@@ -40,11 +40,14 @@ struct CancelSourceImpl {
             co_return;
         }
         mCanceled = true;
-        std::vector<Task<>> tasks;
         if (!mCancellers.empty()) {
+            std::vector<Task<>> tasks;
             mCancellers.traverseInorder([&](CancellerBase &canceller) {
                 tasks.push_back(canceller.doCancel());
             });
+            /* for (auto &&task: tasks) { */
+            /*     co_await task; */
+            /* } */
             co_await when_all(tasks);
             mCancellers.clear();
         }
@@ -132,6 +135,14 @@ public:
         return {};
     }
 
+    CancelSourceImpl *address() const noexcept {
+        return mImpl;
+    }
+
+    auto repr() const {
+        return mImpl;
+    }
+
     /* template <class Awaiter, */
     /*           class Canceller = typename std::decay_t<Awaiter>::Canceller> */
     /* auto guard(Awaiter &&awaiter) const { */
@@ -187,6 +198,10 @@ public:
         if (cancel.mImpl) {
             cancel.mImpl->doRegister(*this);
         }
+    }
+
+    auto repr() {
+        return mImpl.get();
     }
 };
 
@@ -249,7 +264,7 @@ struct GetThisCancel {
     struct DoCancelThis {
         template <class T>
         Task<> operator()(TaskPromise<T> &promise) const {
-            return CancelToken(promise.mCancelToken).cancel();
+            co_return co_await CancelToken(promise.mCancelToken).cancel();
         }
     };
 

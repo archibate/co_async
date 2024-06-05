@@ -223,6 +223,7 @@ struct [[nodiscard("did you forgot to co_await?")]] Task {
 
     Task &operator=(Task &&that) noexcept {
         std::swap(mCoroutine, that.mCoroutine);
+        return *this;
     }
 
     ~Task() {
@@ -302,7 +303,7 @@ struct TaskPromise {
         return await_transform(u(*this));
     }
 
-    template <class U>
+    template <class U> requires (!std::invocable<U, TaskPromise &>)
     U &&await_transform(U &&u) noexcept {
         return std::forward<U>(u);
     }
@@ -360,7 +361,7 @@ struct TaskPromise<void> {
         return await_transform(u(*this));
     }
 
-    template <class U>
+    template <class U> requires (!std::invocable<U, TaskPromise &>)
     U &&await_transform(U &&u) noexcept {
         return std::forward<U>(u);
     }
@@ -399,6 +400,14 @@ struct TaskPromise<Expected<T>> {
 
     auto get_return_object() {
         return std::coroutine_handle<TaskPromise>::from_promise(*this);
+    }
+
+    auto initial_suspend() noexcept {
+        return std::suspend_always();
+    }
+
+    auto final_suspend() noexcept {
+        return TaskFinalAwaiter();
     }
 
     template <class T2>
@@ -508,17 +517,9 @@ struct TaskPromise<Expected<T>> {
         return await_transform(u(*this));
     }
 
-    template <class U>
+    template <class U> requires (!std::invocable<U, TaskPromise &>)
     U &&await_transform(U &&u) noexcept {
         return std::forward<U>(u);
-    }
-
-    auto initial_suspend() noexcept {
-        return std::suspend_always();
-    }
-
-    auto final_suspend() noexcept {
-        return TaskFinalAwaiter();
     }
 
     TaskPromise() = default;

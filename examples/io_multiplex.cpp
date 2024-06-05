@@ -5,16 +5,20 @@
 using namespace co_async;
 using namespace std;
 
-static Task<Expected<>> amain() {
+static TimedQueue<char> cv(1);
+
+[[maybe_unused]] static Task<Expected<>> task1() {
     while (true) {
-        auto r = co_await when_any(raw_stdio().getchar(), co_sleep(500ms));
+        char c = co_await co_await raw_stdio().getchar();
+        cv.try_push(std::move(c));
+    }
+}
+
+static Task<Expected<>> amain() {
+    co_spawn(task1());
+    while (true) {
+        auto r = co_await when_any(cv.pop(), co_sleep(500ms));
         debug(), r;
-        /* if (r.index() == 0) { */
-        /*     char c = co_await get<0>(r); */
-        /*     debug(), c; */
-        /* } else { */
-        /*     debug(), "无输入"; */
-        /* } */
     }
 }
 

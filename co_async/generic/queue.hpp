@@ -17,6 +17,24 @@ private:
 public:
     explicit Queue(std::size_t size) : mQueue(size) {}
 
+    std::optional<T> try_pop() {
+        bool wasFull = mQueue.full();
+        auto value = mQueue.pop();
+        if (value && wasFull) {
+            mNonFull.notify_one();
+        }
+        return value;
+    }
+
+    bool try_push(T &&value) {
+        bool wasEmpty = mQueue.empty();
+        bool ok = mQueue.push(std::move(value));
+        if (ok && wasEmpty) {
+            mNonEmpty.notify_one();
+        }
+        return ok;
+    }
+
     Task<> push(T value) {
         while (!mQueue.push(std::move(value))) {
             co_await mNonFull;
@@ -45,12 +63,30 @@ private:
 public:
     explicit TimedQueue(std::size_t size) : mQueue(size) {}
 
-    Task<> push(T value) {
+    std::optional<T> try_pop() {
+        bool wasFull = mQueue.full();
+        auto value = mQueue.pop();
+        if (value && wasFull) {
+            mNonFull.notify_one();
+        }
+        return value;
+    }
+
+    bool try_push(T &&value) {
+        bool wasEmpty = mQueue.empty();
+        bool ok = mQueue.push(std::move(value));
+        if (ok && wasEmpty) {
+            mNonEmpty.notify_one();
+        }
+        return ok;
+    }
+
+    Task<Expected<>> push(T value) {
         while (!mQueue.push(std::move(value))) {
-            co_await mNonFull.wait();
+            co_await co_await mNonFull.wait();
         }
         mNonEmpty.notify_one();
-        co_return;
+        co_return {};
     }
 
     Task<Expected<>> push(T value,
@@ -62,21 +98,19 @@ public:
     Task<Expected<>> push(T value,
                           std::chrono::steady_clock::time_point expires) {
         while (!mQueue.push(std::move(value))) {
-            if (auto e = co_await mNonFull.wait(expires); e.has_error()) {
-                co_return e.error();
-            }
+            co_await co_await mNonFull.wait(expires);
         }
         mNonEmpty.notify_one();
-        co_return;
+        co_return {};
     }
 
-    Task<T> pop() {
+    Task<Expected<T>> pop() {
         while (true) {
             if (auto value = mQueue.pop()) {
                 mNonFull.notify_one();
                 co_return std::move(*value);
             }
-            co_await mNonEmpty.wait();
+            co_await co_await mNonEmpty.wait();
         }
     }
 
@@ -90,9 +124,7 @@ public:
                 mNonFull.notify_one();
                 co_return std::move(*value);
             }
-            if (auto e = co_await mNonEmpty.wait(expires); e.has_error()) {
-                co_return e.error();
-            }
+            co_await co_await mNonEmpty.wait(expires);
         }
     }
 };
@@ -206,11 +238,11 @@ public:
         return ok;
     }
 
-    Task<T> pop() {
+    Task<Expected<T>> pop() {
         std::unique_lock lock(mMutex);
         while (mQueue.empty()) {
             lock.unlock();
-            co_await mReady.wait();
+            co_await co_await mReady.wait();
             lock.lock();
         }
         bool wasFull = mQueue.full();
@@ -222,11 +254,11 @@ public:
         co_return std::move(value);
     }
 
-    Task<> push(T &&value) {
+    Task<Expected<>> push(T &&value) {
         std::unique_lock lock(mMutex);
         while (mQueue.full()) {
             lock.unlock();
-            co_await mReady.wait();
+            co_await co_await mReady.wait();
             lock.lock();
         }
         bool wasEmpty = mQueue.empty();
@@ -235,7 +267,7 @@ public:
         if (wasEmpty) {
             mReady.notify_one();
         }
-        co_return;
+        co_return {};
     }
 
     Task<Expected<T>> pop(auto waitCond) {
@@ -267,7 +299,7 @@ public:
         if (wasEmpty) {
             mReady.notify_one();
         }
-        co_return;
+        co_return {};
     }
 };
 

@@ -65,17 +65,12 @@ when_any(Ts &&...tasks) {
         std::make_index_sequence<sizeof...(Ts)>());
 }
 
-template <Awaitable... Ts,
-          class Common = typename AwaitableTraits<
-              typename TypeList<Ts...>::FirstType>::AvoidRetType>
-    requires(std::same_as<typename AwaitableTraits<Ts>::AvoidRetType, Common> &&
-             ...)
-Task<WhenAnyResult<typename AwaitableTraits<Ts>::AvoidRetType...>>
-when_any_common(Ts &&...tasks) {
+template <Awaitable... Ts, class Common = std::common_type_t<
+                               typename AwaitableTraits<Ts>::AvoidRetType...>>
+Task<WhenAnyResult<Common>> when_any_common(Ts &&...tasks) {
     return co_bind(
-        [&]<std::size_t... Is>(std::index_sequence<Is...>)
-            -> Task<
-                std::variant<typename AwaitableTraits<Ts>::AvoidRetType...>> {
+        [&]<std::size_t... Is>(
+            std::index_sequence<Is...>) -> Task<WhenAnyResult<Common>> {
             CancelSource cancel(co_await co_cancel);
             std::size_t index = (std::size_t)-1;
             std::optional<Common> result;

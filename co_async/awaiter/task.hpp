@@ -101,8 +101,104 @@ protected:
 #endif
 };
 
+/* template <class T, class Final = void> */
+/* struct Generative { */
+/*     explicit operator bool() const noexcept { */
+/*     } */
+/* }; */
+
+template <class T, class E = void>
+struct GeneratorResult {
+    std::variant<T, E> mValue;
+
+    bool is_final() const noexcept {
+        return mValue.index() == 1;
+    }
+
+    bool is_yield() const noexcept {
+        return mValue.index() == 0;
+    }
+
+    explicit operator bool() const noexcept {
+        return is_yield();
+    }
+
+    T &operator*() & noexcept {
+        return *std::get_if<0>(&mValue);
+    }
+
+    T &&operator*() && noexcept {
+        return std::move(*std::get_if<0>(&mValue));
+    }
+
+    T const &operator*() const & noexcept {
+        return *std::get_if<0>(&mValue);
+    }
+
+    T const &&operator*() const && noexcept {
+        return std::move(*std::get_if<0>(&mValue));
+    }
+
+    T &operator->() noexcept {
+        return std::get_if<0>(&mValue);
+    }
+
+    T &value() & {
+        return std::get<0>(mValue);
+    }
+
+    T &&value() && {
+        return std::move(std::get<0>(mValue));
+    }
+
+    T const &value() const & {
+        return std::get<0>(mValue);
+    }
+
+    T const &&value() const && {
+        return std::move(std::get<0>(mValue));
+    }
+
+    E &final_value_unsafe() & noexcept {
+        return *std::get_if<1>(&mValue);
+    }
+
+    E &&final_value_unsafe() && noexcept {
+        return std::move(*std::get_if<1>(&mValue));
+    }
+
+    E const &final_value_unsafe() const & noexcept {
+        return *std::get_if<1>(&mValue);
+    }
+
+    E const &&final_value_unsafe() const && noexcept {
+        return std::move(*std::get_if<1>(&mValue));
+    }
+
+    E &final_value() & {
+        return std::get<1>(mValue);
+    }
+
+    E &&final_value() && {
+        return std::move(std::get<1>(mValue));
+    }
+
+    E const &final_value() const & {
+        return std::get<1>(mValue);
+    }
+
+    E const &&final_value() const && {
+        return std::move(std::get<1>(mValue));
+    }
+};
+
+template <class T>
+struct GeneratorResult<T, void> : GeneratorResult<T, Void> {
+    using GeneratorResult<T, Void>::GeneratorResult;
+};
+
 template <class T, class E>
-struct GeneratorAwaiter { // TODO: support generator
+struct TaskAwaiter<GeneratorResult<T, E>> {
     bool await_ready() const noexcept {
 #if CO_ASYNC_SAFERET
 #if CO_ASYNC_EXCEPT
@@ -123,6 +219,9 @@ struct GeneratorAwaiter { // TODO: support generator
     }
 
     T await_resume() {
+#if CO_ASYNC_DEBUG
+        mCalleeCoroutine.promise().mAwaiter = nullptr;
+#endif
 #if CO_ASYNC_EXCEPT
         if (mException) [[unlikely]] {
             std::rethrow_exception(mException);
@@ -131,31 +230,49 @@ struct GeneratorAwaiter { // TODO: support generator
         if constexpr (!std::is_void_v<T>) {
 #if CO_ASYNC_SAFERET
 #if CO_ASYNC_DEBUG
-            return std::move(mResult.value());
+            T ret = std::move(mResult.value());
+            mResult.reset();
 #else
-            return std::move(*mResult);
+            T ret = std::move(*mResult);
 #endif
+            mResult.reset();
+            return ret;
 #else
             return mResult.move();
+#endif
+        } else {
+#if CO_ASYNC_SAFERET
+#if CO_ASYNC_DEBUG
+            (void)mResult.value();
+#endif
+            mResult.reset();
 #endif
         }
     }
 
     template <class P>
-    explicit GeneratorAwaiter(std::coroutine_handle<P> coroutine)
+    explicit TaskAwaiter(std::coroutine_handle<P> coroutine)
         : mCalleeCoroutine(coroutine) {
+#if CO_ASYNC_DEBUG
+        assert(!coroutine.promise().mAwaiter);
+#endif
         coroutine.promise().mAwaiter = this;
     }
 
-    GeneratorAwaiter(GeneratorAwaiter &&that) = delete;
+    TaskAwaiter(TaskAwaiter &&that) = delete;
 
     template <class U>
-    void yieldValue(U &&result) {
-        mResult.emplace(std::forward<U>(result));
+    void yieldValue(U &&value) {
+        mResult.emplace(std::in_place_index<0>, std::forward<U>(value));
+    }
+
+    template <class U>
+    void returnValue(U &&result) {
+        mResult.emplace(std::in_place_index<1>, std::forward<U>(result));
     }
 
     void returnVoid() {
-        mResult.emplace(std::errc::broken_pipe);
+        mResult.emplace();
     }
 
     void unhandledException() noexcept {
@@ -166,7 +283,6 @@ struct GeneratorAwaiter { // TODO: support generator
 #endif
     }
 
-
     std::coroutine_handle<> callerCoroutine() const noexcept {
         return mCallerCoroutine;
     }
@@ -175,9 +291,9 @@ protected:
     std::coroutine_handle<> mCallerCoroutine;
     std::coroutine_handle<> mCalleeCoroutine;
 #if CO_ASYNC_SAFERET
-    std::optional<Expected<T>> mResult;
+    std::optional<GeneratorResult<T, E>> mResult;
 #else
-    Uninitialized<Expected<T>> mResult;
+    Uninitialized<GeneratorResult<T, E>> mResult;
 #endif
 #if CO_ASYNC_EXCEPT
     std::exception_ptr mException;
@@ -256,85 +372,10 @@ private:
     std::coroutine_handle<promise_type> mCoroutine;
 };
 
-template <class T>
-struct TaskPromise {
-    void return_value(T &&ret) {
-        mAwaiter->returnValue(std::move(ret));
-    }
-
-    void return_value(T const &ret) {
-        mAwaiter->returnValue(ret);
-    }
-
-    void return_value(std::convertible_to<T> auto &&ret) {
-        mAwaiter->returnValue(std::forward<decltype(ret)>(ret));
-    }
-
-    void unhandled_exception() noexcept {
-        mAwaiter->unhandledException();
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<TaskPromise>::from_promise(*this);
-    }
-
-    std::suspend_always initial_suspend() noexcept {
-        return {};
-    }
-
-    TaskFinalAwaiter final_suspend() noexcept {
-        return {};
-    }
-
-    template <class U>
-    Task<U> &&await_transform(Task<U> &&u) noexcept {
-        u.promise().mCancelToken = mCancelToken;
-        return std::move(u);
-    }
-
-    template <class U>
-    Task<U> const &await_transform(Task<U> const &u) noexcept {
-        u.promise().mCancelToken = mCancelToken;
-        return u;
-    }
-
-    template <std::invocable<TaskPromise &> U>
-    auto await_transform(U &&u) noexcept {
-        return await_transform(u(*this));
-    }
-
-    template <class U> requires (!std::invocable<U, TaskPromise &>)
-    U &&await_transform(U &&u) noexcept {
-        return std::forward<U>(u);
-    }
-
-    TaskPromise() = default;
-    TaskPromise(TaskPromise &&) = delete;
-
-    TaskAwaiter<T> *mAwaiter{};
-    CancelSourceImpl *mCancelToken{};
-
-#if CO_ASYNC_PERF
-    Perf mPerf;
-
-    TaskPromise(std::source_location loc = std::source_location::current())
-        : mPerf(loc) {}
-#endif
-};
-
-template <>
-struct TaskPromise<void> {
-    void return_void() {
-        mAwaiter->returnVoid();
-    }
-
-    void unhandled_exception() noexcept {
-        mAwaiter->unhandledException();
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<TaskPromise>::from_promise(*this);
-    }
+template <class TaskPromise>
+struct TaskPromiseCommon {
+    TaskPromise &self() noexcept { return static_cast<TaskPromise &>(*this); }
+    TaskPromise const &self() const noexcept { return static_cast<TaskPromise const &>(*this); }
 
     auto initial_suspend() noexcept {
         return std::suspend_always();
@@ -344,77 +385,28 @@ struct TaskPromise<void> {
         return TaskFinalAwaiter();
     }
 
-    template <class U>
-    Task<U> &&await_transform(Task<U> &&u) noexcept {
-        u.promise().mCancelToken = mCancelToken;
-        return std::move(u);
-    }
-
-    template <class U>
-    Task<U> const &await_transform(Task<U> const &u) noexcept {
-        u.promise().mCancelToken = mCancelToken;
-        return u;
-    }
-
-    template <std::invocable<TaskPromise &> U>
-    auto await_transform(U &&u) noexcept {
-        return await_transform(u(*this));
-    }
-
-    template <class U> requires (!std::invocable<U, TaskPromise &>)
-    U &&await_transform(U &&u) noexcept {
-        return std::forward<U>(u);
-    }
-
-    TaskPromise() = default;
-    TaskPromise(TaskPromise &&) = delete;
-
-    TaskAwaiter<void> *mAwaiter{};
-    CancelSourceImpl *mCancelToken{};
-
-#if CO_ASYNC_PERF
-    Perf mPerf;
-
-    TaskPromise(std::source_location loc = std::source_location::current())
-        : mPerf(loc) {}
-#endif
-};
-
-template <class T>
-struct TaskPromise<Expected<T>> {
-    void return_value(Expected<T> &&ret) {
-        mAwaiter->returnValue(std::move(ret));
-    }
-
-    void return_value(Expected<T> const &ret) {
-        mAwaiter->returnValue(ret);
-    }
-
-    void return_value(std::convertible_to<Expected<T>> auto &&ret) {
-        mAwaiter->returnValue(std::forward<decltype(ret)>(ret));
-    }
-
     void unhandled_exception() noexcept {
-        mAwaiter->unhandledException();
+        self().mAwaiter->unhandledException();
     }
+
+    TaskPromiseCommon() = default;
+    TaskPromiseCommon(TaskPromiseCommon &&) = delete;
 
     auto get_return_object() {
-        return std::coroutine_handle<TaskPromise>::from_promise(*this);
+        return std::coroutine_handle<TaskPromise>::from_promise(self());
     }
+};
 
-    auto initial_suspend() noexcept {
-        return std::suspend_always();
-    }
-
-    auto final_suspend() noexcept {
-        return TaskFinalAwaiter();
-    }
+template <class TaskPromise>
+struct TaskPromiseExpectedTransforms {
+    TaskPromise &self() noexcept { return static_cast<TaskPromise &>(*this); }
+    TaskPromise const &self() const noexcept { return static_cast<TaskPromise const &>(*this); }
 
     template <class T2>
     ValueOrReturnAwaiter<T2> await_transform(Expected<T2> &&e) noexcept {
         if (e.has_error()) [[unlikely]] {
-            mAwaiter->returnValue(std::move(e).error());
-            return ValueOrReturnAwaiter<T2>(mAwaiter->callerCoroutine());
+            self().mAwaiter->returnValue(std::move(e).error());
+            return ValueOrReturnAwaiter<T2>(self().mAwaiter->callerCoroutine());
         }
         if constexpr (std::is_void_v<T2>) {
             return ValueOrReturnAwaiter<void>(std::in_place);
@@ -432,8 +424,8 @@ struct TaskPromise<Expected<T>> {
     await_transform(std::vector<Expected<void>> &&e) noexcept {
         for (std::size_t i = 0; i < e.size(); ++i) {
             if (e[i].has_error()) [[unlikely]] {
-                mAwaiter->returnValue(std::move(e[i]).error());
-                return ValueOrReturnAwaiter<void>(mAwaiter->callerCoroutine());
+                self().mAwaiter->returnValue(std::move(e[i]).error());
+                return ValueOrReturnAwaiter<void>(self().mAwaiter->callerCoroutine());
             }
         }
         return ValueOrReturnAwaiter<void>(std::in_place);
@@ -449,8 +441,8 @@ struct TaskPromise<Expected<T>> {
     await_transform(std::vector<Expected<T2>> &&e) noexcept {
         for (std::size_t i = 0; i < e.size(); ++i) {
             if (e[i].has_error()) [[unlikely]] {
-                    mAwaiter->returnValue(std::move(e[i]).error());
-                return ValueOrReturnAwaiter<std::vector<T2>>(mAwaiter->callerCoroutine());
+                    self().mAwaiter->returnValue(std::move(e[i]).error());
+                return ValueOrReturnAwaiter<std::vector<T2>>(self().mAwaiter->callerCoroutine());
             }
         }
         std::vector<T2> ret;
@@ -473,13 +465,13 @@ struct TaskPromise<Expected<T>> {
         return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
             if (!([&] {
                     if (std::get<Is>(e).has_error()) [[unlikely]] {
-                        mAwaiter->returnValue(std::move(std::get<Is>(e)).error());
+                        self().mAwaiter->returnValue(std::move(std::get<Is>(e)).error());
                         return false;
                     }
                     return true;
                 }() &&
                   ...)) {
-                return ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>(mAwaiter->callerCoroutine());
+                return ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>(self().mAwaiter->callerCoroutine());
             }
             return ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>(
                 std::in_place, [&]() -> decltype(auto) {
@@ -493,39 +485,132 @@ struct TaskPromise<Expected<T>> {
     await_transform(std::tuple<Expected<Ts>...> &e) noexcept {
         return await_transform(std::move(e));
     }
+};
+
+template <class TaskPromise>
+struct TaskPromiseTransforms {
+    TaskPromise &self() noexcept { return static_cast<TaskPromise &>(*this); }
+    TaskPromise const &self() const noexcept { return static_cast<TaskPromise const &>(*this); }
 
     template <class U>
     Task<U> &&await_transform(Task<U> &&u) noexcept {
-#if CO_ASYNC_DEBUG
-        assert(!mCancelToken);
-#endif
-        u.promise().mCancelToken = mCancelToken;
+        u.promise().mCancelToken = self().mCancelToken;
         return std::move(u);
     }
 
     template <class U>
     Task<U> const &await_transform(Task<U> const &u) noexcept {
-#if CO_ASYNC_DEBUG
-        assert(!mCancelToken);
-#endif
-        u.promise().mCancelToken = mCancelToken;
+        u.promise().mCancelToken = self().mCancelToken;
         return u;
     }
 
     template <std::invocable<TaskPromise &> U>
     auto await_transform(U &&u) noexcept {
-        return await_transform(u(*this));
+        return await_transform(u(self()));
     }
 
     template <class U> requires (!std::invocable<U, TaskPromise &>)
     U &&await_transform(U &&u) noexcept {
         return std::forward<U>(u);
     }
+};
+
+template <class TaskPromise, class T>
+struct TaskPromiseImpl : TaskPromiseCommon<TaskPromise>, TaskPromiseTransforms<TaskPromise> {
+};
+
+template <class TaskPromise, class T>
+struct TaskPromiseImpl<TaskPromise, Expected<T>> : TaskPromiseCommon<TaskPromise>, TaskPromiseTransforms<TaskPromise>, TaskPromiseExpectedTransforms<TaskPromise> {
+    using TaskPromiseTransforms<TaskPromise>::await_transform;
+    using TaskPromiseExpectedTransforms<TaskPromise>::await_transform;
+    static_assert(std::is_void_v<std::void_t<T>>);
+};
+
+template <class T>
+struct TaskPromise : TaskPromiseImpl<TaskPromise<T>, T> {
+    void return_value(T &&ret) {
+        mAwaiter->returnValue(std::move(ret));
+    }
+
+    void return_value(T const &ret) {
+        mAwaiter->returnValue(ret);
+    }
+
+    void return_value(std::convertible_to<T> auto &&ret) {
+        mAwaiter->returnValue(std::forward<decltype(ret)>(ret));
+    }
+
+    TaskAwaiter<T> *mAwaiter{};
+    CancelSourceImpl *mCancelToken{};
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    TaskPromise(std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
+};
+
+template <>
+struct TaskPromise<void> : TaskPromiseImpl<TaskPromise<void>, void> {
+    void return_void() {
+        mAwaiter->returnVoid();
+    }
 
     TaskPromise() = default;
     TaskPromise(TaskPromise &&) = delete;
 
-    TaskAwaiter<Expected<T>> *mAwaiter{};
+    TaskAwaiter<void> *mAwaiter{};
+    CancelSourceImpl *mCancelToken{};
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    TaskPromise(std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
+};
+
+template <class T, class E>
+struct TaskPromise<GeneratorResult<T, E>> : TaskPromiseImpl<TaskPromise<GeneratorResult<T, E>>, E> {
+    void yield_value(T &&ret) {
+        mAwaiter->yieldValue(std::move(ret));
+    }
+
+    void yield_value(T const &ret) {
+        mAwaiter->yieldValue(ret);
+    }
+
+    void return_value(std::convertible_to<T> auto &&ret) {
+        mAwaiter->returnValue(std::forward<decltype(ret)>(ret));
+    }
+
+    TaskAwaiter<GeneratorResult<T, E>> *mAwaiter{};
+    CancelSourceImpl *mCancelToken{};
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    TaskPromise(std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
+};
+
+template <class T>
+struct TaskPromise<GeneratorResult<T, void>> : TaskPromiseImpl<TaskPromise<GeneratorResult<T, void>>, void> {
+    void yield_value(T &&ret) {
+        mAwaiter->yieldValue(std::move(ret));
+    }
+
+    void yield_value(T const &ret) {
+        mAwaiter->yieldValue(ret);
+    }
+
+    void return_void() {
+        mAwaiter->returnVoid();
+    }
+
+    TaskAwaiter<GeneratorResult<T, void>> *mAwaiter{};
     CancelSourceImpl *mCancelToken{};
 
 #if CO_ASYNC_PERF

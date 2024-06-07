@@ -5,19 +5,29 @@
 using namespace co_async;
 using namespace std;
 
-static TimedQueue<char> cv(1);
+static TimedQueue<char> q1(1);
+static TimedQueue<char> q2(1);
 
 [[maybe_unused]] static Task<Expected<>> task1() {
     while (true) {
         char c = co_await co_await raw_stdio().getchar();
-        cv.try_push(std::move(c));
+        co_await co_await q1.push(std::move(c));
+    }
+}
+
+[[maybe_unused]] static Task<Expected<>> task2() {
+    auto f = co_await co_await file_open("/dev/input/mouse0", OpenMode::Read);
+    while (true) {
+        char c = co_await co_await f.getchar();
+        co_await co_await q2.push(std::move(c));
     }
 }
 
 static Task<Expected<>> amain() {
     co_spawn(task1());
+    co_spawn(task2());
     while (true) {
-        auto r = co_await when_any(cv.pop(), co_sleep(500ms));
+        auto r = co_await (co_await when_any_common(q1.pop(), q2.pop())).value;
         debug(), r;
     }
 }

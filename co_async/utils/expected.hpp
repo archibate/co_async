@@ -182,6 +182,13 @@ public:
         throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory));
     }
 
+    T const &&value() const && {
+        if (has_value()) [[likely]] {
+            return std::move(mValue);
+        }
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory));
+    }
+
     template <class... Ts>
         requires std::constructible_from<T, Ts...>
     T value_or(Ts &&...ts) const & {
@@ -228,6 +235,16 @@ public:
         }
 #endif
         return mValue;
+    }
+
+    T const &&operator*() const && {
+#if CO_ASYNC_DEBUG
+        if (has_error()) [[unlikely]] {
+            throw std::logic_error(
+                "Expected has error but operator*() is called");
+        }
+#endif
+        return std::move(mValue);
     }
 
     T *operator->() {

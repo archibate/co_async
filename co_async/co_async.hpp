@@ -8,7 +8,6 @@
 #include <co_async/awaiter/details/previous_awaiter.hpp>
 #include <co_async/awaiter/details/return_previous.hpp>
 #include <co_async/awaiter/details/value_awaiter.hpp>
-#include <co_async/awaiter/generator.hpp>
 #include <co_async/awaiter/just.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/when_all.hpp>

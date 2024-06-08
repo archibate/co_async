@@ -14,7 +14,7 @@ private:
                          IntrusiveList<PromiseNode>::NodeType {
         void doCancel() {
             mCancelled = true;
-            this->destructiveErase();
+            this->erase_from_parent();
             co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
         }
 
@@ -318,7 +318,7 @@ private:
                          ConcurrentIntrusiveList<PromiseNode>::NodeType {
         void doCancel() {
             mCancelled = true;
-            this->destructiveErase();
+            this->erase_from_parent();
             co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
         }
 

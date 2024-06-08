@@ -18,11 +18,11 @@ struct ListHead {
         NodeType(NodeType &&) = delete;
 
         ~NodeType() noexcept {
-            destructiveErase();
+            erase_from_parent();
         }
 
     protected:
-        void destructiveErase() {
+        void erase_from_parent() {
             if (this->listNext) {
                 auto listPrev = this->listPrev;
                 auto listNext = this->listNext;
@@ -38,36 +38,28 @@ struct ListHead {
         node->listNext = root.listNext;
         node->listPrev = &root;
         root.listNext = node;
-        if (node->listNext) {
-            node->listNext->listPrev = node;
-        }
+        node->listNext->listPrev = node;
     }
 
     void doPushBack(ListNode *node) noexcept {
         node->listNext = &root;
         node->listPrev = root.listPrev;
         root.listPrev = node;
-        if (node->listPrev) {
-            node->listPrev->listNext = node;
-        }
+        node->listPrev->listNext = node;
     }
 
     void doInsertAfter(ListNode *pivot, ListNode *node) noexcept {
         node->listNext = pivot->listNext;
         node->listPrev = pivot;
         pivot->listNext = node;
-        if (node->listNext) {
-            node->listNext->listPrev = node;
-        }
+        node->listNext->listPrev = node;
     }
 
     void doInsertBefore(ListNode *pivot, ListNode *node) noexcept {
         node->listNext = pivot;
         node->listPrev = pivot->listPrev;
         pivot->listPrev = node;
-        if (node->listPrev) {
-            node->listPrev->listNext = node;
-        }
+        node->listPrev->listNext = node;
     }
 
     void doErase(ListNode *node) noexcept {
@@ -91,22 +83,26 @@ struct ListHead {
 
     ListNode *doPopFront() noexcept {
         auto node = root.listNext;
-        if (node) {
+        if (node != &root) {
             node->listNext->listPrev = &root;
             root.listNext = node->listNext;
             node->listNext = nullptr;
             node->listPrev = nullptr;
+        } else {
+            node = nullptr;
         }
         return node;
     }
 
     ListNode *doPopBack() noexcept {
         auto node = root.listPrev;
-        if (node) {
+        if (node != &root) {
             node->listNext->listPrev = node->listPrev;
             node->listPrev->listNext = node->listNext;
             node->listNext = nullptr;
             node->listPrev = nullptr;
+        } else {
+            node = nullptr;
         }
         return node;
     }
@@ -118,6 +114,7 @@ struct ListHead {
             current->listNext = nullptr;
             current->listPrev = nullptr;
         }
+        root.listNext = root.listPrev = &root;
     }
 
     static void doIterNext(ListNode *&current) noexcept {
@@ -136,7 +133,9 @@ struct ListHead {
         return const_cast<ListNode *>(&root);
     }
 
-    ListHead() noexcept : root() {}
+    ListHead() noexcept : root() {
+        root.listNext = root.listPrev = &root;
+    }
 
     ListHead(ListHead &&) = delete;
 
@@ -169,13 +168,14 @@ struct ConcurrentListHead {
         NodeType(NodeType &&) = delete;
 
         ~NodeType() noexcept {
-            destructiveErase();
+            erase_from_parent();
         }
 
     protected:
-        void destructiveErase() {
+        void erase_from_parent() {
             if (this->listHead) {
                 this->listHead->doErase(this);
+                this->listHead = nullptr;
             }
         }
     };

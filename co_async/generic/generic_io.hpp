@@ -19,14 +19,14 @@ struct IOContext;
 struct GenericIOContext {
     struct TimerNode : CustomPromise<Expected<>, TimerNode>,
                        RbTree<TimerNode>::NodeType {
-        using RbTree<TimerNode>::NodeType::destructiveErase;
+        using RbTree<TimerNode>::NodeType::erase_from_parent;
         std::chrono::steady_clock::time_point mExpires;
         CancelToken mCancelToken;
         bool mCancelled = false;
 
         void doCancel() {
             mCancelled = true;
-            destructiveErase();
+            erase_from_parent();
         }
 
         bool operator<(TimerNode const &that) const {
@@ -60,7 +60,7 @@ struct GenericIOContext {
         /*     static Task<> doCancel(OpType *op) { */
         /*         auto &promise = op->get().promise(); */
         /*         promise.mCancelled = true; */
-        /*         promise.destructiveErase(); */
+        /*         promise.erase_from_parent(); */
         /*         GenericIOContext::instance->enqueueJob(op->get()); */
         /*         co_return; */
         /*     } */
@@ -103,7 +103,7 @@ struct GenericIOContext {
                 /* now += std::chrono::nanoseconds(1000); */
                 if (promise.mExpires <= now) {
                     promise.mCancelled = false;
-                    promise.destructiveErase();
+                    promise.erase_from_parent();
                     auto coroutine =
                         std::coroutine_handle<TimerNode>::from_promise(promise);
                     enqueueJob(coroutine);

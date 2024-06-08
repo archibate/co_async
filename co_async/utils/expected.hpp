@@ -286,7 +286,6 @@ public:
         return std::nullopt;
     }
 
-#if DEBUG_LEVEL
     std::variant<std::reference_wrapper<T const>, std::error_code> repr() const {
         if (has_error()) {
             return std::error_code(mErrorCode, *mErrorCatgory);
@@ -294,7 +293,6 @@ public:
             return std::cref(mValue);
         }
     }
-#endif
 };
 
 template <>

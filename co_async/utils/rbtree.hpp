@@ -38,11 +38,11 @@ public:
         NodeType(NodeType &&) = delete;
 
         ~NodeType() noexcept {
-            destructiveErase();
+            erase_from_parent();
         }
 
     protected:
-        void destructiveErase() {
+        void erase_from_parent() {
             static_assert(
                 std::is_base_of_v<NodeType, Value>,
                 "Value type must be derived from RbTree<Value>::NodeType");
@@ -312,35 +312,25 @@ struct ConcurrentRbTree : private RbTree<Value, Compare> {
 private:
     using BaseTree = RbTree<Value, Compare>;
 
-    void onDestructiveErase(BaseTree::RbNode *current) noexcept {
-        std::lock_guard guard(mMutex);
-        BaseTree::onDestructiveErase(current);
-    }
-
 public:
     struct NodeType : BaseTree::RbNode {
         NodeType() = default;
         NodeType(NodeType &&) = delete;
 
         ~NodeType() noexcept {
-            destructiveErase();
+            erase_from_parent();
         }
 
     protected:
-        bool destructiveErase() {
+        void erase_from_parent() {
             static_assert(
                 std::is_base_of_v<NodeType, Value>,
                 "Value type must be derived from RbTree<Value>::NodeType");
             if (this->rbTree) {
-                auto lock =
-                    static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
-                if (this->rbTree) [[likely]] {
-                    lock->erase(static_cast<Value &>(*this));
-                    this->rbTree = nullptr;
-                    return true;
-                }
+                auto lock = static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
+                lock->erase(static_cast<Value &>(*this));
+                this->rbTree = nullptr;
             }
-            return false;
         }
     };
 

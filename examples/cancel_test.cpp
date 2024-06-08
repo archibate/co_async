@@ -3,15 +3,17 @@
 using namespace co_async;
 using namespace std::literals;
 
-static Task<int> compute(CancelToken cancel) {
-    debug(), "睡眠结果", co_await co_sleep(200ms, cancel);
-    if (cancel.is_canceled())
+static Task<int> compute() {
+    CancelToken cancel = co_await co_cancel;
+    auto res = co_await co_sleep(200ms);
+    debug(), "睡眠结果", res;
+    if (cancel)
         co_return 0;
     co_return 42;
 }
 
 static Task<> amain() {
-    auto ret = co_await co_timeout_bind(compute, 100ms);
+    auto ret = co_await co_timeout(compute(), 100ms);
     debug(), "计算结果", ret;
     co_return;
 }

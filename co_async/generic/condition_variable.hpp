@@ -5,17 +5,13 @@
 #include <co_async/generic/generic_io.hpp>
 #include <co_async/generic/timeout.hpp>
 #include <co_async/generic/when_any.hpp>
-#include <co_async/utils/rbtree.hpp>
+#include <co_async/utils/ilist.hpp>
 
 namespace co_async {
 struct TimedConditionVariable {
 private:
     struct PromiseNode : CustomPromise<void, PromiseNode>,
-                         RbTree<PromiseNode>::NodeType {
-        bool operator<(PromiseNode const &that) const {
-            return this < &that;
-        }
-
+                         IntrusiveList<PromiseNode>::NodeType {
         void doCancel() {
             mCancelled = true;
             this->destructiveErase();
@@ -25,7 +21,7 @@ private:
         bool mCancelled = false;
     };
 
-    RbTree<PromiseNode> mWaitingList;
+    IntrusiveList<PromiseNode> mWaitingList;
 
     struct Awaiter {
         bool await_ready() const noexcept {
@@ -42,16 +38,11 @@ private:
     };
 
     PromiseNode *popWaiting() {
-        if (mWaitingList.empty()) {
-            return nullptr;
-        }
-        auto &promise = mWaitingList.front();
-        mWaitingList.erase(promise);
-        return &promise;
+        return mWaitingList.pop_front();
     }
 
     void pushWaiting(PromiseNode &promise) {
-        mWaitingList.insert(promise);
+        mWaitingList.push_back(promise);
     }
 
     /* struct Canceller { */
@@ -324,11 +315,7 @@ public:
 struct ConcurrentTimedConditionVariable {
 private:
     struct PromiseNode : CustomPromise<void, PromiseNode>,
-                         ConcurrentRbTree<PromiseNode>::NodeType {
-        bool operator<(PromiseNode const &that) const {
-            return this < &that;
-        }
-
+                         ConcurrentIntrusiveList<PromiseNode>::NodeType {
         void doCancel() {
             mCancelled = true;
             this->destructiveErase();
@@ -338,7 +325,7 @@ private:
         bool mCancelled = false;
     };
 
-    ConcurrentRbTree<PromiseNode> mWaitingList;
+    ConcurrentIntrusiveList<PromiseNode> mWaitingList;
 
     struct Awaiter {
         bool await_ready() const noexcept {
@@ -355,17 +342,11 @@ private:
     };
 
     PromiseNode *popWaiting() {
-        auto waitList = mWaitingList.lock();
-        if (waitList->empty()) {
-            return nullptr;
-        }
-        auto &promise = waitList->front();
-        waitList->erase(promise);
-        return &promise;
+        return mWaitingList.pop_front();
     }
 
     void pushWaiting(PromiseNode &promise) {
-        mWaitingList.lock()->insert(promise);
+        return mWaitingList.push_back(promise);
     }
 
     /* struct Canceller { */

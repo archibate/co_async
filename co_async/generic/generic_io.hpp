@@ -100,6 +100,7 @@ struct GenericIOContext {
                 auto &promise = mTimers.front();
                 std::chrono::steady_clock::time_point now =
                     std::chrono::steady_clock::now();
+                /* now += std::chrono::nanoseconds(1000); */
                 if (promise.mExpires <= now) {
                     promise.mCancelled = false;
                     promise.destructiveErase();
@@ -110,8 +111,9 @@ struct GenericIOContext {
                 } else {
                     return promise.mExpires - now;
                 }
+            } else {
+                return std::nullopt;
             }
-            return std::nullopt;
         }
     }
 

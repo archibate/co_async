@@ -3,13 +3,13 @@
 #include <co_async/awaiter/just.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/when_all.hpp>
-#include <co_async/utils/rbtree.hpp>
+#include <co_async/utils/ilist.hpp>
 
 namespace co_async {
 struct CancelToken;
 
 struct CancelSourceImpl {
-    struct CancellerBase : RbTree<CancellerBase>::NodeType {
+    struct CancellerBase : IntrusiveList<CancellerBase>::NodeType {
         virtual Task<> doCancel() = 0;
 
         CancellerBase &operator=(CancellerBase &&) = delete;
@@ -32,7 +32,7 @@ struct CancelSourceImpl {
     /*     } */
     /* }; */
 
-    RbTree<CancellerBase> mCancellers;
+    IntrusiveList<CancellerBase> mCancellers;
     bool mCanceled;
 
     Task<> doCancel() {
@@ -42,9 +42,9 @@ struct CancelSourceImpl {
         mCanceled = true;
         if (!mCancellers.empty()) {
             std::vector<Task<>> tasks;
-            mCancellers.traverseInorder([&](CancellerBase &canceller) {
+            for (auto &canceller: mCancellers) {
                 tasks.push_back(canceller.doCancel());
-            });
+            }
             /* for (auto &&task: tasks) { */
             /*     co_await task; */
             /* } */
@@ -58,7 +58,7 @@ struct CancelSourceImpl {
     }
 
     void doRegister(CancellerBase &canceller) {
-        mCancellers.insert(canceller);
+        mCancellers.push_front(canceller);
     }
 
     /* template <class Canceller, class Awaiter> */

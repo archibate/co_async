@@ -9,7 +9,7 @@ private:
     Avoid<T> mValue;
 
 public:
-    explicit ValueAwaiter(Avoid<T> value) : mValue(std::move(value)) {}
+    ValueAwaiter(Avoid<T> value) : mValue(std::move(value)) {}
 
     bool await_ready() const noexcept {
         return true;
@@ -32,12 +32,12 @@ private:
 
 public:
     template <class... Args>
-    explicit ValueOrReturnAwaiter(std::in_place_t, Args &&...args)
+    ValueOrReturnAwaiter(std::in_place_t, Args &&...args)
         : mPrevious() {
         mValue.emplace(std::forward<Args>(args)...);
     }
 
-    explicit ValueOrReturnAwaiter(std::coroutine_handle<> previous)
+    ValueOrReturnAwaiter(std::coroutine_handle<> previous)
         : mPrevious(previous) {}
 
     bool await_ready() const noexcept {

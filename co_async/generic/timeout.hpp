@@ -14,8 +14,7 @@ coSleep(std::chrono::steady_clock::time_point expires) {
 inline Task<Expected<>>
 co_sleep(std::chrono::steady_clock::time_point expires) {
     auto task = coSleep(expires);
-    auto *p = &task.promise();
-    CancelCallback _(co_await co_cancel, [p] {
+    CancelCallback _(co_await co_cancel, [p = &task.promise()] {
         p->doCancel();
         GenericIOContext::instance->enqueueJob(std::coroutine_handle<GenericIOContext::TimerNode>::from_promise(*p));
     });

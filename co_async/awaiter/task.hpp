@@ -111,16 +111,26 @@ template <class T, class E = void>
 struct GeneratorResult {
     std::variant<T, E> mValue;
 
-    bool is_final() const noexcept {
+    explicit GeneratorResult(std::in_place_index_t<0>, auto &&...args)
+    : mValue(std::in_place_index<0>, std::forward<decltype(args)>(args)...)
+    {}
+
+    explicit GeneratorResult(std::in_place_index_t<1>, auto &&...args)
+    : mValue(std::in_place_index<1>, std::forward<decltype(args)>(args)...)
+    {}
+
+    /* GeneratorResult(std::convertible_to<T> auto &&value) */
+
+    bool has_result() const noexcept {
         return mValue.index() == 1;
     }
 
-    bool is_yield() const noexcept {
+    bool has_value() const noexcept {
         return mValue.index() == 0;
     }
 
     explicit operator bool() const noexcept {
-        return is_yield();
+        return has_value();
     }
 
     T &operator*() & noexcept {
@@ -159,35 +169,35 @@ struct GeneratorResult {
         return std::move(std::get<0>(mValue));
     }
 
-    E &final_value_unsafe() & noexcept {
+    E &result_unsafe() & noexcept {
         return *std::get_if<1>(&mValue);
     }
 
-    E &&final_value_unsafe() && noexcept {
+    E &&result_unsafe() && noexcept {
         return std::move(*std::get_if<1>(&mValue));
     }
 
-    E const &final_value_unsafe() const & noexcept {
+    E const &result_unsafe() const & noexcept {
         return *std::get_if<1>(&mValue);
     }
 
-    E const &&final_value_unsafe() const && noexcept {
+    E const &&result_unsafe() const && noexcept {
         return std::move(*std::get_if<1>(&mValue));
     }
 
-    E &final_value() & {
+    E &result() & {
         return std::get<1>(mValue);
     }
 
-    E &&final_value() && {
+    E &&result() && {
         return std::move(std::get<1>(mValue));
     }
 
-    E const &final_value() const & {
+    E const &result() const & {
         return std::get<1>(mValue);
     }
 
-    E const &&final_value() const && {
+    E const &&result() const && {
         return std::move(std::get<1>(mValue));
     }
 };
@@ -195,6 +205,34 @@ struct GeneratorResult {
 template <class T>
 struct GeneratorResult<T, void> : GeneratorResult<T, Void> {
     using GeneratorResult<T, Void>::GeneratorResult;
+};
+
+struct TaskFinalAwaiter {
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    template <class P>
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<P> coroutine) const noexcept {
+        return coroutine.promise().mAwaiter->callerCoroutine();
+    }
+
+    void await_resume() const noexcept {}
+};
+
+struct TaskYieldAwaiter {
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    template <class P>
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<P> coroutine) const noexcept {
+        return coroutine.promise().mAwaiter->callerCoroutine();
+    }
+
+    void await_resume() const noexcept {}
 };
 
 template <class T, class E>
@@ -218,7 +256,7 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
         return mCalleeCoroutine;
     }
 
-    T await_resume() {
+    GeneratorResult<T, E> await_resume() {
 #if CO_ASYNC_DEBUG
         mCalleeCoroutine.promise().mAwaiter = nullptr;
 #endif
@@ -227,27 +265,18 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
             std::rethrow_exception(mException);
         }
 #endif
-        if constexpr (!std::is_void_v<T>) {
 #if CO_ASYNC_SAFERET
 #if CO_ASYNC_DEBUG
-            T ret = std::move(mResult.value());
-            mResult.reset();
+        GeneratorResult<T, E> ret = std::move(mResult.value());
+        mResult.reset();
 #else
-            T ret = std::move(*mResult);
+        GeneratorResult<T, E> ret = std::move(*mResult);
 #endif
-            mResult.reset();
-            return ret;
+        mResult.reset();
+        return ret;
 #else
-            return mResult.move();
+        return mResult.move();
 #endif
-        } else {
-#if CO_ASYNC_SAFERET
-#if CO_ASYNC_DEBUG
-            (void)mResult.value();
-#endif
-            mResult.reset();
-#endif
-        }
     }
 
     template <class P>
@@ -262,8 +291,9 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
     TaskAwaiter(TaskAwaiter &&that) = delete;
 
     template <class U>
-    void yieldValue(U &&value) {
+    TaskYieldAwaiter yieldValue(U &&value) {
         mResult.emplace(std::in_place_index<0>, std::forward<U>(value));
+        return TaskYieldAwaiter();
     }
 
     template <class U>
@@ -272,7 +302,7 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
     }
 
     void returnVoid() {
-        mResult.emplace();
+        mResult.emplace(std::in_place_index<1>);
     }
 
     void unhandledException() noexcept {
@@ -307,20 +337,6 @@ struct TaskOwnedAwaiter : TaskAwaiter<T> {
     ~TaskOwnedAwaiter() {
         TaskAwaiter<T>::mCalleeCoroutine.destroy();
     }
-};
-
-struct TaskFinalAwaiter {
-    bool await_ready() const noexcept {
-        return false;
-    }
-
-    template <class P>
-    std::coroutine_handle<>
-    await_suspend(std::coroutine_handle<P> coroutine) const noexcept {
-        return coroutine.promise().mAwaiter->callerCoroutine();
-    }
-
-    void await_resume() const noexcept {}
 };
 
 template <class T>
@@ -406,12 +422,12 @@ struct TaskPromiseExpectedTransforms {
     ValueOrReturnAwaiter<T2> await_transform(Expected<T2> &&e) noexcept {
         if (e.has_error()) [[unlikely]] {
             self().mAwaiter->returnValue(std::move(e).error());
-            return ValueOrReturnAwaiter<T2>(self().mAwaiter->callerCoroutine());
+            return {self().mAwaiter->callerCoroutine()};
         }
         if constexpr (std::is_void_v<T2>) {
-            return ValueOrReturnAwaiter<void>(std::in_place);
+            return {std::in_place};
         } else {
-            return ValueOrReturnAwaiter<T2>(std::in_place, *std::move(e));
+            return {std::in_place, *std::move(e)};
         }
     }
 
@@ -420,15 +436,43 @@ struct TaskPromiseExpectedTransforms {
         return await_transform(std::move(e));
     }
 
+    template <class T2, class E2>
+    ValueOrReturnAwaiter<GeneratorResult<T2, E2>> await_transform(GeneratorResult<T2, Expected<E2>> &&g) noexcept {
+        if (g.has_value()) {
+            if constexpr (std::is_void_v<T2>) {
+                return {std::in_place, std::in_place_index<0>};
+            } else {
+                return {std::in_place, std::in_place_index<0>, std::move(*g)};
+            }
+        } else {
+            auto e = g.result_unsafe();
+            if (e.has_error()) [[unlikely]] {
+                self().mAwaiter->returnValue(std::move(e).error());
+                return {self().mAwaiter->callerCoroutine()};
+            } else {
+                if constexpr (std::is_void_v<E2>) {
+                    return {std::in_place, std::in_place_index<1>, std::move(*e)};
+                } else {
+                    return {std::in_place, std::in_place_index<1>};
+                }
+            }
+        }
+    }
+
+    template <class T2, class E2>
+    ValueOrReturnAwaiter<GeneratorResult<T2, E2>> await_transform(GeneratorResult<T2, Expected<E2>> &g) noexcept {
+        return await_transform(std::move(g));
+    }
+
     ValueOrReturnAwaiter<void>
     await_transform(std::vector<Expected<void>> &&e) noexcept {
         for (std::size_t i = 0; i < e.size(); ++i) {
             if (e[i].has_error()) [[unlikely]] {
                 self().mAwaiter->returnValue(std::move(e[i]).error());
-                return ValueOrReturnAwaiter<void>(self().mAwaiter->callerCoroutine());
+                return {self().mAwaiter->callerCoroutine()};
             }
         }
-        return ValueOrReturnAwaiter<void>(std::in_place);
+        return {std::in_place};
     }
 
     ValueOrReturnAwaiter<void>
@@ -442,7 +486,7 @@ struct TaskPromiseExpectedTransforms {
         for (std::size_t i = 0; i < e.size(); ++i) {
             if (e[i].has_error()) [[unlikely]] {
                     self().mAwaiter->returnValue(std::move(e[i]).error());
-                return ValueOrReturnAwaiter<std::vector<T2>>(self().mAwaiter->callerCoroutine());
+                return {self().mAwaiter->callerCoroutine()};
             }
         }
         std::vector<T2> ret;
@@ -450,7 +494,7 @@ struct TaskPromiseExpectedTransforms {
         for (std::size_t i = 0; i < e.size(); ++i) {
             ret.emplace_back(*std::move(e[i]));
         }
-        return ValueOrReturnAwaiter<std::vector<T2>>(std::in_place, std::move(ret));
+        return {std::in_place, std::move(ret)};
     }
 
     template <class T2>
@@ -462,8 +506,8 @@ struct TaskPromiseExpectedTransforms {
     template <class... Ts>
     ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>
     await_transform(std::tuple<Expected<Ts>...> &&e) noexcept {
-        return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-            if (!([&] {
+        return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>> {
+            if (!([&] () -> ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>> {
                     if (std::get<Is>(e).has_error()) [[unlikely]] {
                         self().mAwaiter->returnValue(std::move(std::get<Is>(e)).error());
                         return false;
@@ -471,12 +515,12 @@ struct TaskPromiseExpectedTransforms {
                     return true;
                 }() &&
                   ...)) {
-                return ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>(self().mAwaiter->callerCoroutine());
+                return {self().mAwaiter->callerCoroutine()};
             }
-            return ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>(
+            return {
                 std::in_place, [&]() -> decltype(auto) {
                     return *std::move(std::get<Is>(e)), Void();
-                }()...);
+                }()...};
         }(std::make_index_sequence<sizeof...(Ts)>());
     }
 
@@ -573,15 +617,27 @@ struct TaskPromise<void> : TaskPromiseImpl<TaskPromise<void>, void> {
 
 template <class T, class E>
 struct TaskPromise<GeneratorResult<T, E>> : TaskPromiseImpl<TaskPromise<GeneratorResult<T, E>>, E> {
-    void yield_value(T &&ret) {
-        mAwaiter->yieldValue(std::move(ret));
+    auto yield_value(T &&ret) {
+        return mAwaiter->yieldValue(std::move(ret));
     }
 
-    void yield_value(T const &ret) {
-        mAwaiter->yieldValue(ret);
+    auto yield_value(T const &ret) {
+        return mAwaiter->yieldValue(ret);
     }
 
-    void return_value(std::convertible_to<T> auto &&ret) {
+    auto yield_value(std::convertible_to<T> auto &&ret) {
+        return mAwaiter->yieldValue(std::forward<decltype(ret)>(ret));
+    }
+
+    void return_value(E &&ret) {
+        mAwaiter->returnValue(std::move(ret));
+    }
+
+    void return_value(E const &ret) {
+        mAwaiter->returnValue(ret);
+    }
+
+    void return_value(std::convertible_to<E> auto &&ret) {
         mAwaiter->returnValue(std::forward<decltype(ret)>(ret));
     }
 
@@ -598,12 +654,16 @@ struct TaskPromise<GeneratorResult<T, E>> : TaskPromiseImpl<TaskPromise<Generato
 
 template <class T>
 struct TaskPromise<GeneratorResult<T, void>> : TaskPromiseImpl<TaskPromise<GeneratorResult<T, void>>, void> {
-    void yield_value(T &&ret) {
-        mAwaiter->yieldValue(std::move(ret));
+    auto yield_value(T &&ret) {
+        return mAwaiter->yieldValue(std::move(ret));
     }
 
-    void yield_value(T const &ret) {
-        mAwaiter->yieldValue(ret);
+    auto yield_value(T const &ret) {
+        return mAwaiter->yieldValue(ret);
+    }
+
+    auto yield_value(std::convertible_to<T> auto &&ret) {
+        return mAwaiter->yieldValue(std::forward<decltype(ret)>(ret));
     }
 
     void return_void() {

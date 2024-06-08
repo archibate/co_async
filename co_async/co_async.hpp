@@ -55,6 +55,7 @@
 #include <co_async/utils/non_void_helper.hpp>
 #include <co_async/utils/perf.hpp>
 #include <co_async/utils/pimpl.hpp>
+#include <co_async/utils/ilist.hpp>
 #include <co_async/utils/rbtree.hpp>
 #include <co_async/utils/reflect.hpp>
 #include <co_async/utils/ring_queue.hpp>

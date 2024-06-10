@@ -11,8 +11,6 @@
 
 namespace co_async {
 
-struct CancelSourceImpl;
-
 template <class T>
 struct TaskAwaiter {
     bool await_ready() const noexcept {
@@ -585,7 +583,7 @@ struct TaskPromise : TaskPromiseImpl<TaskPromise<T>, T> {
     }
 
     TaskAwaiter<T> *mAwaiter{};
-    CancelSourceImpl *mCancelToken{};
+    void *mCancelToken{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -605,7 +603,7 @@ struct TaskPromise<void> : TaskPromiseImpl<TaskPromise<void>, void> {
     TaskPromise(TaskPromise &&) = delete;
 
     TaskAwaiter<void> *mAwaiter{};
-    CancelSourceImpl *mCancelToken{};
+    void *mCancelToken{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -642,7 +640,7 @@ struct TaskPromise<GeneratorResult<T, E>> : TaskPromiseImpl<TaskPromise<Generato
     }
 
     TaskAwaiter<GeneratorResult<T, E>> *mAwaiter{};
-    CancelSourceImpl *mCancelToken{};
+    void *mCancelToken{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -671,7 +669,7 @@ struct TaskPromise<GeneratorResult<T, void>> : TaskPromiseImpl<TaskPromise<Gener
     }
 
     TaskAwaiter<GeneratorResult<T, void>> *mAwaiter{};
-    CancelSourceImpl *mCancelToken{};
+    void *mCancelToken{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;

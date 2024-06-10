@@ -4,10 +4,10 @@ using namespace co_async;
 using namespace std::literals;
 
 static Task<int> compute() {
-    CancelToken cancel = co_await co_cancel;
     auto res = co_await co_sleep(200ms);
     debug(), "睡眠结果", res;
-    if (cancel)
+    CancelToken cancel = co_await co_cancel;
+    if (cancel.is_canceled())
         co_return 0;
     co_return 42;
 }

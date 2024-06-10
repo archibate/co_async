@@ -6,7 +6,6 @@
 #include <co_async/utils/ilist.hpp>
 
 namespace co_async {
-struct CancelToken;
 
 struct CancelSourceImpl {
     struct CancellerBase : IntrusiveList<CancellerBase>::NodeType {
@@ -75,14 +74,14 @@ struct CancelSourceImpl {
     /* } */
 };
 
+struct CancelToken;
+
 struct [[nodiscard]] CancelSourceBase {
-private:
+protected:
     std::unique_ptr<CancelSourceImpl> mImpl =
         std::make_unique<CancelSourceImpl>();
 
     friend CancelToken;
-
-    friend struct CancelSource;
 
     template <class Callback>
     friend struct CancelCallback;
@@ -128,15 +127,19 @@ public:
         return is_canceled();
     }
 
-    Expected<> expect() {
+    Expected<> as_expect() {
         if (mImpl->doIsCanceled()) [[unlikely]] {
             return std::errc::operation_canceled;
         }
         return {};
     }
 
-    CancelSourceImpl *address() const noexcept {
+    void *address() const noexcept {
         return mImpl;
+    }
+
+    CancelToken from_address(void *impl) noexcept {
+        return CancelToken((CancelSourceImpl *)impl);
     }
 
     auto repr() const {

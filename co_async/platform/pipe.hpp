@@ -11,7 +11,7 @@
 # include <co_async/platform/fs.hpp>
 
 namespace co_async {
-struct PipeHandlePair {
+struct FSPipeHandlePair {
     FileHandle mReader;
     FileHandle mWriter;
 
@@ -40,14 +40,14 @@ struct PipeHandlePair {
     }
 };
 
-inline Task<Expected<PipeHandlePair>> fs_pipe() {
+inline Task<Expected<FSPipeHandlePair>> fs_pipe() {
     int p[2];
     int res = pipe2(p, 0);
     if (res < 0) [[unlikely]] {
         res = -errno;
     }
     co_await expectError(res);
-    co_return PipeHandlePair{FileHandle(p[0]), FileHandle(p[1])};
+    co_return FSPipeHandlePair{FileHandle(p[0]), FileHandle(p[1])};
 }
 
 inline Task<Expected<>> send_file(FileHandle &sock, FileHandle &&file) {

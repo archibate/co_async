@@ -547,7 +547,7 @@ struct TaskPromiseTransforms {
     }
 
     template <std::invocable<TaskPromise &> U>
-    auto await_transform(U &&u) noexcept {
+    auto await_transform(U &&u) noexcept(noexcept(u(self()))) {
         return await_transform(u(self()));
     }
 

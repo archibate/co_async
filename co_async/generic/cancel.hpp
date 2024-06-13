@@ -103,8 +103,6 @@ private:
 
     explicit CancelToken(CancelSourceImpl *impl) noexcept : mImpl(impl) {}
 
-    friend struct GetThisCancel;
-
 public:
     CancelToken() noexcept : mImpl(nullptr) {}
 
@@ -138,7 +136,7 @@ public:
         return mImpl;
     }
 
-    CancelToken from_address(void *impl) noexcept {
+    static CancelToken from_address(void *impl) noexcept {
         return CancelToken((CancelSourceImpl *)impl);
     }
 
@@ -255,19 +253,19 @@ CancelCallback(CancelToken, Callback) -> CancelCallback<Callback>;
 struct GetThisCancel {
     template <class T>
     ValueAwaiter<CancelToken> operator()(TaskPromise<T> &promise) const {
-        return ValueAwaiter<CancelToken>(CancelToken(promise.mCancelToken));
+        return ValueAwaiter<CancelToken>(CancelToken::from_address(promise.mCancelToken));
     }
 
     template <class T>
     static T &&bind(CancelToken cancel, T &&task) {
-        task.promise().mCancelToken = cancel.mImpl;
+        task.promise().mCancelToken = cancel.address();
         return std::forward<T>(task);
     }
 
     struct DoCancelThis {
         template <class T>
         Task<> operator()(TaskPromise<T> &promise) const {
-            co_return co_await CancelToken(promise.mCancelToken).cancel();
+            co_return co_await CancelToken::from_address(promise.mCancelToken).cancel();
         }
     };
 

@@ -136,6 +136,14 @@ public:
         MutexImpl *mImpl;
     };
 
+    MutexImpl(MutexImpl &&) = delete;
+    MutexImpl(MutexImpl const &) = delete;
+    MutexImpl() = default;
+
+    template <class ...Args> requires (!std::is_void_v<T> && std::constructible_from<T, Args...>)
+    explicit MutexImpl(Args &&...args) : mMutex(), mValue(std::forward<Args>(args)...) {
+    }
+
     Locked try_lock() {
         if (auto e = mMutex.try_lock()) {
             return Locked(this);
@@ -181,16 +189,24 @@ public:
 };
 
 template <class M>
-struct MutexImpl<M, void> : MutexImpl<M, Void> {};
+struct MutexImpl<M, void> : MutexImpl<M, Void> {
+    using MutexImpl<M, Void>::MutexImpl;
+};
 
 template <class T = void>
-struct Mutex : MutexImpl<BasicMutex, T> {};
+struct Mutex : MutexImpl<BasicMutex, T> {
+    using MutexImpl<BasicMutex, T>::MutexImpl;
+};
 
 template <class T = void>
-struct ConcurrentMutex : MutexImpl<BasicConcurrentMutex, T> {};
+struct ConcurrentMutex : MutexImpl<BasicConcurrentMutex, T> {
+    using MutexImpl<BasicConcurrentMutex, T>::MutexImpl;
+};
 
 template <class T = void>
-struct TimedMutex : MutexImpl<BasicTimedMutex, T> {};
+struct TimedMutex : MutexImpl<BasicTimedMutex, T> {
+    using MutexImpl<BasicTimedMutex, T>::MutexImpl;
+};
 
 struct CallOnce {
 private:

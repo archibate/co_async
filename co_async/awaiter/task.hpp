@@ -56,9 +56,6 @@ struct TaskAwaiter {
     template <class P>
     explicit TaskAwaiter(std::coroutine_handle<P> coroutine)
         : mCalleeCoroutine(coroutine) {
-#if CO_ASYNC_DEBUG
-        assert(!coroutine.promise().mAwaiter);
-#endif
         coroutine.promise().mAwaiter = this;
     }
 
@@ -255,9 +252,6 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
     }
 
     GeneratorResult<T, E> await_resume() {
-#if CO_ASYNC_DEBUG
-        mCalleeCoroutine.promise().mAwaiter = nullptr;
-#endif
 #if CO_ASYNC_EXCEPT
         if (mException) [[unlikely]] {
             std::rethrow_exception(mException);
@@ -280,9 +274,6 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
     template <class P>
     explicit TaskAwaiter(std::coroutine_handle<P> coroutine)
         : mCalleeCoroutine(coroutine) {
-#if CO_ASYNC_DEBUG
-        assert(!coroutine.promise().mAwaiter);
-#endif
         coroutine.promise().mAwaiter = this;
     }
 
@@ -505,7 +496,7 @@ struct TaskPromiseExpectedTransforms {
     ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>
     await_transform(std::tuple<Expected<Ts>...> &&e) noexcept {
         return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>> {
-            if (!([&] () -> ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>> {
+            if (!([&] () -> bool {
                     if (std::get<Is>(e).has_error()) [[unlikely]] {
                         self().mAwaiter->returnValue(std::move(std::get<Is>(e)).error());
                         return false;
@@ -548,7 +539,7 @@ struct TaskPromiseTransforms {
 
     template <std::invocable<TaskPromise &> U>
     auto await_transform(U &&u) noexcept(noexcept(u(self()))) {
-        return await_transform(u(self()));
+        return self().await_transform(u(self()));
     }
 
     template <class U> requires (!std::invocable<U, TaskPromise &>)

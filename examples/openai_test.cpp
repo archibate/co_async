@@ -111,7 +111,7 @@ static Task<Expected<>> amain() {
             .model = "deepseek-coder",
             .stream = true,
         };
-        auto [res, body] = co_await co_await conn->requestStreamed(req, json_encode(compReq));
+        auto [res, body] = co_await co_await conn->request_streamed(req, json_encode(compReq));
         while (auto tmp = co_await body.getline('\n')) {
             std::string_view line = *tmp;
             if (line.starts_with("data: "sv)) {

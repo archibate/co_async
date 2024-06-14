@@ -126,7 +126,7 @@ void HTTPProtocolVersion11::negotiateAcceptEncoding(
 
 Task<Expected<>> HTTPProtocolVersion11::writeChunked(BorrowedStream &body) {
     using namespace std::string_view_literals;
-    bool hadHeader = false;
+    co_await co_await sock.puts("transfer-encoding: chunked\r\n\r\n"sv);
     do {
         auto bufSpan = body.peekbuf();
         auto n = bufSpan.size();
@@ -139,11 +139,6 @@ Task<Expected<>> HTTPProtocolVersion11::writeChunked(BorrowedStream &body) {
             std::reverse(buf, ep);
             *ep++ = '\r';
             *ep++ = '\n';
-            if (!hadHeader) {
-                co_await co_await sock.puts(
-                    "transfer-encoding: chunked\r\n\r\n"sv);
-                hadHeader = true;
-            }
             co_await co_await sock.puts(
                 std::string_view{buf, static_cast<std::size_t>(ep - buf)});
             co_await co_await sock.putspan(bufSpan);
@@ -151,11 +146,7 @@ Task<Expected<>> HTTPProtocolVersion11::writeChunked(BorrowedStream &body) {
             co_await co_await sock.flush();
         }
     } while (co_await body.fillbuf());
-    if (hadHeader) {
-        co_await co_await sock.puts("0\r\n\r\n"sv);
-    } else {
-        co_await co_await sock.puts("\r\n"sv);
-    }
+    co_await co_await sock.puts("0\r\n\r\n"sv);
     co_await co_await sock.flush();
     co_return {};
 }

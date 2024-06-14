@@ -294,8 +294,8 @@ struct JsonEncoder {
                 if ((c >= 0 && c < 0x20) || c == 0x7F) {
                     put("\\u00", 4);
                     auto u = static_cast<unsigned char>(c);
-                    put("0123456789abcdef"[u & 0x0F]);
                     put("0123456789abcdef"[u >> 4]);
+                    put("0123456789abcdef"[u & 0x0F]);
                 } else {
                     put(c);
                 }

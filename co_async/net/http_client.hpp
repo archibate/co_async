@@ -243,7 +243,7 @@ public:
     }
 
     Task<Expected<std::tuple<HTTPResponse, OwningStream>>>
-    requestStreamed(HTTPRequest req, std::string_view in = {}) {
+    request_streamed(HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);

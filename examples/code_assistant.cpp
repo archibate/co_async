@@ -121,7 +121,7 @@ static Task<Expected<OwningStream>> evaluate(std::string prompt) {
         .model = "deepseek-coder",
         .stream = true,
     };
-    auto [res, body] = co_await co_await conn->requestStreamed(req, json_encode(compReq));
+    auto [res, body] = co_await co_await conn->request_streamed(req, json_encode(compReq));
     auto [r, w] = pipe_stream();
     co_spawn(pipe_bind(std::move(w), [conn = std::move(conn), body = std::move(body)] (OwningStream &w) mutable -> Task<Expected<>> {
         while (auto tmp = co_await body.getline('\n')) {

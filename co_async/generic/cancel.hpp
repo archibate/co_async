@@ -97,7 +97,7 @@ public:
     CancelSourceBase &operator=(CancelSourceBase &&) = default;
 };
 
-struct CancelToken {
+struct [[nodiscard("did you forget to capture or co_await the cancel token?")]] CancelToken {
 private:
     CancelSourceImpl *mImpl;
 

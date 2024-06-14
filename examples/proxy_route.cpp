@@ -54,7 +54,7 @@ static Task<Expected<>> amain(std::string serveAt, std::string targetHost,
         }
         auto in = co_await co_await io.request_body();
         auto [response, stream] =
-            co_await co_await connection->requestStreamed(request, in);
+            co_await co_await connection->request_streamed(request, in);
         co_await co_await io.response(response, stream);
         co_return {};
     });

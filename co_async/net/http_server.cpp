@@ -83,7 +83,7 @@ struct HTTPServer::Impl {
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
     };
-    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(5);
+    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(10);
 #if CO_ASYNC_DEBUG
     bool mLogRequests = false;
 #endif
@@ -109,8 +109,16 @@ struct HTTPServer::Impl {
                     co_await co_await make_error_response(io, 405);
                     co_return {};
                 }
+#if CO_ASYNC_DEBUG
+                auto ret = co_await route.mHandler(io, suffix);
+                if (ret.has_error() && mLogRequests) {
+                    std::clog << "SERVER ERROR: " << ret.error() << '\n';
+                }
+                co_return ret;
+#else
                 co_await co_await route.mHandler(io, suffix);
                 co_return {};
+#endif
             }
         }
         co_await co_await mDefaultRoute(io);

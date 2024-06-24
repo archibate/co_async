@@ -22,7 +22,8 @@ using namespace std;
 }
 
 [[maybe_unused]] static Task<> amain() {
-    debug(), co_await test();
+    auto ret = co_await test();
+    debug(), ret;
 }
 
 int main() {

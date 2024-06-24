@@ -6,85 +6,85 @@ using namespace std::literals;
 
 namespace {
 
-struct ClientMain {
-    HTTPConnectionPool pool;
-    std::string address;
-    std::string id;
-
-    explicit ClientMain(std::string address_, std::string id_ = "")
-        : pool(32),
-          address(address_),
-          id(id_) {}
-
-    Task<Expected<>> writer() {
-        while (true) {
-            auto chunk = co_await co_await stdio().getchunk();
-            auto conn = co_await co_await pool.connect("http://" + address);
-            HTTPRequest req = {
-                .method = "POST",
-                .uri =
-                    URI{
-                        .path = "/write",
-                        .params =
-                            {
-                                {"id", id},
-                                {"side", "c"},
-                            },
-                    },
-                .headers = {
-                    {"content-type", "application/json"},
-                    {"cache-control", "no-cache"},
-                },
-            };
-            co_await co_await conn->request(req, json_encode(chunk));
-        }
-    }
-
-    Task<Expected<>> reader() {
-        while (true) {
-            auto conn = co_await co_await pool.connect("http://" + address);
-            HTTPRequest req = {
-                .method = "GET",
-                .uri =
-                    {
-                        .path = "/read",
-                        .params =
-                            {
-                                {"id", id},
-                                {"side", "c"},
-                            },
-                    },
-                .headers =
-                    {
-                        {"content-type", "application/json"},
-                        {"cache-control", "no-cache"},
-                        {"accept", "text/event-stream"},
-                    },
-            };
-            auto [resp, body] = co_await co_await conn->request_streamed(req);
-
-            while (auto tmp = co_await body.getline('\n')) {
-                std::string_view line = *tmp;
-                if (line.starts_with("data: "sv)) {
-                    line.remove_prefix(6);
-                    if (line == "[DONE]"sv) {
-                        break;
-                    }
-                    auto chunk = co_await json_decode<std::string>(line);
-                    co_await co_await stdio().putchunk(chunk);
-                }
-            }
-            co_await body.dropall();
-            co_await body.close();
-        }
-    }
-
-    Task<Expected<>> operator()() {
-        co_await co_await stdio().putline("connecting to: http://"s + address);
-        co_await co_await when_all(reader(), writer());
-        co_return {};
-    }
-};
+/* struct ClientMain { */
+/*     HTTPConnectionPool pool; */
+/*     std::string address; */
+/*     std::string id; */
+/*  */
+/*     explicit ClientMain(std::string address_, std::string id_ = "") */
+/*         : pool(32), */
+/*           address(address_), */
+/*           id(id_) {} */
+/*  */
+/*     Task<Expected<>> writer() { */
+/*         while (true) { */
+/*             auto chunk = co_await co_await stdio().getchunk(); */
+/*             auto conn = co_await co_await pool.connect("http://" + address); */
+/*             HTTPRequest req = { */
+/*                 .method = "POST", */
+/*                 .uri = */
+/*                     URI{ */
+/*                         .path = "/write", */
+/*                         .params = */
+/*                             { */
+/*                                 {"id", id}, */
+/*                                 {"side", "c"}, */
+/*                             }, */
+/*                     }, */
+/*                 .headers = { */
+/*                     {"content-type", "application/json"}, */
+/*                     {"cache-control", "no-cache"}, */
+/*                 }, */
+/*             }; */
+/*             co_await co_await conn->request(req, json_encode(chunk)); */
+/*         } */
+/*     } */
+/*  */
+/*     Task<Expected<>> reader() { */
+/*         while (true) { */
+/*             auto conn = co_await co_await pool.connect("http://" + address); */
+/*             HTTPRequest req = { */
+/*                 .method = "GET", */
+/*                 .uri = */
+/*                     { */
+/*                         .path = "/read", */
+/*                         .params = */
+/*                             { */
+/*                                 {"id", id}, */
+/*                                 {"side", "c"}, */
+/*                             }, */
+/*                     }, */
+/*                 .headers = */
+/*                     { */
+/*                         {"content-type", "application/json"}, */
+/*                         {"cache-control", "no-cache"}, */
+/*                         {"accept", "text/event-stream"}, */
+/*                     }, */
+/*             }; */
+/*             auto [resp, body] = co_await co_await conn->request_streamed(req); */
+/*  */
+/*             while (auto tmp = co_await body.getline('\n')) { */
+/*                 std::string_view line = *tmp; */
+/*                 if (line.starts_with("data: "sv)) { */
+/*                     line.remove_prefix(6); */
+/*                     if (line == "[DONE]"sv) { */
+/*                         break; */
+/*                     } */
+/*                     auto chunk = co_await json_decode<std::string>(line); */
+/*                     co_await co_await stdio().putchunk(chunk); */
+/*                 } */
+/*             } */
+/*             co_await body.dropall(); */
+/*             co_await body.close(); */
+/*         } */
+/*     } */
+/*  */
+/*     Task<Expected<>> operator()() { */
+/*         co_await co_await stdio().putline("connecting to: http://"s + address); */
+/*         co_await co_await when_all(reader(), writer()); */
+/*         co_return {}; */
+/*     } */
+/* }; */
 
 Task<Expected<>> server_main(std::string address) {
     co_await co_await stdio().putline("listening at: http://"s + address);
@@ -290,7 +290,7 @@ rm -f "$F" "$L")bash";
 }
 
 Task<Expected<>> amain(std::string address) {
-    (void)raw_stdio();
+    /* (void)raw_stdio(); */
     /* ClientMain client_main(address); */
     /* auto fut = co_future(client_main()); */
     auto ret = co_await server_main(address);

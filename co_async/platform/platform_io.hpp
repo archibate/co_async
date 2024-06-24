@@ -54,7 +54,7 @@ struct PlatformIOContext {
     }
 
     PlatformIOContext &operator=(PlatformIOContext &&) = delete;
-    explicit PlatformIOContext(std::size_t entries = 1024);
+    explicit PlatformIOContext(std::size_t entries = 2048);
     ~PlatformIOContext();
     static thread_local PlatformIOContext *instance;
 
@@ -66,8 +66,7 @@ struct [[nodiscard]] UringOp {
     UringOp() {
         struct io_uring *ring = PlatformIOContext::instance->getRing();
         mSqe = io_uring_get_sqe(ring);
-        if (!mSqe) [[unlikely]] {
-            /* throw std::bad_alloc(); */
+        while (!mSqe) [[unlikely]] {
             io_uring_submit(ring);
             mSqe = io_uring_get_sqe(ring);
         }

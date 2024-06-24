@@ -20,7 +20,7 @@ static Task<Expected<>> amain(std::string serveAt) {
 
 #if 0
     ConcurrentRobinhoodQueue<OwningStream> incoming(IOContextMT::num_workers());
-    incoming.set_max_size(512);
+    incoming.set_max_size(1024);
     
     for (std::size_t i = 0; i < IOContextMT::num_workers(); ++i) {
         IOContextMT::nth_worker(i).spawn(co_bind([incoming = incoming.consumer(i)]() -> Task<> {

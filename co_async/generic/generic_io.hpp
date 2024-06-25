@@ -81,6 +81,7 @@ struct GenericIOContext {
     }
 
     bool runMTQueue() {
+#if !CO_ASYNC_STEAL
         std::unique_lock lock(mMTMutex);
         if (!mMTQueue.empty()) {
             auto coroutine = mMTQueue.front();
@@ -89,6 +90,7 @@ struct GenericIOContext {
             enqueueJob(coroutine);
             return true;
         }
+#endif
         return false;
     }
 

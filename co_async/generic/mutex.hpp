@@ -87,25 +87,25 @@ namespace co_async {
 
 struct BasicMutex {
 private:
-    std::atomic<std::uint32_t> mFutex;
+    std::atomic<bool> mFutex;
 
 public:
     bool try_lock() {
-        std::uint32_t old = mFutex.exchange(1, std::memory_order_acquire);
-        return old == 0;
+        bool old = mFutex.exchange(true, std::memory_order_acquire);
+        return old == false;
     }
 
     Task<Expected<>> lock() {
         while (true) {
-            std::uint32_t old = mFutex.exchange(1, std::memory_order_acquire);
-            if (old == 0)
+            bool old = mFutex.exchange(true, std::memory_order_acquire);
+            if (old == false)
                 co_return {};
             co_await co_await futex_wait(&mFutex, old);
         }
     }
 
     void unlock() {
-        mFutex.store(0, std::memory_order_release);
+        mFutex.store(false, std::memory_order_release);
         futex_notify(&mFutex, 1);
     }
 };

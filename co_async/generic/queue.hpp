@@ -12,8 +12,10 @@ template <class T>
 struct Queue {
 private:
     RingQueue<T> mQueue;
-    ConditionVariable mNonEmpty;
-    ConditionVariable mNonFull;
+    ConditionVariable mReady;
+
+    static constexpr ConditionVariable::Mask kNonEmptyMask = 1;
+    static constexpr ConditionVariable::Mask kNonFullMask = 2;
 
 public:
     explicit Queue(std::size_t size) : mQueue(size) {}
@@ -22,7 +24,7 @@ public:
         bool wasFull = mQueue.full();
         auto value = mQueue.pop();
         if (value && wasFull) {
-            mNonFull.notify_one();
+            mReady.notify_one(kNonFullMask);
         }
         return value;
     }
@@ -31,25 +33,25 @@ public:
         bool wasEmpty = mQueue.empty();
         bool ok = mQueue.push(std::move(value));
         if (ok && wasEmpty) {
-            mNonEmpty.notify_one();
+            mReady.notify_one(kNonEmptyMask);
         }
         return ok;
     }
 
     Task<> push(T value) {
         while (!mQueue.push(std::move(value))) {
-            co_await mNonFull;
+            co_await mReady.wait(kNonFullMask);
         }
-        mNonEmpty.notify_one();
+        mReady.notify_one(kNonEmptyMask);
     }
 
     Task<T> pop(T value) {
         while (true) {
             if (auto value = mQueue.pop()) {
-                mNonFull.notify_one();
+                mReady.notify_one(kNonFullMask);
                 co_return std::move(*value);
             }
-            co_await mNonEmpty;
+            co_await mReady.wait(kNonEmptyMask);
         }
     }
 };
@@ -58,8 +60,11 @@ template <class T>
 struct alignas(hardware_destructive_interference_size) ConcurrentQueue {
 private:
     RingQueue<T> mQueue;
-    SpinMutex mMutex;
     ConditionVariable mReady;
+    SpinMutex mMutex;
+
+    static constexpr ConditionVariable::Mask kNonEmptyMask = 1;
+    static constexpr ConditionVariable::Mask kNonFullMask = 2;
 
 public:
     explicit ConcurrentQueue(std::size_t maxSize = 0) : mQueue(maxSize) {}
@@ -76,7 +81,7 @@ public:
         auto value = mQueue.pop();
         lock.unlock();
         if (value && wasFull) {
-            mReady.notify_one();
+            mReady.notify_one(kNonFullMask);
         }
         return value;
     }
@@ -87,7 +92,7 @@ public:
         bool ok = mQueue.push(std::move(value));
         lock.unlock();
         if (ok && wasEmpty) {
-            mReady.notify_one();
+            mReady.notify_one(kNonEmptyMask);
         }
         return ok;
     }
@@ -96,14 +101,14 @@ public:
         std::unique_lock lock(mMutex);
         while (mQueue.empty()) {
             lock.unlock();
-            co_await mReady;
+            co_await mReady.wait(kNonEmptyMask);
             lock.lock();
         }
         bool wasFull = mQueue.full();
         T value = mQueue.pop_unchecked();
         lock.unlock();
         if (wasFull) {
-            mReady.notify_one();
+            mReady.notify_one(kNonFullMask);
         }
         co_return std::move(value);
     }
@@ -112,14 +117,14 @@ public:
         std::unique_lock lock(mMutex);
         while (mQueue.full()) {
             lock.unlock();
-            co_await mReady;
+            co_await mReady.wait(kNonFullMask);
             lock.lock();
         }
         bool wasEmpty = mQueue.empty();
         mQueue.push_unchecked(std::move(value));
         lock.unlock();
         if (wasEmpty) {
-            mReady.notify_one();
+            mReady.notify_one(kNonEmptyMask);
         }
         co_return;
     }

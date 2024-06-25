@@ -12,8 +12,8 @@ private:
     std::atomic<std::uint32_t> mCounter;
     std::uint32_t const mMaxCount;
 
-    static constexpr std::uint32_t AcquireMask = 1;
-    static constexpr std::uint32_t ReleaseMask = 2;
+    static constexpr std::uint32_t kAcquireMask = 1;
+    static constexpr std::uint32_t kReleaseMask = 2;
 
 public:
     explicit Semaphore(std::uint32_t maxCount, std::uint32_t initialCount)
@@ -32,11 +32,11 @@ public:
         std::uint32_t count = mCounter.load(std::memory_order_relaxed);
         do {
             while (count == 0) {
-                co_await co_await futex_wait(&mCounter, count, AcquireMask);
+                co_await co_await futex_wait(&mCounter, count, kAcquireMask);
                 count = mCounter.load(std::memory_order_relaxed);
             }
         } while (mCounter.compare_exchange_weak(count, count - 1, std::memory_order_acq_rel, std::memory_order_relaxed));
-        futex_notify(&mCounter, 1, ReleaseMask);
+        futex_notify(&mCounter, 1, kReleaseMask);
         co_return {};
     }
 
@@ -44,11 +44,11 @@ public:
         std::uint32_t count = mCounter.load(std::memory_order_relaxed);
         do {
             while (count == mMaxCount) {
-                co_await co_await futex_wait(&mCounter, count, ReleaseMask);
+                co_await co_await futex_wait(&mCounter, count, kReleaseMask);
                 count = mCounter.load(std::memory_order_relaxed);
             }
         } while (mCounter.compare_exchange_weak(count, count + 1, std::memory_order_acq_rel, std::memory_order_relaxed));
-        futex_notify(&mCounter, 1, AcquireMask);
+        futex_notify(&mCounter, 1, kAcquireMask);
         co_return {};
     }
 };

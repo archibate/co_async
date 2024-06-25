@@ -14,7 +14,7 @@ static Task<Expected<>> amain() {
                    .open(1, p.writer())
                    .spawn();
     auto rs = file_from_handle(p.reader());
-    std::string line;
+    String line;
     while (line.clear(), co_await rs.getline(line, '\n')) {
         co_await co_await stdio().putline("process output: " + line);
     }

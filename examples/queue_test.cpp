@@ -5,7 +5,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-TimedQueue<int> q(4);
+Queue<int> q(4);
 
 static Task<Expected<>> func() {
     (void)co_await co_sleep(1000ms);
@@ -19,7 +19,7 @@ static Task<Expected<>> amain() {
     co_spawn(func());
     for (int i = 0; i < 8; i++) {
         debug(), i;
-        auto e = co_await q.pop(400ms);
+        auto e = co_await co_timeout(q.pop(), 400ms);
         debug(), i, e;
     }
     co_return {};

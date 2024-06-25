@@ -1,12 +1,12 @@
-#define DEBUG_LEVEL 1
 #include <co_async/std.hpp>
 #include <co_async/co_async.hpp>
+#include <co_async/utils/debug.hpp>
 
 using namespace co_async;
 using namespace std;
 
-static TimedQueue<char> q1(1);
-static TimedQueue<char> q2(1);
+static Queue<char> q1(1);
+static Queue<char> q2(1);
 
 [[maybe_unused]] static Task<Expected<>> task1() {
     while (true) {

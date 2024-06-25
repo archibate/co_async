@@ -3,6 +3,7 @@
 #include <co_async/awaiter/task.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/generic/allocator.hpp>
+#include <co_async/iostream/bytes_buffer.hpp>
 
 namespace co_async {
 inline constexpr std::size_t kStreamBufferSize = 8192;
@@ -59,12 +60,12 @@ struct BorrowedStream {
         while (true) {
             for (std::size_t i = start; i < mInEnd; ++i) {
                 if (mInBuffer[i] == eol) {
-                    s.append(mInBuffer.get() + start, i - start);
+                    s.append(mInBuffer.data() + start, i - start);
                     mInIndex = i + 1;
                     co_return {};
                 }
             }
-            s.append(mInBuffer.get() + start, mInEnd - start);
+            s.append(mInBuffer.data() + start, mInEnd - start);
             mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
@@ -142,12 +143,12 @@ struct BorrowedStream {
         while (true) {
             auto end = start + n;
             if (end <= mInEnd) {
-                p = std::copy(mInBuffer.get() + start, mInBuffer.get() + end,
+                p = std::copy(mInBuffer.data() + start, mInBuffer.data() + end,
                               p);
                 mInIndex = end;
                 co_return {};
             }
-            p = std::copy(mInBuffer.get() + start, mInBuffer.get() + mInEnd, p);
+            p = std::copy(mInBuffer.data() + start, mInBuffer.data() + mInEnd, p);
             mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
@@ -175,13 +176,13 @@ struct BorrowedStream {
         while (true) {
             auto end = start + n;
             if (end <= mInEnd) {
-                s.append(mInBuffer.get() + mInIndex, n);
+                s.append(mInBuffer.data() + mInIndex, n);
                 mInIndex = end;
                 co_return {};
             }
             auto m = mInEnd - mInIndex;
             n -= m;
-            s.append(mInBuffer.get() + mInIndex, m);
+            s.append(mInBuffer.data() + mInIndex, m);
             mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
@@ -204,7 +205,7 @@ struct BorrowedStream {
     Task<> getall(String &s) {
         std::size_t start = mInIndex;
         do {
-            s.append(mInBuffer.get() + start, mInEnd - start);
+            s.append(mInBuffer.data() + start, mInEnd - start);
             start = 0;
             mInEnd = mInIndex = 0;
         } while (co_await fillbuf());
@@ -231,7 +232,7 @@ struct BorrowedStream {
     }
 
     std::span<char const> peekbuf() const noexcept {
-        return {mInBuffer.get() + mInIndex, mInEnd - mInIndex};
+        return {mInBuffer.data() + mInIndex, mInEnd - mInIndex};
     }
 
     void seenbuf(std::size_t n) noexcept {
@@ -266,11 +267,11 @@ struct BorrowedStream {
     }
 
     Task<Expected<>> peekn(String &s, std::size_t n) {
-        if (mInBufSize - mInIndex < n) {
-            if (mInBufSize < n) [[unlikely]] {
+        if (mInBuffer.size() - mInIndex < n) {
+            if (mInBuffer.size() < n) [[unlikely]] {
                 co_return std::errc::value_too_large;
             }
-            std::memmove(mInBuffer.get(), mInBuffer.get() + mInIndex,
+            std::memmove(mInBuffer.data(), mInBuffer.data() + mInIndex,
                          mInEnd - mInIndex);
             mInEnd -= mInIndex;
             mInIndex = 0;
@@ -278,7 +279,7 @@ struct BorrowedStream {
         while (mInEnd - mInIndex < n) {
             co_await co_await fillbuf();
         }
-        s.append(mInBuffer.get() + mInIndex, n);
+        s.append(mInBuffer.data() + mInIndex, n);
         co_return {};
     }
 
@@ -288,10 +289,9 @@ struct BorrowedStream {
         co_return s;
     }
 
-    void allocinbuf(std::size_t size = kStreamBufferSize) {
+    void allocinbuf(std::size_t size CO_ASYNC_PMR_ARG_DEF1) {
         if (!mInBuffer) [[likely]] {
-            mInBuffer = std::make_unique<char[]>(size);
-            mInBufSize = size;
+            mInBuffer.allocate(size CO_ASYNC_PMR_ARG_USE1);
             mInIndex = 0;
             mInEnd = 0;
         }
@@ -299,10 +299,10 @@ struct BorrowedStream {
 
     Task<Expected<>> fillbuf() {
         if (!mInBuffer) {
-            allocinbuf();
+            allocinbuf(kStreamBufferSize CO_ASYNC_PMR1);
         }
         auto n = co_await co_await mRaw->raw_read(
-            std::span(mInBuffer.get() + mInIndex, mInBufSize - mInIndex));
+            std::span(mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
         if (n == 0) [[unlikely]] {
             co_return std::errc::broken_pipe;
         }
@@ -327,16 +327,16 @@ struct BorrowedStream {
         auto p = s.data();
         auto const pe = s.data() + s.size();
     again:
-        if (std::size_t(pe - p) <= mOutBufSize - mOutIndex) {
-            auto b = mOutBuffer.get() + mOutIndex;
+        if (std::size_t(pe - p) <= mOutBuffer.size() - mOutIndex) {
+            auto b = mOutBuffer.data() + mOutIndex;
             mOutIndex += std::size_t(pe - p);
             while (p < pe) {
                 *b++ = *p++;
             }
         } else {
-            auto b = mOutBuffer.get() + mOutIndex;
-            auto const be = mOutBuffer.get() + mOutBufSize;
-            mOutIndex = mOutBufSize;
+            auto b = mOutBuffer.data() + mOutIndex;
+            auto const be = mOutBuffer.data() + mOutBuffer.size();
+            mOutIndex = mOutBuffer.size();
             while (b < be) {
                 *b++ = *p++;
             }
@@ -349,23 +349,23 @@ struct BorrowedStream {
 
     std::size_t trywrite(std::span<char const> s) {
         if (!mOutBuffer) {
-            allocoutbuf();
+            allocoutbuf(kStreamBufferSize);
         }
         auto p = s.data();
         auto const pe = s.data() + s.size();
-        auto nMax = mOutBufSize - mOutIndex;
+        auto nMax = mOutBuffer.size() - mOutIndex;
         auto n = std::size_t(pe - p);
         if (n <= nMax) {
-            auto b = mOutBuffer.get() + mOutIndex;
+            auto b = mOutBuffer.data() + mOutIndex;
             mOutIndex += std::size_t(pe - p);
             while (p < pe) {
                 *b++ = *p++;
             }
             return n;
         } else {
-            auto b = mOutBuffer.get() + mOutIndex;
-            auto const be = mOutBuffer.get() + mOutBufSize;
-            mOutIndex = mOutBufSize;
+            auto b = mOutBuffer.data() + mOutIndex;
+            auto const be = mOutBuffer.data() + mOutBuffer.size();
+            mOutIndex = mOutBuffer.size();
             while (b < be) {
                 *b++ = *p++;
             }
@@ -394,21 +394,20 @@ struct BorrowedStream {
         co_return co_await flush();
     }
 
-    void allocoutbuf(std::size_t size = kStreamBufferSize) {
+    void allocoutbuf(std::size_t size CO_ASYNC_PMR_ARG_DEF1) {
         if (!mOutBuffer) [[likely]] {
-            mOutBuffer = std::make_unique<char[]>(size);
-            mOutBufSize = size;
+            mOutBuffer.allocate(size CO_ASYNC_PMR_ARG_USE1);
             mOutIndex = 0;
         }
     }
 
     Task<Expected<>> flush() {
         if (!mOutBuffer) {
-            allocoutbuf();
+            allocoutbuf(kStreamBufferSize CO_ASYNC_PMR1);
             co_return {};
         }
         if (mOutIndex) [[likely]] {
-            auto buf = std::span(mOutBuffer.get(), mOutIndex);
+            auto buf = std::span(mOutBuffer.data(), mOutIndex);
             auto len = co_await mRaw->raw_write(buf);
             while (len.has_value() && *len > 0 && *len != buf.size()) {
                 buf = buf.subspan(*len);
@@ -427,7 +426,7 @@ struct BorrowedStream {
     }
 
     bool buffull() const noexcept {
-        return mOutIndex == mOutBufSize;
+        return mOutIndex == mOutBuffer.size();
     }
 
     Stream &raw() const noexcept {
@@ -451,7 +450,7 @@ struct BorrowedStream {
     Task<Expected<std::size_t>> read(std::span<char> buffer) {
         if (!bufempty()) {
             auto n = std::min(mInEnd - mInIndex, buffer.size());
-            std::memcpy(buffer.data(), mInBuffer.get() + mInIndex, n);
+            std::memcpy(buffer.data(), mInBuffer.data() + mInIndex, n);
             mInIndex += n;
             co_return n;
         }
@@ -468,7 +467,7 @@ struct BorrowedStream {
 
     Task<Expected<std::size_t>> write(std::span<char const> buffer) {
         if (!buffull()) {
-            auto n = std::min(mInBufSize - mInIndex, buffer.size());
+            auto n = std::min(mInBuffer.size() - mInIndex, buffer.size());
             co_await co_await putspan(buffer.subspan(0, n));
             co_return n;
         }
@@ -500,13 +499,11 @@ struct BorrowedStream {
     }
 
 private:
-    std::unique_ptr<char[]> mInBuffer;
+    StreamIOBuffer mInBuffer;
     std::size_t mInIndex = 0;
     std::size_t mInEnd = 0;
-    std::size_t mInBufSize = 0;
-    std::unique_ptr<char[]> mOutBuffer;
+    StreamIOBuffer mOutBuffer;
     std::size_t mOutIndex = 0;
-    std::size_t mOutBufSize = 0;
     Stream *mRaw;
 };
 

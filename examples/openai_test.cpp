@@ -99,7 +99,7 @@ static Task<Expected<>> amain() {
             .uri = URI::parse("/chat/completions"),
             .headers = {
                 {"content-type", "application/json"},
-                {"authorization", authorization},
+                {"authorization", String{authorization}},
             },
         };
         auto compReq = ChatCompletionRequest{

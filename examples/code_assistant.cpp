@@ -111,7 +111,7 @@ static Task<Expected<OwningStream>> evaluate(std::string prompt) {
         .uri = URI::parse("/chat/completions"),
         .headers = {
             {"content-type", "application/json"},
-            {"authorization", authorization},
+            {"authorization", String{authorization}},
         },
     };
     auto compReq = ChatCompletionRequest{
@@ -148,7 +148,7 @@ static void code_complete(std::string code, std::function<void(std::string)> cal
         auto stream = co_await co_await evaluate(std::move(prompt));
         while (auto chunk = co_await stream.getchunk()) {
             if (!chunk->empty()) {
-                callback(std::move(*chunk));
+                callback(std::string{std::move(*chunk)});
             }
         }
         co_return {};

@@ -38,20 +38,20 @@ public:
         return ok;
     }
 
-    Task<> push(T value) {
+    Task<Expected<>> push(T value) {
         while (!mQueue.push(std::move(value))) {
-            co_await mReady.wait(kNonFullMask);
+            co_await co_await mReady.wait(kNonFullMask);
         }
         mReady.notify_one(kNonEmptyMask);
     }
 
-    Task<T> pop(T value) {
+    Task<Expected<T>> pop() {
         while (true) {
             if (auto value = mQueue.pop()) {
                 mReady.notify_one(kNonFullMask);
                 co_return std::move(*value);
             }
-            co_await mReady.wait(kNonEmptyMask);
+            co_await co_await mReady.wait(kNonEmptyMask);
         }
     }
 };

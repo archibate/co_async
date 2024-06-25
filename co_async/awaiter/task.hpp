@@ -385,19 +385,12 @@ struct TaskPromiseLocal {
     void *mCancelToken = nullptr;
 #if CO_ASYNC_ALLOC
     std::pmr::memory_resource *mAllocator = nullptr;
+    static inline thread_local std::pmr::memory_resource *mFrameAllocator =
+        std::pmr::get_default_resource();
 #endif
 };
 
-template <class TaskPromise>
-struct TaskPromiseCommon {
-    TaskPromise &self() noexcept {
-        return static_cast<TaskPromise &>(*this);
-    }
-
-    TaskPromise const &self() const noexcept {
-        return static_cast<TaskPromise const &>(*this);
-    }
-
+struct TaskPromiseCommonBase {
     auto initial_suspend() noexcept {
         return std::suspend_always();
     }
@@ -406,27 +399,38 @@ struct TaskPromiseCommon {
         return TaskFinalAwaiter();
     }
 
+    TaskPromiseCommonBase() = default;
+    TaskPromiseCommonBase(TaskPromiseCommonBase &&) = delete;
+
+#if CO_ASYNC_ALLOC
+    void *operator new(std::size_t size) {
+        void *ptr = TaskPromiseLocal::mFrameAllocator->allocate(size);
+        return ptr;
+    }
+
+    void operator delete(void *ptr, std::size_t size) noexcept {
+        return TaskPromiseLocal::mFrameAllocator->deallocate(ptr, size);
+    }
+#endif
+};
+
+template <class TaskPromise>
+struct TaskPromiseCommon : TaskPromiseCommonBase {
+    TaskPromise &self() noexcept {
+        return static_cast<TaskPromise &>(*this);
+    }
+
+    TaskPromise const &self() const noexcept {
+        return static_cast<TaskPromise const &>(*this);
+    }
+
     void unhandled_exception() noexcept {
         self().mAwaiter->unhandledException();
     }
 
-    TaskPromiseCommon() = default;
-    TaskPromiseCommon(TaskPromiseCommon &&) = delete;
-
     auto get_return_object() {
         return std::coroutine_handle<TaskPromise>::from_promise(self());
     }
-
-// #if CO_ASYNC_ALLOC
-//     void *operator new(std::size_t n) {
-//         // void *a[64];
-//         // backtrace_symbols_fd(a, backtrace(a, sizeof a), 1);
-//         throw std::bad_alloc();
-//     }
-//
-//     void operator delete(void *ptr) noexcept {
-//     }
-// #endif
 };
 
 template <class TaskPromise>
@@ -749,7 +753,8 @@ struct TaskPromise<GeneratorResult<T, void>>
 
 // static_assert(sizeof(TaskPromise<int>) == sizeof(TaskPromise<void>));
 // static_assert(sizeof(TaskPromise<Expected<>>) == sizeof(TaskPromise<void>));
-// static_assert(sizeof(TaskPromise<GeneratorResult<int, Expected<>>>) == sizeof(TaskPromise<void>));
+// static_assert(sizeof(TaskPromise<GeneratorResult<int, Expected<>>>) ==
+// sizeof(TaskPromise<void>));
 
 template <class T, class P>
 struct CustomPromise : TaskPromise<T> {

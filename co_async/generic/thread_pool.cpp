@@ -88,7 +88,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
                 ep = std::current_exception();
             }
             ready->store(1, std::memory_order_release);
-            futex_notify(ready.get(), 1);
+            futex_notify_sync(ready.get());
         });
     while (ready->load(std::memory_order_acquire) == 0)
         co_await co_await futex_wait(ready.get(), 0);
@@ -112,7 +112,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
             ep = std::current_exception();
         }
         ready->store(1, std::memory_order_release);
-        futex_notify(ready.get(), 1);
+        futex_notify_sync(ready.get());
     });
 
     {

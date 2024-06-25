@@ -8,28 +8,54 @@
 #include <unistd.h>
 
 namespace co_async {
-inline Task<Expected<>> futex_wait(void *futex, uint32_t val, uint32_t mask = FUTEX_BITSET_MATCH_ANY, uint32_t futex_flags = FUTEX_PRIVATE_FLAG) {
-    debug(), "wait";
-    // co_return expectError(co_await UringOp().prep_futex_wait(reinterpret_cast<uint32_t *>(futex), static_cast<uint64_t>(val), static_cast<uint64_t>(mask), futex_flags, 0));
-    struct futex_waitv waits[1] = {
-        {
-            .val = (__u64)val,
-            .uaddr = (__u64)futex,
-            .flags = futex_flags,
-            .__reserved = {},
-        },
-    };
-    co_return expectError(co_await UringOp().prep_futex_waitv({waits, 0}, 1));
+template <class T>
+inline constexpr uint32_t getFutexFlagsFor() {
+    switch (sizeof(T)) {
+    case sizeof(uint8_t):  return FUTEX2_SIZE_U8;
+    case sizeof(uint16_t): return FUTEX2_SIZE_U16;
+    case sizeof(uint32_t): return FUTEX2_SIZE_U32;
+    case sizeof(uint64_t): return FUTEX2_SIZE_U64;
+    }
 }
 
-inline Task<Expected<>> futex_wake(void *futex, std::size_t count = static_cast<std::size_t>(-1), uint32_t mask = FUTEX_BITSET_MATCH_ANY, uint32_t futex_flags = FUTEX_PRIVATE_FLAG) {
-    debug(), "wake";
-    co_return expectError(co_await UringOp().prep_futex_wake(reinterpret_cast<uint32_t *>(futex), static_cast<uint64_t>(count), static_cast<uint64_t>(mask), futex_flags, 0));
+template <class T>
+inline Task<Expected<>> futex_wait(std::atomic<T> *futex,
+                                   std::type_identity_t<T> val,
+                                   uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    co_return expectError(co_await UringOp().prep_futex_wait(
+        reinterpret_cast<uint32_t *>(futex),
+        static_cast<uint64_t>(static_cast<std::make_unsigned_t<T>>(val)),
+        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0));
 }
 
-inline void futex_notify(void *futex, std::size_t count = static_cast<std::size_t>(-1), uint32_t mask = FUTEX_BITSET_MATCH_ANY, uint32_t futex_flags = FUTEX_PRIVATE_FLAG) {
-    debug(), "notify";
-    UringOp().prep_futex_wake(reinterpret_cast<uint32_t *>(futex), static_cast<uint64_t>(count), static_cast<uint64_t>(mask), futex_flags, 0).detach();
+template <class T>
+inline Task<Expected<>>
+futex_wake(std::atomic<T> *futex,
+           std::size_t count = static_cast<std::size_t>(-1),
+           uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    co_return expectError(co_await UringOp().prep_futex_wake(
+        reinterpret_cast<uint32_t *>(futex), static_cast<uint64_t>(count),
+        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0));
+}
+
+template <class T>
+inline void futex_notify(std::atomic<T> *futex,
+                         std::size_t count = static_cast<std::size_t>(-1),
+                         uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    UringOp()
+        .prep_futex_wake(reinterpret_cast<uint32_t *>(futex),
+                         static_cast<uint64_t>(count),
+                         static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0)
+        .detach();
+}
+
+template <class T>
+inline void futex_notify_sync(std::atomic<T> *futex,
+                              std::size_t count = static_cast<std::size_t>(-1),
+                              uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    syscall(SYS_futex_wake, reinterpret_cast<uint32_t *>(futex),
+            static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
+            getFutexFlagsFor<T>());
 }
 
 // struct Futex {

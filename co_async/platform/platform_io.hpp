@@ -116,7 +116,17 @@ private:
 
     friend PlatformIOContext;
 
+    struct DoNotConstruct {};
+
+    explicit UringOp(DoNotConstruct) {}
+
 public:
+    void detach() {
+        static thread_local UringOp detachedOp{DoNotConstruct{}};
+        detachedOp.mPrevious = std::noop_coroutine();
+        io_uring_sqe_set_data(mSqe, &detachedOp);
+    }
+
     UringOp &&prep_nop() && {
         io_uring_prep_nop(mSqe);
         return std::move(*this);
@@ -317,6 +327,23 @@ public:
         return std::move(*this);
     }
 
+    UringOp &&prep_futex_wait(uint32_t *futex, uint64_t val, uint64_t mask,
+                              uint32_t futex_flags, unsigned int flags) && {
+        io_uring_prep_futex_wait(mSqe, futex, val, mask, futex_flags, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_futex_waitv(std::span<struct futex_waitv> futex, unsigned int flags) && {
+        io_uring_prep_futex_waitv(mSqe, futex.data(), (uint32_t)futex.size(), flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_futex_wake(uint32_t *futex, uint64_t val, uint64_t mask,
+                              uint32_t futex_flags, unsigned int flags) && {
+        io_uring_prep_futex_wake(mSqe, futex, val, mask, futex_flags, flags);
+        return std::move(*this);
+    }
+
     struct Canceller {
         using OpType = UringOp;
 
@@ -332,4 +359,5 @@ public:
         co_return co_await std::move(*this);
     }
 };
+
 } // namespace co_async

@@ -1,6 +1,5 @@
+#include <co_async/platform/futex.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/generic/condition_variable.hpp>
-#include <co_async/generic/io_context.hpp>
 #include <co_async/generic/thread_pool.hpp>
 
 namespace co_async {
@@ -79,20 +78,20 @@ ThreadPool::Thread *ThreadPool::submitJob(std::function<void()> func) {
 }
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
-    auto cv = std::make_shared<ConditionVariable>();
+    auto ready = std::make_shared<std::atomic<std::uint32_t>>(0);
     std::exception_ptr ep;
     submitJob(
-        [cv, ctx = IOContext::instance, func = std::move(func), &ep]() mutable {
+        [ready, func = std::move(func), &ep]() mutable {
             try {
                 func();
             } catch (...) {
                 ep = std::current_exception();
             }
-            if (auto coroutine = cv->notifyPopCoroutine()) [[likely]] {
-                ctx->spawn_mt(coroutine);
-            }
+            ready->store(1, std::memory_order_release);
+            futex_notify(ready.get(), 1);
         });
-    co_await *cv;
+    while (ready->load(std::memory_order_acquire) == 0)
+        co_await co_await futex_wait(ready.get(), 0);
     if (ep) [[unlikely]] {
         std::rethrow_exception(ep);
     }
@@ -101,20 +100,19 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
                                     CancelToken cancel) {
-    auto cv = std::make_shared<ConditionVariable>();
+    auto ready = std::make_shared<std::atomic<std::uint32_t>>(0);
     std::stop_source stop;
     bool stopped = false;
     std::exception_ptr ep;
-    submitJob([cv, ctx = IOContext::instance, func = std::move(func),
+    submitJob([ready, func = std::move(func),
                stop = stop.get_token(), &ep]() mutable {
         try {
             func(stop);
         } catch (...) {
             ep = std::current_exception();
         }
-        if (auto p = cv->notifyPopCoroutine()) [[likely]] {
-            ctx->spawn_mt(p);
-        }
+        ready->store(1, std::memory_order_release);
+        futex_notify(ready.get(), 1);
     });
 
     {
@@ -122,7 +120,8 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
             stopped = true;
             stop.request_stop();
         });
-        co_await *cv;
+        while (ready->load(std::memory_order_acquire) == 0)
+            co_await co_await futex_wait(ready.get(), 0);
     }
 
     if (ep) [[unlikely]] {

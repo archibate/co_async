@@ -17,7 +17,7 @@ struct CancelSourceImpl {
             return this < &that;
         }
 
-        virtual ~CancellerBase() = default;
+        // virtual ~CancellerBase() = default;
     };
 
     /* template <class AwaiterPtr, class Canceller> */

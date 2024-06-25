@@ -1,87 +1,112 @@
 #pragma once
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/generic/condition_variable.hpp>
+#include <co_async/platform/futex.hpp>
 #include <co_async/utils/non_void_helper.hpp>
 
 namespace co_async {
+// struct BasicMutex {
+//     ConditionVariable mReady;
+//     std::atomic_bool mLocked;
+//
+//     bool try_lock() {
+//         bool expect = false;
+//         return mLocked.compare_exchange_strong(
+//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//     }
+//
+//     Task<> lock() {
+//         while (!try_lock()) {
+//             co_await mReady.wait();
+//         }
+//     }
+//
+//     void unlock() {
+//         mLocked.store(false, std::memory_order_release);
+//         mReady.notify_one();
+//     }
+// };
+//
+// struct BasicConcurrentMutex {
+//     ConcurrentConditionVariable mReady;
+//     std::atomic_bool mLocked;
+//
+//     bool try_lock() {
+//         bool expect = false;
+//         return mLocked.compare_exchange_strong(
+//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//     }
+//
+//     Task<> lock() {
+//         while (!try_lock()) {
+//             co_await mReady.wait();
+//         }
+//     }
+//
+//     void unlock() {
+//         mLocked.store(false, std::memory_order_release);
+//         mReady.notify_one();
+//     }
+// };
+//
+// struct BasicTimedMutex {
+//     TimedConditionVariable mReady;
+//     std::atomic_bool mLocked;
+//
+//     bool try_lock() {
+//         bool expect = false;
+//         return mLocked.compare_exchange_strong(
+//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//     }
+//
+//     Task<> lock() {
+//         while (!try_lock()) {
+//             co_await mReady.wait();
+//         }
+//     }
+//
+//     Task<bool> try_lock(std::chrono::steady_clock::duration timeout) {
+//         return try_lock(std::chrono::steady_clock::now() + timeout);
+//     }
+//
+//     Task<bool> try_lock(std::chrono::steady_clock::time_point expires) {
+//         while (!try_lock()) {
+//             if (std::chrono::steady_clock::now() > expires ||
+//                 !co_await mReady.wait(expires)) {
+//                 co_return false;
+//             }
+//         }
+//         co_return true;
+//     }
+//
+//     void unlock() {
+//         mLocked.store(false, std::memory_order_release);
+//         mReady.notify_one();
+//     }
+// };
+
 struct BasicMutex {
-    ConditionVariable mReady;
-    std::atomic_bool mLocked;
+private:
+    std::atomic<std::uint32_t> mFutex;
 
+public:
     bool try_lock() {
-        bool expect = false;
-        return mLocked.compare_exchange_strong(
-            expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+        std::uint32_t old = mFutex.exchange(1, std::memory_order_acquire);
+        return old == 0;
     }
 
-    Task<> lock() {
-        while (!try_lock()) {
-            co_await mReady.wait();
+    Task<Expected<>> lock() {
+        while (true) {
+            std::uint32_t old = mFutex.exchange(1, std::memory_order_acquire);
+            if (old == 0)
+                co_return {};
+            co_await co_await futex_wait(&mFutex, old);
         }
     }
 
     void unlock() {
-        mLocked.store(false, std::memory_order_release);
-        mReady.notify_one();
-    }
-};
-
-struct BasicConcurrentMutex {
-    ConcurrentConditionVariable mReady;
-    std::atomic_bool mLocked;
-
-    bool try_lock() {
-        bool expect = false;
-        return mLocked.compare_exchange_strong(
-            expect, true, std::memory_order_acquire, std::memory_order_relaxed);
-    }
-
-    Task<> lock() {
-        while (!try_lock()) {
-            co_await mReady.wait();
-        }
-    }
-
-    void unlock() {
-        mLocked.store(false, std::memory_order_release);
-        mReady.notify_one();
-    }
-};
-
-struct BasicTimedMutex {
-    TimedConditionVariable mReady;
-    std::atomic_bool mLocked;
-
-    bool try_lock() {
-        bool expect = false;
-        return mLocked.compare_exchange_strong(
-            expect, true, std::memory_order_acquire, std::memory_order_relaxed);
-    }
-
-    Task<> lock() {
-        while (!try_lock()) {
-            co_await mReady.wait();
-        }
-    }
-
-    Task<bool> try_lock(std::chrono::steady_clock::duration timeout) {
-        return try_lock(std::chrono::steady_clock::now() + timeout);
-    }
-
-    Task<bool> try_lock(std::chrono::steady_clock::time_point expires) {
-        while (!try_lock()) {
-            if (std::chrono::steady_clock::now() > expires ||
-                !co_await mReady.wait(expires)) {
-                co_return false;
-            }
-        }
-        co_return true;
-    }
-
-    void unlock() {
-        mLocked.store(false, std::memory_order_release);
-        mReady.notify_one();
+        mFutex.store(0, std::memory_order_release);
+        futex_notify(&mFutex, 1);
     }
 };
 
@@ -157,19 +182,19 @@ public:
         co_return Locked(this);
     }
 
-    Task<Locked> try_lock_for(std::chrono::steady_clock::duration timeout) {
-        if (!co_await mMutex.try_lock_for(timeout)) {
-            co_return Locked();
-        }
-        co_return Locked(this);
-    }
-
-    Task<Locked> try_lock_until(std::chrono::steady_clock::time_point expires) {
-        if (!co_await mMutex.try_lock_for(expires)) {
-            co_return Locked();
-        }
-        co_return Locked(this);
-    }
+    // Task<Locked> try_lock_for(std::chrono::steady_clock::duration timeout) {
+    //     if (!co_await mMutex.try_lock_for(timeout)) {
+    //         co_return Locked();
+    //     }
+    //     co_return Locked(this);
+    // }
+    //
+    // Task<Locked> try_lock_until(std::chrono::steady_clock::time_point expires) {
+    //     if (!co_await mMutex.try_lock_for(expires)) {
+    //         co_return Locked();
+    //     }
+    //     co_return Locked(this);
+    // }
 
     T &unsafe_access() {
         return mValue;
@@ -198,25 +223,15 @@ struct Mutex : MutexImpl<BasicMutex, T> {
     using MutexImpl<BasicMutex, T>::MutexImpl;
 };
 
-template <class T = void>
-struct ConcurrentMutex : MutexImpl<BasicConcurrentMutex, T> {
-    using MutexImpl<BasicConcurrentMutex, T>::MutexImpl;
-};
-
-template <class T = void>
-struct TimedMutex : MutexImpl<BasicTimedMutex, T> {
-    using MutexImpl<BasicTimedMutex, T>::MutexImpl;
-};
-
 struct CallOnce {
 private:
     std::atomic_bool mCalled{false};
-    ConcurrentMutex<> mMutex;
+    Mutex<> mMutex;
 
 public:
     struct Locked {
     private:
-        explicit Locked(ConcurrentMutex<>::Locked locked,
+        explicit Locked(Mutex<>::Locked locked,
                         CallOnce *impl) noexcept
             : mLocked(std::move(locked)),
               mImpl(impl) {}
@@ -235,7 +250,7 @@ public:
         }
 
     private:
-        ConcurrentMutex<>::Locked mLocked;
+        Mutex<>::Locked mLocked;
         CallOnce *mImpl;
     };
 

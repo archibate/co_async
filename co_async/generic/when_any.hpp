@@ -91,8 +91,12 @@ Task<WhenAnyResult<Common>> when_any_common(Ts &&...tasks) {
         std::make_index_sequence<sizeof...(Ts)>());
 }
 
-template <Awaitable A, class Timeout, bool IsExp = std::convertible_to<std::errc, typename AwaitableTraits<A>::RetType> && !std::is_void_v<typename AwaitableTraits<A>::RetType>>
-Task<std::conditional_t<IsExp, typename AwaitableTraits<A>::RetType, Expected<typename AwaitableTraits<A>::RetType>>>
+template <Awaitable A, class Timeout,
+          bool IsExp = std::convertible_to<
+                           std::errc, typename AwaitableTraits<A>::RetType> &&
+                       !std::is_void_v<typename AwaitableTraits<A>::RetType>>
+Task<std::conditional_t<IsExp, typename AwaitableTraits<A>::RetType,
+                        Expected<typename AwaitableTraits<A>::RetType>>>
 co_timeout(A &&a, Timeout timeout) {
     auto res = co_await when_any(std::forward<A>(a), co_sleep(timeout));
     if (auto ret = std::get_if<0>(&res)) {

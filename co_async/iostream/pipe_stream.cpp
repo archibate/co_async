@@ -11,7 +11,7 @@ namespace {
 
 struct PipeStreamBuffer {
     InfinityQueue<std::string> mChunks;
-    TimedConditionVariable mNonEmpty;
+    ConditionVariable mNonEmpty;
 };
 
 struct IPipeStream : Stream {

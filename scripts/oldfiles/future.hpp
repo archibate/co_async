@@ -16,7 +16,7 @@ public:
     struct Awaiter;
 
 private:
-    struct Impl : OneshotConditionVariable {
+    struct Impl : ConditionVariable {
         Uninitialized<T> mValue;
 #if CO_ASYNC_EXCEPT
         std::exception_ptr mException{nullptr};
@@ -27,9 +27,9 @@ private:
     std::unique_ptr<Impl> mImpl = std::make_unique<Impl>();
 
 public:
-    struct Awaiter : OneshotConditionVariable::Awaiter {
+    struct Awaiter : ConditionVariable::Awaiter {
         T await_resume() const noexcept {
-            OneshotConditionVariable::Awaiter::await_resume();
+            ConditionVariable::Awaiter::await_resume();
             auto impl = static_cast<Impl *>(mThat);
             if constexpr (!std::is_void_v<T>) {
                 return impl->mValue.move();
@@ -53,7 +53,7 @@ public:
 template <class T>
 auto FutureSource<T>::Impl::makeAwaiter() -> FutureSource::Awaiter {
     return FutureSource::Awaiter(
-        static_cast<OneshotConditionVariable &>(*this).operator co_await());
+        static_cast<ConditionVariable &>(*this).operator co_await());
 }
 
 template <class T>

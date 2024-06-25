@@ -18,6 +18,22 @@ protected:
         int mErrorCode;
     };
 
+#if CO_ASYNC_DEBUG
+public:
+    std::source_location mErrorLocation;
+#define CO_ASYNC_EXPECTED_LOCATION , std::source_location const &errLoc = std::source_location::current()
+#define CO_ASYNC_EXPECTED_LOCATION_INIT , mErrorLocation(errLoc)
+#define CO_ASYNC_EXPECTED_LOCATION_MESSAGE , std::string(mErrorLocation.file_name()) + ":" + std::to_string(mErrorLocation.line()) + ": " + mErrorLocation.function_name()
+#define CO_ASYNC_EXPECTED_LOCATION_COPY , mErrorLocation(that.mErrorLocation)
+#define CO_ASYNC_EXPECTED_LOCATION_ASSIGN mErrorLocation = that.mErrorLocation
+#else
+#define CO_ASYNC_EXPECTED_LOCATION
+#define CO_ASYNC_EXPECTED_LOCATION_INIT
+#define CO_ASYNC_EXPECTED_LOCATION_MESSAGE
+#define CO_ASYNC_EXPECTED_LOCATION_COPY
+#define CO_ASYNC_EXPECTED_LOCATION_ASSIGN
+#endif
+
 public:
     template <std::convertible_to<T> U>
         requires(!std::convertible_to<U, std::error_code> &&
@@ -41,13 +57,13 @@ public:
     Expected(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>)
         : mErrorCatgory(nullptr), mValue(value) {}
 
-    Expected(std::error_code const &ec) noexcept
+    Expected(std::error_code const &ec CO_ASYNC_EXPECTED_LOCATION) noexcept
         : mErrorCatgory(&ec.category()),
-          mErrorCode(ec.value()) {}
+          mErrorCode(ec.value()) CO_ASYNC_EXPECTED_LOCATION_INIT {}
 
-    Expected(std::errc e) noexcept
+    Expected(std::errc e CO_ASYNC_EXPECTED_LOCATION) noexcept
         : mErrorCatgory(&std::generic_category()),
-          mErrorCode(static_cast<int>(e)) {}
+          mErrorCode(static_cast<int>(e)) CO_ASYNC_EXPECTED_LOCATION_INIT {}
 
     ~Expected() noexcept(std::is_nothrow_destructible_v<T>) {
         if (!mErrorCatgory) {
@@ -56,7 +72,7 @@ public:
     }
 
     Expected(Expected &&that) noexcept(std::is_nothrow_move_constructible_v<T>)
-        : mErrorCatgory(that.mErrorCatgory) {
+        : mErrorCatgory(that.mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_COPY {
         if (!mErrorCatgory) {
             std::construct_at(std::addressof(mValue), std::move(that.mValue));
         } else {
@@ -66,7 +82,7 @@ public:
 
     Expected(Expected const &that) noexcept(
         std::is_nothrow_copy_constructible_v<T>)
-        : mErrorCatgory(that.mErrorCatgory) {
+        : mErrorCatgory(that.mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_COPY {
         if (!mErrorCatgory) {
             std::construct_at(std::addressof(mValue), that.mValue);
         } else {
@@ -80,6 +96,7 @@ public:
         if (&that == this) [[unlikely]] {
             return *this;
         }
+        CO_ASYNC_EXPECTED_LOCATION_ASSIGN;
         if (!mErrorCatgory) {
             std::destroy_at(std::addressof(mValue));
         }
@@ -99,6 +116,7 @@ public:
         if (&that == this) [[unlikely]] {
             return *this;
         }
+        CO_ASYNC_EXPECTED_LOCATION_ASSIGN;
         if (!mErrorCatgory) {
             std::destroy_at(std::addressof(mValue));
         }
@@ -117,7 +135,7 @@ public:
                  (std::convertible_to<U, T> || std::constructible_from<T, U>))
     explicit(!std::convertible_to<U, T>) Expected(Expected<U> that) noexcept(
         std::is_nothrow_constructible_v<T, U>)
-        : mErrorCatgory(that.mErrorCatgory) {
+        : mErrorCatgory(that.mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_COPY {
         if (!mErrorCatgory) {
             std::construct_at(std::addressof(mValue), std::move(that.mValue));
         } else {
@@ -128,7 +146,7 @@ public:
     template <class U>
         requires(std::same_as<T, Void>)
     Expected(Expected<U> that) noexcept
-        : mErrorCatgory(that.mErrorCatgory) {
+        : mErrorCatgory(that.mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_COPY {
         if (!mErrorCatgory) {
             std::construct_at(std::addressof(mValue));
         } else {
@@ -165,28 +183,28 @@ public:
         if (has_value()) [[likely]] {
             return std::move(mValue);
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory));
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     T &value() & {
         if (has_value()) [[likely]] {
             return mValue;
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory));
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     T const &value() const & {
         if (has_value()) [[likely]] {
             return mValue;
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory));
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     T const &&value() const && {
         if (has_value()) [[likely]] {
             return std::move(mValue);
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory));
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     template <class... Ts>
@@ -304,4 +322,9 @@ template <class T>
 Expected(T) -> Expected<T>;
 Expected() -> Expected<>;
 
+#undef CO_ASYNC_EXPECTED_LOCATION
+#undef CO_ASYNC_EXPECTED_LOCATION_INIT
+#undef CO_ASYNC_EXPECTED_LOCATION_MESSAGE
+#undef CO_ASYNC_EXPECTED_LOCATION_COPY
+#undef CO_ASYNC_EXPECTED_LOCATION_ASSIGN
 } // namespace co_async

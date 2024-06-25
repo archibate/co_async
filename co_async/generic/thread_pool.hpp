@@ -30,12 +30,9 @@ public:
         requires(!std::invocable<decltype(func), std::stop_token>)
     {
         std::optional<Avoid<std::invoke_result_t<decltype(func)>>> res;
-        auto e = co_await rawRun([&res, func = std::move(func)]() mutable {
+        co_await co_await rawRun([&res, func = std::move(func)]() mutable {
             res = (func(), Void());
         });
-        if (e.has_error()) [[unlikely]] {
-            co_return e.error();
-        }
         if (!res) [[unlikely]] {
             co_return std::errc::operation_canceled;
         }

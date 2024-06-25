@@ -93,6 +93,8 @@ build/server  # 对应于 examples/server.cpp
 
 > Docker 继承宿主机的 Linux 内核版本，因此 Docker 无法解决 Linux 内核版本过低的问题。
 
+> 同样地，不建议使用 WSL，因为 WSL 的 Linux 内核版本是固定的，无法升级。
+
 ### Windows
 
 - Windows >= 10（施工中，稍后支持）

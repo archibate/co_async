@@ -1,8 +1,8 @@
 #pragma once
 #include <co_async/std.hpp>
+#include <co_async/generic/when_any.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/condition_variable.hpp>
-#include <co_async/generic/future.hpp>
 #include <co_async/generic/mutex.hpp>
 #include <co_async/iostream/cached_stream.hpp>
 #include <co_async/iostream/file_stream.hpp>
@@ -272,7 +272,7 @@ private:
 
     struct HostPool {
         std::vector<PoolEntry> mPool;
-        TimedConditionVariable mFreeSlot;
+        ConditionVariable mFreeSlot;
 
         explicit HostPool(std::size_t size) : mPool(size) {}
     };
@@ -376,7 +376,7 @@ private:
         auto *pool = mPools.at(host);
         lock.unlock();
         if (pool) [[likely]] {
-            (void)co_await pool->mFreeSlot.wait(std::chrono::milliseconds(100));
+            (void)co_await co_timeout(pool->mFreeSlot.wait(), std::chrono::milliseconds(100));
         }
     }
 

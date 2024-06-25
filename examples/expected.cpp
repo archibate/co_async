@@ -1,5 +1,4 @@
 #include <co_async/std.hpp>
-#include <co_async/utils/debug.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/generic/io_context.hpp>
 

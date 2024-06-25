@@ -1,5 +1,4 @@
 #include <co_async/awaiter/task.hpp>
-#include <co_async/generic/task_group.hpp>
 #include <co_async/iostream/pipe_stream.hpp>
 #include <co_async/iostream/socket_stream.hpp>
 #include <co_async/iostream/string_stream.hpp>
@@ -226,15 +225,14 @@ Task<Expected<>> HTTPProtocolVersion11::writeEncoded(BorrowedStream &body) {
     case HTTPContentEncoding::Deflate: {
         co_await co_await sock.puts("content-encoding: deflate\r\n"sv);
         auto [r, w] = pipe_stream();
-        TaskGroup<Expected<>> group;
-        group.add([&body, w = std::move(w)]() mutable -> Task<Expected<>> {
-            co_await co_await zlib_deflate(body, w);
-            co_await co_await w.flush();
-            co_await w.close();
-            co_return {};
-        });
-        group.add(writeChunked(r));
-        co_await co_await group.wait();
+        co_await co_await when_all(
+            co_bind([&body, w = std::move(w)]() mutable -> Task<Expected<>> {
+                co_await co_await zlib_deflate(body, w);
+                co_await co_await w.flush();
+                co_await w.close();
+                co_return {};
+            }),
+            writeChunked(r));
     } break;
     case HTTPContentEncoding::Gzip: {
         co_await co_await sock.puts("content-encoding: gzip\r\n"sv);
@@ -245,10 +243,7 @@ Task<Expected<>> HTTPProtocolVersion11::writeEncoded(BorrowedStream &body) {
                        .pipe_in(0, pin)
                        .pipe_out(1, pout)
                        .spawn();
-        TaskGroup<Expected<>> group;
-        group.add(pipe_forward(body, pin));
-        group.add(writeChunked(pout));
-        co_await co_await group.wait();
+        co_await co_await when_all(pipe_forward(body, pin), writeChunked(pout));
         co_await co_await wait_process(pid);
     } break;
     };
@@ -278,17 +273,16 @@ Task<Expected<>> HTTPProtocolVersion11::readEncoded(BorrowedStream &body) {
     } break;
     case HTTPContentEncoding::Deflate: {
         auto [r, w] = pipe_stream();
-        TaskGroup<Expected<>> group;
-        group.add(pipe_bind(std::move(w),
-                            &std::decay_t<decltype(*this)>::readChunked, this));
-        group.add([this, w = std::move(w)]() mutable -> Task<Expected<>> {
-            co_await co_await readChunked(w);
-            co_await co_await w.flush();
-            co_await w.close();
-            co_return {};
-        });
-        group.add(zlib_deflate(r, body));
-        co_await co_await group.wait();
+        co_await co_await when_all(
+            pipe_bind(std::move(w), &std::decay_t<decltype(*this)>::readChunked,
+                      this),
+            co_bind([this, w = std::move(w)]() mutable -> Task<Expected<>> {
+                co_await co_await readChunked(w);
+                co_await co_await w.flush();
+                co_await w.close();
+                co_return {};
+            }),
+            zlib_deflate(r, body));
     } break;
     case HTTPContentEncoding::Gzip: {
         OwningStream pin, pout;
@@ -299,15 +293,14 @@ Task<Expected<>> HTTPProtocolVersion11::readEncoded(BorrowedStream &body) {
                        .pipe_in(0, pin)
                        .pipe_out(1, pout)
                        .spawn();
-        TaskGroup<Expected<>> group;
-        group.add([this, pin = std::move(pin)]() mutable -> Task<Expected<>> {
-            co_await co_await readChunked(pin);
-            co_await co_await pin.flush();
-            co_await pin.close();
-            co_return {};
-        });
-        group.add(pipe_forward(pout, body));
-        co_await co_await group.wait();
+        co_await co_await when_all(
+            co_bind([this, pin = std::move(pin)]() mutable -> Task<Expected<>> {
+                co_await co_await readChunked(pin);
+                co_await co_await pin.flush();
+                co_await pin.close();
+                co_return {};
+            }),
+            pipe_forward(pout, body));
         co_await co_await wait_process(pid);
     } break;
     };

@@ -12,7 +12,7 @@ static Task<Expected<>> func() {
 }
 
 static Task<Expected<>> amain() {
-    co_await co_await when_all(func(), func(), func());
+    co_await when_all(func(), func(), func());
     co_return {};
 }
 

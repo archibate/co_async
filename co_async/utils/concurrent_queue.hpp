@@ -1,5 +1,6 @@
 #pragma once
 #include <co_async/std.hpp>
+#include <co_async/utils/spin_mutex.hpp>
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/ring_queue.hpp>
 
@@ -103,6 +104,6 @@ struct alignas(hardware_destructive_interference_size)
 
 private:
     std::deque<T> mQueue;
-    std::mutex mMutex;
+    SpinMutex mMutex;
 };
 } // namespace co_async

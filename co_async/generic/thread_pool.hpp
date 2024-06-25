@@ -2,6 +2,7 @@
 
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
+#include <co_async/utils/spin_mutex.hpp>
 #include <co_async/generic/condition_variable.hpp>
 #include <co_async/generic/io_context.hpp>
 
@@ -11,11 +12,11 @@ struct ThreadPool {
 private:
     struct Thread;
 
-    std::mutex mWorkingMutex;
+    SpinMutex mWorkingMutex;
     std::list<Thread *> mWorkingThreads;
-    std::mutex mFreeMutex;
+    SpinMutex mFreeMutex;
     std::list<Thread *> mFreeThreads;
-    std::mutex mThreadsMutex;
+    SpinMutex mThreadsMutex;
     std::list<Thread> mThreads;
 
     Thread *submitJob(std::function<void()> func);

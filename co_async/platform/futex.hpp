@@ -1,6 +1,5 @@
 #pragma once
 #include <co_async/std.hpp>
-#include "co_async/utils/debug.hpp"
 #include <co_async/awaiter/task.hpp>
 #include <co_async/platform/error_handling.hpp>
 #include <co_async/platform/platform_io.hpp>
@@ -11,11 +10,18 @@ namespace co_async {
 template <class T>
 inline constexpr uint32_t getFutexFlagsFor() {
     switch (sizeof(T)) {
-    case sizeof(uint8_t):  return FUTEX2_SIZE_U8;
-    case sizeof(uint16_t): return FUTEX2_SIZE_U16;
-    case sizeof(uint32_t): return FUTEX2_SIZE_U32;
-    case sizeof(uint64_t): return FUTEX2_SIZE_U64;
+    case sizeof(uint8_t):  return FUTEX2_SIZE_U8 | FUTEX2_PRIVATE;
+    case sizeof(uint16_t): return FUTEX2_SIZE_U16 | FUTEX2_PRIVATE;
+    case sizeof(uint32_t): return FUTEX2_SIZE_U32 | FUTEX2_PRIVATE;
+    case sizeof(uint64_t): return FUTEX2_SIZE_U64 | FUTEX2_PRIVATE;
     }
+}
+
+template <class T>
+inline constexpr uint64_t futexValueExtend(T value) {
+    uint64_t ret = 0;
+    std::memcpy(&ret, &value, sizeof(T));
+    return ret;
 }
 
 template <class T>
@@ -24,7 +30,7 @@ inline Task<Expected<>> futex_wait(std::atomic<T> *futex,
                                    uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
     co_return expectError(co_await UringOp().prep_futex_wait(
         reinterpret_cast<uint32_t *>(futex),
-        static_cast<uint64_t>(static_cast<std::make_unsigned_t<T>>(val)),
+        futexValueExtend(val),
         static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0));
 }
 

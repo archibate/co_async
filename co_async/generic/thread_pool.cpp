@@ -78,7 +78,7 @@ ThreadPool::Thread *ThreadPool::submitJob(std::function<void()> func) {
 }
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
-    auto ready = std::make_shared<std::atomic<std::uint32_t>>(0);
+    auto ready = std::make_shared<std::atomic<bool>>(false);
     std::exception_ptr ep;
     submitJob(
         [ready, func = std::move(func), &ep]() mutable {
@@ -87,11 +87,11 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
             } catch (...) {
                 ep = std::current_exception();
             }
-            ready->store(1, std::memory_order_release);
+            ready->store(true, std::memory_order_release);
             futex_notify_sync(ready.get());
         });
-    while (ready->load(std::memory_order_acquire) == 0)
-        co_await co_await futex_wait(ready.get(), 0);
+    while (ready->load(std::memory_order_acquire) == false)
+        co_await co_await futex_wait(ready.get(), false);
     if (ep) [[unlikely]] {
         std::rethrow_exception(ep);
     }
@@ -100,7 +100,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
                                     CancelToken cancel) {
-    auto ready = std::make_shared<std::atomic<std::uint32_t>>(0);
+    auto ready = std::make_shared<std::atomic<bool>>(false);
     std::stop_source stop;
     bool stopped = false;
     std::exception_ptr ep;
@@ -111,7 +111,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
         } catch (...) {
             ep = std::current_exception();
         }
-        ready->store(1, std::memory_order_release);
+        ready->store(true, std::memory_order_release);
         futex_notify_sync(ready.get());
     });
 
@@ -120,8 +120,8 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
             stopped = true;
             stop.request_stop();
         });
-        while (ready->load(std::memory_order_acquire) == 0)
-            co_await co_await futex_wait(ready.get(), 0);
+        while (ready->load(std::memory_order_acquire) == false)
+            co_await co_await futex_wait(ready.get(), false);
     }
 
     if (ep) [[unlikely]] {

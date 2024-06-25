@@ -307,64 +307,64 @@ public:
     }
 };
 
-template <class Value, class Compare = std::less<>>
-struct ConcurrentRbTree : private RbTree<Value, Compare> {
-private:
-    using BaseTree = RbTree<Value, Compare>;
-
-public:
-    struct NodeType : BaseTree::RbNode {
-        NodeType() = default;
-        NodeType(NodeType &&) = delete;
-
-        ~NodeType() noexcept {
-            erase_from_parent();
-        }
-
-    protected:
-        void erase_from_parent() {
-            static_assert(
-                std::is_base_of_v<NodeType, Value>,
-                "Value type must be derived from RbTree<Value>::NodeType");
-            if (this->rbTree) {
-                auto lock = static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
-                lock->erase(static_cast<Value &>(*this));
-                this->rbTree = nullptr;
-            }
-        }
-    };
-
-    struct LockGuard {
-    private:
-        BaseTree *mThat;
-        std::unique_lock<std::mutex> mGuard;
-
-        explicit LockGuard(ConcurrentRbTree *that) noexcept
-            : mThat(that),
-              mGuard(that->mMutex) {}
-
-        friend ConcurrentRbTree;
-
-    public:
-        BaseTree &operator*() const noexcept {
-            return *mThat;
-        }
-
-        BaseTree *operator->() const noexcept {
-            return mThat;
-        }
-
-        void unlock() noexcept {
-            mGuard.unlock();
-            mThat = nullptr;
-        }
-    };
-
-    LockGuard lock() noexcept {
-        return LockGuard(this);
-    }
-
-private:
-    std::mutex mMutex;
-};
+// template <class Value, class Compare = std::less<>>
+// struct ConcurrentRbTree : private RbTree<Value, Compare> {
+// private:
+//     using BaseTree = RbTree<Value, Compare>;
+//
+// public:
+//     struct NodeType : BaseTree::RbNode {
+//         NodeType() = default;
+//         NodeType(NodeType &&) = delete;
+//
+//         ~NodeType() noexcept {
+//             erase_from_parent();
+//         }
+//
+//     protected:
+//         void erase_from_parent() {
+//             static_assert(
+//                 std::is_base_of_v<NodeType, Value>,
+//                 "Value type must be derived from RbTree<Value>::NodeType");
+//             if (this->rbTree) {
+//                 auto lock = static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
+//                 lock->erase(static_cast<Value &>(*this));
+//                 this->rbTree = nullptr;
+//             }
+//         }
+//     };
+//
+//     struct LockGuard {
+//     private:
+//         BaseTree *mThat;
+//         std::unique_lock<std::mutex> mGuard;
+//
+//         explicit LockGuard(ConcurrentRbTree *that) noexcept
+//             : mThat(that),
+//               mGuard(that->mMutex) {}
+//
+//         friend ConcurrentRbTree;
+//
+//     public:
+//         BaseTree &operator*() const noexcept {
+//             return *mThat;
+//         }
+//
+//         BaseTree *operator->() const noexcept {
+//             return mThat;
+//         }
+//
+//         void unlock() noexcept {
+//             mGuard.unlock();
+//             mThat = nullptr;
+//         }
+//     };
+//
+//     LockGuard lock() noexcept {
+//         return LockGuard(this);
+//     }
+//
+// private:
+//     std::mutex mMutex;
+// };
 } // namespace co_async

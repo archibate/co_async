@@ -1,5 +1,6 @@
 #pragma once
 #include <co_async/std.hpp>
+#include <co_async/utils/spin_mutex.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/condition_variable.hpp>
 #include <co_async/utils/cacheline.hpp>
@@ -57,7 +58,7 @@ template <class T>
 struct alignas(hardware_destructive_interference_size) ConcurrentQueue {
 private:
     RingQueue<T> mQueue;
-    std::mutex mMutex;
+    SpinMutex mMutex;
     ConditionVariable mReady;
 
 public:

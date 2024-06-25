@@ -1,5 +1,6 @@
 #pragma once
 #include <co_async/std.hpp>
+#include <co_async/utils/spin_mutex.hpp>
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/details/ignore_return_promise.hpp>
 #include <co_async/awaiter/task.hpp>
@@ -168,7 +169,7 @@ private:
     InfinityQueue<std::coroutine_handle<>> mQueue;
 #endif
     RbTree<TimerNode> mTimers;
-    std::mutex mMTMutex;
+    SpinMutex mMTMutex;
     std::list<std::coroutine_handle<>> mMTQueue;
 };
 

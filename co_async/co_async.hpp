@@ -10,6 +10,7 @@
 #include <co_async/awaiter/just.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/awaiter/when_all.hpp>
+#include <co_async/generic/allocator.hpp>
 #include <co_async/generic/cancel.hpp>
 #include <co_async/generic/condition_variable.hpp>
 #include <co_async/generic/generic_io.hpp>
@@ -21,6 +22,7 @@
 #include <co_async/generic/thread_pool.hpp>
 #include <co_async/generic/timeout.hpp>
 #include <co_async/generic/when_any.hpp>
+#include <co_async/iostream/bytes_buffer.hpp>
 #include <co_async/iostream/cached_stream.hpp>
 #include <co_async/iostream/directory_stream.hpp>
 #include <co_async/iostream/file_stream.hpp>
@@ -53,6 +55,7 @@
 #include <co_async/utils/debug.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/utils/finally.hpp>
+#include <co_async/utils/generator_result.hpp>
 #include <co_async/utils/ilist.hpp>
 #include <co_async/utils/non_void_helper.hpp>
 #include <co_async/utils/perf.hpp>

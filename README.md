@@ -139,6 +139,7 @@ cmake -B build -DCO_ASYNC_EXCEPT=ON  # 启用异常（会影响协程函数性�
 cmake -B build -DCO_ASYNC_PERF=ON  # 启用性能测试（程序结束时自动打印测时结果）
 cmake -B build -DCO_ASYNC_ZLIB=ON  # 启用压缩支持（需要链接 /usr/lib/libz.so）
 cmake -B build -DCO_ASYNC_STEAL=ON  # 启用任务窃取队列（类似于 TBB）
+cmake -B build -DCO_ASYNC_ALLOC=ON  # 启用自定义分配器（基于 C++17 PMR）
 ```
 
 ## 性能测试

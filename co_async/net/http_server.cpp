@@ -254,6 +254,10 @@ HTTPServer::prepareHTTP(SocketHandle handle) const {
 }
 
 Task<Expected<>> HTTPServer::handle_http(SocketHandle handle) const {
+// #if CO_ASYNC_ALLOC
+//     std::pmr::unsynchronized_pool_resource pool{currentAllocator};
+//     ReplaceAllocator _ = &pool;
+// #endif
     /* int h = handle.fileNo(); */
     co_await co_await doHandleConnection(
         co_await prepareHTTP(std::move(handle)));
@@ -300,6 +304,12 @@ Task<Expected<>> HTTPServer::handle_https(SocketHandle handle,
 Task<Expected<>>
 HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
     while (true) {
+// #if CO_ASYNC_ALLOC
+//         BytesBuffer buf(8192 * 4);
+//         std::pmr::monotonic_buffer_resource mono{buf.data(), buf.size(), currentAllocator};
+//         ReplaceAllocator _ = &mono;
+// #endif
+
         IO io(http.get());
         if (!co_await io.readRequestHeader()) {
             break;

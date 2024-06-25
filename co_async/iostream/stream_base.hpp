@@ -499,10 +499,10 @@ struct BorrowedStream {
     }
 
 private:
-    StreamIOBuffer mInBuffer;
+    BytesBuffer mInBuffer;
     std::size_t mInIndex = 0;
     std::size_t mInEnd = 0;
-    StreamIOBuffer mOutBuffer;
+    BytesBuffer mOutBuffer;
     std::size_t mOutIndex = 0;
     Stream *mRaw;
 };

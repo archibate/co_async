@@ -26,7 +26,7 @@ struct SignalingContextMT {
             waiters.swap(instance->mWaitingSignals.at(signo));
             lock.unlock();
             for (auto coroutine: waiters) {
-                IOContextMT::spawn_mt(coroutine);
+                IOContextMT::spawn(coroutine);
             }
         }
     }

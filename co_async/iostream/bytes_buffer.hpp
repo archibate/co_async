@@ -4,7 +4,7 @@
 #include <co_async/generic/allocator.hpp>
 
 #if CO_ASYNC_ALLOC
-struct StreamIOBuffer {
+struct BytesBuffer {
 private:
     struct Deleter {
         std::size_t mSize;
@@ -18,7 +18,15 @@ private:
     std::unique_ptr<char[], Deleter> mData;
 
 public:
-    void allocate(std::size_t size, std::pmr::polymorphic_allocator<> alloc = {}) {
+    BytesBuffer() noexcept = default;
+
+    explicit BytesBuffer(std::size_t size,
+                         std::pmr::polymorphic_allocator<> alloc = {})
+        : mData(reinterpret_cast<char *>(alloc.resource()->allocate(size)),
+                Deleter{size, alloc.resource()}) {}
+
+    void allocate(std::size_t size,
+                  std::pmr::polymorphic_allocator<> alloc = {}) {
         std::pmr::memory_resource *resource = alloc.resource();
         mData.reset(reinterpret_cast<char *>(resource->allocate(size)));
         mData.get_deleter() = {size, resource};
@@ -41,12 +49,16 @@ public:
     }
 };
 #else
-struct StreamIOBuffer {
+struct BytesBuffer {
 private:
     std::unique_ptr<char[]> mData;
     std::size_t mSize = 0;
 
 public:
+    BytesBuffer() noexcept = default;
+
+    explicit BytesBuffer(std::size_t size) : mData(std::make_unique<char[]>(size)), mSize(size) {}
+
     void allocate(std::size_t size) {
         mData = std::make_unique<char[]>(size);
         mSize = size;

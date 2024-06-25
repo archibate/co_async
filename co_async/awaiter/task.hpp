@@ -7,9 +7,25 @@
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/details/previous_awaiter.hpp>
 #include <co_async/awaiter/details/value_awaiter.hpp>
+#include <co_async/utils/generator_result.hpp>
 #include <co_async/utils/uninitialized.hpp>
+#include <co_async/generic/allocator.hpp>
 
 namespace co_async {
+
+#if CO_ASYNC_ALLOC
+struct TaskAwaiterAllocState {
+    std::pmr::memory_resource *mLastAllocator;
+
+    void push() noexcept {
+        mLastAllocator = currentAllocator;
+    }
+
+    void pop() noexcept {
+        currentAllocator = mLastAllocator;
+    }
+};
+#endif
 
 template <class T>
 struct TaskAwaiter {
@@ -28,11 +44,17 @@ struct TaskAwaiter {
 
     std::coroutine_handle<>
     await_suspend(std::coroutine_handle<> coroutine) noexcept {
+#if CO_ASYNC_ALLOC
+        mAllocState.push();
+#endif
         mCallerCoroutine = coroutine;
         return mCalleeCoroutine;
     }
 
     T await_resume() {
+#if CO_ASYNC_ALLOC
+        mAllocState.pop();
+#endif
 #if CO_ASYNC_EXCEPT
         if (mException) [[unlikely]] {
             std::rethrow_exception(mException);
@@ -98,112 +120,9 @@ protected:
 #if CO_ASYNC_EXCEPT
     std::exception_ptr mException;
 #endif
-};
-
-/* template <class T, class Final = void> */
-/* struct Generative { */
-/*     explicit operator bool() const noexcept { */
-/*     } */
-/* }; */
-
-template <class T, class E = void>
-struct GeneratorResult {
-    std::variant<T, E> mValue;
-
-    explicit GeneratorResult(std::in_place_index_t<0>, auto &&...args)
-        : mValue(std::in_place_index<0>,
-                 std::forward<decltype(args)>(args)...) {}
-
-    explicit GeneratorResult(std::in_place_index_t<1>, auto &&...args)
-        : mValue(std::in_place_index<1>,
-                 std::forward<decltype(args)>(args)...) {}
-
-    /* GeneratorResult(std::convertible_to<T> auto &&value) */
-
-    bool has_result() const noexcept {
-        return mValue.index() == 1;
-    }
-
-    bool has_value() const noexcept {
-        return mValue.index() == 0;
-    }
-
-    explicit operator bool() const noexcept {
-        return has_value();
-    }
-
-    T &operator*() & noexcept {
-        return *std::get_if<0>(&mValue);
-    }
-
-    T &&operator*() && noexcept {
-        return std::move(*std::get_if<0>(&mValue));
-    }
-
-    T const &operator*() const & noexcept {
-        return *std::get_if<0>(&mValue);
-    }
-
-    T const &&operator*() const && noexcept {
-        return std::move(*std::get_if<0>(&mValue));
-    }
-
-    T &operator->() noexcept {
-        return std::get_if<0>(&mValue);
-    }
-
-    T &value() & {
-        return std::get<0>(mValue);
-    }
-
-    T &&value() && {
-        return std::move(std::get<0>(mValue));
-    }
-
-    T const &value() const & {
-        return std::get<0>(mValue);
-    }
-
-    T const &&value() const && {
-        return std::move(std::get<0>(mValue));
-    }
-
-    E &result_unsafe() & noexcept {
-        return *std::get_if<1>(&mValue);
-    }
-
-    E &&result_unsafe() && noexcept {
-        return std::move(*std::get_if<1>(&mValue));
-    }
-
-    E const &result_unsafe() const & noexcept {
-        return *std::get_if<1>(&mValue);
-    }
-
-    E const &&result_unsafe() const && noexcept {
-        return std::move(*std::get_if<1>(&mValue));
-    }
-
-    E &result() & {
-        return std::get<1>(mValue);
-    }
-
-    E &&result() && {
-        return std::move(std::get<1>(mValue));
-    }
-
-    E const &result() const & {
-        return std::get<1>(mValue);
-    }
-
-    E const &&result() const && {
-        return std::move(std::get<1>(mValue));
-    }
-};
-
-template <class T>
-struct GeneratorResult<T, void> : GeneratorResult<T, Void> {
-    using GeneratorResult<T, Void>::GeneratorResult;
+#if CO_ASYNC_ALLOC
+    TaskAwaiterAllocState mAllocState;
+#endif
 };
 
 struct TaskFinalAwaiter {
@@ -251,11 +170,17 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
 
     std::coroutine_handle<>
     await_suspend(std::coroutine_handle<> coroutine) noexcept {
+#if CO_ASYNC_ALLOC
+        mAllocState.push();
+#endif
         mCallerCoroutine = coroutine;
         return mCalleeCoroutine;
     }
 
     GeneratorResult<T, E> await_resume() {
+#if CO_ASYNC_ALLOC
+        mAllocState.pop();
+#endif
 #if CO_ASYNC_EXCEPT
         if (mException) [[unlikely]] {
             std::rethrow_exception(mException);
@@ -264,7 +189,6 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
 #if CO_ASYNC_SAFERET
 # if CO_ASYNC_DEBUG
         GeneratorResult<T, E> ret = std::move(mResult.value());
-        mResult.reset();
 # else
         GeneratorResult<T, E> ret = std::move(*mResult);
 # endif
@@ -320,6 +244,9 @@ protected:
 #endif
 #if CO_ASYNC_EXCEPT
     std::exception_ptr mException;
+#endif
+#if CO_ASYNC_ALLOC
+    TaskAwaiterAllocState mAllocState;
 #endif
 };
 
@@ -383,11 +310,6 @@ private:
 
 struct TaskPromiseLocal {
     void *mCancelToken = nullptr;
-#if CO_ASYNC_ALLOC
-    std::pmr::memory_resource *mAllocator = nullptr;
-    static inline thread_local std::pmr::memory_resource *mFrameAllocator =
-        std::pmr::get_default_resource();
-#endif
 };
 
 struct TaskPromiseCommonBase {
@@ -404,12 +326,11 @@ struct TaskPromiseCommonBase {
 
 #if CO_ASYNC_ALLOC
     void *operator new(std::size_t size) {
-        void *ptr = TaskPromiseLocal::mFrameAllocator->allocate(size);
-        return ptr;
+        return std::pmr::get_default_resource()->allocate(size);
     }
 
     void operator delete(void *ptr, std::size_t size) noexcept {
-        return TaskPromiseLocal::mFrameAllocator->deallocate(ptr, size);
+        std::pmr::get_default_resource()->deallocate(ptr, size);
     }
 #endif
 };

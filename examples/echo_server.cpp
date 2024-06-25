@@ -5,6 +5,11 @@ using namespace co_async;
 using namespace std::literals;
 
 static Task<Expected<>> handle_connection(OwningStream income) {
+    // BytesBuffer buf(8192 * 8);
+    // std::pmr::monotonic_buffer_resource mono{buf.data(), buf.size(), currentAllocator};
+    std::pmr::unsynchronized_pool_resource pool{currentAllocator};
+    ReplaceAllocator _ = &pool;
+
     while (auto line = co_await income.getline("\r\n"sv)) {
         if (line->empty()) {
             co_await co_await income.puts("HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv);
@@ -39,8 +44,8 @@ static Task<Expected<>> amain(std::string serveAt) {
 #else
     std::size_t i = 0;
     while (true) {
-        if (auto income = co_await tcp_accept(listener, std::chrono::seconds(3))) [[likely]] {
-            IOContextMT::nth_worker(i).spawn_mt(handle_connection(std::move(*income)));
+        if (auto income = co_await tcp_accept(listener, std::chrono::seconds(5))) [[likely]] {
+            IOContextMT::nth_worker(i).spawn(handle_connection(std::move(*income)));
             ++i;
             if (i >= IOContextMT::num_workers()) {
                 i = 0;

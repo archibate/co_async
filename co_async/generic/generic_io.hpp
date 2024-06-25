@@ -73,32 +73,25 @@ struct GenericIOContext {
     };
 
     bool runComputeOnly() {
+        std::unique_lock lock(mMutex);
         if (auto coroutine = mQueue.pop()) {
+            lock.unlock();
             coroutine->resume();
             return true;
         }
-        return false;
-    }
-
-    bool runMTQueue() {
-#if !CO_ASYNC_STEAL
-        std::unique_lock lock(mMTMutex);
-        if (!mMTQueue.empty()) {
-            auto coroutine = mMTQueue.front();
-            mMTQueue.pop_front();
-            lock.unlock();
-            enqueueJob(coroutine);
-            return true;
-        }
-#endif
+        lock.unlock();
         return false;
     }
 
     std::optional<std::chrono::steady_clock::duration> runDuration() {
         while (true) {
+            std::unique_lock lock(mMutex);
             while (auto coroutine = mQueue.pop()) {
+                lock.unlock();
                 coroutine->resume();
+                lock.lock();
             }
+            lock.unlock();
             if (!mTimers.empty()) {
                 auto &promise = mTimers.front();
                 std::chrono::steady_clock::time_point now =
@@ -121,23 +114,8 @@ struct GenericIOContext {
     }
 
     void enqueueJob(std::coroutine_handle<> coroutine) {
-        (void)mQueue.push(std::move(coroutine));
-        /*         if (!mQueue.push(std::move(coroutine))) [[unlikely]] { */
-        /* #if CO_ASYNC_DEBUG */
-        /*             std::cerr << "WARNING: coroutine queue overrun\n"; */
-        /* #endif */
-        /*             std::lock_guard lock(mMTMutex); */
-        /*             mMTQueue.push_back(coroutine); */
-        /*         } */
-    }
-
-    void enqueueJobMT(std::coroutine_handle<> coroutine) {
-#if CO_ASYNC_STEAL
-        enqueueJob(coroutine);
-#else
-        std::lock_guard lock(mMTMutex);
-        mMTQueue.push_back(coroutine);
-#endif
+        std::unique_lock lock(mMutex);
+        mQueue.push(std::move(coroutine));
     }
 
     void enqueueTimerNode(TimerNode &promise) {
@@ -147,9 +125,6 @@ struct GenericIOContext {
     void startMain(std::stop_token stop) {
         while (!stop.stop_requested()) [[likely]] {
             auto duration = runDuration();
-            if (runMTQueue()) {
-                continue;
-            }
             if (duration) {
                 std::this_thread::sleep_for(*duration);
             } else {
@@ -169,10 +144,9 @@ private:
 #else
     /* RingQueue<std::coroutine_handle<>> mQueue{1024}; */
     InfinityQueue<std::coroutine_handle<>> mQueue;
+    SpinMutex mMutex;
 #endif
     RbTree<TimerNode> mTimers;
-    SpinMutex mMTMutex;
-    std::list<std::coroutine_handle<>> mMTQueue;
 };
 
 inline void GenericIOContext::TimerNode::Awaiter::await_suspend(

@@ -1,8 +1,8 @@
 #pragma once
 #include <co_async/std.hpp>
+#include <co_async/awaiter/task.hpp>
 #include <co_async/generic/generic_io.hpp>
 #include <co_async/platform/platform_io.hpp>
-#include <co_async/awaiter/task.hpp>
 #include <co_async/utils/cacheline.hpp>
 
 namespace co_async {
@@ -12,26 +12,7 @@ private:
     PlatformIOContext mPlatformIO;
     std::jthread mThread;
 
-    struct IOContextGuard {
-        explicit IOContextGuard(IOContext *that) {
-            if (IOContext::instance || GenericIOContext::instance ||
-                PlatformIOContext::instance) [[unlikely]] {
-                throw std::logic_error(
-                    "each thread may contain only one IOContextGuard");
-            }
-            IOContext::instance = that;
-            GenericIOContext::instance = &that->mGenericIO;
-            PlatformIOContext::instance = &that->mPlatformIO;
-        }
-
-        ~IOContextGuard() {
-            IOContext::instance = nullptr;
-            GenericIOContext::instance = nullptr;
-            PlatformIOContext::instance = nullptr;
-        }
-
-        IOContextGuard(IOContextGuard &&) = delete;
-    };
+    struct IOContextGuard;
 
 public:
     explicit IOContext(std::in_place_t) {}
@@ -43,59 +24,13 @@ public:
     IOContext(IOContext &&) = delete;
 
     void startHere(std::stop_token stop, PlatformIOContextOptions options,
-                   std::span<IOContext> peerContexts) {
-        IOContextGuard guard(this);
-        if (options.threadAffinity) {
-            PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
-        }
-        auto maxSleep = options.maxSleep;
-        auto *genericIO = GenericIOContext::instance;
-        auto *platformIO = PlatformIOContext::instance;
-        while (!stop.stop_requested()) [[likely]] {
-            auto duration = genericIO->runDuration();
-            if (genericIO->runMTQueue()) {
-                continue;
-            }
-            if (!duration || *duration > maxSleep) {
-                duration = maxSleep;
-            }
-            bool hasEvent = platformIO->waitEventsFor(1, duration);
-            if (hasEvent) {
-                auto t = maxSleep + options.maxSleepInc;
-                if (t > options.maxSleepLimit) {
-                    t = options.maxSleepLimit;
-                }
-                maxSleep = t;
-            } else {
-                maxSleep = options.maxSleep;
-            }
-#if CO_ASYNC_STEAL
-            if (!hasEvent && !peerContexts.empty()) {
-                for (IOContext *p = peerContexts.data();
-                     p != peerContexts.data() + peerContexts.size(); ++p) {
-                    if (p->mGenericIO.runComputeOnly()) {
-                        break;
-                    }
-                }
-            }
-#endif
-        }
-    }
+                   std::span<IOContext> peerContexts);
 
     void start(PlatformIOContextOptions options = {},
-               std::span<IOContext> peerContexts = {}) {
-        mThread = std::jthread([this, options = std::move(options),
-                                peerContexts](std::stop_token stop) {
-            this->startHere(stop, options, peerContexts);
-        });
-    }
+               std::span<IOContext> peerContexts = {});
 
     void spawn(std::coroutine_handle<> coroutine) {
         mGenericIO.enqueueJob(coroutine);
-    }
-
-    void spawn_mt(std::coroutine_handle<> coroutine) /* MT-safe */ {
-        mGenericIO.enqueueJobMT(coroutine);
     }
 
     template <class T, class P>
@@ -107,19 +42,14 @@ public:
     }
 
     template <class T, class P>
-    void spawn_mt(Task<T, P> task) /* MT-safe */ {
-        auto wrapped = coSpawnStarter(std::move(task));
-        auto coroutine = wrapped.get();
-        mGenericIO.enqueueJobMT(coroutine);
-        wrapped.release();
-    }
-
-    template <class T, class P>
     T join(Task<T, P> task) {
         return contextJoin(*this, std::move(task));
     }
 
-    static inline thread_local IOContext *instance;
+    static thread_local IOContext *instance;
+#if CO_ASYNC_ALLOC
+    static thread_local std::pmr::memory_resource *currentAllocator;
+#endif
 };
 
 template <class T, class P>

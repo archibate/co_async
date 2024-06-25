@@ -65,7 +65,7 @@ struct FileWatch {
         if (!co_await mStream.getstruct(*mEventBuffer)) [[unlikely]] {
             throw std::runtime_error("EOF while reading struct");
         }
-        std::string name;
+        String name CO_ASYNC_PMR;
         name.reserve(mEventBuffer->len);
         co_await co_await mStream.getn(name, mEventBuffer->len);
         name = name.c_str();

@@ -15,7 +15,7 @@ namespace co_async {
 struct HTTPServer::Impl {
     struct Route {
         HTTPHandler mHandler;
-        std::vector<std::string> mMethods;
+        std::vector<String> mMethods;
 
         bool checkMethod(std::string_view method) const {
             return std::find(mMethods.begin(), mMethods.end(), method) !=
@@ -26,7 +26,7 @@ struct HTTPServer::Impl {
     struct PrefixRoute {
         HTTPPrefixHandler mHandler;
         HTTPRouteMode mRouteMode;
-        std::vector<std::string> mMethods;
+        std::vector<String> mMethods;
 
         bool checkMethod(std::string_view method) const {
             return std::find(mMethods.begin(), mMethods.end(), method) !=
@@ -78,8 +78,8 @@ struct HTTPServer::Impl {
         }
     };
 
-    SimpleMap<std::string, Route> mRoutes;
-    std::vector<std::pair<std::string, PrefixRoute>> mPrefixRoutes;
+    SimpleMap<String, Route> mRoutes;
+    std::vector<std::pair<String, PrefixRoute>> mPrefixRoutes;
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
     };
@@ -132,14 +132,14 @@ Task<Expected<>> HTTPServer::IO::readRequestHeader() {
     co_return {};
 }
 
-Task<Expected<std::string>> HTTPServer::IO::request_body() {
+Task<Expected<String>> HTTPServer::IO::request_body() {
 #if CO_ASYNC_DEBUG
     if (mBodyRead) [[unlikely]] {
         throw std::runtime_error("request_body() may only be called once");
     }
 #endif
     mBodyRead = true;
-    std::string body;
+    String body;
     co_await co_await mHttp->readBody(body);
     co_return body;
 }
@@ -186,11 +186,10 @@ Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp,
 }
 
 void HTTPServer::IO::builtinHeaders(HTTPResponse &res) {
-    using namespace std::string_literals;
-    res.headers.insert("server"s, "co_async/0.0.1"s);
-    res.headers.insert("accept"s, "*/*"s);
-    res.headers.insert("accept-ranges"s, "bytes"s);
-    res.headers.insert("date"s, httpDateNow());
+    res.headers.insert("server"_s, "co_async/0.0.1"_s);
+    res.headers.insert("accept"_s, "*/*"_s);
+    res.headers.insert("accept-ranges"_s, "bytes"_s);
+    res.headers.insert("date"_s, httpDateNow());
 }
 
 HTTPServer::HTTPServer() : mImpl(std::make_unique<Impl>()) {}
@@ -210,7 +209,7 @@ void HTTPServer::timeout(std::chrono::steady_clock::duration timeout) {
 void HTTPServer::route(std::string_view methods, std::string_view path,
                        HTTPHandler handler) {
     mImpl->mRoutes.insert_or_assign(
-        std::string(path),
+        String(path),
         {handler, split_string(upper_string(methods), ' ').collect()});
 }
 
@@ -223,7 +222,7 @@ void HTTPServer::route(std::string_view methods, std::string_view prefix,
                                });
     mImpl->mPrefixRoutes.insert(
         it,
-        {std::string(prefix),
+        {String(prefix),
          {handler, mode, split_string(upper_string(methods), ' ').collect()}});
 }
 
@@ -272,13 +271,13 @@ HTTPServer::handle_http_redirect_to_https(SocketHandle handle) const {
             break;
         }
         if (auto host = io.request.headers.get("host")) {
-            auto location = "https://"s + *host + io.request.uri.dump();
+            auto location = "https://"_s + *host + io.request.uri.dump();
             HTTPResponse res = {
                 .status = 302,
                 .headers =
                     {
-                        {"location", location},
-                        {"content-type", "text/plain"},
+                        {"location"_s, location},
+                        {"content-type"_s, "text/plain"_s},
                     },
             };
             co_await co_await io.response(res, location);
@@ -325,14 +324,14 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
         if (mImpl->mLogRequests) {
             auto dt = std::chrono::steady_clock::now() - t0;
             std::clog << io.request.method + ' ' + io.request.uri.dump() + ' ' +
-                             std::to_string(io.mResponseSavedForDebug.status) +
+                             to_string(io.mResponseSavedForDebug.status) + ' ' +
+                             String(getHTTPStatusName(
+                                 io.mResponseSavedForDebug.status)
+                                        CO_ASYNC_PMR1) +
                              ' ' +
-                             std::string(getHTTPStatusName(
-                                 io.mResponseSavedForDebug.status)) +
-                             ' ' +
-                             std::to_string(std::chrono::duration_cast<
-                                                std::chrono::milliseconds>(dt)
-                                                .count()) +
+                             to_string(std::chrono::duration_cast<
+                                           std::chrono::milliseconds>(dt)
+                                           .count()) +
                              "ms\n";
             for (auto [k, v]: io.mResponseSavedForDebug.headers) {
                 if (k == "cookie" || k == "set-cookie") {
@@ -349,7 +348,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
 
 Task<Expected<>> HTTPServer::make_error_response(IO &io, int status) {
     auto error =
-        to_string(status) + " " + std::string(getHTTPStatusName(status));
+        to_string(status) + ' ' + String(getHTTPStatusName(status) CO_ASYNC_PMR1);
     HTTPResponse res{
         .status = status,
         .headers =

@@ -32,7 +32,7 @@ HTTPProtocolVersion11::httpContentEncodingByName(std::string_view name) {
 
 Task<Expected<>> HTTPProtocolVersion11::parseHeaders(HTTPHeaders &headers) {
     using namespace std::string_view_literals;
-    std::string line;
+    String line CO_ASYNC_PMR;
     while (true) {
         line.clear();
         co_await co_await sock.getline(line, "\r\n"sv);
@@ -168,13 +168,13 @@ Task<Expected<>> HTTPProtocolVersion11::readChunked(BorrowedStream &body) {
     using namespace std::string_view_literals;
     if (mContentLength) {
         if (auto n = *mContentLength; n > 0) {
-            std::string line;
+            String line;
             co_await co_await sock.getn(line, n);
             co_await co_await body.puts(line);
             co_await co_await body.flush();
         }
     } else {
-        std::string line;
+        String line;
         while (true) {
             line.clear();
             co_await co_await sock.getline(line, "\r\n"sv);
@@ -194,14 +194,14 @@ Task<Expected<>> HTTPProtocolVersion11::readChunked(BorrowedStream &body) {
     co_return {};
 }
 
-Task<Expected<>> HTTPProtocolVersion11::readChunkedString(std::string &body) {
+Task<Expected<>> HTTPProtocolVersion11::readChunkedString(String &body) {
     using namespace std::string_view_literals;
     if (mContentLength) {
         if (auto n = *mContentLength; n > 0) {
             co_await co_await sock.getn(body, n);
         }
     } else {
-        std::string line;
+        String line;
         while (true) {
             line.clear();
             co_await co_await sock.getline(line, "\r\n"sv);
@@ -307,7 +307,7 @@ Task<Expected<>> HTTPProtocolVersion11::readEncoded(BorrowedStream &body) {
     co_return {};
 }
 
-Task<Expected<>> HTTPProtocolVersion11::readEncodedString(std::string &body) {
+Task<Expected<>> HTTPProtocolVersion11::readEncodedString(String &body) {
     using namespace std::string_view_literals;
     switch (mContentEncoding) {
     case HTTPContentEncoding::Identity: {
@@ -326,8 +326,8 @@ void HTTPProtocolVersion11::checkPhase(int from, int to) {
     if (mPhase != from) [[unlikely]] {
         throw std::logic_error(
             "HTTPProtocol member function calling order wrong (phase = " +
-            to_string(mPhase) + ", from = " + to_string(from) +
-            ", to = " + to_string(to) + ")");
+            std::to_string(mPhase) + ", from = " + std::to_string(from) +
+            ", to = " + std::to_string(to) + ")");
     }
     mPhase = to;
 }
@@ -354,7 +354,7 @@ Task<Expected<>> HTTPProtocolVersion11::readBodyStream(BorrowedStream &body) {
     co_return {};
 }
 
-Task<Expected<>> HTTPProtocolVersion11::readBody(std::string &body) {
+Task<Expected<>> HTTPProtocolVersion11::readBody(String &body) {
     checkPhase(-1, 0);
     co_await co_await readEncodedString(body);
     co_return {};
@@ -387,7 +387,7 @@ void HTTPProtocolVersion11::initClientState() {
 Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
-    std::string line;
+    String line;
     if (!co_await sock.getline(line, "\r\n"sv)) {
         co_return std::errc::broken_pipe;
     }
@@ -423,7 +423,7 @@ Task<Expected<>> HTTPProtocolVersion11::writeResponse(HTTPResponse const &res) {
 Task<Expected<>> HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
-    std::string line;
+    String line;
     if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
         co_return std::errc::broken_pipe;
     }

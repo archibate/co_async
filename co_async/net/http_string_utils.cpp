@@ -1,8 +1,9 @@
 #include <co_async/net/http_string_utils.hpp>
 #include <co_async/utils/expected.hpp>
+#include <co_async/generic/allocator.hpp>
 
 namespace co_async {
-std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
+String timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
     // format chrono time point into HTTP date format, e.g.:
     // Tue, 30 Apr 2024 07:31:38 GMT
     std::time_t time = std::chrono::system_clock::to_time_t(tp);
@@ -10,11 +11,11 @@ std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
     std::ostringstream ss;
     ss.imbue(std::locale::classic());
     ss << std::put_time(&tm, "%a, %d %b %Y %H:%M:%S GMT");
-    return ss.str();
+    return String{ss.str()};
 }
 
 Expected<std::chrono::system_clock::time_point>
-httpDateToTimePoint(std::string const &date) {
+httpDateToTimePoint(String const &date) {
     std::tm tm = {};
     std::istringstream ss(date);
     ss.imbue(std::locale::classic());
@@ -26,13 +27,13 @@ httpDateToTimePoint(std::string const &date) {
     return std::chrono::system_clock::from_time_t(time);
 }
 
-std::string httpDateNow() {
+String httpDateNow() {
     std::time_t time = std::time(nullptr);
     std::tm tm = *std::gmtime(&time);
     std::ostringstream ss;
     ss.imbue(std::locale::classic());
     ss << std::put_time(&tm, "%a, %d %b %Y %H:%M:%S GMT");
-    return ss.str();
+    return String{ss.str()};
 }
 
 std::string_view getHTTPStatusName(int status) {
@@ -113,92 +114,91 @@ std::string_view getHTTPStatusName(int status) {
     }
 }
 
-std::string guessContentTypeByExtension(std::string_view ext,
-                                        char const *defaultType) {
+String guessContentTypeByExtension(std::string_view ext,
+                                   char const *defaultType) {
     using namespace std::string_view_literals;
-    using namespace std::string_literals;
     if (ext == ".html"sv || ext == ".htm"sv) {
-        return "text/html;charset=utf-8"s;
+        return String{"text/html;charset=utf-8"sv};
     } else if (ext == ".css"sv) {
-        return "text/css;charset=utf-8"s;
+        return String{"text/css;charset=utf-8"sv};
     } else if (ext == ".js"sv) {
-        return "application/javascript;charset=utf-8"s;
+        return String{"application/javascript;charset=utf-8"sv};
     } else if (ext == ".txt"sv || ext == ".md"sv) {
-        return "text/plain;charset=utf-8"s;
+        return String{"text/plain;charset=utf-8"sv};
     } else if (ext == ".json"sv) {
-        return "application/json"s;
+        return String{"application/json"sv};
     } else if (ext == ".png"sv) {
-        return "image/png"s;
+        return String{"image/png"sv};
     } else if (ext == ".jpg"sv || ext == ".jpeg"sv) {
-        return "image/jpeg"s;
+        return String{"image/jpeg"sv};
     } else if (ext == ".gif"sv) {
-        return "image/gif"s;
+        return String{"image/gif"sv};
     } else if (ext == ".xml"sv) {
-        return "application/xml"s;
+        return String{"application/xml"sv};
     } else if (ext == ".pdf"sv) {
-        return "application/pdf"s;
+        return String{"application/pdf"sv};
     } else if (ext == ".mp4"sv) {
-        return "video/mp4"s;
+        return String{"video/mp4"sv};
     } else if (ext == ".mp3"sv) {
-        return "audio/mp3"s;
+        return String{"audio/mp3"sv};
     } else if (ext == ".zip"sv) {
-        return "application/zip"s;
+        return String{"application/zip"sv};
     } else if (ext == ".svg"sv) {
-        return "image/svg+xml"s;
+        return String{"image/svg+xml"sv};
     } else if (ext == ".wav"sv) {
-        return "audio/wav"s;
+        return String{"audio/wav"sv};
     } else if (ext == ".ogg"sv) {
-        return "audio/ogg"s;
+        return String{"audio/ogg"sv};
     } else if (ext == ".mpg"sv || ext == ".mpeg"sv) {
-        return "video/mpeg"s;
+        return String{"video/mpeg"sv};
     } else if (ext == ".webm"sv) {
-        return "video/webm"s;
+        return String{"video/webm"sv};
     } else if (ext == ".ico"sv) {
-        return "image/x-icon"s;
+        return String{"image/x-icon"sv};
     } else if (ext == ".rar"sv) {
-        return "application/x-rar-compressed"s;
+        return String{"application/x-rar-compressed"sv};
     } else if (ext == ".7z"sv) {
-        return "application/x-7z-compressed"s;
+        return String{"application/x-7z-compressed"sv};
     } else if (ext == ".tar"sv) {
-        return "application/x-tar"s;
+        return String{"application/x-tar"sv};
     } else if (ext == ".gz"sv) {
-        return "application/gzip"s;
+        return String{"application/gzip"sv};
     } else if (ext == ".bz2"sv) {
-        return "application/x-bzip2"s;
+        return String{"application/x-bzip2"sv};
     } else if (ext == ".xz"sv) {
-        return "application/x-xz"s;
+        return String{"application/x-xz"sv};
     } else if (ext == ".zip"sv) {
-        return "application/zip"s;
+        return String{"application/zip"sv};
     } else if (ext == ".tar.gz"sv || ext == ".tgz"sv) {
-        return "application/tar+gzip"s;
+        return String{"application/tar+gzip"sv};
     } else if (ext == ".tar.bz2"sv || ext == ".tbz2"sv) {
-        return "application/tar+bzip2"s;
+        return String{"application/tar+bzip2"sv};
     } else if (ext == ".tar.xz"sv || ext == ".txz"sv) {
-        return "application/tar+xz"s;
+        return String{"application/tar+xz"sv};
     } else if (ext == ".doc"sv || ext == ".docx"sv) {
-        return "application/msword"s;
+        return String{"application/msword"sv};
     } else if (ext == ".xls"sv || ext == ".xlsx"sv) {
-        return "application/vnd.ms-excel"s;
+        return String{"application/vnd.ms-excel"sv};
     } else if (ext == ".ppt"sv || ext == ".pptx"sv) {
-        return "application/vnd.ms-powerpoint"s;
+        return String{"application/vnd.ms-powerpoint"sv};
     } else if (ext == ".csv"sv) {
-        return "text/csv;charset=utf-8"s;
+        return String{"text/csv;charset=utf-8"sv};
     } else if (ext == ".rtf"sv) {
-        return "application/rtf"s;
+        return String{"application/rtf"sv};
     } else if (ext == ".exe"sv) {
-        return "application/x-msdownload"s;
+        return String{"application/x-msdownload"sv};
     } else if (ext == ".msi"sv) {
-        return "application/x-msi"s;
+        return String{"application/x-msi"sv};
     } else if (ext == ".bin"sv) {
-        return "application/octet-stream"s;
+        return String{"application/octet-stream"sv};
     } else {
-        return std::string(defaultType);
+        return String{defaultType};
     }
 }
 
-std::string capitalizeHTTPHeader(std::string_view key) {
+String capitalizeHTTPHeader(std::string_view key) {
     // e.g.: user-agent -> User-Agent
-    std::string result(key);
+    String result(key);
     if (!result.empty()) [[likely]] {
         if ('a' <= result[0] && result[0] <= 'z') [[likely]] {
             result[0] -= 'a' - 'A';

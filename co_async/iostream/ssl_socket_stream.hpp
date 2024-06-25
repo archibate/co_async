@@ -9,13 +9,13 @@ namespace co_async {
 std::error_category const &bearSSLCategory();
 
 StructPImpl(SSLClientTrustAnchor) {
-    Expected<> add(std::string content);
+    Expected<> add(std::string_view content);
 };
 
 StructPImpl(SSLServerPrivateKey){};
 
 StructPImpl(SSLServerCertificate) {
-    void add(std::string content);
+    void add(std::string_view content);
 };
 
 StructPImpl(SSLServerSessionCache){};

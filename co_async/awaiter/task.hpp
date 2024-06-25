@@ -381,6 +381,13 @@ private:
     std::coroutine_handle<promise_type> mCoroutine;
 };
 
+struct TaskPromiseLocal {
+    void *mCancelToken = nullptr;
+#if CO_ASYNC_ALLOC
+    std::pmr::memory_resource *mAllocator = nullptr;
+#endif
+};
+
 template <class TaskPromise>
 struct TaskPromiseCommon {
     TaskPromise &self() noexcept {
@@ -409,6 +416,17 @@ struct TaskPromiseCommon {
     auto get_return_object() {
         return std::coroutine_handle<TaskPromise>::from_promise(self());
     }
+
+// #if CO_ASYNC_ALLOC
+//     void *operator new(std::size_t n) {
+//         // void *a[64];
+//         // backtrace_symbols_fd(a, backtrace(a, sizeof a), 1);
+//         throw std::bad_alloc();
+//     }
+//
+//     void operator delete(void *ptr) noexcept {
+//     }
+// #endif
 };
 
 template <class TaskPromise>
@@ -563,13 +581,13 @@ struct TaskPromiseTransforms {
 
     template <class U>
     Task<U> &&await_transform(Task<U> &&u) noexcept {
-        u.promise().mCancelToken = self().mCancelToken;
+        u.promise().mLocals = self().mLocals;
         return std::move(u);
     }
 
     template <class U>
     Task<U> const &await_transform(Task<U> const &u) noexcept {
-        u.promise().mCancelToken = self().mCancelToken;
+        u.promise().mLocals = self().mLocals;
         return u;
     }
 
@@ -631,7 +649,7 @@ struct TaskPromise : TaskPromiseImpl<TaskPromise<T>, T> {
 #endif
 
     TaskAwaiter<T> *mAwaiter{};
-    void *mCancelToken{};
+    TaskPromiseLocal mLocals{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -651,7 +669,7 @@ struct TaskPromise<void> : TaskPromiseImpl<TaskPromise<void>, void> {
     TaskPromise(TaskPromise &&) = delete;
 
     TaskAwaiter<void> *mAwaiter{};
-    void *mCancelToken{};
+    TaskPromiseLocal mLocals{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -689,7 +707,7 @@ struct TaskPromise<GeneratorResult<T, E>>
     }
 
     TaskAwaiter<GeneratorResult<T, E>> *mAwaiter{};
-    void *mCancelToken{};
+    TaskPromiseLocal mLocals{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -719,7 +737,7 @@ struct TaskPromise<GeneratorResult<T, void>>
     }
 
     TaskAwaiter<GeneratorResult<T, void>> *mAwaiter{};
-    void *mCancelToken{};
+    TaskPromiseLocal mLocals{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -728,6 +746,10 @@ struct TaskPromise<GeneratorResult<T, void>>
         : mPerf(loc) {}
 #endif
 };
+
+// static_assert(sizeof(TaskPromise<int>) == sizeof(TaskPromise<void>));
+// static_assert(sizeof(TaskPromise<Expected<>>) == sizeof(TaskPromise<void>));
+// static_assert(sizeof(TaskPromise<GeneratorResult<int, Expected<>>>) == sizeof(TaskPromise<void>));
 
 template <class T, class P>
 struct CustomPromise : TaskPromise<T> {

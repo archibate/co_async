@@ -121,7 +121,7 @@ private:
     explicit UringOp(DoNotConstruct) {}
 
 public:
-    void detach() {
+    void startDetach() {
         static thread_local UringOp detachedOp{DoNotConstruct{}};
         detachedOp.mPrevious = std::noop_coroutine();
         io_uring_sqe_set_data(mSqe, &detachedOp);

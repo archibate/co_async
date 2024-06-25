@@ -2,13 +2,14 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/net/http_server.hpp>
+#include <co_async/generic/allocator.hpp>
 
 namespace co_async {
 struct HTTPServerUtils {
-    static std::string html_encode(std::string_view str);
+    static String html_encode(std::string_view str);
     static Task<Expected<>>
     make_ok_response(HTTPServer::IO &io, std::string_view body,
-                     std::string contentType = "text/html;charset=utf-8");
+                     String contentType = "text/html;charset=utf-8");
     static Task<Expected<>>
     make_response_from_directory(HTTPServer::IO &io,
                                  std::filesystem::path path);

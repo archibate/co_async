@@ -31,7 +31,7 @@ bool isCharUrlSafe(char c) {
 }
 } // namespace
 
-void URI::url_decode(std::string &r, std::string_view s) {
+void URI::url_decode(String &r, std::string_view s) {
     std::size_t b = 0;
     while (true) {
         auto i = s.find('%', b);
@@ -47,14 +47,14 @@ void URI::url_decode(std::string &r, std::string_view s) {
     }
 }
 
-std::string URI::url_decode(std::string_view s) {
-    std::string r;
+String URI::url_decode(std::string_view s) {
+    String r;
     r.reserve(s.size());
     url_decode(r, s);
     return r;
 }
 
-void URI::url_encode(std::string &r, std::string_view s) {
+void URI::url_encode(String &r, std::string_view s) {
     static constexpr char lut[] = "0123456789ABCDEF";
     for (char c: s) {
         if (isCharUrlSafe(c)) {
@@ -67,14 +67,14 @@ void URI::url_encode(std::string &r, std::string_view s) {
     }
 }
 
-std::string URI::url_encode(std::string_view s) {
-    std::string r;
+String URI::url_encode(std::string_view s) {
+    String r;
     r.reserve(s.size());
     url_encode(r, s);
     return r;
 }
 
-void URI::url_encode_path(std::string &r, std::string_view s) {
+void URI::url_encode_path(String &r, std::string_view s) {
     static constexpr char lut[] = "0123456789ABCDEF";
     for (char c: s) {
         if (isCharUrlSafe(c) || c == '/') {
@@ -87,8 +87,8 @@ void URI::url_encode_path(std::string &r, std::string_view s) {
     }
 }
 
-std::string URI::url_encode_path(std::string_view s) {
-    std::string r;
+String URI::url_encode_path(std::string_view s) {
+    String r;
     r.reserve(s.size());
     url_encode_path(r, s);
     return r;
@@ -107,18 +107,18 @@ URI URI::parse(std::string_view uri) {
             if (m != std::string_view::npos) {
                 auto k = pair.substr(0, m);
                 auto v = pair.substr(m + 1);
-                params.insert_or_assign(std::string(k), url_decode(v));
+                params.insert_or_assign(String(k), url_decode(v));
             }
         } while (i != std::string_view::npos);
     }
-    std::string spath(path);
+    String spath(path);
     if (spath.empty() || spath.front() != '/') [[unlikely]] {
         spath.insert(spath.begin(), '/');
     }
     return URI{spath, std::move(params)};
 }
 
-void URI::dump(std::string &r) const {
+void URI::dump(String &r) const {
     r.append(path);
     char queryChar = '?';
     for (auto &[k, v]: params) {
@@ -130,8 +130,8 @@ void URI::dump(std::string &r) const {
     }
 }
 
-std::string URI::dump() const {
-    std::string r;
+String URI::dump() const {
+    String r;
     dump(r);
     return r;
 }

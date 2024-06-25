@@ -2,6 +2,7 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/utils/expected.hpp>
+#include <co_async/generic/allocator.hpp>
 
 namespace co_async {
 inline constexpr std::size_t kStreamBufferSize = 8192;
@@ -53,7 +54,7 @@ struct BorrowedStream {
         co_return c;
     }
 
-    Task<Expected<>> getline(std::string &s, char eol) {
+    Task<Expected<>> getline(String &s, char eol) {
         std::size_t start = mInIndex;
         while (true) {
             for (std::size_t i = start; i < mInEnd; ++i) {
@@ -85,7 +86,7 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<>> getline(std::string &s, std::string_view eol) {
+    Task<Expected<>> getline(String &s, std::string_view eol) {
     again:
         co_await co_await getline(s, eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
@@ -122,14 +123,14 @@ struct BorrowedStream {
         co_return {};
     }
 
-    Task<Expected<std::string>> getline(char eol) {
-        std::string s;
+    Task<Expected<String>> getline(char eol) {
+        String s CO_ASYNC_PMR;
         co_await co_await getline(s, eol);
         co_return s;
     }
 
-    Task<Expected<std::string>> getline(std::string_view eol) {
-        std::string s;
+    Task<Expected<String>> getline(std::string_view eol) {
+        String s CO_ASYNC_PMR;
         co_await co_await getline(s, eol);
         co_return s;
     }
@@ -169,7 +170,7 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<>> getn(std::string &s, std::size_t n) {
+    Task<Expected<>> getn(String &s, std::size_t n) {
         auto start = mInIndex;
         while (true) {
             auto end = start + n;
@@ -187,8 +188,8 @@ struct BorrowedStream {
         }
     }
 
-    Task<Expected<std::string>> getn(std::size_t n) {
-        std::string s;
+    Task<Expected<String>> getn(std::size_t n) {
+        String s CO_ASYNC_PMR;
         s.reserve(n);
         co_await co_await getn(s, n);
         co_return s;
@@ -200,7 +201,7 @@ struct BorrowedStream {
         } while (co_await fillbuf());
     }
 
-    Task<> getall(std::string &s) {
+    Task<> getall(String &s) {
         std::size_t start = mInIndex;
         do {
             s.append(mInBuffer.get() + start, mInEnd - start);
@@ -209,8 +210,8 @@ struct BorrowedStream {
         } while (co_await fillbuf());
     }
 
-    Task<std::string> getall() {
-        std::string s;
+    Task<String> getall() {
+        String s CO_ASYNC_PMR;
         co_await getall(s);
         co_return s;
     }
@@ -237,13 +238,13 @@ struct BorrowedStream {
         mInIndex += n;
     }
 
-    Task<Expected<std::string>> getchunk() noexcept {
+    Task<Expected<String>> getchunk() noexcept {
         if (bufempty()) {
             mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
         }
         auto buf = peekbuf();
-        std::string ret(buf.data(), buf.size());
+        String ret(buf.data(), buf.size() CO_ASYNC_PMR1);
         seenbuf(buf.size());
         co_return std::move(ret);
     }
@@ -264,7 +265,7 @@ struct BorrowedStream {
         co_return mInBuffer[mInIndex];
     }
 
-    Task<Expected<>> peekn(std::string &s, std::size_t n) {
+    Task<Expected<>> peekn(String &s, std::size_t n) {
         if (mInBufSize - mInIndex < n) {
             if (mInBufSize < n) [[unlikely]] {
                 co_return std::errc::value_too_large;
@@ -281,8 +282,8 @@ struct BorrowedStream {
         co_return {};
     }
 
-    Task<Expected<std::string>> peekn(std::size_t n) {
-        std::string s;
+    Task<Expected<String>> peekn(std::size_t n) {
+        String s CO_ASYNC_PMR;
         co_await co_await peekn(s, n);
         co_return s;
     }

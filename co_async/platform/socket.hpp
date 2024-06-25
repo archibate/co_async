@@ -27,7 +27,7 @@ struct IpAddress {
     static Expected<IpAddress> parse(std::string_view host,
                                      bool allowIpv6 = true);
     static Expected<IpAddress> parse(char const *host, bool allowIpv6 = true);
-    std::string toString() const;
+    String toString() const;
 
     auto repr() const {
         return toString();
@@ -57,7 +57,7 @@ struct SocketAddress {
 
     int port() const;
 
-    std::string toString() const;
+    String toString() const;
 
     auto repr() const {
         return toString();
@@ -108,7 +108,7 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
 Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
                                              int backlog = SOMAXCONN);
 Task<Expected<SocketListener>>
-listener_bind(std::pair<std::string, int> const &addr, int backlog = SOMAXCONN);
+listener_bind(std::pair<String, int> const &addr, int backlog = SOMAXCONN);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              CancelToken cancel);

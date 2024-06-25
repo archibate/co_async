@@ -5,10 +5,11 @@
 #include <co_async/net/uri.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/utils/simple_map.hpp>
+#include <co_async/generic/allocator.hpp>
 
 namespace co_async {
-struct HTTPHeaders : SimpleMap<std::string, std::string> {
-    using SimpleMap<std::string, std::string>::SimpleMap;
+struct HTTPHeaders : SimpleMap<String, String> {
+    using SimpleMap<String, String>::SimpleMap;
     // NOTE: user-specified http headers must not contain the following keys:
     // - connection
     // - acecpt-encoding
@@ -24,8 +25,8 @@ enum class HTTPContentEncoding {
 };
 
 struct HTTPRequest {
-    std::string method{"GET", 3};
-    URI uri{std::string{"/", 1}, {}};
+    String method{"GET", 3};
+    URI uri{String{"/", 1}, {}};
     HTTPHeaders headers{};
 
     auto repr() const {
@@ -55,7 +56,7 @@ public:
     virtual Task<Expected<>> writeBodyStream(BorrowedStream &body) = 0;
     virtual Task<Expected<>> readBodyStream(BorrowedStream &body) = 0;
     virtual Task<Expected<>> writeBody(std::string_view body) = 0;
-    virtual Task<Expected<>> readBody(std::string &body) = 0;
+    virtual Task<Expected<>> readBody(String &body) = 0;
     virtual Task<Expected<>> writeRequest(HTTPRequest const &req) = 0;
     virtual Task<Expected<>> readRequest(HTTPRequest &req) = 0;
     virtual Task<Expected<>> writeResponse(HTTPResponse const &res) = 0;
@@ -67,7 +68,7 @@ struct HTTPProtocolVersion11 : HTTPProtocol {
 
 protected:
     HTTPContentEncoding mContentEncoding;
-    std::string mAcceptEncoding;
+    String mAcceptEncoding;
     std::optional<std::size_t> mContentLength;
     HTTPContentEncoding httpContentEncodingByName(std::string_view name);
     Task<Expected<>> parseHeaders(HTTPHeaders &headers);
@@ -80,11 +81,11 @@ protected:
     Task<Expected<>> writeChunked(BorrowedStream &body);
     Task<Expected<>> writeChunkedString(std::string_view body);
     Task<Expected<>> readChunked(BorrowedStream &body);
-    Task<Expected<>> readChunkedString(std::string &body);
+    Task<Expected<>> readChunkedString(String &body);
     Task<Expected<>> writeEncoded(BorrowedStream &body);
     Task<Expected<>> writeEncodedString(std::string_view body);
     Task<Expected<>> readEncoded(BorrowedStream &body);
-    Task<Expected<>> readEncodedString(std::string &body);
+    Task<Expected<>> readEncodedString(String &body);
 #if CO_ASYNC_DEBUG
     void checkPhase(int from, int to);
 
@@ -97,7 +98,7 @@ public:
     Task<Expected<>> writeBodyStream(BorrowedStream &body) override;
     Task<Expected<>> writeBody(std::string_view body) override;
     Task<Expected<>> readBodyStream(BorrowedStream &body) override;
-    Task<Expected<>> readBody(std::string &body) override;
+    Task<Expected<>> readBody(String &body) override;
     Task<Expected<>> writeRequest(HTTPRequest const &req) override;
     void initServerState() override;
     void initClientState() override;

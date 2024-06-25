@@ -3,6 +3,7 @@
 #include <co_async/awaiter/task.hpp>
 #include <co_async/iostream/stream_base.hpp>
 #include <co_async/platform/fs.hpp>
+#include <co_async/generic/allocator.hpp>
 
 namespace co_async {
 struct IStringStream : Stream {
@@ -34,7 +35,7 @@ private:
 };
 
 struct OStringStream : Stream {
-    OStringStream(std::string &output) noexcept : mOutput(output) {}
+    OStringStream(String &output) noexcept : mOutput(output) {}
 
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
@@ -42,15 +43,15 @@ struct OStringStream : Stream {
         co_return buffer.size();
     }
 
-    std::string &str() const noexcept {
+    String &str() const noexcept {
         return mOutput;
     }
 
-    std::string release() noexcept {
+    String release() noexcept {
         return std::move(mOutput);
     }
 
 private:
-    std::string &mOutput;
+    String &mOutput;
 };
 } // namespace co_async

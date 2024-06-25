@@ -32,7 +32,7 @@ DirectoryWalker::DirectoryWalker(FileHandle file)
 
 DirectoryWalker::~DirectoryWalker() = default;
 
-Task<Expected<std::string>> DirectoryWalker::DirectoryWalker::next() {
+Task<Expected<String>> DirectoryWalker::DirectoryWalker::next() {
     struct LinuxDirent64 {
         int64_t d_ino;           /* 64-bit inode number */
         int64_t d_off;           /* 64-bit offset to next structure */
@@ -41,10 +41,10 @@ Task<Expected<std::string>> DirectoryWalker::DirectoryWalker::next() {
     } dent;
 
     co_await co_await mStream.getspan(std::span<char>((char *)&dent, 19));
-    std::string rest;
+    String rest CO_ASYNC_PMR;
     rest.reserve(dent.d_reclen - 19);
     co_await co_await mStream.getn(rest, dent.d_reclen - 19);
-    co_return std::string(rest.data());
+    co_return String(rest.data());
 }
 
 Task<Expected<DirectoryWalker>> dir_open(std::filesystem::path path) {

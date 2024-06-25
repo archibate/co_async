@@ -1,14 +1,16 @@
 #pragma once
 #include <co_async/std.hpp>
+#include <co_async/generic/allocator.hpp>
 
 namespace co_async {
 template <class T>
 struct from_string_t;
 
-template <>
-struct from_string_t<std::string> {
-    std::string operator()(std::string_view s) const {
-        return std::string(s);
+template <class Traits, class Alloc>
+struct from_string_t<std::basic_string<char, Traits, Alloc>> {
+    std::basic_string<char, Traits, Alloc>
+    operator()(std::string_view s) const {
+        return std::basic_string<char, Traits, Alloc>(s);
     }
 };
 
@@ -60,35 +62,37 @@ struct to_string_t;
 template <>
 struct to_string_t<void> {
     template <class U>
-    void operator()(std::string &result, U &&value) const {
+    void operator()(String &result, U &&value) const {
         to_string_t<std::decay_t<U>>()(result, std::forward<U>(value));
     }
 
     template <class U>
-    std::string operator()(U &&value) const {
-        std::string result;
+    String operator()(U &&value) const {
+        String result;
         operator()(result, std::forward<U>(value));
         return result;
     }
 };
 
 template <>
-struct to_string_t<std::string> {
-    void operator()(std::string &result, std::string const &value) const {
+struct to_string_t<String> {
+    template <class Traits, class Alloc>
+    void operator()(String &result,
+                    std::basic_string<char, Traits, Alloc> const &value) const {
         result.assign(value);
     }
 };
 
 template <>
 struct to_string_t<std::string_view> {
-    void operator()(std::string &result, std::string_view value) const {
+    void operator()(String &result, std::string_view value) const {
         result.assign(value);
     }
 };
 
 template <std::integral T>
 struct to_string_t<T> {
-    void operator()(std::string &result, T value) const {
+    void operator()(String &result, T value) const {
         result.resize(std::numeric_limits<T>::digits10 + 2, '\0');
         auto [p, ec] =
             std::to_chars(result.data(), result.data() + result.size(), value);
@@ -101,7 +105,7 @@ struct to_string_t<T> {
 
 template <std::floating_point T>
 struct to_string_t<T> {
-    void operator()(std::string &result, T value) const {
+    void operator()(String &result, T value) const {
         result.resize(std::numeric_limits<T>::max_digits10 + 2, '\0');
         auto [p, ec] =
             std::to_chars(result.data(), result.data() + result.size(), value);
@@ -114,8 +118,8 @@ struct to_string_t<T> {
 
 inline constexpr to_string_t<> to_string;
 
-inline std::string lower_string(std::string_view s) {
-    std::string ret;
+inline String lower_string(std::string_view s) {
+    String ret;
     ret.resize(s.size());
     std::transform(s.begin(), s.end(), ret.begin(), [](char c) {
         if (c >= 'A' && c <= 'Z') {
@@ -126,8 +130,8 @@ inline std::string lower_string(std::string_view s) {
     return ret;
 }
 
-inline std::string upper_string(std::string_view s) {
-    std::string ret;
+inline String upper_string(std::string_view s) {
+    String ret;
     ret.resize(s.size());
     std::transform(s.begin(), s.end(), ret.begin(), [](char c) {
         if (c >= 'a' && c <= 'z') {
@@ -138,14 +142,14 @@ inline std::string upper_string(std::string_view s) {
     return ret;
 }
 
-inline std::string trim_string(std::string_view s,
-                               std::string_view trims = {" \t\r\n", 4}) {
+inline String trim_string(std::string_view s,
+                          std::string_view trims = {" \t\r\n", 4}) {
     auto pos = s.find_first_not_of(trims);
     if (pos == std::string_view::npos) {
         return {};
     }
     auto end = s.find_last_not_of(trims);
-    return std::string(s.substr(pos, end - pos + 1));
+    return String(s.substr(pos, end - pos + 1));
 }
 
 template <class Delim>
@@ -233,8 +237,8 @@ struct SplitString {
         return sentinel();
     }
 
-    std::vector<std::string> collect() const {
-        std::vector<std::string> result;
+    std::vector<String> collect() const {
+        std::vector<String> result;
         for (auto &&part: *this) {
             result.emplace_back(part);
         }
@@ -243,15 +247,15 @@ struct SplitString {
 
     template <std::size_t N>
         requires(N > 0)
-    std::array<std::string, N> collect() const {
-        std::array<std::string, N> result;
+    std::array<String, N> collect() const {
+        std::array<String, N> result;
         std::size_t i = 0;
         for (auto it = begin(); it != end(); ++it, ++i) {
             if (i + 1 >= N) {
-                result[i] = std::string(it.rest());
+                result[i] = String(it.rest());
                 break;
             }
-            result[i] = std::string(*it);
+            result[i] = String(*it);
         }
         return result;
     }

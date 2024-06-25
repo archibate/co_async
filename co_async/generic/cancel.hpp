@@ -253,19 +253,19 @@ CancelCallback(CancelToken, Callback) -> CancelCallback<Callback>;
 struct GetThisCancel {
     template <class T>
     ValueAwaiter<CancelToken> operator()(TaskPromise<T> &promise) const {
-        return ValueAwaiter<CancelToken>(CancelToken::from_address(promise.mCancelToken));
+        return ValueAwaiter<CancelToken>(CancelToken::from_address(promise.mLocals.mCancelToken));
     }
 
     template <class T>
     static T &&bind(CancelToken cancel, T &&task) {
-        task.promise().mCancelToken = cancel.address();
+        task.promise().mLocals.mCancelToken = cancel.address();
         return std::forward<T>(task);
     }
 
     struct DoCancelThis {
         template <class T>
         Task<> operator()(TaskPromise<T> &promise) const {
-            co_return co_await CancelToken::from_address(promise.mCancelToken).cancel();
+            co_return co_await CancelToken::from_address(promise.mLocals.mCancelToken).cancel();
         }
     };
 
@@ -276,7 +276,7 @@ struct GetThisCancel {
     /* struct DoExpectCancel { */
     /*     template <class T> */
     /*     Expected<> operator()(TaskPromise<T> &promise) const { */
-    /*         return CancelToken(promise.mCancelToken).expect(); */
+    /*         return CancelToken(promise.mLocals.mCancelToken).expect(); */
     /*     } */
     /* }; */
     /*  */

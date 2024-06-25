@@ -9,14 +9,19 @@ namespace co_async {
 Task<Expected<SocketHandle>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout) {
+    using namespace std::string_view_literals;
     if (proxy.starts_with("http://")) {
         proxy.remove_prefix(7);
         auto sock = co_await co_await socket_connect(
             co_await SocketAddress::parse(proxy, 80), co_await co_cancel);
-        auto hostName = std::string(host) + ":" + to_string(port);
-        std::string header = "CONNECT " + hostName +
-                             " HTTP/1.1\r\nHost: " + hostName +
-                             "\r\nProxy-Connection: Keep-Alive\r\n\r\n";
+        String hostName(host CO_ASYNC_PMR1);
+        hostName += ':';
+        hostName += to_string(port);
+        String header("CONNECT "sv CO_ASYNC_PMR1);
+        header += hostName;
+        header += " HTTP/1.1\r\nHost: "sv;
+        header += hostName;
+        header += "\r\nProxy-Connection: Keep-Alive\r\n\r\n"sv;
         std::span<char const> buf = header;
         std::size_t n = 0;
         do {
@@ -28,7 +33,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         } while (buf.size() > 0);
         using namespace std::string_view_literals;
         auto desiredResponse = "HTTP/1.1 200 Connection established\r\n\r\n"sv;
-        std::string response(39, '\0');
+        String response(39, '\0' CO_ASYNC_PMR1);
         std::span<char> outbuf = response;
         do {
             n = co_await co_await socket_read(sock, outbuf, timeout);

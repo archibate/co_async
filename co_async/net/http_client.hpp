@@ -116,13 +116,13 @@ private:
             throw std::logic_error("http factory not initialized");
         }
 #endif
-        req.headers.insert("host"s, mHttpFactory->hostName());
-        req.headers.insert("user-agent"s, "co_async/0.0.1"s);
-        req.headers.insert("accept"s, "*/*"s);
+        req.headers.insert("host"_s, String{mHttpFactory->hostName()});
+        req.headers.insert("user-agent"_s, "co_async/0.0.1"_s);
+        req.headers.insert("accept"_s, "*/*"_s);
 #if CO_ASYNC_ZLIB
-        req.headers.insert("accept-encoding"s, "deflate, gzip"s);
+        req.headers.insert("accept-encoding"_s, "deflate, gzip"_s);
 #else
-        req.headers.insert("accept-encoding"s, "gzip"s);
+        req.headers.insert("accept-encoding"_s, "gzip"_s);
 #endif
     }
 
@@ -229,13 +229,13 @@ public:
 
     HTTPConnection() = default;
 
-    Task<Expected<std::tuple<HTTPResponse, std::string>>>
+    Task<Expected<std::tuple<HTTPResponse, String>>>
     request(HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
         HTTPResponse res;
-        std::string body;
+        String body;
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBody(body);
         reset.neverMind();

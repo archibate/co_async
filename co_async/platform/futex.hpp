@@ -31,7 +31,7 @@ inline Task<Expected<>> futex_wait(std::atomic<T> *futex,
     co_return expectError(co_await UringOp().prep_futex_wait(
         reinterpret_cast<uint32_t *>(futex),
         futexValueExtend(val),
-        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0));
+        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0).cancelGuard(co_await co_cancel));
 }
 
 template <class T>
@@ -41,7 +41,7 @@ futex_wake(std::atomic<T> *futex,
            uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
     co_return expectError(co_await UringOp().prep_futex_wake(
         reinterpret_cast<uint32_t *>(futex), static_cast<uint64_t>(count),
-        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0));
+        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0).cancelGuard(co_await co_cancel));
 }
 
 template <class T>
@@ -52,7 +52,7 @@ inline void futex_notify(std::atomic<T> *futex,
         .prep_futex_wake(reinterpret_cast<uint32_t *>(futex),
                          static_cast<uint64_t>(count),
                          static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0)
-        .detach();
+        .startDetach();
 }
 
 template <class T>

@@ -31,7 +31,7 @@ struct HTTPServer {
 
         HTTPRequest request;
         Task<Expected<>> readRequestHeader();
-        Task<Expected<std::string>> request_body();
+        Task<Expected<String>> request_body();
         Task<Expected<>> request_body_stream(OwningStream &out);
         Task<Expected<>> response(HTTPResponse resp, std::string_view content);
         Task<Expected<>> response(HTTPResponse resp, OwningStream &body);

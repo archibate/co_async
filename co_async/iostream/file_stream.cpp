@@ -44,7 +44,7 @@ OwningStream file_from_handle(FileHandle handle) {
     return make_stream<FileStream>(std::move(handle));
 }
 
-Task<Expected<std::string>> file_read(std::filesystem::path path) {
+Task<Expected<String>> file_read(std::filesystem::path path) {
     auto file = co_await co_await file_open(path, OpenMode::Read);
     co_return co_await file.getall();
 }

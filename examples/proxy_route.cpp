@@ -27,7 +27,7 @@ static Task<Expected<>> amain(std::string serveAt, std::string targetHost,
                 }
             }
             if (host.empty()) {
-                auto thisHost = io.request.headers.get("host"sv).value_or(""s);
+                auto thisHost = io.request.headers.get("host"sv).value_or(""_s);
                 co_await co_await HTTPServerUtils::make_ok_response(
                     io,
                     "<center><h1>SSL Latency Reducing Proxy Server</h1></center><p>This is a proxy server! Send HTTP requests to me and I will forward it as HTTP or HTTPS for you. The target HTTP or HTTPS URL is specified in path (see below). HTTPS connections are automatically keep alive in the background for future reuse, no more repeatitive TCP and SSL handshakes wasting time! Signiticantly reducing overhead for one-shot command line tools like curl. It's tested to reducing latency from ~450ms to ~120ms for https://api.openai.com/, compared to original curl command (won't speed up your OpenAI computation tasks, of course, we only reduce the unnecessary overhead in SSL handshake). Also allowing libraries that only support HTTP to visit HTTPS sites.</p><hr><p>For example, if your curl command was:</p><pre><code>curl https://www.example.com/index.html</code></pre><p>Then you may run this instead for speeding up:</p><pre><code>curl http://"s +

@@ -3,6 +3,7 @@
 #include <co_async/awaiter/task.hpp>
 #include <co_async/iostream/stream_base.hpp>
 #include <co_async/platform/fs.hpp>
+#include <co_async/generic/allocator.hpp>
 #include <dirent.h>
 
 namespace co_async {
@@ -11,7 +12,7 @@ struct DirectoryWalker {
     DirectoryWalker(DirectoryWalker &&) = default;
     DirectoryWalker &operator=(DirectoryWalker &&) = default;
     ~DirectoryWalker();
-    Task<Expected<std::string>> next();
+    Task<Expected<String>> next();
 
 private:
     OwningStream mStream;

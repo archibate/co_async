@@ -10,8 +10,8 @@
 #include <co_async/platform/socket.hpp>
 
 namespace co_async {
-std::string HTTPServerUtils::html_encode(std::string_view str) {
-    std::string res;
+String HTTPServerUtils::html_encode(std::string_view str) {
+    String res;
     res.reserve(str.size());
     for (auto c: str) {
         switch (c) {
@@ -28,7 +28,7 @@ std::string HTTPServerUtils::html_encode(std::string_view str) {
 
 Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO &io,
                                                    std::string_view body,
-                                                   std::string contentType) {
+                                                   String contentType) {
     HTTPResponse res{
         .status = 200,
         .headers =
@@ -43,8 +43,8 @@ Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO &io,
 Task<Expected<>>
 HTTPServerUtils::make_response_from_directory(HTTPServer::IO &io,
                                               std::filesystem::path path) {
-    auto dirPath = path.generic_string();
-    std::string content = "<h1>Files in " + dirPath + ":</h1>";
+    String dirPath{path.generic_string() CO_ASYNC_PMR1};
+    String content = "<h1>Files in " + dirPath + ":</h1>";
     auto parentPath = path.parent_path().generic_string();
     content +=
         "<a href=\"/" + URI::url_encode_path(parentPath) + "\">..</a><br>";
@@ -65,7 +65,7 @@ HTTPServerUtils::make_response_from_directory(HTTPServer::IO &io,
 Task<Expected<>> HTTPServerUtils::make_error_response(HTTPServer::IO &io,
                                                       int status) {
     auto error =
-        to_string(status) + " " + std::string(getHTTPStatusName(status));
+        to_string(status) + ' ' + String(getHTTPStatusName(status));
     HTTPResponse res{
         .status = status,
         .headers =

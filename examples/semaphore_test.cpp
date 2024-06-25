@@ -4,39 +4,39 @@
 using namespace co_async;
 using namespace std::literals;
 
-TimedSemaphore sem(2);
+Semaphore sem(2, 0);
 
 static Task<Expected<>> func() {
     (void)co_await co_sleep(1000ms);
     debug(), sem.count();
-    co_await sem.release();
+    co_await co_await sem.release();
     debug(), sem.count();
     (void)co_await co_sleep(1000ms);
     debug(), sem.count();
-    co_await sem.release();
+    co_await co_await sem.release();
     debug(), sem.count();
-    co_await sem.release();
+    co_await co_await sem.release();
     debug(), sem.count();
-    co_await sem.release();
+    co_await co_await sem.release();
     debug(), sem.count();
     co_return {};
 }
 
 static Task<Expected<>> amain() {
     co_spawn(func());
-    auto success = co_await sem.try_acquire(800ms);
+    auto success = co_await co_timeout(sem.acquire(), 800ms);
     debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
+    success = co_await co_timeout(sem.acquire(), 800ms);
     debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
+    success = co_await co_timeout(sem.acquire(), 800ms);
     debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
+    success = co_await co_timeout(sem.acquire(), 800ms);
     debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
+    success = co_await co_timeout(sem.acquire(), 800ms);
     debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
+    success = co_await co_timeout(sem.acquire(), 800ms);
     debug(), success, sem.count();
-    success = co_await sem.try_acquire(800ms);
+    success = co_await co_timeout(sem.acquire(), 800ms);
     debug(), success, sem.count();
     co_return {};
 }

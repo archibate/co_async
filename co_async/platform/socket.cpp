@@ -78,7 +78,7 @@ Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
     }
 }
 
-std::string IpAddress::toString() const {
+String IpAddress::toString() const {
     if (mAddr.index() == 1) {
         char buf[INET6_ADDRSTRLEN + 1] = {};
         inet_ntop(AF_INET6, &std::get<1>(mAddr), buf, sizeof(buf));
@@ -146,8 +146,8 @@ int SocketAddress::port() const {
     }
 }
 
-std::string SocketAddress::toString() const {
-    return host().toString() + ":" + to_string(port());
+String SocketAddress::toString() const {
+    return host().toString() + ':' + to_string(port());
 }
 
 void SocketAddress::initFromHostPort(struct in_addr const &host, int port) {
@@ -240,7 +240,7 @@ Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
 }
 
 Task<Expected<SocketListener>>
-listener_bind(std::pair<std::string, int> const &addr, int backlog) {
+listener_bind(std::pair<String, int> const &addr, int backlog) {
     co_return co_await listener_bind(
         co_await SocketAddress::parse(addr.first, addr.second));
 }

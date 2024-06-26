@@ -25,11 +25,10 @@ using namespace std::literals;
 co_async::AsyncLoop loop;
 
 co_async::Task<> amain() {
-    auto sock = co_async::tcp_socket<co_async::Ipv4Address>();
-    co_await socket_connect(loop, sock, co_async::Ipv4Address("142857.red", 80));
-    co_await socket_send(loop, sock, "GET / HTTP/1.1\r\n\r\n"sv);
+    auto sock = co_await create_tcp_client(loop, co_async::socket_address(co_async::ip_address("142857.red"), 80));
+    co_await write_file(loop, sock, "GET / HTTP/1.1\r\n\r\n"sv);
     char buf[4096];
-    auto len = co_await socket_recv(loop, sock, buf);
+    auto len = co_await read_file(loop, sock, buf);
     std::string_view res(buf, len);
     std::cout << res;
     co_return;

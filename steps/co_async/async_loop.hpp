@@ -1,7 +1,7 @@
 #pragma once
 
-#include <co_async/timer_loop.hpp>
-#include <co_async/epoll_loop.hpp>
+#include "timer_loop.hpp"
+#include "epoll_loop.hpp"
 #include <thread>
 
 namespace co_async {

@@ -8,7 +8,7 @@
 #include <utility>
 #include <optional>
 #include <memory>
-#include <co_async/task.hpp>
+#include "task.hpp"
 
 namespace co_async {
 

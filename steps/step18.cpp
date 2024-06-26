@@ -2,7 +2,7 @@
 #include "co_async/task.hpp"
 #include "co_async/timer_loop.hpp"
 #include "co_async/epoll_loop.hpp"
-#include "co_async/generic_loop.hpp"
+#include "co_async/async_loop.hpp"
 #include "co_async/when_any.hpp"
 #include "co_async/when_all.hpp"
 #include "co_async/limit_timeout.hpp"
@@ -80,6 +80,15 @@ void on_draw() {
     write(STDOUT_FILENO, s.data(), s.size());
 }
 
+inline co_async::Task<std::string> read_string(co_async::EpollLoop &loop, co_async::AsyncFile &file) {
+    co_await wait_file_event(loop, file, EPOLLIN | EPOLLRDHUP);
+    std::string s;
+    s.resize(64);
+    auto len = readFileSync(file, s);
+    s.resize(len);
+    co_return s;
+}
+
 co_async::Task<> async_main() {
     co_async::AsyncFile file(STDIN_FILENO);
     auto nextTp = std::chrono::system_clock::now();
@@ -101,7 +110,8 @@ co_async::Task<> async_main() {
 }
 
 int main() {
+    co_async::AsyncLoop loop;
     auto t = async_main();
-    run_main_task(t);
+    run_task(loop, t);
     return 0;
 }

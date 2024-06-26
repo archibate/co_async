@@ -1,22 +1,22 @@
 #include "co_async/debug.hpp"
 #include "co_async/task.hpp"
-#include "co_async/uring_loop.hpp"
 #include "co_async/filesystem.hpp"
 #include "co_async/socket.hpp"
 #include "co_async/stream.hpp"
-#include "co_async/benchmark.hpp"
 
 using namespace co_async;
 using namespace std::literals;
 
-Task<> amain() {
-    auto serv = co_await server_bind({"127.0.0.1", 8080});
-    auto conn = co_await server_accept(serv);
+EpollLoop loop;
 
-    debug(), "收到了来自", serv.address(), "的连接";
+Task<> amain() {
+    auto serv = co_await create_tcp_server(loop, socket_address(ip_address("127.0.0.1"), 8080));
+    auto [conn, addr] = co_await socket_accept<IpAddress>(loop, serv);
+
+    debug(), "收到了来自", addr, "的连接";
 
     debug(), "发来的消息头如下：";
-    FileStream s(std::move(conn));
+    FileStream s(loop, std::move(conn));
     while (true) {
         auto l = co_await s.getline("\r\n");
         debug(), l;
@@ -30,7 +30,6 @@ Task<> amain() {
     co_await s.puts("\r\n");
     co_await s.puts("Hello, world");
     co_await s.flush();
-    co_await fs_close(s.mFile);
     co_return;
 }
 

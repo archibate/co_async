@@ -336,8 +336,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
             std::clog << io.request.method + ' ' + io.request.uri.dump() + ' ' +
                              to_string(io.mResponseSavedForDebug.status) + ' ' +
                              String(getHTTPStatusName(
-                                 io.mResponseSavedForDebug.status)
-                                        CO_ASYNC_PMR1) +
+                                 io.mResponseSavedForDebug.status)) +
                              ' ' +
                              to_string(std::chrono::duration_cast<
                                            std::chrono::milliseconds>(dt)
@@ -358,7 +357,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
 
 Task<Expected<>> HTTPServer::make_error_response(IO &io, int status) {
     auto error =
-        to_string(status) + ' ' + String(getHTTPStatusName(status) CO_ASYNC_PMR1);
+        to_string(status) + ' ' + String(getHTTPStatusName(status));
     HTTPResponse res{
         .status = status,
         .headers =

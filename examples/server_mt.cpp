@@ -8,11 +8,6 @@ static Task<Expected<>> amain(std::string serveAt) {
     co_await co_await stdio().putline("listening at: "s + serveAt);
     auto listener = co_await co_await listener_bind(co_await SocketAddress::parse(serveAt, 80));
 
-    // ConcurrentRobinhoodQueue<SocketHandle> incoming(IOContextMT::num_workers());
-    // ConcurrentStealingQueue<SocketHandle> incoming(IOContextMT::num_workers());
-    ConcurrentQueue<SocketHandle> incoming;
-    incoming.set_max_size(512);
-
     HTTPServer server;
     server.route("GET", "/", [](HTTPServer::IO &io) -> Task<Expected<>> {
         co_await co_await HTTPServerUtils::make_ok_response(io, "<h1>It works!</h1>");

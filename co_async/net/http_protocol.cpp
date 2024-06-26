@@ -32,7 +32,7 @@ HTTPProtocolVersion11::httpContentEncodingByName(std::string_view name) {
 
 Task<Expected<>> HTTPProtocolVersion11::parseHeaders(HTTPHeaders &headers) {
     using namespace std::string_view_literals;
-    String line CO_ASYNC_PMR;
+    String line;
     while (true) {
         line.clear();
         co_await co_await sock.getline(line, "\r\n"sv);

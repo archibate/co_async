@@ -14,10 +14,10 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         proxy.remove_prefix(7);
         auto sock = co_await co_await socket_connect(
             co_await SocketAddress::parse(proxy, 80), co_await co_cancel);
-        String hostName(host CO_ASYNC_PMR1);
+        String hostName(host);
         hostName += ':';
         hostName += to_string(port);
-        String header("CONNECT "sv CO_ASYNC_PMR1);
+        String header("CONNECT "sv);
         header += hostName;
         header += " HTTP/1.1\r\nHost: "sv;
         header += hostName;
@@ -33,7 +33,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
         } while (buf.size() > 0);
         using namespace std::string_view_literals;
         auto desiredResponse = "HTTP/1.1 200 Connection established\r\n\r\n"sv;
-        String response(39, '\0' CO_ASYNC_PMR1);
+        String response(39, '\0');
         std::span<char> outbuf = response;
         do {
             n = co_await co_await socket_read(sock, outbuf, timeout);

@@ -2,13 +2,6 @@
 #include <co_async/std.hpp>
 
 namespace co_async {
-#define CO_ASYNC_PMR
-#define CO_ASYNC_PMR1
-#define CO_ASYNC_PMR_ARG_DEF
-#define CO_ASYNC_PMR_ARG_DEF1
-#define CO_ASYNC_PMR_ARG_USE
-#define CO_ASYNC_PMR_ARG_USE1
-
 #if CO_ASYNC_ALLOC
 using String = std::pmr::string;
 #else

@@ -1,3 +1,4 @@
+#include "co_async/utils/debug.hpp"
 #include <co_async/co_async.hpp>
 #include <co_async/std.hpp>
 
@@ -5,11 +6,6 @@ using namespace co_async;
 using namespace std::literals;
 
 static Task<Expected<>> handle_connection(OwningStream income) {
-    // BytesBuffer buf(8192 * 8);
-    // std::pmr::monotonic_buffer_resource mono{buf.data(), buf.size(), currentAllocator};
-    std::pmr::unsynchronized_pool_resource pool{currentAllocator};
-    ReplaceAllocator _ = &pool;
-
     while (auto line = co_await income.getline("\r\n"sv)) {
         if (line->empty()) {
             co_await co_await income.puts("HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv);
@@ -23,12 +19,12 @@ static Task<Expected<>> amain(std::string serveAt) {
     co_await co_await stdio().putline("listening at: "s + serveAt);
     auto listener = co_await co_await listener_bind(co_await SocketAddress::parse(serveAt, 80));
 
-#if 0
-    ConcurrentRobinhoodQueue<OwningStream> incoming(IOContextMT::num_workers());
+#if 1
+    ConcurrentQueue<OwningStream> incoming;
     incoming.set_max_size(1024);
     
     for (std::size_t i = 0; i < IOContextMT::num_workers(); ++i) {
-        IOContextMT::nth_worker(i).spawn(co_bind([incoming = incoming.consumer(i)]() -> Task<> {
+        IOContextMT::nth_worker(i).spawn(co_bind([&]() -> Task<> {
             while (true) {
                 auto income = co_await incoming.pop();
                 co_spawn(handle_connection(std::move(income)));
@@ -38,6 +34,7 @@ static Task<Expected<>> amain(std::string serveAt) {
 
     while (true) {
         if (auto income = co_await tcp_accept(listener, std::chrono::seconds(3))) [[likely]] {
+            debug(), income;
             co_await incoming.push(std::move(*income));
         }
     }

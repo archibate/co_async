@@ -43,7 +43,7 @@ Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO &io,
 Task<Expected<>>
 HTTPServerUtils::make_response_from_directory(HTTPServer::IO &io,
                                               std::filesystem::path path) {
-    String dirPath{path.generic_string() CO_ASYNC_PMR1};
+    String dirPath{path.generic_string()};
     String content = "<h1>Files in " + dirPath + ":</h1>";
     auto parentPath = path.parent_path().generic_string();
     content +=

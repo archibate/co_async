@@ -125,13 +125,13 @@ struct BorrowedStream {
     }
 
     Task<Expected<String>> getline(char eol) {
-        String s CO_ASYNC_PMR;
+        String s;
         co_await co_await getline(s, eol);
         co_return s;
     }
 
     Task<Expected<String>> getline(std::string_view eol) {
-        String s CO_ASYNC_PMR;
+        String s;
         co_await co_await getline(s, eol);
         co_return s;
     }
@@ -190,7 +190,7 @@ struct BorrowedStream {
     }
 
     Task<Expected<String>> getn(std::size_t n) {
-        String s CO_ASYNC_PMR;
+        String s;
         s.reserve(n);
         co_await co_await getn(s, n);
         co_return s;
@@ -212,7 +212,7 @@ struct BorrowedStream {
     }
 
     Task<String> getall() {
-        String s CO_ASYNC_PMR;
+        String s;
         co_await getall(s);
         co_return s;
     }
@@ -245,7 +245,7 @@ struct BorrowedStream {
             co_await co_await fillbuf();
         }
         auto buf = peekbuf();
-        String ret(buf.data(), buf.size() CO_ASYNC_PMR1);
+        String ret(buf.data(), buf.size());
         seenbuf(buf.size());
         co_return std::move(ret);
     }
@@ -284,14 +284,14 @@ struct BorrowedStream {
     }
 
     Task<Expected<String>> peekn(std::size_t n) {
-        String s CO_ASYNC_PMR;
+        String s;
         co_await co_await peekn(s, n);
         co_return s;
     }
 
-    void allocinbuf(std::size_t size CO_ASYNC_PMR_ARG_DEF1) {
+    void allocinbuf(std::size_t size) {
         if (!mInBuffer) [[likely]] {
-            mInBuffer.allocate(size CO_ASYNC_PMR_ARG_USE1);
+            mInBuffer.allocate(size);
             mInIndex = 0;
             mInEnd = 0;
         }
@@ -299,7 +299,7 @@ struct BorrowedStream {
 
     Task<Expected<>> fillbuf() {
         if (!mInBuffer) {
-            allocinbuf(kStreamBufferSize CO_ASYNC_PMR1);
+            allocinbuf(kStreamBufferSize);
         }
         auto n = co_await co_await mRaw->raw_read(
             std::span(mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
@@ -394,16 +394,16 @@ struct BorrowedStream {
         co_return co_await flush();
     }
 
-    void allocoutbuf(std::size_t size CO_ASYNC_PMR_ARG_DEF1) {
+    void allocoutbuf(std::size_t size) {
         if (!mOutBuffer) [[likely]] {
-            mOutBuffer.allocate(size CO_ASYNC_PMR_ARG_USE1);
+            mOutBuffer.allocate(size);
             mOutIndex = 0;
         }
     }
 
     Task<Expected<>> flush() {
         if (!mOutBuffer) {
-            allocoutbuf(kStreamBufferSize CO_ASYNC_PMR1);
+            allocoutbuf(kStreamBufferSize);
             co_return {};
         }
         if (mOutIndex) [[likely]] {

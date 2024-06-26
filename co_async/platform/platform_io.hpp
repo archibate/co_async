@@ -31,11 +31,7 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
 }
 
 struct PlatformIOContextOptions {
-    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(20);
-    std::chrono::steady_clock::duration maxSleepInc =
-        std::chrono::milliseconds(10);
-    std::chrono::steady_clock::duration maxSleepLimit =
-        std::chrono::milliseconds(100);
+    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(10);
     std::optional<std::size_t> threadAffinity = std::nullopt;
 };
 
@@ -358,6 +354,10 @@ public:
         });
         co_return co_await std::move(*this);
     }
+
+    // UringOp &&cancelGuard(CancelToken) && {
+    //     return std::move(*this);
+    // }
 };
 
 } // namespace co_async

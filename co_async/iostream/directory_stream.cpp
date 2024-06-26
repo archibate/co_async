@@ -41,7 +41,7 @@ Task<Expected<String>> DirectoryWalker::DirectoryWalker::next() {
     } dent;
 
     co_await co_await mStream.getspan(std::span<char>((char *)&dent, 19));
-    String rest CO_ASYNC_PMR;
+    String rest;
     rest.reserve(dent.d_reclen - 19);
     co_await co_await mStream.getn(rest, dent.d_reclen - 19);
     co_return String(rest.data());

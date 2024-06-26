@@ -1,5 +1,5815 @@
 #pragma once
 
+#include <cassert>     // IWYU pragma: export
+#include <cctype>      // IWYU pragma: export
+#include <cerrno>      // IWYU pragma: export
+#include <cfloat>      // IWYU pragma: export
+#include <ciso646>     // IWYU pragma: export
+#include <climits>     // IWYU pragma: export
+#include <clocale>     // IWYU pragma: export
+#include <cmath>       // IWYU pragma: export
+#include <csetjmp>     // IWYU pragma: export
+#include <csignal>     // IWYU pragma: export
+#include <cstdarg>     // IWYU pragma: export
+#include <cstddef>     // IWYU pragma: export
+#include <cstdio>      // IWYU pragma: export
+#include <cstdlib>     // IWYU pragma: export
+#include <cstring>     // IWYU pragma: export
+#include <ctime>       // IWYU pragma: export
+#include <cwchar>      // IWYU pragma: export
+#include <cwctype>     // IWYU pragma: export
+#if __cplusplus >= 201103L
+# include <ccomplex>   // IWYU pragma: export
+# include <cfenv>      // IWYU pragma: export
+# include <cinttypes>  // IWYU pragma: export
+# if __has_include(<cstdalign>)
+#  include <cstdalign> // IWYU pragma: export
+# endif
+# include <cstdbool>   // IWYU pragma: export
+# include <cstdint>    // IWYU pragma: export
+# include <ctgmath>    // IWYU pragma: export
+# include <cuchar>     // IWYU pragma: export
+#endif
+// C++
+#include <algorithm>           // IWYU pragma: export
+#include <bitset>              // IWYU pragma: export
+#include <complex>             // IWYU pragma: export
+#include <deque>               // IWYU pragma: export
+#include <exception>           // IWYU pragma: export
+#include <fstream>             // IWYU pragma: export
+#include <functional>          // IWYU pragma: export
+#include <iomanip>             // IWYU pragma: export
+#include <ios>                 // IWYU pragma: export
+#include <iosfwd>              // IWYU pragma: export
+#include <iostream>            // IWYU pragma: export
+#include <istream>             // IWYU pragma: export
+#include <iterator>            // IWYU pragma: export
+#include <limits>              // IWYU pragma: export
+#include <list>                // IWYU pragma: export
+#include <locale>              // IWYU pragma: export
+#include <map>                 // IWYU pragma: export
+#include <memory>              // IWYU pragma: export
+#include <new>                 // IWYU pragma: export
+#include <numeric>             // IWYU pragma: export
+#include <ostream>             // IWYU pragma: export
+#include <queue>               // IWYU pragma: export
+#include <set>                 // IWYU pragma: export
+#include <sstream>             // IWYU pragma: export
+#include <stack>               // IWYU pragma: export
+#include <stdexcept>           // IWYU pragma: export
+#include <streambuf>           // IWYU pragma: export
+#include <string>              // IWYU pragma: export
+#include <typeinfo>            // IWYU pragma: export
+#include <utility>             // IWYU pragma: export
+#include <valarray>            // IWYU pragma: export
+#include <vector>              // IWYU pragma: export
+#if __cplusplus >= 201103L
+# include <array>              // IWYU pragma: export
+# include <atomic>             // IWYU pragma: export
+# include <chrono>             // IWYU pragma: export
+# include <codecvt>            // IWYU pragma: export
+# include <condition_variable> // IWYU pragma: export
+# include <forward_list>       // IWYU pragma: export
+# include <future>             // IWYU pragma: export
+# include <initializer_list>   // IWYU pragma: export
+# include <mutex>              // IWYU pragma: export
+# include <random>             // IWYU pragma: export
+# include <ratio>              // IWYU pragma: export
+# include <regex>              // IWYU pragma: export
+# include <scoped_allocator>   // IWYU pragma: export
+# include <system_error>       // IWYU pragma: export
+# include <thread>             // IWYU pragma: export
+# include <tuple>              // IWYU pragma: export
+# include <type_traits>        // IWYU pragma: export
+# include <typeindex>          // IWYU pragma: export
+# include <unordered_map>      // IWYU pragma: export
+# include <unordered_set>      // IWYU pragma: export
+#endif
+#if __cplusplus >= 201402L
+# include <shared_mutex> // IWYU pragma: export
+#endif
+#if __cplusplus >= 201703L
+# include <any>      // IWYU pragma: export
+# include <charconv> // IWYU pragma: export
+// # include <execution>       // IWYU pragma: export
+# include <filesystem>      // IWYU pragma: export
+# include <memory_resource> // IWYU pragma: export
+# include <optional>        // IWYU pragma: export
+# include <string_view>     // IWYU pragma: export
+# include <variant>         // IWYU pragma: export
+#endif
+#if __cplusplus >= 202002L
+# if __has_include(<barrier>)
+#  include <barrier> // IWYU pragma: export
+# endif
+# include <bit>      // IWYU pragma: export
+# include <compare>  // IWYU pragma: export
+# include <concepts> // IWYU pragma: export
+# if __cpp_impl_coroutine
+#  if __has_include(<coroutine>)
+#   include <coroutine> // IWYU pragma: export
+#  endif
+# endif
+# if __has_include(<latch>)
+#  include <latch>      // IWYU pragma: export
+# endif
+# include <numbers>     // IWYU pragma: export
+# include <ranges>      // IWYU pragma: export
+# include <span>        // IWYU pragma: export
+# if __has_include(<stop_token>)
+#  include <stop_token> // IWYU pragma: export
+# endif
+# if __has_include(<semaphore>)
+#  include <semaphore> // IWYU pragma: export
+# endif
+# if __has_include(<source_location>)
+#  include <source_location> // IWYU pragma: export
+# endif
+# if __has_include(<syncstream>)
+#  include <syncstream> // IWYU pragma: export
+# endif
+# include <version>     // IWYU pragma: export
+#endif
+#if __cplusplus > 202002L
+# if __has_include(<expected>)
+#  include <expected> // IWYU pragma: export
+# endif
+# if __has_include(<spanstream>)
+#  include <spanstream> // IWYU pragma: export
+# endif
+# if __has_include(<stacktrace>)
+#  include <stacktrace> // IWYU pragma: export
+# endif
+# if __has_include(<stdatomic.h>)
+#  include <stdatomic.h> // IWYU pragma: export
+# endif
+#endif
+
+
+
+
+namespace co_async {
+struct Void final {
+    explicit Void() = default;
+
+    /* template <class T> */
+    /* Void(T &&) noexcept {} */
+
+    template <class T>
+    friend constexpr T &&operator,(T &&t, Void) {
+        return std::forward<T>(t);
+    }
+
+    template <class T>
+    friend constexpr T &&operator|(Void, T &&t) {
+        return std::forward<T>(t);
+    }
+
+    friend constexpr void operator|(Void, Void) {}
+
+    char const *repr() const noexcept {
+        return "void";
+    }
+};
+
+template <class T = void>
+struct AvoidVoidTrait {
+    using Type = T;
+    using RefType = std::reference_wrapper<T>;
+    using CRefType = std::reference_wrapper<T const>;
+};
+
+template <>
+struct AvoidVoidTrait<void> {
+    using Type = Void;
+    using RefType = Void;
+    using CRefType = Void;
+};
+template <class T>
+using Avoid = typename AvoidVoidTrait<T>::Type;
+template <class T>
+using AvoidRef = typename AvoidVoidTrait<T>::RefType;
+template <class T>
+using AvoidCRef = typename AvoidVoidTrait<T>::CRefType;
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+
+template <class A>
+concept Awaiter = requires(A a, std::coroutine_handle<> h) {
+    { a.await_ready() };
+    { a.await_suspend(h) };
+    { a.await_resume() };
+};
+template <class A>
+concept Awaitable = Awaiter<A> || requires(A a) {
+    { a.operator co_await() } -> Awaiter;
+};
+
+template <class A>
+struct AwaitableTraits {
+    using Type = A;
+};
+
+template <Awaiter A>
+struct AwaitableTraits<A> {
+    using RetType = decltype(std::declval<A>().await_resume());
+    using AvoidRetType = Avoid<RetType>;
+    using Type = RetType;
+    using AwaiterType = A;
+};
+
+template <class A>
+    requires(!Awaiter<A> && Awaitable<A>)
+struct AwaitableTraits<A>
+    : AwaitableTraits<decltype(std::declval<A>().operator co_await())> {};
+
+template <class... Ts>
+struct TypeList {};
+
+template <class Last>
+struct TypeList<Last> {
+    using FirstType = Last;
+    using LastType = Last;
+};
+
+template <class First, class... Ts>
+struct TypeList<First, Ts...> {
+    using FirstType = First;
+    using LastType = typename TypeList<Ts...>::LastType;
+};
+
+} // namespace co_async
+
+
+
+
+namespace co_async {
+struct PreviousAwaiter {
+    std::coroutine_handle<> mPrevious;
+
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<> coroutine) const noexcept {
+        return mPrevious;
+    }
+
+    void await_resume() const noexcept {}
+};
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+template <class T>
+struct Uninitialized {
+    union {
+        T mValue;
+    };
+#if CO_ASYNC_DEBUG
+    bool mHasValue = false;
+#endif
+    Uninitialized() noexcept {}
+
+    Uninitialized(Uninitialized &&) = delete;
+
+    ~Uninitialized() {
+#if CO_ASYNC_DEBUG
+        if (mHasValue) [[unlikely]] {
+            throw std::logic_error("Uninitialized destroyed with value");
+        }
+#endif
+    }
+
+    T const &ref() const noexcept {
+#if CO_ASYNC_DEBUG
+        if (!mHasValue) [[unlikely]] {
+            throw std::logic_error(
+                "Uninitialized::ref called in an unvalued slot");
+        }
+#endif
+        return mValue;
+    }
+
+    T &ref() noexcept {
+#if CO_ASYNC_DEBUG
+        if (!mHasValue) [[unlikely]] {
+            throw std::logic_error(
+                "Uninitialized::ref called in an unvalued slot");
+        }
+#endif
+        return mValue;
+    }
+
+    void destroy() {
+#if CO_ASYNC_DEBUG
+        if (!mHasValue) [[unlikely]] {
+            throw std::logic_error(
+                "Uninitialized::destroyValue called in an unvalued slot");
+        }
+#endif
+        mValue.~T();
+#if CO_ASYNC_DEBUG
+        mHasValue = false;
+#endif
+    }
+
+    T move() {
+#if CO_ASYNC_DEBUG
+        if (!mHasValue) [[unlikely]] {
+            throw std::logic_error(
+                "Uninitialized::move called in an unvalued slot");
+        }
+#endif
+        T ret(std::move(mValue));
+        mValue.~T();
+#if CO_ASYNC_DEBUG
+        mHasValue = false;
+#endif
+        return ret;
+    }
+
+    template <class... Ts>
+        requires std::constructible_from<T, Ts...>
+    void emplace(Ts &&...args) {
+#if CO_ASYNC_DEBUG
+        if (mHasValue) [[unlikely]] {
+            throw std::logic_error(
+                "Uninitialized::emplace with value already exist");
+        }
+#endif
+        std::construct_at(std::addressof(mValue), std::forward<Ts>(args)...);
+#if CO_ASYNC_DEBUG
+        mHasValue = true;
+#endif
+    }
+};
+
+template <>
+struct Uninitialized<void> {
+    void ref() const noexcept {}
+
+    void destroy() {}
+
+    Void move() {
+        return Void();
+    }
+
+    void emplace(Void) {}
+
+    void emplace() {}
+};
+
+template <>
+struct Uninitialized<Void> : Uninitialized<void> {};
+
+template <class T>
+struct Uninitialized<T const> : Uninitialized<T> {};
+
+template <class T>
+struct Uninitialized<T &> : Uninitialized<std::reference_wrapper<T>> {
+private:
+    using Base = Uninitialized<std::reference_wrapper<T>>;
+
+public:
+    T const &ref() const noexcept {
+        return Base::ref().get();
+    }
+
+    T &ref() noexcept {
+        return Base::ref().get();
+    }
+
+    T &move() {
+        return Base::move().get();
+    }
+};
+
+template <class T>
+struct Uninitialized<T &&> : Uninitialized<T &> {
+private:
+    using Base = Uninitialized<T &>;
+
+public:
+    T &&move() {
+        return std::move(Base::move().get());
+    }
+};
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+template <class T = void>
+struct ValueAwaiter {
+private:
+    Avoid<T> mValue;
+
+public:
+    ValueAwaiter(Avoid<T> value) : mValue(std::move(value)) {}
+
+    bool await_ready() const noexcept {
+        return true;
+    }
+
+    void await_suspend(std::coroutine_handle<>) const noexcept {}
+
+    T await_resume() {
+        if constexpr (!std::is_void_v<T>) {
+            return std::move(mValue);
+        }
+    }
+};
+
+template <class T = void>
+struct ValueOrReturnAwaiter {
+private:
+    std::coroutine_handle<> mPrevious;
+    Uninitialized<T> mValue;
+
+public:
+    template <class... Args>
+    ValueOrReturnAwaiter(std::in_place_t, Args &&...args)
+        : mPrevious() {
+        mValue.emplace(std::forward<Args>(args)...);
+    }
+
+    ValueOrReturnAwaiter(std::coroutine_handle<> previous)
+        : mPrevious(previous) {}
+
+    bool await_ready() const noexcept {
+        return !mPrevious;
+    }
+
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<> coroutine) const noexcept {
+        return mPrevious;
+    }
+
+    T await_resume() noexcept {
+        if constexpr (!std::is_void_v<T>) {
+            return mValue.move();
+        }
+    }
+};
+} // namespace co_async
+
+
+
+
+namespace co_async {
+#if CO_ASYNC_ALLOC
+using String = std::pmr::string;
+#else
+using String = std::string;
+#endif
+
+inline String operator""_s(const char *str, size_t len) {
+    return String(str, len);
+}
+
+extern thread_local std::pmr::memory_resource *currentAllocator;
+
+struct ReplaceAllocator {
+    ReplaceAllocator(std::pmr::memory_resource *allocator) {
+        lastAllocator = currentAllocator;
+        currentAllocator = allocator;
+    }
+
+    ReplaceAllocator(ReplaceAllocator &&) = delete;
+
+    ~ReplaceAllocator() {
+        currentAllocator = lastAllocator;
+    }
+
+private:
+    std::pmr::memory_resource *lastAllocator;
+};
+
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+/* template <class T, class Final = void> */
+/* struct Generative { */
+/*     explicit operator bool() const noexcept { */
+/*     } */
+/* }; */
+
+template <class T, class E = void>
+struct GeneratorResult {
+    std::variant<T, E> mValue;
+
+    explicit GeneratorResult(std::in_place_index_t<0>, auto &&...args)
+        : mValue(std::in_place_index<0>,
+                 std::forward<decltype(args)>(args)...) {}
+
+    explicit GeneratorResult(std::in_place_index_t<1>, auto &&...args)
+        : mValue(std::in_place_index<1>,
+                 std::forward<decltype(args)>(args)...) {}
+
+    /* GeneratorResult(std::convertible_to<T> auto &&value) */
+
+    bool has_result() const noexcept {
+        return mValue.index() == 1;
+    }
+
+    bool has_value() const noexcept {
+        return mValue.index() == 0;
+    }
+
+    explicit operator bool() const noexcept {
+        return has_value();
+    }
+
+    T &operator*() & noexcept {
+        return *std::get_if<0>(&mValue);
+    }
+
+    T &&operator*() && noexcept {
+        return std::move(*std::get_if<0>(&mValue));
+    }
+
+    T const &operator*() const & noexcept {
+        return *std::get_if<0>(&mValue);
+    }
+
+    T const &&operator*() const && noexcept {
+        return std::move(*std::get_if<0>(&mValue));
+    }
+
+    T &operator->() noexcept {
+        return std::get_if<0>(&mValue);
+    }
+
+    T &value() & {
+        return std::get<0>(mValue);
+    }
+
+    T &&value() && {
+        return std::move(std::get<0>(mValue));
+    }
+
+    T const &value() const & {
+        return std::get<0>(mValue);
+    }
+
+    T const &&value() const && {
+        return std::move(std::get<0>(mValue));
+    }
+
+    E &result_unsafe() & noexcept {
+        return *std::get_if<1>(&mValue);
+    }
+
+    E &&result_unsafe() && noexcept {
+        return std::move(*std::get_if<1>(&mValue));
+    }
+
+    E const &result_unsafe() const & noexcept {
+        return *std::get_if<1>(&mValue);
+    }
+
+    E const &&result_unsafe() const && noexcept {
+        return std::move(*std::get_if<1>(&mValue));
+    }
+
+    E &result() & {
+        return std::get<1>(mValue);
+    }
+
+    E &&result() && {
+        return std::move(std::get<1>(mValue));
+    }
+
+    E const &result() const & {
+        return std::get<1>(mValue);
+    }
+
+    E const &&result() const && {
+        return std::move(std::get<1>(mValue));
+    }
+};
+template <class T>
+struct GeneratorResult<T, void> : GeneratorResult<T, Void> {
+    using GeneratorResult<T, Void>::GeneratorResult;
+};
+} // namespace co_async
+
+
+
+
+namespace co_async {
+struct Perf {
+private:
+    char const *file;
+    std::uint_least32_t line;
+    std::chrono::steady_clock::time_point t0;
+
+    struct PerfTableEntry {
+        std::uint64_t duration;
+        char const *file;
+        int line;
+    };
+
+    struct PerfThreadLocal {
+        std::deque<PerfTableEntry> table;
+        PerfThreadLocal() = default;
+        PerfThreadLocal(PerfThreadLocal &&) = delete;
+
+        ~PerfThreadLocal() {
+            gather(*this);
+        }
+    };
+
+    struct PerfGather {
+        /* PerfGather() { */
+        /*     signal( */
+        /*         SIGINT, +[](int signo) { std::exit(130); }); */
+        /* } */
+
+        PerfGather &operator=(PerfGather &&) = delete;
+
+        void dump() const {
+            if (table.empty()) {
+                return;
+            }
+
+            struct PairLess {
+                bool
+                operator()(std::pair<std::string_view, int> const &a,
+                           std::pair<std::string_view, int> const &b) const {
+                    return std::tie(a.first, a.second) <
+                           std::tie(b.first, b.second);
+                }
+            };
+
+            struct Entry {
+                std::uint64_t min = std::numeric_limits<std::uint64_t>::max();
+                std::uint64_t sum = 0;
+                std::uint64_t max = 0;
+                std::uint64_t nr = 0;
+
+                Entry &operator+=(std::uint64_t d) {
+                    min = std::min(min, d);
+                    sum += d;
+                    max = std::max(max, d);
+                    ++nr;
+                    return *this;
+                }
+            };
+
+            std::map<std::pair<std::string_view, int>, Entry, PairLess> m;
+            for (auto const &e: table) {
+                m[{e.file, e.line}] += e.duration;
+            }
+            auto t = [](std::uint64_t d) -> std::string {
+                if (d < 10000) {
+                    return std::format("{}ns", d);
+                } else if (d < 10'000'000) {
+                    return std::format("{}us", d / 1000);
+                } else if (d < 10'000'000'000) {
+                    return std::format("{}ms", d / 1'000'000);
+                } else if (d < 10'000'000'000'000) {
+                    return std::format("{}s", d / 1'000'000'000);
+                } else {
+                    return std::format("{}h", d / 3'600'000'000'000);
+                }
+            };
+            auto p = [](std::string_view s) -> std::string {
+                auto p = s.rfind('/');
+                if (p == std::string_view::npos) {
+                    return std::string(s);
+                } else {
+                    return std::string(s.substr(p + 1));
+                }
+            };
+            std::vector<std::pair<std::pair<std::string_view, int>, Entry>>
+                sorted(m.begin(), m.end());
+            std::sort(sorted.begin(), sorted.end(),
+                      [](auto const &lhs, auto const &rhs) {
+                          return lhs.second.sum > rhs.second.sum;
+                      });
+            std::size_t w = 0, nw = 1;
+            for (auto const &[loc, e]: sorted) {
+                w = std::max(w, p(loc.first).size());
+                nw = std::max(nw, std::to_string(e.nr).size());
+            }
+            std::string o;
+            auto oit = std::back_inserter(o);
+            std::format_to(oit, "{:>{}}:{:<4} {:^6} {:^6} {:^6} {:^6} {:^{}}\n",
+                           "file", w, "line", "min", "avg", "max", "sum", "nr",
+                           nw + 1);
+            for (auto const &[loc, e]: sorted) {
+                std::format_to(oit,
+                               "{:>{}}:{:<4} {:>6} {:>6} {:>6} {:>6} {:>{}}x\n",
+                               p(loc.first), w, loc.second, t(e.min),
+                               t(e.sum / e.nr), t(e.max), t(e.sum), e.nr, nw);
+            }
+            fprintf(stderr, "%s", o.c_str());
+        }
+
+        ~PerfGather() {
+            for (auto *thread: threads) {
+                gather(*thread);
+            }
+            dump();
+        }
+
+        std::deque<PerfTableEntry> table;
+        std::set<PerfThreadLocal *> threads;
+        std::mutex lock;
+    };
+
+    static inline PerfGather gathered;
+    static inline thread_local PerfThreadLocal perthread;
+
+    static void gather(PerfThreadLocal &perthread) {
+        std::lock_guard guard(gathered.lock);
+        gathered.table.insert(gathered.table.end(), perthread.table.begin(),
+                              perthread.table.end());
+        gathered.threads.erase(&perthread);
+    }
+
+public:
+    Perf(std::source_location loc = std::source_location::current())
+        : file(loc.file_name()),
+          line(loc.line()),
+          t0(std::chrono::steady_clock::now()) {}
+
+    Perf(Perf &&) = delete;
+
+    ~Perf() {
+        auto t1 = std::chrono::steady_clock::now();
+        auto duration = (t1 - t0).count();
+        perthread.table.emplace_back(duration, file, line);
+    }
+};
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+
+template <class T = void>
+struct [[nodiscard("Expected<T> return values must be handled, use co_await to propagate")]] Expected {
+protected:
+    static_assert(!std::is_reference_v<T>);
+    std::error_category const *mErrorCatgory;
+
+    template <class>
+    friend struct Expected;
+
+    union {
+        T mValue;
+        int mErrorCode;
+    };
+
+#if CO_ASYNC_DEBUG
+public:
+    std::source_location mErrorLocation;
+#define CO_ASYNC_EXPECTED_LOCATION , std::source_location const &errLoc = std::source_location::current()
+#define CO_ASYNC_EXPECTED_LOCATION_INIT , mErrorLocation(errLoc)
+#define CO_ASYNC_EXPECTED_LOCATION_MESSAGE , std::string(mErrorLocation.file_name()) + ":" + std::to_string(mErrorLocation.line()) + ": " + mErrorLocation.function_name()
+#define CO_ASYNC_EXPECTED_LOCATION_COPY , mErrorLocation(that.mErrorLocation)
+#define CO_ASYNC_EXPECTED_LOCATION_ASSIGN mErrorLocation = that.mErrorLocation
+#else
+#define CO_ASYNC_EXPECTED_LOCATION
+#define CO_ASYNC_EXPECTED_LOCATION_INIT
+#define CO_ASYNC_EXPECTED_LOCATION_MESSAGE
+#define CO_ASYNC_EXPECTED_LOCATION_COPY
+#define CO_ASYNC_EXPECTED_LOCATION_ASSIGN
+#endif
+
+public:
+    template <std::convertible_to<T> U>
+        requires(!std::convertible_to<U, std::error_code> &&
+                 !std::convertible_to<U, std::errc> &&
+                 !std::convertible_to<U, std::in_place_t>)
+    Expected(U &&value) noexcept(std::is_nothrow_constructible_v<T, U>)
+        : mErrorCatgory(nullptr), mValue(std::forward<U>(value)) {}
+
+    template <class... Args>
+        requires std::constructible_from<T, Args...>
+    Expected(std::in_place_t, Args &&...args) noexcept(
+        std::is_nothrow_constructible_v<T, Args...>)
+        : mErrorCatgory(nullptr), mValue(std::forward<Args>(args)...) {}
+
+    Expected() noexcept(std::is_nothrow_default_constructible_v<T>)
+        : mErrorCatgory(nullptr), mValue() {}
+
+    Expected(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>)
+        : mErrorCatgory(nullptr), mValue(std::move(value)) {}
+
+    Expected(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>)
+        : mErrorCatgory(nullptr), mValue(value) {}
+
+    Expected(std::error_code const &ec CO_ASYNC_EXPECTED_LOCATION) noexcept
+        : mErrorCatgory(&ec.category()),
+          mErrorCode(ec.value()) CO_ASYNC_EXPECTED_LOCATION_INIT {}
+
+    Expected(std::errc e CO_ASYNC_EXPECTED_LOCATION) noexcept
+        : mErrorCatgory(&std::generic_category()),
+          mErrorCode(static_cast<int>(e)) CO_ASYNC_EXPECTED_LOCATION_INIT {}
+
+    ~Expected() noexcept(std::is_nothrow_destructible_v<T>) {
+        if (!mErrorCatgory) {
+            std::destroy_at(std::addressof(mValue));
+        }
+    }
+
+    Expected(Expected &&that) noexcept(std::is_nothrow_move_constructible_v<T>)
+        : mErrorCatgory(that.mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_COPY {
+        if (!mErrorCatgory) {
+            std::construct_at(std::addressof(mValue), std::move(that.mValue));
+        } else {
+            mErrorCode = that.mErrorCode;
+        }
+    }
+
+    Expected(Expected const &that) noexcept(
+        std::is_nothrow_copy_constructible_v<T>)
+        : mErrorCatgory(that.mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_COPY {
+        if (!mErrorCatgory) {
+            std::construct_at(std::addressof(mValue), that.mValue);
+        } else {
+            mErrorCode = that.mErrorCode;
+        }
+    }
+
+    Expected &operator=(Expected &&that) noexcept(
+        std::is_nothrow_destructible_v<T> &&
+        std::is_nothrow_move_constructible_v<T>) {
+        if (&that == this) [[unlikely]] {
+            return *this;
+        }
+        CO_ASYNC_EXPECTED_LOCATION_ASSIGN;
+        if (!mErrorCatgory) {
+            std::destroy_at(std::addressof(mValue));
+        }
+        mErrorCatgory = nullptr;
+        if (!that.mErrorCatgory) {
+            std::construct_at(std::addressof(mValue), std::move(that.mValue));
+        } else {
+            mErrorCatgory = that.mErrorCatgory;
+            mErrorCode = that.mErrorCode;
+        }
+        return *this;
+    }
+
+    Expected &operator=(Expected const &that) noexcept(
+        std::is_nothrow_destructible_v<T> &&
+        std::is_nothrow_copy_constructible_v<T>) {
+        if (&that == this) [[unlikely]] {
+            return *this;
+        }
+        CO_ASYNC_EXPECTED_LOCATION_ASSIGN;
+        if (!mErrorCatgory) {
+            std::destroy_at(std::addressof(mValue));
+        }
+        mErrorCatgory = nullptr;
+        if (!that.mErrorCatgory) {
+            std::construct_at(std::addressof(mValue), that.mValue);
+        } else {
+            mErrorCatgory = that.mErrorCatgory;
+            mErrorCode = that.mErrorCode;
+        }
+        return *this;
+    }
+
+    template <class U>
+        requires(!std::same_as<T, Void> && !std::same_as<T, U> &&
+                 (std::convertible_to<U, T> || std::constructible_from<T, U>))
+    explicit(!std::convertible_to<U, T>) Expected(Expected<U> that) noexcept(
+        std::is_nothrow_constructible_v<T, U>)
+        : mErrorCatgory(that.mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_COPY {
+        if (!mErrorCatgory) {
+            std::construct_at(std::addressof(mValue), std::move(that.mValue));
+        } else {
+            mErrorCode = that.mErrorCode;
+        }
+    }
+
+    template <class U>
+        requires(std::same_as<T, Void>)
+    Expected(Expected<U> that) noexcept
+        : mErrorCatgory(that.mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_COPY {
+        if (!mErrorCatgory) {
+            std::construct_at(std::addressof(mValue));
+        } else {
+            mErrorCode = that.mErrorCode;
+        }
+    }
+
+    bool has_error() const noexcept {
+        return mErrorCatgory;
+    }
+
+    bool has_value() const noexcept {
+        return !mErrorCatgory;
+    }
+
+    template <std::equality_comparable_with<std::error_code> U>
+        requires(!std::equality_comparable_with<U, T>)
+    bool operator==(U &&e) const {
+        return has_error() && std::error_code(mErrorCode, *mErrorCatgory) ==
+                                  std::forward<U>(e);
+    }
+
+    template <std::equality_comparable_with<T> U>
+        requires(!std::equality_comparable_with<std::error_code, T>)
+    bool operator==(U &&v) const {
+        return has_value() && mValue == std::forward<U>(v);
+    }
+
+    explicit operator bool() const noexcept {
+        return has_value();
+    }
+
+    T &&value() && {
+        if (has_value()) [[likely]] {
+            return std::move(mValue);
+        }
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+    }
+
+    T &value() & {
+        if (has_value()) [[likely]] {
+            return mValue;
+        }
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+    }
+
+    T const &value() const & {
+        if (has_value()) [[likely]] {
+            return mValue;
+        }
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+    }
+
+    T const &&value() const && {
+        if (has_value()) [[likely]] {
+            return std::move(mValue);
+        }
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+    }
+
+    template <class... Ts>
+        requires std::constructible_from<T, Ts...>
+    T value_or(Ts &&...ts) const & {
+        if (has_value()) [[likely]] {
+            return mValue;
+        }
+        return T(std::forward<Ts>(ts)...);
+    }
+
+    template <class... Ts>
+        requires std::constructible_from<T, Ts...>
+    T value_or(Ts &&...ts) && {
+        if (has_value()) [[likely]] {
+            return mValue;
+        }
+        return T(std::forward<Ts>(ts)...);
+    }
+
+    T &&operator*() && {
+#if CO_ASYNC_DEBUG
+        if (has_error()) [[unlikely]] {
+            throw std::logic_error(
+                "Expected has error but operator*() is called");
+        }
+#endif
+        return std::move(mValue);
+    }
+
+    T &operator*() & {
+#if CO_ASYNC_DEBUG
+        if (has_error()) [[unlikely]] {
+            throw std::logic_error(
+                "Expected has error but operator*() is called");
+        }
+#endif
+        return mValue;
+    }
+
+    T const &operator*() const & {
+#if CO_ASYNC_DEBUG
+        if (has_error()) [[unlikely]] {
+            throw std::logic_error(
+                "Expected has error but operator*() is called");
+        }
+#endif
+        return mValue;
+    }
+
+    T const &&operator*() const && {
+#if CO_ASYNC_DEBUG
+        if (has_error()) [[unlikely]] {
+            throw std::logic_error(
+                "Expected has error but operator*() is called");
+        }
+#endif
+        return std::move(mValue);
+    }
+
+    T *operator->() {
+        return std::addressof(operator*());
+    }
+
+    T const *operator->() const {
+        return std::addressof(operator*());
+    }
+
+    std::error_code error() const {
+#if CO_ASYNC_DEBUG
+        if (!has_error()) [[unlikely]] {
+            throw std::logic_error(
+                "Expected has no error but error() is called");
+        }
+#endif
+        return std::error_code(mErrorCode, *mErrorCatgory);
+    }
+
+    std::optional<T> opt_value() const & {
+        if (has_value()) {
+            return mValue;
+        }
+        return std::nullopt;
+    }
+
+    std::optional<T> opt_value() && {
+        if (has_value()) {
+            return std::move(mValue);
+        }
+        return std::nullopt;
+    }
+
+    std::optional<std::error_code> opt_error() const {
+        if (has_error()) {
+            return std::error_code(mErrorCode, *mErrorCatgory);
+        }
+        return std::nullopt;
+    }
+
+    std::variant<std::reference_wrapper<T const>, std::error_code> repr() const {
+        if (has_error()) {
+            return std::error_code(mErrorCode, *mErrorCatgory);
+        } else {
+            return std::cref(mValue);
+        }
+    }
+};
+
+template <>
+struct [[nodiscard("Expected<T> return values must be handled, use co_await to propagate")]] Expected<void> : Expected<Void> {
+    using Expected<Void>::Expected;
+};
+
+template <class T>
+Expected(T) -> Expected<T>;
+Expected() -> Expected<>;
+
+#undef CO_ASYNC_EXPECTED_LOCATION
+#undef CO_ASYNC_EXPECTED_LOCATION_INIT
+#undef CO_ASYNC_EXPECTED_LOCATION_MESSAGE
+#undef CO_ASYNC_EXPECTED_LOCATION_COPY
+#undef CO_ASYNC_EXPECTED_LOCATION_ASSIGN
+} // namespace co_async
+
+
+
+
+#if CO_ASYNC_PERF
+
+#endif
+
+
+
+
+
+
+
+namespace co_async {
+
+#if CO_ASYNC_ALLOC
+struct TaskAwaiterAllocState {
+    std::pmr::memory_resource *mLastAllocator;
+
+    void push() noexcept {
+        mLastAllocator = currentAllocator;
+    }
+
+    void pop() noexcept {
+        currentAllocator = mLastAllocator;
+    }
+};
+#endif
+
+template <class T>
+struct TaskAwaiter {
+    bool await_ready() const noexcept {
+#if CO_ASYNC_SAFERET
+# if CO_ASYNC_EXCEPT
+        if (mException) [[unlikely]] {
+            return true;
+        }
+# endif
+        return mResult.has_value();
+#else
+        return false;
+#endif
+    }
+
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<> coroutine) noexcept {
+#if CO_ASYNC_ALLOC
+        mAllocState.push();
+#endif
+        mCallerCoroutine = coroutine;
+        return mCalleeCoroutine;
+    }
+
+    T await_resume() {
+#if CO_ASYNC_ALLOC
+        mAllocState.pop();
+#endif
+#if CO_ASYNC_EXCEPT
+        if (mException) [[unlikely]] {
+            std::rethrow_exception(mException);
+        }
+#endif
+        if constexpr (!std::is_void_v<T>) {
+#if CO_ASYNC_SAFERET
+# if CO_ASYNC_DEBUG
+            if constexpr (std::same_as<Expected<>, T>) {}
+            return std::move(mResult.value());
+# else
+            return std::move(*mResult);
+# endif
+#else
+            return mResult.move();
+#endif
+        }
+    }
+
+    template <class P>
+    explicit TaskAwaiter(std::coroutine_handle<P> coroutine)
+        : mCalleeCoroutine(coroutine) {
+        coroutine.promise().mAwaiter = this;
+    }
+
+    TaskAwaiter(TaskAwaiter &&that) = delete;
+
+#if CO_ASYNC_DEBUG
+    template <class U, class Loc>
+    void returnValue(U &&result, Loc &&loc) {
+        mResult.emplace(std::forward<U>(result), std::forward<Loc>(loc));
+    }
+#endif
+    template <class U>
+    void returnValue(U &&result) {
+        mResult.emplace(std::forward<U>(result));
+    }
+
+    void returnVoid() {
+        mResult.emplace();
+    }
+
+    void unhandledException() noexcept {
+#if CO_ASYNC_EXCEPT
+        mException = std::current_exception();
+#else
+        std::terminate();
+#endif
+    }
+
+    std::coroutine_handle<> callerCoroutine() const noexcept {
+        return mCallerCoroutine;
+    }
+
+protected:
+    std::coroutine_handle<> mCallerCoroutine;
+    std::coroutine_handle<> mCalleeCoroutine;
+#if CO_ASYNC_SAFERET
+    std::optional<Avoid<T>> mResult;
+#else
+    Uninitialized<Avoid<T>> mResult;
+#endif
+#if CO_ASYNC_EXCEPT
+    std::exception_ptr mException;
+#endif
+#if CO_ASYNC_ALLOC
+    TaskAwaiterAllocState mAllocState;
+#endif
+};
+
+struct TaskFinalAwaiter {
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    template <class P>
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<P> coroutine) const noexcept {
+        return coroutine.promise().mAwaiter->callerCoroutine();
+    }
+
+    void await_resume() const noexcept {}
+};
+
+struct TaskYieldAwaiter {
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    template <class P>
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<P> coroutine) const noexcept {
+        return coroutine.promise().mAwaiter->callerCoroutine();
+    }
+
+    void await_resume() const noexcept {}
+};
+
+template <class T, class E>
+struct TaskAwaiter<GeneratorResult<T, E>> {
+    bool await_ready() const noexcept {
+#if CO_ASYNC_SAFERET
+# if CO_ASYNC_EXCEPT
+        if (mException) [[unlikely]] {
+            return true;
+        }
+# endif
+        return mResult.has_value();
+#else
+        return false;
+#endif
+    }
+
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<> coroutine) noexcept {
+#if CO_ASYNC_ALLOC
+        mAllocState.push();
+#endif
+        mCallerCoroutine = coroutine;
+        return mCalleeCoroutine;
+    }
+
+    GeneratorResult<T, E> await_resume() {
+#if CO_ASYNC_ALLOC
+        mAllocState.pop();
+#endif
+#if CO_ASYNC_EXCEPT
+        if (mException) [[unlikely]] {
+            std::rethrow_exception(mException);
+        }
+#endif
+#if CO_ASYNC_SAFERET
+# if CO_ASYNC_DEBUG
+        GeneratorResult<T, E> ret = std::move(mResult.value());
+# else
+        GeneratorResult<T, E> ret = std::move(*mResult);
+# endif
+        mResult.reset();
+        return ret;
+#else
+        return mResult.move();
+#endif
+    }
+
+    template <class P>
+    explicit TaskAwaiter(std::coroutine_handle<P> coroutine)
+        : mCalleeCoroutine(coroutine) {
+        coroutine.promise().mAwaiter = this;
+    }
+
+    TaskAwaiter(TaskAwaiter &&that) = delete;
+
+    template <class U>
+    TaskYieldAwaiter yieldValue(U &&value) {
+        mResult.emplace(std::in_place_index<0>, std::forward<U>(value));
+        return TaskYieldAwaiter();
+    }
+
+    template <class U>
+    void returnValue(U &&result) {
+        mResult.emplace(std::in_place_index<1>, std::forward<U>(result));
+    }
+
+    void returnVoid() {
+        mResult.emplace(std::in_place_index<1>);
+    }
+
+    void unhandledException() noexcept {
+#if CO_ASYNC_EXCEPT
+        mException = std::current_exception();
+#else
+        std::terminate();
+#endif
+    }
+
+    std::coroutine_handle<> callerCoroutine() const noexcept {
+        return mCallerCoroutine;
+    }
+
+protected:
+    std::coroutine_handle<> mCallerCoroutine;
+    std::coroutine_handle<> mCalleeCoroutine;
+#if CO_ASYNC_SAFERET
+    std::optional<GeneratorResult<T, E>> mResult;
+#else
+    Uninitialized<GeneratorResult<T, E>> mResult;
+#endif
+#if CO_ASYNC_EXCEPT
+    std::exception_ptr mException;
+#endif
+#if CO_ASYNC_ALLOC
+    TaskAwaiterAllocState mAllocState;
+#endif
+};
+
+template <class T>
+struct TaskOwnedAwaiter : TaskAwaiter<T> {
+    using TaskAwaiter<T>::TaskAwaiter;
+
+    ~TaskOwnedAwaiter() {
+        TaskAwaiter<T>::mCalleeCoroutine.destroy();
+    }
+};
+
+template <class T>
+struct TaskPromise;
+
+template <class T = void, class P = TaskPromise<T>>
+struct [[nodiscard("did you forgot to co_await?")]] Task {
+    using promise_type = P;
+
+    Task(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
+        : mCoroutine(coroutine) {}
+
+    Task(Task &&that) noexcept : mCoroutine(that.mCoroutine) {
+        that.mCoroutine = nullptr;
+    }
+
+    Task &operator=(Task &&that) noexcept {
+        std::swap(mCoroutine, that.mCoroutine);
+        return *this;
+    }
+
+    ~Task() {
+        if (mCoroutine) {
+            mCoroutine.destroy();
+        }
+    }
+
+    auto operator co_await() const & noexcept {
+        return TaskAwaiter<T>(mCoroutine);
+    }
+
+    auto operator co_await() && noexcept {
+        return TaskOwnedAwaiter<T>(std::exchange(mCoroutine, nullptr));
+    }
+
+    std::coroutine_handle<promise_type> get() const noexcept {
+        return mCoroutine;
+    }
+
+    std::coroutine_handle<promise_type> release() noexcept {
+        return std::exchange(mCoroutine, nullptr);
+    }
+
+    promise_type &promise() const {
+        return mCoroutine.promise();
+    }
+
+private:
+    std::coroutine_handle<promise_type> mCoroutine;
+};
+
+struct TaskPromiseLocal {
+    void *mCancelToken = nullptr;
+};
+
+struct TaskPromiseCommonBase {
+    auto initial_suspend() noexcept {
+        return std::suspend_always();
+    }
+
+    auto final_suspend() noexcept {
+        return TaskFinalAwaiter();
+    }
+
+    TaskPromiseCommonBase() = default;
+    TaskPromiseCommonBase(TaskPromiseCommonBase &&) = delete;
+
+#if CO_ASYNC_ALLOC
+    void *operator new(std::size_t size) {
+        return std::pmr::get_default_resource()->allocate(size);
+    }
+
+    void operator delete(void *ptr, std::size_t size) noexcept {
+        std::pmr::get_default_resource()->deallocate(ptr, size);
+    }
+#endif
+};
+
+template <class TaskPromise>
+struct TaskPromiseCommon : TaskPromiseCommonBase {
+    TaskPromise &self() noexcept {
+        return static_cast<TaskPromise &>(*this);
+    }
+
+    TaskPromise const &self() const noexcept {
+        return static_cast<TaskPromise const &>(*this);
+    }
+
+    void unhandled_exception() noexcept {
+        self().mAwaiter->unhandledException();
+    }
+
+    auto get_return_object() {
+        return std::coroutine_handle<TaskPromise>::from_promise(self());
+    }
+};
+
+template <class TaskPromise>
+struct TaskPromiseExpectedTransforms {
+    TaskPromise &self() noexcept {
+        return static_cast<TaskPromise &>(*this);
+    }
+
+    TaskPromise const &self() const noexcept {
+        return static_cast<TaskPromise const &>(*this);
+    }
+
+#if CO_ASYNC_DEBUG
+# define CO_ASYNC_EXPECTED_LOCATION_FORWARD(e) , (e).mErrorLocation
+#else
+# define CO_ASYNC_EXPECTED_LOCATION_FORWARD(e)
+#endif
+
+    template <class T2>
+    ValueOrReturnAwaiter<T2> await_transform(Expected<T2> &&e) noexcept {
+        if (e.has_error()) [[unlikely]] {
+            self().mAwaiter->returnValue(
+                std::move(e).error() CO_ASYNC_EXPECTED_LOCATION_FORWARD(e));
+            return {self().mAwaiter->callerCoroutine()};
+        }
+        if constexpr (std::is_void_v<T2>) {
+            return {std::in_place};
+        } else {
+            return {std::in_place, *std::move(e)};
+        }
+    }
+
+    template <class T2>
+    ValueOrReturnAwaiter<T2> await_transform(Expected<T2> &e) noexcept {
+        return await_transform(std::move(e));
+    }
+
+    template <class T2, class E2>
+    ValueOrReturnAwaiter<GeneratorResult<T2, E2>>
+    await_transform(GeneratorResult<T2, Expected<E2>> &&g) noexcept {
+        if (g.has_value()) {
+            if constexpr (std::is_void_v<T2>) {
+                return {std::in_place, std::in_place_index<0>};
+            } else {
+                return {std::in_place, std::in_place_index<0>, std::move(*g)};
+            }
+        } else {
+            auto e = g.result_unsafe();
+            if (e.has_error()) [[unlikely]] {
+                self().mAwaiter->returnValue(
+                    std::move(e).error() CO_ASYNC_EXPECTED_LOCATION_FORWARD(e));
+                return {self().mAwaiter->callerCoroutine()};
+            } else {
+                if constexpr (std::is_void_v<E2>) {
+                    return {std::in_place, std::in_place_index<1>,
+                            std::move(*e)};
+                } else {
+                    return {std::in_place, std::in_place_index<1>};
+                }
+            }
+        }
+    }
+
+    template <class T2, class E2>
+    ValueOrReturnAwaiter<GeneratorResult<T2, E2>>
+    await_transform(GeneratorResult<T2, Expected<E2>> &g) noexcept {
+        return await_transform(std::move(g));
+    }
+
+    ValueOrReturnAwaiter<void>
+    await_transform(std::vector<Expected<void>> &&e) noexcept {
+        for (std::size_t i = 0; i < e.size(); ++i) {
+            if (e[i].has_error()) [[unlikely]] {
+                self().mAwaiter->returnValue(
+                    std::move(e[i]).error()
+                        CO_ASYNC_EXPECTED_LOCATION_FORWARD(e[i]));
+                return {self().mAwaiter->callerCoroutine()};
+            }
+        }
+        return {std::in_place};
+    }
+
+    ValueOrReturnAwaiter<void>
+    await_transform(std::vector<Expected<void>> &e) noexcept {
+        return await_transform(std::move(e));
+    }
+
+    template <class T2, class E2>
+    ValueOrReturnAwaiter<std::vector<T2>>
+    await_transform(std::vector<Expected<T2>> &&e) noexcept {
+        for (std::size_t i = 0; i < e.size(); ++i) {
+            if (e[i].has_error()) [[unlikely]] {
+                self().mAwaiter->returnValue(
+                    std::move(e[i]).error()
+                        CO_ASYNC_EXPECTED_LOCATION_FORWARD(e[i]));
+                return {self().mAwaiter->callerCoroutine()};
+            }
+        }
+        std::vector<T2> ret;
+        ret.reserve(e.size());
+        for (std::size_t i = 0; i < e.size(); ++i) {
+            ret.emplace_back(*std::move(e[i]));
+        }
+        return {std::in_place, std::move(ret)};
+    }
+
+    template <class T2>
+    ValueOrReturnAwaiter<std::vector<T2>>
+    await_transform(std::vector<Expected<T2>> &e) noexcept {
+        return await_transform(std::move(e));
+    }
+
+    template <class... Ts>
+    ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>
+    await_transform(std::tuple<Expected<Ts>...> &&e) noexcept {
+        return [&]<std::size_t... Is>(std::index_sequence<Is...>)
+                   -> ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>> {
+            if (!([&]() -> bool {
+                    if (std::get<Is>(e).has_error()) [[unlikely]] {
+                        self().mAwaiter->returnValue(
+                            std::move(std::get<Is>(e))
+                                .error() CO_ASYNC_EXPECTED_LOCATION_FORWARD(
+                                    std::get<Is>(e)));
+                        return false;
+                    }
+                    return true;
+                }() && ...)) {
+                return {self().mAwaiter->callerCoroutine()};
+            }
+            return {std::in_place, [&]() -> decltype(auto) {
+                        return *std::move(std::get<Is>(e)), Void();
+                    }()...};
+        }(std::make_index_sequence<sizeof...(Ts)>());
+    }
+
+    template <class... Ts>
+    ValueOrReturnAwaiter<std::tuple<Avoid<Ts>...>>
+    await_transform(std::tuple<Expected<Ts>...> &e) noexcept {
+        return await_transform(std::move(e));
+    }
+};
+
+template <class TaskPromise>
+struct TaskPromiseTransforms {
+    TaskPromise &self() noexcept {
+        return static_cast<TaskPromise &>(*this);
+    }
+
+    TaskPromise const &self() const noexcept {
+        return static_cast<TaskPromise const &>(*this);
+    }
+
+    template <class U>
+    Task<U> &&await_transform(Task<U> &&u) noexcept {
+        u.promise().mLocals = self().mLocals;
+        return std::move(u);
+    }
+
+    template <class U>
+    Task<U> const &await_transform(Task<U> const &u) noexcept {
+        u.promise().mLocals = self().mLocals;
+        return u;
+    }
+
+    template <std::invocable<TaskPromise &> U>
+    auto await_transform(U &&u) noexcept(noexcept(u(self()))) {
+        return self().await_transform(u(self()));
+    }
+
+    template <class U>
+        requires(!std::invocable<U, TaskPromise &>)
+    U &&await_transform(U &&u) noexcept {
+        return std::forward<U>(u);
+    }
+};
+
+template <class TaskPromise, class T>
+struct TaskPromiseImpl : TaskPromiseCommon<TaskPromise>,
+                         TaskPromiseTransforms<TaskPromise> {};
+
+template <class TaskPromise, class T>
+struct TaskPromiseImpl<TaskPromise, Expected<T>>
+    : TaskPromiseCommon<TaskPromise>,
+      TaskPromiseTransforms<TaskPromise>,
+      TaskPromiseExpectedTransforms<TaskPromise> {
+    using TaskPromiseTransforms<TaskPromise>::await_transform;
+    using TaskPromiseExpectedTransforms<TaskPromise>::await_transform;
+    static_assert(std::is_void_v<std::void_t<T>>);
+};
+
+template <class T>
+struct TaskPromise : TaskPromiseImpl<TaskPromise<T>, T> {
+    void return_value(T &&ret) {
+        mAwaiter->returnValue(std::move(ret));
+    }
+
+    void return_value(T const &ret) {
+        mAwaiter->returnValue(ret);
+    }
+
+#if CO_ASYNC_DEBUG
+    void
+    return_value(std::convertible_to<T> auto &&ret,
+                 std::source_location loc = std::source_location::current())
+        requires std::constructible_from<T, decltype(ret), std::source_location>
+    {
+        mAwaiter->returnValue(std::forward<decltype(ret)>(ret), loc);
+    }
+
+    void return_value(std::convertible_to<T> auto &&ret)
+        requires(
+            !std::constructible_from<T, decltype(ret), std::source_location>)
+    {
+        mAwaiter->returnValue(std::forward<decltype(ret)>(ret));
+    }
+#else
+    void return_value(std::convertible_to<T> auto &&ret) {
+        mAwaiter->returnValue(std::forward<decltype(ret)>(ret));
+    }
+#endif
+
+    TaskAwaiter<T> *mAwaiter{};
+    TaskPromiseLocal mLocals{};
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    TaskPromise(std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
+};
+
+template <>
+struct TaskPromise<void> : TaskPromiseImpl<TaskPromise<void>, void> {
+    void return_void() {
+        mAwaiter->returnVoid();
+    }
+
+    TaskPromise() = default;
+    TaskPromise(TaskPromise &&) = delete;
+
+    TaskAwaiter<void> *mAwaiter{};
+    TaskPromiseLocal mLocals{};
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    TaskPromise(std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
+};
+
+template <class T, class E>
+struct TaskPromise<GeneratorResult<T, E>>
+    : TaskPromiseImpl<TaskPromise<GeneratorResult<T, E>>, E> {
+    auto yield_value(T &&ret) {
+        return mAwaiter->yieldValue(std::move(ret));
+    }
+
+    auto yield_value(T const &ret) {
+        return mAwaiter->yieldValue(ret);
+    }
+
+    auto yield_value(std::convertible_to<T> auto &&ret) {
+        return mAwaiter->yieldValue(std::forward<decltype(ret)>(ret));
+    }
+
+    void return_value(E &&ret) {
+        mAwaiter->returnValue(std::move(ret));
+    }
+
+    void return_value(E const &ret) {
+        mAwaiter->returnValue(ret);
+    }
+
+    void return_value(std::convertible_to<E> auto &&ret) {
+        mAwaiter->returnValue(std::forward<decltype(ret)>(ret));
+    }
+
+    TaskAwaiter<GeneratorResult<T, E>> *mAwaiter{};
+    TaskPromiseLocal mLocals{};
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    TaskPromise(std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
+};
+
+template <class T>
+struct TaskPromise<GeneratorResult<T, void>>
+    : TaskPromiseImpl<TaskPromise<GeneratorResult<T, void>>, void> {
+    auto yield_value(T &&ret) {
+        return mAwaiter->yieldValue(std::move(ret));
+    }
+
+    auto yield_value(T const &ret) {
+        return mAwaiter->yieldValue(ret);
+    }
+
+    auto yield_value(std::convertible_to<T> auto &&ret) {
+        return mAwaiter->yieldValue(std::forward<decltype(ret)>(ret));
+    }
+
+    void return_void() {
+        mAwaiter->returnVoid();
+    }
+
+    TaskAwaiter<GeneratorResult<T, void>> *mAwaiter{};
+    TaskPromiseLocal mLocals{};
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    TaskPromise(std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
+};
+
+// static_assert(sizeof(TaskPromise<int>) == sizeof(TaskPromise<void>));
+// static_assert(sizeof(TaskPromise<Expected<>>) == sizeof(TaskPromise<void>));
+// static_assert(sizeof(TaskPromise<GeneratorResult<int, Expected<>>>) ==
+// sizeof(TaskPromise<void>));
+
+template <class T, class P>
+struct CustomPromise : TaskPromise<T> {
+    auto get_return_object() {
+        static_assert(std::is_base_of_v<CustomPromise, P>);
+        return std::coroutine_handle<P>::from_promise(static_cast<P &>(*this));
+    }
+};
+
+template <class F, class... Args>
+    requires(Awaitable<std::invoke_result_t<F, Args...>>)
+inline std::invoke_result_t<F, Args...> co_bind(F f, Args... args) {
+    co_return co_await std::move(f)(std::move(args)...);
+    /* std::optional o(std::move(f)); */
+    /* decltype(auto) r = co_await std::move(*o)(); */
+    /* o.reset(); */
+    /* co_return */
+    /*     typename AwaitableTraits<std::invoke_result_t<F,
+     * Args...>>::RetType( */
+    /*         std::forward<decltype(r)>(r)); */
+}
+
+} // namespace co_async
+
+#define co_awaits co_await co_await
+#define co_returns \
+    co_return {}
+
+
+
+
+
+
+namespace co_async {
+template <Awaitable A, Awaitable F>
+    requires(!std::invocable<F> &&
+             !std::invocable<F, typename AwaitableTraits<A>::RetType>)
+Task<typename AwaitableTraits<F>::RetType> and_then(A a, F f) {
+    co_await std::move(a);
+    co_return co_await std::move(f);
+}
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+inline Task<> just_void() {
+    co_return;
+}
+
+template <class T>
+Task<T> just_value(T t) {
+    co_return std::move(t);
+}
+
+template <class F, class... Args>
+Task<std::invoke_result_t<F, Args...>> just_invoke(F &&f, Args &&...args) {
+    co_return std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+}
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+struct ReturnPreviousPromise {
+    auto initial_suspend() noexcept {
+        return std::suspend_always();
+    }
+
+    auto final_suspend() noexcept {
+        return PreviousAwaiter(mPrevious);
+    }
+
+    void unhandled_exception() {
+        throw;
+    }
+
+    void return_value(std::coroutine_handle<> previous) noexcept {
+        mPrevious = previous;
+    }
+
+    auto get_return_object() {
+        return std::coroutine_handle<ReturnPreviousPromise>::from_promise(
+            *this);
+    }
+
+    std::coroutine_handle<> mPrevious;
+    ReturnPreviousPromise &operator=(ReturnPreviousPromise &&) = delete;
+};
+
+using ReturnPreviousTask = Task<void, ReturnPreviousPromise>;
+} // namespace co_async
+
+
+
+
+
+
+
+
+namespace co_async {
+struct WhenAllCtlBlock {
+    std::size_t mCount;
+    std::coroutine_handle<> mPrevious{};
+#if CO_ASYNC_EXCEPT
+    std::exception_ptr mException{};
+#endif
+};
+
+struct WhenAllAwaiter {
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<> coroutine) const {
+        if (mTasks.empty()) {
+            return coroutine;
+        }
+        mControl.mPrevious = coroutine;
+        for (auto const &t: mTasks.subspan(0, mTasks.size() - 1)) {
+            t.get().resume();
+        }
+        return mTasks.back().get();
+    }
+
+    void await_resume() const {
+#if CO_ASYNC_EXCEPT
+        if (mControl.mException) [[unlikely]] {
+            std::rethrow_exception(mControl.mException);
+        }
+#endif
+    }
+
+    WhenAllCtlBlock &mControl;
+    std::span<ReturnPreviousTask const> mTasks;
+};
+
+template <class T>
+ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
+                                 Uninitialized<T> &result) {
+#if CO_ASYNC_EXCEPT
+    try {
+#endif
+        result.emplace(co_await std::forward<decltype(t)>(t));
+#if CO_ASYNC_EXCEPT
+    } catch (...) {
+        control.mException = std::current_exception();
+        co_return control.mPrevious;
+    }
+#endif
+    --control.mCount;
+    if (control.mCount == 0) {
+        co_return control.mPrevious;
+    }
+    co_return std::noop_coroutine();
+}
+
+template <class = void>
+ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
+                                 Uninitialized<void> &) {
+#if CO_ASYNC_EXCEPT
+    try {
+#endif
+        co_await std::forward<decltype(t)>(t);
+#if CO_ASYNC_EXCEPT
+    } catch (...) {
+        control.mException = std::current_exception();
+        co_return control.mPrevious;
+    }
+#endif
+    --control.mCount;
+    if (control.mCount == 0) {
+        co_return control.mPrevious;
+    }
+    co_return std::noop_coroutine();
+}
+
+template <std::size_t... Is, class... Ts>
+Task<std::tuple<typename AwaitableTraits<Ts>::AvoidRetType...>>
+whenAllImpl(std::index_sequence<Is...>, Ts &&...ts) {
+    WhenAllCtlBlock control{sizeof...(Ts)};
+    std::tuple<Uninitialized<typename AwaitableTraits<Ts>::RetType>...> result;
+    ReturnPreviousTask taskArray[]{
+        whenAllHelper(ts, control, std::get<Is>(result))...};
+    co_await WhenAllAwaiter(control, taskArray);
+    co_return std::tuple<typename AwaitableTraits<Ts>::AvoidRetType...>(
+        std::get<Is>(result).move()...);
+}
+
+template <Awaitable... Ts>
+    requires(sizeof...(Ts) != 0)
+auto when_all(Ts &&...ts) {
+    return whenAllImpl(std::make_index_sequence<sizeof...(Ts)>{},
+                       std::forward<Ts>(ts)...);
+}
+
+template <Awaitable T, class Alloc = std::allocator<T>>
+Task<std::conditional_t<
+    !std::is_void_v<typename AwaitableTraits<T>::RetType>,
+    std::vector<typename AwaitableTraits<T>::RetType,
+                typename std::allocator_traits<Alloc>::template rebind_alloc<
+                    typename AwaitableTraits<T>::RetType>>,
+    void>>
+when_all(std::vector<T, Alloc> const &tasks) {
+    WhenAllCtlBlock control{tasks.size()};
+    Alloc alloc = tasks.get_allocator();
+    std::vector<Uninitialized<typename AwaitableTraits<T>::RetType>,
+                typename std::allocator_traits<Alloc>::template rebind_alloc<
+                    Uninitialized<typename AwaitableTraits<T>::RetType>>>
+        result(tasks.size(), alloc);
+    {
+        std::vector<ReturnPreviousTask,
+                    typename std::allocator_traits<
+                        Alloc>::template rebind_alloc<ReturnPreviousTask>>
+            taskArray(alloc);
+        taskArray.reserve(tasks.size());
+        for (std::size_t i = 0; i < tasks.size(); ++i) {
+            taskArray.push_back(whenAllHelper(tasks[i], control, result[i]));
+        }
+        co_await WhenAllAwaiter(control, taskArray);
+    }
+    if constexpr (!std::is_void_v<typename AwaitableTraits<T>::RetType>) {
+        std::vector<
+            typename AwaitableTraits<T>::RetType,
+            typename std::allocator_traits<Alloc>::template rebind_alloc<
+                typename AwaitableTraits<T>::RetType>>
+            res(alloc);
+        res.reserve(tasks.size());
+        for (auto &r: result) {
+            res.push_back(r.move());
+        }
+        co_return res;
+    }
+}
+} // namespace co_async
+
+
+
+
+
+
+namespace co_async {
+template <Awaitable A>
+A ensureAwaitable(A a) {
+    return std::move(a);
+}
+
+template <class A>
+    requires(!Awaitable<A>)
+Task<A> ensureAwaitable(A a) {
+    co_return std::move(a);
+}
+
+template <Awaitable A>
+Task<typename AwaitableTraits<A>::RetType> ensureTask(A a) {
+    co_return co_await std::move(a);
+}
+
+template <class T>
+Task<T> ensureTask(Task<T> &&t) {
+    return std::move(t);
+}
+
+template <class A>
+    requires(!Awaitable<A> && std::invocable<A> &&
+             Awaitable<std::invoke_result_t<A>>)
+Task<typename AwaitableTraits<std::invoke_result_t<A>>::RetType>
+ensureTask(A a) {
+    return ensureTask(std::invoke(std::move(a)));
+}
+} // namespace co_async
+
+
+
+
+namespace co_async {
+struct CurrentCoroutineAwaiter {
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<> coroutine) noexcept {
+        mCurrent = coroutine;
+        return coroutine;
+    }
+
+    auto await_resume() const noexcept {
+        return mCurrent;
+    }
+
+    std::coroutine_handle<> mCurrent;
+};
+} // namespace co_async
+
+
+
+
+
+
+#if defined(__unix__) && __has_include(<cxxabi.h>)
+# include <cxxabi.h>
+#endif
+
+namespace co_async {
+template <class FinalAwaiter = std::suspend_always>
+struct IgnoreReturnPromise {
+    auto initial_suspend() noexcept {
+        return std::suspend_always();
+    }
+
+    auto final_suspend() noexcept {
+        return FinalAwaiter();
+    }
+
+    void unhandled_exception() noexcept {
+#if CO_ASYNC_EXCEPT
+        try {
+            throw;
+        } catch (std::exception const &e) {
+            auto name = typeid(e).name();
+# if defined(__unix__) && __has_include(<cxxabi.h>)
+            int status;
+            char *p = abi::__cxa_demangle(name, 0, 0, &status);
+            std::string s = p ? p : name;
+            std::free(p);
+# else
+            std::string s = name;
+# endif
+            std::cerr
+                << "co_spawn coroutine terminated after thrown exception '" +
+                       s + "'\n  e.what(): " + std::string(e.what()) + "\n";
+        } catch (...) {
+            std::cerr
+                << "co_spawn coroutine terminated after thrown exception\n";
+        }
+#else
+        std::terminate();
+#endif
+    }
+
+    void result() noexcept {}
+
+    void return_void() noexcept {}
+
+    auto get_return_object() {
+        return std::coroutine_handle<IgnoreReturnPromise>::from_promise(*this);
+    }
+
+    IgnoreReturnPromise &operator=(IgnoreReturnPromise &&) = delete;
+
+    [[maybe_unused]] TaskAwaiter<void> *mAwaiter;
+
+#if CO_ASYNC_PERF
+    Perf mPerf;
+
+    IgnoreReturnPromise(
+        std::source_location loc = std::source_location::current())
+        : mPerf(loc) {}
+#endif
+};
+
+struct AutoDestroyFinalAwaiter {
+    bool await_ready() const noexcept {
+        return false;
+    }
+
+    void await_suspend(std::coroutine_handle<> coroutine) const noexcept {
+        coroutine.destroy();
+    }
+
+    void await_resume() const noexcept {}
+};
+} // namespace co_async
+
+
+
+
+namespace co_async {
+
+struct ListHead {
+    struct ListNode {
+        ListNode() noexcept : listNext(nullptr), listPrev(nullptr) {}
+        friend struct ListHead;
+
+    private:
+        ListNode *listNext;
+        ListNode *listPrev;
+    };
+
+    struct NodeType : ListNode {
+        NodeType() = default;
+        NodeType(NodeType &&) = delete;
+
+        ~NodeType() noexcept {
+            erase_from_parent();
+        }
+
+    protected:
+        void erase_from_parent() {
+            if (this->listNext) {
+                auto listPrev = this->listPrev;
+                auto listNext = this->listNext;
+                listPrev->listNext = listNext;
+                listNext->listPrev = listPrev;
+                this->listPrev = nullptr;
+                this->listNext = nullptr;
+            }
+        }
+    };
+
+    void doPushFront(ListNode *node) noexcept {
+        node->listNext = root.listNext;
+        node->listPrev = &root;
+        root.listNext = node;
+        node->listNext->listPrev = node;
+    }
+
+    void doPushBack(ListNode *node) noexcept {
+        node->listNext = &root;
+        node->listPrev = root.listPrev;
+        root.listPrev = node;
+        node->listPrev->listNext = node;
+    }
+
+    void doInsertAfter(ListNode *pivot, ListNode *node) noexcept {
+        node->listNext = pivot->listNext;
+        node->listPrev = pivot;
+        pivot->listNext = node;
+        node->listNext->listPrev = node;
+    }
+
+    void doInsertBefore(ListNode *pivot, ListNode *node) noexcept {
+        node->listNext = pivot;
+        node->listPrev = pivot->listPrev;
+        pivot->listPrev = node;
+        node->listPrev->listNext = node;
+    }
+
+    void doErase(ListNode *node) noexcept {
+        node->listNext->listPrev = node->listPrev;
+        node->listPrev->listNext = node->listNext;
+        node->listNext = nullptr;
+        node->listPrev = nullptr;
+    }
+
+    ListNode *doFront() const noexcept {
+        return root.listNext;
+    }
+
+    ListNode *doBack() const noexcept {
+        return root.listPrev;
+    }
+
+    bool doEmpty() const noexcept {
+        return root.listNext == nullptr;
+    }
+
+    ListNode *doPopFront() noexcept {
+        auto node = root.listNext;
+        if (node != &root) {
+            node->listNext->listPrev = &root;
+            root.listNext = node->listNext;
+            node->listNext = nullptr;
+            node->listPrev = nullptr;
+        } else {
+            node = nullptr;
+        }
+        return node;
+    }
+
+    ListNode *doPopBack() noexcept {
+        auto node = root.listPrev;
+        if (node != &root) {
+            node->listNext->listPrev = node->listPrev;
+            node->listPrev->listNext = node->listNext;
+            node->listNext = nullptr;
+            node->listPrev = nullptr;
+        } else {
+            node = nullptr;
+        }
+        return node;
+    }
+
+    void doClear() {
+        for (ListNode *current = root.listNext, *next; current != &root;
+             current = next) {
+            next = current->listNext;
+            current->listNext = nullptr;
+            current->listPrev = nullptr;
+        }
+        root.listNext = root.listPrev = &root;
+    }
+
+    static void doIterNext(ListNode *&current) noexcept {
+        current = current->listNext;
+    }
+
+    static void doIterPrev(ListNode *&current) noexcept {
+        current = current->listPrev;
+    }
+
+    ListNode *doIterBegin() const noexcept {
+        return root.listNext;
+    }
+
+    ListNode *doIterEnd() const noexcept {
+        return const_cast<ListNode *>(&root);
+    }
+
+    ListHead() noexcept : root() {
+        root.listNext = root.listPrev = &root;
+    }
+
+    ListHead(ListHead &&) = delete;
+
+    ~ListHead() noexcept {
+        doClear();
+    }
+
+private:
+    ListNode root;
+};
+
+// struct ConcurrentListHead {
+//     struct ListNode {
+//         ListNode() noexcept
+//             : listNext(nullptr),
+//               listPrev(nullptr),
+//               listHead(nullptr) {}
+//         friend struct ConcurrentListHead;
+//
+//     private:
+//         ListNode *listNext;
+//         ListNode *listPrev;
+//
+//     protected:
+//         ConcurrentListHead *listHead;
+//     };
+//
+//     struct NodeType : ListNode {
+//         NodeType() = default;
+//         NodeType(NodeType &&) = delete;
+//
+//         ~NodeType() noexcept {
+//             erase_from_parent();
+//         }
+//
+//     protected:
+//         void erase_from_parent() {
+//             if (this->listHead) {
+//                 this->listHead->doErase(this);
+//                 this->listHead = nullptr;
+//             }
+//         }
+//     };
+//
+//     void doPushFront(ListNode *node) noexcept {
+//         std::lock_guard lock(listLock);
+//         node->listHead = this;
+//         node->listNext = root.listNext;
+//         node->listPrev = &root;
+//         root.listNext = node;
+//         if (node->listNext) {
+//             node->listNext->listPrev = node;
+//         }
+//     }
+//
+//     void doPushBack(ListNode *node) noexcept {
+//         std::lock_guard lock(listLock);
+//         node->listHead = this;
+//         node->listNext = &root;
+//         node->listPrev = root.listPrev;
+//         root.listPrev = node;
+//         if (node->listPrev) {
+//             node->listPrev->listNext = node;
+//         }
+//     }
+//
+//     void doInsertAfter(ListNode *pivot,
+//                        ListNode *node) noexcept {
+//         std::lock_guard lock(listLock);
+//         node->listHead = this;
+//         node->listNext = pivot->listNext;
+//         node->listPrev = pivot;
+//         pivot->listNext = node;
+//         if (node->listNext) {
+//             node->listNext->listPrev = node;
+//         }
+//     }
+//
+//     void doInsertBefore(ListNode *pivot,
+//                         ListNode *node) noexcept {
+//         std::lock_guard lock(listLock);
+//         node->listHead = this;
+//         node->listNext = pivot;
+//         node->listPrev = pivot->listPrev;
+//         pivot->listPrev = node;
+//         if (node->listPrev) {
+//             node->listPrev->listNext = node;
+//         }
+//     }
+//
+//     void doErase(ListNode *node) noexcept {
+//         std::lock_guard lock(listLock);
+//         node->listHead = nullptr;
+//         node->listNext->listPrev = node->listPrev;
+//         node->listPrev->listNext = node->listNext;
+//         node->listNext = nullptr;
+//         node->listPrev = nullptr;
+//     }
+//
+//     ListNode *doFront() const noexcept {
+//         std::lock_guard lock(listLock);
+//         return root.listNext;
+//     }
+//
+//     ListNode *doBack() const noexcept {
+//         std::lock_guard lock(listLock);
+//         return root.listPrev;
+//     }
+//
+//     bool doEmpty() const noexcept {
+//         std::lock_guard lock(listLock);
+//         return root.listNext == nullptr;
+//     }
+//
+//     ListNode *doPopFront() noexcept {
+//         std::lock_guard lock(listLock);
+//         auto node = root.listNext;
+//         if (node) {
+//             node->listHead = nullptr;
+//             node->listNext->listPrev = &root;
+//             root.listNext = node->listNext;
+//             node->listNext = nullptr;
+//             node->listPrev = nullptr;
+//         }
+//         return node;
+//     }
+//
+//     ListNode *doPopBack() noexcept {
+//         std::lock_guard lock(listLock);
+//         auto node = root.listPrev;
+//         if (node) {
+//             node->listHead = nullptr;
+//             node->listNext->listPrev = node->listPrev;
+//             node->listPrev->listNext = node->listNext;
+//             node->listNext = nullptr;
+//             node->listPrev = nullptr;
+//         }
+//         return node;
+//     }
+//
+//     void doClear() {
+//         std::lock_guard lock(listLock);
+//         for (ListNode *current = root.listNext, *next;
+//              current != &root; current = next) {
+//             next = current->listNext;
+//             current->listHead = nullptr;
+//             current->listNext = nullptr;
+//             current->listPrev = nullptr;
+//         }
+//     }
+//
+//     ConcurrentListHead() noexcept : root() {}
+//
+//     ConcurrentListHead(ConcurrentListHead &&) = delete;
+//
+//     ~ConcurrentListHead() noexcept {
+//         doClear();
+//     }
+//
+// private:
+//     ListNode root;
+//     mutable std::mutex listLock;
+// };
+
+template <class Value>
+struct IntrusiveList : private ListHead {
+    using ListHead::NodeType;
+
+    IntrusiveList() noexcept {
+        static_assert(
+            std::is_base_of_v<NodeType, Value>,
+            "Value type must be derived from IntrusiveList<Value>::NodeType");
+    }
+
+    struct iterator {
+    private:
+        ListNode *node;
+
+        explicit iterator(ListNode *node) noexcept : node(node) {}
+
+        friend IntrusiveList;
+
+    public:
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = Value;
+        using difference_type = std::ptrdiff_t;
+        using pointer = Value *;
+        using reference = Value &;
+
+        iterator() noexcept : node(nullptr) {}
+
+        explicit iterator(Value &value) noexcept : node(&static_cast<ListNode &>(value)) {}
+
+        Value &operator*() const noexcept {
+            return *static_cast<Value *>(node);
+        }
+
+        Value *operator->() const noexcept {
+            return static_cast<Value *>(node);
+        }
+
+        iterator &operator++() noexcept {
+            ListHead::doIterNext(node);
+            return *this;
+        }
+
+        iterator &operator--() noexcept {
+            ListHead::doIterPrev(node);
+            return *this;
+        }
+
+        iterator operator++(int) noexcept {
+            auto copy = *this;
+            ListHead::doIterNext(node);
+            return copy;
+        }
+
+        iterator operator--(int) noexcept {
+            auto copy = *this;
+            ListHead::doIterPrev(node);
+            return copy;
+        }
+
+        bool operator==(const iterator &other) const noexcept {
+            return node == other.node;
+        }
+
+        bool operator!=(const iterator &other) const noexcept {
+            return node != other.node;
+        }
+    };
+
+    using const_iterator = iterator;
+
+    iterator begin() const noexcept {
+        return iterator(ListHead::doIterBegin());
+    }
+
+    iterator end() const noexcept {
+        return iterator(ListHead::doIterEnd());
+    }
+
+    void push_front(Value &value) noexcept {
+        doPushFront(&static_cast<ListNode &>(value));
+    }
+
+    void push_back(Value &value) noexcept {
+        doPushBack(&static_cast<ListNode &>(value));
+    }
+
+    void insert_after(Value &pivot, Value &value) noexcept {
+        doInsertAfter(&static_cast<ListNode &>(pivot),
+                      &static_cast<ListNode &>(value));
+    }
+
+    void insert_before(Value &pivot, Value &value) noexcept {
+        doInsertBefore(&static_cast<ListNode &>(pivot),
+                       &static_cast<ListNode &>(value));
+    }
+
+    void erase(Value &value) noexcept {
+        doErase(&static_cast<ListNode &>(value));
+    }
+
+    bool empty() const noexcept {
+        return doEmpty();
+    }
+
+    Value &front() const noexcept {
+        return static_cast<Value &>(*doFront());
+    }
+
+    Value &back() const noexcept {
+        return static_cast<Value &>(*doBack());
+    }
+
+    Value *pop_front() noexcept {
+        auto node = doPopFront();
+        return node ? static_cast<Value *>(node) : nullptr;
+    }
+
+    Value *pop_back() noexcept {
+        auto node = doPopBack();
+        return node ? static_cast<Value *>(node) : nullptr;
+    }
+
+    void clear() {
+        doClear();
+    }
+};
+
+// template <class Value>
+// struct ConcurrentIntrusiveList : private ConcurrentListHead {
+//     using ConcurrentListHead::NodeType;
+//
+//     ConcurrentIntrusiveList() noexcept {
+//         static_assert(
+//             std::is_base_of_v<NodeType, Value>,
+//             "Value type must be derived from ConcurrentIntrusiveList<Value>::NodeType");
+//     }
+//
+//     void push_front(Value &value) noexcept {
+//         doPushFront(&static_cast<ListNode &>(value));
+//     }
+//
+//     void push_back(Value &value) noexcept {
+//         doPushBack(&static_cast<ListNode &>(value));
+//     }
+//
+//     void insert_after(Value &pivot, Value &value) noexcept {
+//         doInsertAfter(&static_cast<ListNode &>(pivot),
+//                       &static_cast<ListNode &>(value));
+//     }
+//
+//     void insert_before(Value &pivot, Value &value) noexcept {
+//         doInsertBefore(&static_cast<ListNode &>(pivot),
+//                        &static_cast<ListNode &>(value));
+//     }
+//
+//     void erase(Value &value) noexcept {
+//         doErase(&static_cast<ListNode &>(value));
+//     }
+//
+//     bool empty() const noexcept {
+//         return doEmpty();
+//     }
+//
+//     Value &front() const noexcept {
+//         return static_cast<Value &>(*doFront());
+//     }
+//
+//     Value &back() const noexcept {
+//         return static_cast<Value &>(*doBack());
+//     }
+//
+//     Value *pop_front() noexcept {
+//         auto node = doPopFront();
+//         return node ? static_cast<Value *>(node) : nullptr;
+//     }
+//
+//     Value *pop_back() noexcept {
+//         auto node = doPopBack();
+//         return node ? static_cast<Value *>(node) : nullptr;
+//     }
+//
+//     void clear() {
+//         doClear();
+//     }
+// };
+} // namespace co_async
+
+
+
+
+
+
+
+
+namespace co_async {
+
+struct CancelSourceImpl {
+    struct CancellerBase : IntrusiveList<CancellerBase>::NodeType {
+        virtual Task<> doCancel() = 0;
+
+        CancellerBase &operator=(CancellerBase &&) = delete;
+
+        bool operator<(CancellerBase const &that) const noexcept {
+            return this < &that;
+        }
+
+        // virtual ~CancellerBase() = default;
+    };
+
+    /* template <class AwaiterPtr, class Canceller> */
+    /* struct CancellerImpl : CancellerBase { */
+    /*     AwaiterPtr mOp; */
+    /*  */
+    /*     explicit CancellerImpl(AwaiterPtr op) : mOp(op) {} */
+    /*  */
+    /*     virtual Task<> doCancel() { */
+    /*         return Canceller::doCancel(mOp); */
+    /*     } */
+    /* }; */
+
+    IntrusiveList<CancellerBase> mCancellers;
+    bool mCanceled;
+
+    Task<> doCancel() {
+        if (mCanceled) {
+            co_return;
+        }
+        mCanceled = true;
+        if (!mCancellers.empty()) {
+            std::vector<Task<>> tasks;
+            for (auto &canceller: mCancellers) {
+                tasks.push_back(canceller.doCancel());
+            }
+            /* for (auto &&task: tasks) { */
+            /*     co_await task; */
+            /* } */
+            co_await when_all(tasks);
+            mCancellers.clear();
+        }
+    }
+
+    bool doIsCanceled() const noexcept {
+        return mCanceled;
+    }
+
+    void doRegister(CancellerBase &canceller) {
+        mCancellers.push_front(canceller);
+    }
+
+    /* template <class Canceller, class Awaiter> */
+    /* static Task<typename AwaitableTraits<Awaiter>::RetType> */
+    /* doGuard(CancelSourceImpl *impl, Awaiter &&awaiter) { */
+    /*     if (impl) { */
+    /*         auto *op = std::addressof(awaiter); */
+    /*         CancellerImpl<decltype(op), Canceller> canceller(op); */
+    /*         impl->doRegister(canceller); */
+    /*         co_return co_await awaiter; */
+    /*     } else { */
+    /*         co_return co_await awaiter; */
+    /*     } */
+    /* } */
+};
+
+struct CancelToken;
+
+struct [[nodiscard]] CancelSourceBase {
+protected:
+    std::unique_ptr<CancelSourceImpl> mImpl =
+        std::make_unique<CancelSourceImpl>();
+
+    friend CancelToken;
+
+    template <class Callback>
+    friend struct CancelCallback;
+
+public:
+    Task<> cancel() const {
+        return mImpl->doCancel();
+    }
+
+    inline CancelToken token() const;
+    CancelSourceBase() = default;
+    CancelSourceBase(CancelSourceBase &&) = default;
+    CancelSourceBase &operator=(CancelSourceBase &&) = default;
+};
+
+struct [[nodiscard("did you forget to capture or co_await the cancel token?")]] CancelToken {
+private:
+    CancelSourceImpl *mImpl;
+
+    explicit CancelToken(CancelSourceImpl *impl) noexcept : mImpl(impl) {}
+
+public:
+    CancelToken() noexcept : mImpl(nullptr) {}
+
+    CancelToken(CancelSourceBase const &that) noexcept
+        : mImpl(that.mImpl.get()) {}
+
+    Task<> cancel() const {
+        return mImpl ? mImpl->doCancel() : just_void();
+    }
+
+    [[nodiscard]] bool is_cancel_possible() const noexcept {
+        return mImpl;
+    }
+
+    [[nodiscard]] bool is_canceled() const noexcept {
+        return mImpl && mImpl->doIsCanceled();
+    }
+
+    [[nodiscard]] operator bool() const noexcept {
+        return is_canceled();
+    }
+
+    Expected<> as_expect() {
+        if (mImpl->doIsCanceled()) [[unlikely]] {
+            return std::errc::operation_canceled;
+        }
+        return {};
+    }
+
+    void *address() const noexcept {
+        return mImpl;
+    }
+
+    static CancelToken from_address(void *impl) noexcept {
+        return CancelToken((CancelSourceImpl *)impl);
+    }
+
+    auto repr() const {
+        return mImpl;
+    }
+
+    /* template <class Awaiter, */
+    /*           class Canceller = typename std::decay_t<Awaiter>::Canceller> */
+    /* auto guard(Awaiter &&awaiter) const { */
+    /*     return CancelSourceImpl::doGuard<Canceller>( */
+    /*         mImpl, std::forward<Awaiter>(awaiter)); */
+    /* } */
+    /*  */
+    /* template <class Awaiter, class Canceller> */
+    /* auto guard(std::in_place_type_t<Canceller>, Awaiter &&awaiter) const { */
+    /*     return CancelSourceImpl::doGuard<Canceller>( */
+    /*         mImpl, std::forward<Awaiter>(awaiter)); */
+    /* } */
+
+    /* template <class Callback> */
+    /* [[nodiscard("capture me in a local variable")]] auto callback(Callback
+     * callback) { */
+    /*     std::unique_ptr<CancelSource::CancellerCallback<Callback>> canceller;
+     */
+    /*     if (mImpl) { */
+    /*         canceller =
+     * std::make_unique<CancelSource::CancellerCallback>(std::move(callback));
+     */
+    /*         mImpl->doRegister(*canceller); */
+    /*     } */
+    /*     return canceller; */
+    /* } */
+
+    template <class T>
+    Expected<> operator()(TaskPromise<T> &promise) const {
+        if (is_canceled()) [[unlikely]] {
+            return std::errc::operation_canceled;
+        }
+        return {};
+    }
+
+    friend struct CancelSource;
+
+    template <class Callback>
+    friend struct CancelCallback;
+};
+
+struct CancelSource : private CancelSourceImpl::CancellerBase,
+                      public CancelSourceBase {
+private:
+    virtual Task<> doCancel() {
+        return cancel();
+    }
+
+public:
+    CancelSource() = default;
+
+    explicit CancelSource(CancelToken cancel) {
+        if (cancel.mImpl) {
+            cancel.mImpl->doRegister(*this);
+        }
+    }
+
+    auto repr() {
+        return mImpl.get();
+    }
+};
+
+inline CancelToken CancelSourceBase::token() const {
+    return *this;
+}
+
+template <class Callback>
+struct [[nodiscard]] CancelCallback : private CancelSourceImpl::CancellerBase {
+    explicit CancelCallback(CancelToken cancel, Callback callback)
+        : mCallback(std::move(callback)) {
+        if (cancel.mImpl) {
+            cancel.mImpl->doRegister(*this);
+        }
+    }
+
+private:
+    virtual Task<> doCancel() {
+        std::invoke(std::move(mCallback));
+        co_return;
+    }
+
+    Callback mCallback;
+};
+
+template <class Callback>
+    requires Awaitable<std::invoke_result_t<Callback>>
+struct [[nodiscard]] CancelCallback<Callback>
+    : private CancelSourceImpl::CancellerBase {
+    explicit CancelCallback(CancelToken cancel, Callback callback)
+        : mCallback(std::move(callback)) {
+        if (cancel.mImpl) {
+            cancel.mImpl->doRegister(*this);
+        }
+    }
+
+private:
+    virtual Task<> doCancel() {
+        co_await std::invoke(std::move(mCallback));
+    }
+
+    Callback mCallback;
+};
+
+template <class Callback>
+CancelCallback(CancelToken, Callback) -> CancelCallback<Callback>;
+
+struct GetThisCancel {
+    template <class T>
+    ValueAwaiter<CancelToken> operator()(TaskPromise<T> &promise) const {
+        return ValueAwaiter<CancelToken>(CancelToken::from_address(promise.mLocals.mCancelToken));
+    }
+
+    template <class T>
+    static T &&bind(CancelToken cancel, T &&task) {
+        task.promise().mLocals.mCancelToken = cancel.address();
+        return std::forward<T>(task);
+    }
+
+    struct DoCancelThis {
+        template <class T>
+        Task<> operator()(TaskPromise<T> &promise) const {
+            co_return co_await CancelToken::from_address(promise.mLocals.mCancelToken).cancel();
+        }
+    };
+
+    static DoCancelThis cancel() {
+        return {};
+    }
+
+    /* struct DoExpectCancel { */
+    /*     template <class T> */
+    /*     Expected<> operator()(TaskPromise<T> &promise) const { */
+    /*         return CancelToken(promise.mLocals.mCancelToken).expect(); */
+    /*     } */
+    /* }; */
+    /*  */
+    /* static DoExpectCancel expect() { */
+    /*     return {}; */
+    /* } */
+};
+
+inline constexpr GetThisCancel co_cancel;
+
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+
+struct SpinMutex {
+    bool try_lock() {
+        return !flag.test_and_set(std::memory_order_acquire);
+    }
+
+    void lock() {
+        while (flag.test_and_set(std::memory_order_acquire))
+            ;
+    }
+
+    void unlock() {
+        flag.clear(std::memory_order_release);
+    }
+
+    std::atomic_flag flag{false};
+};
+
+}
+
+
+
+
+namespace co_async {
+template <class Value, class Compare = std::less<>>
+struct RbTree : private Compare {
+private:
+    enum RbColor {
+        RED,
+        BLACK
+    };
+
+protected:
+    struct RbNode {
+        RbNode() noexcept
+            : rbLeft(nullptr),
+              rbRight(nullptr),
+              rbParent(nullptr),
+              rbTree(nullptr),
+              rbColor(RED) {}
+        friend struct RbTree;
+
+    private:
+        RbNode *rbLeft;
+        RbNode *rbRight;
+        RbNode *rbParent;
+
+    protected:
+        RbTree *rbTree;
+
+    private:
+        RbColor rbColor;
+    };
+
+public:
+    struct NodeType : RbNode {
+        NodeType() = default;
+        NodeType(NodeType &&) = delete;
+
+        ~NodeType() noexcept {
+            erase_from_parent();
+        }
+
+    protected:
+        void erase_from_parent() {
+            static_assert(
+                std::is_base_of_v<NodeType, Value>,
+                "Value type must be derived from RbTree<Value>::NodeType");
+            if (this->rbTree) {
+                this->rbTree->doErase(this);
+                this->rbTree = nullptr;
+            }
+        }
+    };
+
+private:
+    RbNode *root;
+
+    bool compare(RbNode *left, RbNode *right) const noexcept {
+        return static_cast<Compare const &>(*this)(
+            static_cast<Value &>(*left), static_cast<Value &>(*right));
+    }
+
+    void rotateLeft(RbNode *node) noexcept {
+        RbNode *rightChild = node->rbRight;
+        node->rbRight = rightChild->rbLeft;
+        if (rightChild->rbLeft != nullptr) {
+            rightChild->rbLeft->rbParent = node;
+        }
+        rightChild->rbParent = node->rbParent;
+        if (node->rbParent == nullptr) {
+            root = rightChild;
+        } else if (node == node->rbParent->rbLeft) {
+            node->rbParent->rbLeft = rightChild;
+        } else {
+            node->rbParent->rbRight = rightChild;
+        }
+        rightChild->rbLeft = node;
+        node->rbParent = rightChild;
+    }
+
+    void rotateRight(RbNode *node) noexcept {
+        RbNode *leftChild = node->rbLeft;
+        node->rbLeft = leftChild->rbRight;
+        if (leftChild->rbRight != nullptr) {
+            leftChild->rbRight->rbParent = node;
+        }
+        leftChild->rbParent = node->rbParent;
+        if (node->rbParent == nullptr) {
+            root = leftChild;
+        } else if (node == node->rbParent->rbRight) {
+            node->rbParent->rbRight = leftChild;
+        } else {
+            node->rbParent->rbLeft = leftChild;
+        }
+        leftChild->rbRight = node;
+        node->rbParent = leftChild;
+    }
+
+    void fixViolation(RbNode *node) noexcept {
+        RbNode *parent = nullptr;
+        RbNode *grandParent = nullptr;
+        while (node != root && node->rbColor != BLACK &&
+               node->rbParent->rbColor == RED) {
+            parent = node->rbParent;
+            grandParent = parent->rbParent;
+            if (parent == grandParent->rbLeft) {
+                RbNode *uncle = grandParent->rbRight;
+                if (uncle != nullptr && uncle->rbColor == RED) {
+                    grandParent->rbColor = RED;
+                    parent->rbColor = BLACK;
+                    uncle->rbColor = BLACK;
+                    node = grandParent;
+                } else {
+                    if (node == parent->rbRight) {
+                        rotateLeft(parent);
+                        node = parent;
+                        parent = node->rbParent;
+                    }
+                    rotateRight(grandParent);
+                    std::swap(parent->rbColor, grandParent->rbColor);
+                    node = parent;
+                }
+            } else {
+                RbNode *uncle = grandParent->rbLeft;
+                if (uncle != nullptr && uncle->rbColor == RED) {
+                    grandParent->rbColor = RED;
+                    parent->rbColor = BLACK;
+                    uncle->rbColor = BLACK;
+                    node = grandParent;
+                } else {
+                    if (node == parent->rbLeft) {
+                        rotateRight(parent);
+                        node = parent;
+                        parent = node->rbParent;
+                    }
+                    rotateLeft(grandParent);
+                    std::swap(parent->rbColor, grandParent->rbColor);
+                    node = parent;
+                }
+            }
+        }
+        root->rbColor = BLACK;
+    }
+
+    void doInsert(RbNode *node) noexcept {
+        node->rbLeft = nullptr;
+        node->rbRight = nullptr;
+        node->rbTree = this;
+        node->rbColor = RED;
+        RbNode *parent = nullptr;
+        RbNode *current = root;
+        while (current != nullptr) {
+            parent = current;
+            if (compare(node, current)) {
+                current = current->rbLeft;
+            } else {
+                current = current->rbRight;
+            }
+        }
+        node->rbParent = parent;
+        if (parent == nullptr) {
+            root = node;
+        } else if (compare(node, parent)) {
+            parent->rbLeft = node;
+        } else {
+            parent->rbRight = node;
+        }
+        fixViolation(node);
+    }
+
+    void doErase(RbNode *current) noexcept {
+        current->rbTree = nullptr;
+        RbNode *node = nullptr;
+        RbNode *child = nullptr;
+        RbColor color = RED;
+        if (current->rbLeft != nullptr && current->rbRight != nullptr) {
+            RbNode *replace = current;
+            replace = replace->rbRight;
+            while (replace->rbLeft != nullptr) {
+                replace = replace->rbLeft;
+            }
+            if (current != replace->rbParent) {
+                current->rbParent->rbLeft = replace->rbRight;
+                replace->rbRight = current->rbRight;
+                current->rbRight->rbParent = replace;
+            } else {
+                replace->rbParent = current;
+            }
+            if (current == root) {
+                root = replace;
+            } else if (current->rbParent->rbLeft == current) {
+                current->rbParent->rbLeft = replace;
+            } else {
+                current->rbParent->rbRight = replace;
+            }
+            replace->rbLeft = current->rbLeft;
+            current->rbLeft->rbParent = replace;
+            node = replace;
+            color = node->rbColor;
+            child = node->rbRight;
+        } else {
+            node = current;
+            color = node->rbColor;
+            child = (node->rbLeft != nullptr) ? node->rbLeft : node->rbRight;
+        }
+        if (child != nullptr) {
+            child->rbParent = node->rbParent;
+        }
+        if (node == root) {
+            root = child;
+        } else if (node->rbParent->rbLeft == node) {
+            node->rbParent->rbLeft = child;
+        } else {
+            node->rbParent->rbRight = child;
+        }
+        if (color == BLACK && root) {
+            fixViolation(child ? child : node->rbParent);
+        }
+    }
+
+    RbNode *getFront() const noexcept {
+        RbNode *current = root;
+        while (current->rbLeft != nullptr) {
+            current = current->rbLeft;
+        }
+        return current;
+    }
+
+    RbNode *getBack() const noexcept {
+        RbNode *current = root;
+        while (current->rbRight != nullptr) {
+            current = current->rbRight;
+        }
+        return current;
+    }
+
+    template <class Visitor>
+    void doTraverseInorder(RbNode *node, Visitor &&visitor) {
+        if (node == nullptr) {
+            return;
+        }
+        doTraverseInorder(node->rbLeft, visitor);
+        visitor(node);
+        doTraverseInorder(node->rbRight, visitor);
+    }
+
+    void doClear(RbNode *node) {
+        if (node == nullptr) {
+            return;
+        }
+        doClear(node->rbLeft);
+        node->rbTree = nullptr;
+        doClear(node->rbRight);
+    }
+
+    void doClear() {
+        doClear(root);
+        root = nullptr;
+    }
+
+public:
+    RbTree() noexcept(noexcept(Compare())) : Compare(), root(nullptr) {}
+
+    explicit RbTree(Compare comp) noexcept(noexcept(Compare(comp)))
+        : Compare(comp),
+          root(nullptr) {}
+
+    RbTree(RbTree &&) = delete;
+
+    ~RbTree() noexcept {}
+
+    void insert(Value &value) noexcept {
+        doInsert(&static_cast<RbNode &>(value));
+    }
+
+    void erase(Value &value) noexcept {
+        doErase(&static_cast<RbNode &>(value));
+    }
+
+    bool empty() const noexcept {
+        return root == nullptr;
+    }
+
+    Value &front() const noexcept {
+        return static_cast<Value &>(*getFront());
+    }
+
+    Value &back() const noexcept {
+        return static_cast<Value &>(*getBack());
+    }
+
+    template <class Visitor, class V>
+    std::pair<RbNode *, RbNode *> traverseEqualRange(Visitor &&visitor,
+                                                     V &&value) {}
+
+    template <class Visitor>
+    void traverseInorder(Visitor &&visitor) {
+        doTraverseInorder(root, [visitor = std::forward<Visitor>(visitor)](
+                                    RbNode *node) mutable {
+            visitor(static_cast<Value &>(*node));
+        });
+    }
+
+    void clear() {
+        doClear();
+    }
+};
+
+// template <class Value, class Compare = std::less<>>
+// struct ConcurrentRbTree : private RbTree<Value, Compare> {
+// private:
+//     using BaseTree = RbTree<Value, Compare>;
+//
+// public:
+//     struct NodeType : BaseTree::RbNode {
+//         NodeType() = default;
+//         NodeType(NodeType &&) = delete;
+//
+//         ~NodeType() noexcept {
+//             erase_from_parent();
+//         }
+//
+//     protected:
+//         void erase_from_parent() {
+//             static_assert(
+//                 std::is_base_of_v<NodeType, Value>,
+//                 "Value type must be derived from RbTree<Value>::NodeType");
+//             if (this->rbTree) {
+//                 auto lock = static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
+//                 lock->erase(static_cast<Value &>(*this));
+//                 this->rbTree = nullptr;
+//             }
+//         }
+//     };
+//
+//     struct LockGuard {
+//     private:
+//         BaseTree *mThat;
+//         std::unique_lock<std::mutex> mGuard;
+//
+//         explicit LockGuard(ConcurrentRbTree *that) noexcept
+//             : mThat(that),
+//               mGuard(that->mMutex) {}
+//
+//         friend ConcurrentRbTree;
+//
+//     public:
+//         BaseTree &operator*() const noexcept {
+//             return *mThat;
+//         }
+//
+//         BaseTree *operator->() const noexcept {
+//             return mThat;
+//         }
+//
+//         void unlock() noexcept {
+//             mGuard.unlock();
+//             mThat = nullptr;
+//         }
+//     };
+//
+//     LockGuard lock() noexcept {
+//         return LockGuard(this);
+//     }
+//
+// private:
+//     std::mutex mMutex;
+// };
+} // namespace co_async
+
+
+
+
+namespace co_async {
+template <class T>
+struct RingQueue {
+    std::unique_ptr<T[]> mHead;
+    T *mTail;
+    T *mRead;
+    T *mWrite;
+
+    explicit RingQueue(std::size_t maxSize = 0)
+        : mHead(maxSize ? std::make_unique<T[]>(maxSize) : nullptr),
+          mTail(maxSize ? mHead.get() + maxSize : nullptr),
+          mRead(mHead.get()),
+          mWrite(mHead.get()) {}
+
+    void set_max_size(std::size_t maxSize) {
+        mHead = maxSize ? std::make_unique<T[]>(maxSize) : nullptr;
+        mTail = maxSize ? mHead.get() + maxSize : nullptr;
+        mRead = mHead.get();
+        mWrite = mHead.get();
+    }
+
+    [[nodiscard]] std::size_t max_size() const noexcept {
+        return mTail - mHead.get();
+    }
+
+    [[nodiscard]] std::size_t size() const noexcept {
+        return static_cast<std::size_t>(mWrite - mRead + max_size()) % max_size();
+    }
+
+    [[nodiscard]] bool empty() const noexcept {
+        return mRead == mWrite;
+    }
+
+    [[nodiscard]] bool full() const noexcept {
+        T *nextWrite = mWrite == mTail ? mHead.get() : mWrite + 1;
+        return nextWrite == mRead;
+    }
+
+    [[nodiscard]] std::optional<T> pop() {
+        if (mRead == mWrite) {
+            return std::nullopt;
+        }
+        T p = std::move(*mRead);
+        mRead = mRead == mTail ? mHead.get() : mRead + 1;
+        return p;
+    }
+
+    [[nodiscard]] T pop_unchecked() {
+        T p = std::move(*mRead);
+        mRead = mRead == mTail ? mHead.get() : mRead + 1;
+        return p;
+    }
+
+    [[nodiscard]] bool push(T &&value) {
+        T *nextWrite = mWrite == mTail ? mHead.get() : mWrite + 1;
+        if (nextWrite == mRead) {
+            return false;
+        }
+        *mWrite = std::move(value);
+        mWrite = nextWrite;
+        return true;
+    }
+
+    void push_unchecked(T &&value) {
+        T *nextWrite = mWrite == mTail ? mHead.get() : mWrite + 1;
+        *mWrite = std::move(value);
+        mWrite = nextWrite;
+    }
+};
+
+template <class T>
+struct InfinityQueue {
+    [[nodiscard]] std::optional<T> pop() {
+        if (mQueue.empty()) {
+            return std::nullopt;
+        }
+        T value = std::move(mQueue.front());
+        mQueue.pop_front();
+        return value;
+    }
+
+    [[nodiscard]] T pop_unchecked() {
+        T value = std::move(mQueue.front());
+        mQueue.pop_front();
+        return value;
+    }
+
+    void push(T &&value) {
+        mQueue.push_back(std::move(value));
+    }
+
+private:
+    std::deque<T> mQueue;
+};
+} // namespace co_async
+
+
+
+
+namespace co_async {
+#if __cpp_lib_hardware_interference_size
+using std::hardware_constructive_interference_size;
+using std::hardware_destructive_interference_size;
+#else
+constexpr std::size_t hardware_constructive_interference_size = 64;
+constexpr std::size_t hardware_destructive_interference_size = 64;
+#endif
+} // namespace co_async
+
+
+
+
+
+
+
+namespace co_async {
+template <class T, std::size_t Capacity = 0>
+struct alignas(hardware_destructive_interference_size) ConcurrentRingQueue {
+    static constexpr std::size_t Shift = std::bit_width(Capacity);
+    using Stamp = std::conditional_t<
+        Shift <= 4, std::uint8_t,
+        std::conditional_t<
+            Shift <= 8, std::uint16_t,
+            std::conditional_t<Shift <= 16, std::uint32_t, std::uint64_t>>>;
+    static_assert(Shift * 2 <= sizeof(Stamp) * 8);
+    static_assert(Capacity < (1 << Shift));
+    static constexpr Stamp kSize = 1 << Shift;
+
+    [[nodiscard]] std::optional<T> pop() {
+        auto s = mStamp.load(std::memory_order_acquire);
+        if (!canRead(s)) {
+            return std::nullopt;
+        }
+        while (!mStamp.compare_exchange_weak(s, advectRead(s),
+                                             std::memory_order_acq_rel, std::memory_order_acquire)) {
+            if (!canRead(s)) {
+                return std::nullopt;
+            }
+        }
+        return std::move(mHead[offsetRead(s)]);
+    }
+
+    [[nodiscard]] bool push(T &&value) {
+        auto s = mStamp.load(std::memory_order_acquire);
+        if (!canWrite(s)) [[unlikely]] {
+            return false;
+        }
+        while (!mStamp.compare_exchange_weak(s, advectWrite(s),
+                                             std::memory_order_acq_rel, std::memory_order_acquire)) {
+            if (!canWrite(s)) [[unlikely]] {
+                return false;
+            }
+        }
+        mHead[offsetWrite(s)] = std::move(value);
+        return true;
+    }
+
+    ConcurrentRingQueue() = default;
+    ConcurrentRingQueue(ConcurrentRingQueue &&) = delete;
+
+private:
+    inline Stamp offsetRead(Stamp s) const {
+        return s >> Shift;
+    }
+
+    inline Stamp offsetWrite(Stamp s) const {
+        return s & (kSize - 1);
+    }
+
+    inline bool canRead(Stamp s) const {
+        return offsetRead(s) != offsetWrite(s);
+    }
+
+    inline bool canWrite(Stamp s) const {
+        return (offsetRead(s) & (Stamp)(kSize - 1)) !=
+               ((offsetWrite(s) + (Stamp)(kSize - Capacity)) &
+                (Stamp)(kSize - 1));
+    }
+
+    inline Stamp advectRead(Stamp s) const {
+        return (Stamp)((((Stamp)(s >> Shift) + (Stamp)1) & (Stamp)(kSize - 1))
+                       << Shift) |
+               (s & (Stamp)(kSize - 1));
+    }
+
+    inline Stamp advectWrite(Stamp s) const {
+        return (((s & (Stamp)(kSize - 1)) + (Stamp)1) & (Stamp)(kSize - 1)) |
+               (Stamp)(s & ((Stamp)(kSize - 1) << Shift));
+    }
+
+    std::unique_ptr<T[]> const mHead = std::make_unique<T[]>(kSize);
+    std::atomic<Stamp> mStamp{0};
+};
+
+template <class T>
+struct alignas(hardware_destructive_interference_size)
+    ConcurrentRingQueue<T, 0> {
+    std::optional<T> pop() {
+        std::lock_guard lck(mMutex);
+        if (mQueue.empty()) {
+            return std::nullopt;
+        }
+        T p = std::move(mQueue.front());
+        mQueue.pop_front();
+        return p;
+    }
+
+    bool push(T &&value) {
+        std::lock_guard lck(mMutex);
+        mQueue.push_back(std::move(value));
+        return true;
+    }
+
+private:
+    std::deque<T> mQueue;
+    SpinMutex mMutex;
+};
+} // namespace co_async
+
+
+
+
+
+
+
+
+
+
+#if CO_ASYNC_STEAL
+
+#endif
+
+
+
+
+namespace co_async {
+struct IOContext;
+
+struct GenericIOContext {
+    struct TimerNode : CustomPromise<Expected<>, TimerNode>,
+                       RbTree<TimerNode>::NodeType {
+        using RbTree<TimerNode>::NodeType::erase_from_parent;
+        std::chrono::steady_clock::time_point mExpires;
+        CancelToken mCancelToken;
+        bool mCancelled = false;
+
+        void doCancel() {
+            mCancelled = true;
+            erase_from_parent();
+        }
+
+        bool operator<(TimerNode const &that) const {
+            return mExpires < that.mExpires;
+        }
+
+        struct Awaiter {
+            std::chrono::steady_clock::time_point mExpires;
+            TimerNode *mPromise = nullptr;
+
+            bool await_ready() const noexcept {
+                return false;
+            }
+
+            inline void
+            await_suspend(std::coroutine_handle<TimerNode> coroutine);
+
+            Expected<> await_resume() const {
+                if (!mPromise->mCancelled) {
+                    return {};
+                } else {
+                    return 
+                        std::errc::operation_canceled;
+                }
+            }
+        };
+
+        /* struct Canceller { */
+        /*     using OpType = Task<Expected<>, GenericIOContext::TimerNode>; */
+        /*  */
+        /*     static Task<> doCancel(OpType *op) { */
+        /*         auto &promise = op->get().promise(); */
+        /*         promise.mCancelled = true; */
+        /*         promise.erase_from_parent(); */
+        /*         GenericIOContext::instance->enqueueJob(op->get()); */
+        /*         co_return; */
+        /*     } */
+        /*  */
+        /*     static Expected<> earlyCancelValue(OpType *op) { */
+        /*         return std::errc::operation_canceled; */
+        /*     } */
+        /* }; */
+    };
+
+    bool runComputeOnly() {
+        std::unique_lock lock(mMutex);
+        if (auto coroutine = mQueue.pop()) {
+            lock.unlock();
+            coroutine->resume();
+            return true;
+        }
+        lock.unlock();
+        return false;
+    }
+
+    std::optional<std::chrono::steady_clock::duration> runDuration() {
+        while (true) {
+            std::unique_lock lock(mMutex);
+            while (auto coroutine = mQueue.pop()) {
+                lock.unlock();
+                coroutine->resume();
+                lock.lock();
+            }
+            lock.unlock();
+            if (!mTimers.empty()) {
+                auto &promise = mTimers.front();
+                std::chrono::steady_clock::time_point now =
+                    std::chrono::steady_clock::now();
+                /* now += std::chrono::nanoseconds(1000); */
+                if (promise.mExpires <= now) {
+                    promise.mCancelled = false;
+                    promise.erase_from_parent();
+                    auto coroutine =
+                        std::coroutine_handle<TimerNode>::from_promise(promise);
+                    enqueueJob(coroutine);
+                    continue;
+                } else {
+                    return promise.mExpires - now;
+                }
+            } else {
+                return std::nullopt;
+            }
+        }
+    }
+
+    void enqueueJob(std::coroutine_handle<> coroutine) {
+        std::unique_lock lock(mMutex);
+        mQueue.push(std::move(coroutine));
+    }
+
+    void enqueueTimerNode(TimerNode &promise) {
+        mTimers.insert(promise);
+    }
+
+    void startMain(std::stop_token stop) {
+        while (!stop.stop_requested()) [[likely]] {
+            auto duration = runDuration();
+            if (duration) {
+                std::this_thread::sleep_for(*duration);
+            } else {
+                break;
+            }
+        }
+    }
+
+    GenericIOContext() = default;
+
+    GenericIOContext(GenericIOContext &&) = delete;
+    static inline thread_local GenericIOContext *instance;
+
+private:
+#if CO_ASYNC_STEAL
+    ConcurrentRingQueue<std::coroutine_handle<>, 1024 - 1> mQueue;
+#else
+    /* RingQueue<std::coroutine_handle<>> mQueue{1024}; */
+    InfinityQueue<std::coroutine_handle<>> mQueue;
+    SpinMutex mMutex;
+#endif
+    RbTree<TimerNode> mTimers;
+};
+
+inline void GenericIOContext::TimerNode::Awaiter::await_suspend(
+    std::coroutine_handle<GenericIOContext::TimerNode> coroutine) {
+    mPromise = &coroutine.promise();
+    mPromise->mExpires = mExpires;
+    GenericIOContext::instance->enqueueTimerNode(*mPromise);
+}
+
+template <class A>
+inline Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>>
+coSpawnStarter(A awaitable) {
+    (void)co_await std::move(awaitable);
+}
+
+template <Awaitable A>
+inline void co_spawn(A awaitable) {
+    auto wrapped = coSpawnStarter(std::move(awaitable));
+    auto coroutine = wrapped.get();
+    GenericIOContext::instance->enqueueJob(coroutine);
+    wrapped.release();
+}
+
+inline void co_spawn(std::coroutine_handle<> coroutine) {
+    GenericIOContext::instance->enqueueJob(coroutine);
+}
+
+inline auto co_resume() {
+    struct ResumeAwaiter {
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> coroutine) const {
+            co_spawn(coroutine);
+        }
+
+        void await_resume() const noexcept {}
+    };
+
+    return ResumeAwaiter();
+}
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+#if CO_ASYNC_DEBUG
+inline Expected<int> expectError(int res, std::source_location loc = std::source_location::current()) {
+    if (res < 0) [[unlikely]] {
+        return Expected<int>(std::errc(-res), loc);
+    }
+    return res;
+}
+#else
+inline Expected<int> expectError(int res) {
+    if (res < 0) [[unlikely]] {
+        return std::errc(-res);
+    }
+    return res;
+}
+#endif
+
+inline int throwingError(int res) {
+    if (res < 0) [[unlikely]] {
+        throw std::system_error(-res, std::system_category());
+    }
+    return res;
+}
+
+inline int throwingErrorErrno(int res) {
+    if (res == -1) [[unlikely]] {
+        throw std::system_error(errno, std::system_category());
+    }
+    return res;
+}
+} // namespace co_async
+
+
+
+
+
+
+#include <fcntl.h>
+#include <liburing.h>
+#include <sched.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+namespace co_async {
+template <class Rep, class Period>
+struct __kernel_timespec
+durationToKernelTimespec(std::chrono::duration<Rep, Period> dur) {
+    struct __kernel_timespec ts;
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(dur);
+    auto nsecs =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(dur - secs);
+    ts.tv_sec = static_cast<__kernel_time64_t>(secs.count());
+    ts.tv_nsec = static_cast<__kernel_time64_t>(nsecs.count());
+    return ts;
+}
+
+template <class Clk, class Dur>
+struct __kernel_timespec
+timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
+    return durationToKernelTimespec(tp.time_since_epoch());
+}
+
+struct PlatformIOContextOptions {
+    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(10);
+    std::optional<std::size_t> threadAffinity = std::nullopt;
+};
+
+struct PlatformIOContext {
+    static void schedSetThreadAffinity(size_t cpu);
+    bool
+    waitEventsFor(std::size_t numBatch,
+                  std::optional<std::chrono::steady_clock::duration> timeout);
+
+    std::size_t pendingEventCount() const {
+        return io_uring_cq_ready(&mRing);
+    }
+
+    struct io_uring *getRing() {
+        return &mRing;
+    }
+
+    PlatformIOContext &operator=(PlatformIOContext &&) = delete;
+    explicit PlatformIOContext(std::size_t entries = 2048);
+    ~PlatformIOContext();
+    static thread_local PlatformIOContext *instance;
+
+private:
+    struct io_uring mRing;
+};
+
+struct [[nodiscard]] UringOp {
+    UringOp() {
+        struct io_uring *ring = PlatformIOContext::instance->getRing();
+        mSqe = io_uring_get_sqe(ring);
+        while (!mSqe) [[unlikely]] {
+            io_uring_submit(ring);
+            mSqe = io_uring_get_sqe(ring);
+        }
+        io_uring_sqe_set_data(mSqe, this);
+    }
+
+    UringOp(UringOp &&) = delete;
+
+    struct Awaiter {
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> coroutine) {
+            mOp->mPrevious = coroutine;
+            mOp->mRes = -ENOSYS;
+        }
+
+        int await_resume() const noexcept {
+            return mOp->mRes;
+        }
+
+        UringOp *mOp;
+    };
+
+    Awaiter operator co_await() {
+        return Awaiter{this};
+    }
+
+    static UringOp &&link_ops(UringOp &&lhs, UringOp &&rhs) {
+        lhs.mSqe->flags |= IOSQE_IO_LINK;
+        rhs.mPrevious = std::noop_coroutine();
+        return std::move(lhs);
+    }
+
+    struct io_uring_sqe *getSqe() const noexcept {
+        return mSqe;
+    }
+
+private:
+    std::coroutine_handle<> mPrevious;
+
+    union {
+        int mRes;
+        struct io_uring_sqe *mSqe;
+    };
+
+    friend PlatformIOContext;
+
+    struct DoNotConstruct {};
+
+    explicit UringOp(DoNotConstruct) {}
+
+public:
+    void startDetach() {
+        static thread_local UringOp detachedOp{DoNotConstruct{}};
+        detachedOp.mPrevious = std::noop_coroutine();
+        io_uring_sqe_set_data(mSqe, &detachedOp);
+    }
+
+    UringOp &&prep_nop() && {
+        io_uring_prep_nop(mSqe);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_openat(int dirfd, char const *path, int flags,
+                          mode_t mode) && {
+        io_uring_prep_openat(mSqe, dirfd, path, flags, mode);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_openat_direct(int dirfd, char const *path, int flags,
+                                 mode_t mode, unsigned int file_index) && {
+        io_uring_prep_openat_direct(mSqe, dirfd, path, flags, mode, file_index);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_socket(int domain, int type, int protocol,
+                          unsigned int flags) && {
+        io_uring_prep_socket(mSqe, domain, type, protocol, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_accept(int fd, struct sockaddr *addr, socklen_t *addrlen,
+                          int flags) && {
+        io_uring_prep_accept(mSqe, fd, addr, addrlen, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_connect(int fd, const struct sockaddr *addr,
+                           socklen_t addrlen) && {
+        io_uring_prep_connect(mSqe, fd, addr, addrlen);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_mkdirat(int dirfd, char const *path, mode_t mode) && {
+        io_uring_prep_mkdirat(mSqe, dirfd, path, mode);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_linkat(int olddirfd, char const *oldpath, int newdirfd,
+                          char const *newpath, int flags) && {
+        io_uring_prep_linkat(mSqe, olddirfd, oldpath, newdirfd, newpath, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_renameat(int olddirfd, char const *oldpath, int newdirfd,
+                            char const *newpath, unsigned int flags) && {
+        io_uring_prep_renameat(mSqe, olddirfd, oldpath, newdirfd, newpath,
+                               flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_unlinkat(int dirfd, char const *path, int flags = 0) && {
+        io_uring_prep_unlinkat(mSqe, dirfd, path, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_symlinkat(char const *target, int newdirfd,
+                             char const *linkpath) && {
+        io_uring_prep_symlinkat(mSqe, target, newdirfd, linkpath);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_statx(int dirfd, char const *path, int flags,
+                         unsigned int mask, struct statx *statxbuf) && {
+        io_uring_prep_statx(mSqe, dirfd, path, flags, mask, statxbuf);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_read(int fd, std::span<char> buf, std::uint64_t offset) && {
+        io_uring_prep_read(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                           offset);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_write(int fd, std::span<char const> buf,
+                         std::uint64_t offset) && {
+        io_uring_prep_write(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                            offset);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_read_fixed(int fd, std::span<char> buf, std::uint64_t offset,
+                              int buf_index) && {
+        io_uring_prep_read_fixed(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                                 offset, buf_index);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_write_fixed(int fd, std::span<char const> buf,
+                               std::uint64_t offset, int buf_index) && {
+        io_uring_prep_write_fixed(mSqe, fd, buf.data(),
+                                  (unsigned int)buf.size(), offset, buf_index);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_readv(int fd, std::span<struct iovec const> buf,
+                         std::uint64_t offset, int flags) && {
+        io_uring_prep_readv2(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                             offset, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_writev(int fd, std::span<struct iovec const> buf,
+                          std::uint64_t offset, int flags) && {
+        io_uring_prep_writev2(mSqe, fd, buf.data(), (unsigned int)buf.size(),
+                              offset, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_recv(int fd, std::span<char> buf, int flags) && {
+        io_uring_prep_recv(mSqe, fd, buf.data(), buf.size(), flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_send(int fd, std::span<char const> buf, int flags) && {
+        io_uring_prep_send(mSqe, fd, buf.data(), buf.size(), flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_recvmsg(int fd, struct msghdr *msg, unsigned int flags) && {
+        io_uring_prep_recvmsg(mSqe, fd, msg, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_sendmsg(int fd, struct msghdr *msg, unsigned int flags) && {
+        io_uring_prep_sendmsg(mSqe, fd, msg, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_close(int fd) && {
+        io_uring_prep_close(mSqe, fd);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_shutdown(int fd, int how) && {
+        io_uring_prep_shutdown(mSqe, fd, how);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_fsync(int fd, unsigned int flags) && {
+        io_uring_prep_fsync(mSqe, fd, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_ftruncate(int fd, loff_t len) && {
+        io_uring_prep_ftruncate(mSqe, fd, len);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_cancel(UringOp *op, int flags) && {
+        io_uring_prep_cancel(mSqe, op, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_cancel_fd(int fd, unsigned int flags) && {
+        io_uring_prep_cancel_fd(mSqe, fd, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_waitid(idtype_t idtype, id_t id, siginfo_t *infop,
+                          int options, unsigned int flags) && {
+        io_uring_prep_waitid(mSqe, idtype, id, infop, options, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_timeout(struct __kernel_timespec *ts, unsigned int count,
+                           unsigned int flags) && {
+        io_uring_prep_timeout(mSqe, ts, count, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_link_timeout(struct __kernel_timespec *ts,
+                                unsigned int flags) && {
+        io_uring_prep_link_timeout(mSqe, ts, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_timeout_update(UringOp *op, struct __kernel_timespec *ts,
+                                  unsigned int flags) && {
+        io_uring_prep_timeout_update(
+            mSqe, ts, reinterpret_cast<std::uintptr_t>(op), flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_timeout_remove(UringOp *op, unsigned int flags) && {
+        io_uring_prep_timeout_remove(mSqe, reinterpret_cast<std::uintptr_t>(op),
+                                     flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_splice(int fd_in, std::int64_t off_in, int fd_out,
+                          std::int64_t off_out, std::size_t nbytes,
+                          unsigned int flags) && {
+        io_uring_prep_splice(mSqe, fd_in, off_in, fd_out, off_out,
+                             (unsigned int)nbytes, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_futex_wait(uint32_t *futex, uint64_t val, uint64_t mask,
+                              uint32_t futex_flags, unsigned int flags) && {
+        io_uring_prep_futex_wait(mSqe, futex, val, mask, futex_flags, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_futex_waitv(std::span<struct futex_waitv> futex, unsigned int flags) && {
+        io_uring_prep_futex_waitv(mSqe, futex.data(), (uint32_t)futex.size(), flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_futex_wake(uint32_t *futex, uint64_t val, uint64_t mask,
+                              uint32_t futex_flags, unsigned int flags) && {
+        io_uring_prep_futex_wake(mSqe, futex, val, mask, futex_flags, flags);
+        return std::move(*this);
+    }
+
+    struct Canceller {
+        using OpType = UringOp;
+
+        static Task<> doCancel(OpType *op) {
+            co_await UringOp().prep_cancel(op, IORING_ASYNC_CANCEL_ALL);
+        }
+    };
+
+    Task<int> cancelGuard(CancelToken cancel) && {
+        CancelCallback _(cancel, [this] () -> Task<> {
+            co_await UringOp().prep_cancel(this, IORING_ASYNC_CANCEL_ALL);
+        });
+        co_return co_await std::move(*this);
+    }
+
+    // UringOp &&cancelGuard(CancelToken) && {
+    //     return std::move(*this);
+    // }
+};
+
+} // namespace co_async
+
+
+
+
+
+
+
+
+namespace co_async {
+struct alignas(hardware_destructive_interference_size) IOContext {
+private:
+    GenericIOContext mGenericIO;
+    PlatformIOContext mPlatformIO;
+    std::jthread mThread;
+
+    struct IOContextGuard;
+
+public:
+    explicit IOContext(std::in_place_t) {}
+
+    explicit IOContext(PlatformIOContextOptions options = {}) {
+        start(options);
+    }
+
+    IOContext(IOContext &&) = delete;
+
+    void startHere(std::stop_token stop, PlatformIOContextOptions options,
+                   std::span<IOContext> peerContexts);
+
+    void start(PlatformIOContextOptions options = {},
+               std::span<IOContext> peerContexts = {});
+
+    void spawn(std::coroutine_handle<> coroutine) {
+        mGenericIO.enqueueJob(coroutine);
+    }
+
+    template <class T, class P>
+    void spawn(Task<T, P> task) {
+        auto wrapped = coSpawnStarter(std::move(task));
+        auto coroutine = wrapped.get();
+        mGenericIO.enqueueJob(coroutine);
+        wrapped.release();
+    }
+
+    template <class T, class P>
+    T join(Task<T, P> task) {
+        return contextJoin(*this, std::move(task));
+    }
+
+    static thread_local IOContext *instance;
+#if CO_ASYNC_ALLOC
+    static thread_local std::pmr::memory_resource *currentAllocator;
+#endif
+};
+
+template <class T, class P>
+inline Task<> contextJoinHelper(Task<T, P> task, std::condition_variable &cv,
+                                Uninitialized<T> &result
+#if CO_ASYNC_EXCEPT
+                                ,
+                                std::exception_ptr exception
+#endif
+) {
+#if CO_ASYNC_EXCEPT
+    try {
+#endif
+        result.emplace((co_await task, Void()));
+#if CO_ASYNC_EXCEPT
+    } catch (...) {
+# if CO_ASYNC_DEBUG
+        std::cerr << "WARNING: exception occurred in IOContext::join\n";
+# endif
+        exception = std::current_exception();
+    }
+#endif
+    cv.notify_one();
+}
+
+template <class T, class P>
+T contextJoin(IOContext &context, Task<T, P> task) {
+    std::condition_variable cv;
+    std::mutex mtx;
+    Uninitialized<T> result;
+#if CO_ASYNC_EXCEPT
+    std::exception_ptr exception;
+#endif
+    context.spawn(contextJoinHelper(std::move(task), cv, result
+#if CO_ASYNC_EXCEPT
+                                    ,
+                                    exception
+#endif
+                                    ));
+    std::unique_lock lck(mtx);
+    cv.wait(lck);
+    lck.unlock();
+#if CO_ASYNC_EXCEPT
+    if (exception) [[unlikely]] {
+        std::rethrow_exception(exception);
+    }
+#endif
+    if constexpr (!std::is_void_v<T>) {
+        return result.move();
+    }
+}
+
+inline auto co_resume_on(IOContext &context) {
+    struct ResumeOnAwaiter {
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> coroutine) const {
+            mContext.spawn(coroutine);
+        }
+
+        void await_resume() const noexcept {}
+
+        IOContext &mContext;
+    };
+
+    return ResumeOnAwaiter(context);
+}
+} // namespace co_async
+
+
+
+
+
+
+
+
+namespace co_async {
+inline Task<Expected<>, GenericIOContext::TimerNode>
+coSleep(std::chrono::steady_clock::time_point expires) {
+    co_return co_await GenericIOContext::TimerNode::Awaiter(expires);
+}
+
+inline Task<Expected<>>
+co_sleep(std::chrono::steady_clock::time_point expires) {
+    auto task = coSleep(expires);
+    CancelCallback _(co_await co_cancel, [p = &task.promise()] {
+        p->doCancel();
+        GenericIOContext::instance->enqueueJob(std::coroutine_handle<GenericIOContext::TimerNode>::from_promise(*p));
+    });
+    co_return co_await task;
+}
+
+inline Task<Expected<>, GenericIOContext::TimerNode>
+coSleep(std::chrono::steady_clock::duration timeout) {
+    return coSleep(std::chrono::steady_clock::now() + timeout);
+}
+
+inline Task<Expected<>>
+co_sleep(std::chrono::steady_clock::duration timeout) {
+    return co_sleep(std::chrono::steady_clock::now() + timeout);
+}
+
+inline Task<> coForever() {
+    co_await std::suspend_always();
+#if defined(__GNUC__) && defined(__has_builtin)
+# if __has_builtin(__builtin_unreachable)
+    __builtin_unreachable();
+# endif
+#endif
+}
+
+inline Task<> co_forever() {
+    struct ForeverAwaiter {
+        bool await_ready() const noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> coroutine) noexcept {
+            mPrevious = coroutine;
+        }
+
+        void await_resume() const noexcept {}
+
+        std::coroutine_handle<> mPrevious;
+    };
+
+    ForeverAwaiter awaiter;
+    CancelCallback _(co_await co_cancel, [&awaiter] {
+        co_spawn(awaiter.mPrevious);
+    });
+    co_return co_await awaiter;
+}
+} // namespace co_async
+
+
+
+
+
+
+
+
+
+
+namespace co_async {
+
+template <class T>
+struct WhenAnyResult {
+    T value;
+    std::size_t index;
+};
+
+template <Awaitable T, class Alloc = std::allocator<T>>
+Task<WhenAnyResult<typename AwaitableTraits<T>::AvoidRetType>>
+when_any(std::vector<T, Alloc> const &tasks) {
+    CancelSource cancel(co_await co_cancel);
+    std::vector<Task<>, Alloc> newTasks(tasks.size(), tasks.get_allocator());
+    std::optional<typename AwaitableTraits<T>::RetType> result;
+    std::size_t index = (std::size_t)-1;
+    std::size_t i = 0;
+    for (auto &&task: tasks) {
+        newTasks.push_back(co_cancel.bind(
+            cancel,
+            co_bind([&, i, cancel = cancel.token()]() mutable -> Task<> {
+                result.emplace((co_await std::move(task), Void()));
+                if (cancel.is_canceled()) {
+                    co_return;
+                }
+                co_await cancel.cancel();
+                index = i;
+            })));
+        ++i;
+    }
+    co_await when_all(newTasks);
+    co_return {std::move(result.value()), index};
+}
+
+template <Awaitable... Ts>
+Task<std::variant<typename AwaitableTraits<Ts>::AvoidRetType...>>
+when_any(Ts &&...tasks) {
+    return co_bind(
+        [&]<std::size_t... Is>(std::index_sequence<Is...>)
+            -> Task<
+                std::variant<typename AwaitableTraits<Ts>::AvoidRetType...>> {
+            CancelSource cancel(co_await co_cancel);
+            std::optional<
+                std::variant<typename AwaitableTraits<Ts>::AvoidRetType...>>
+                result;
+            co_await when_all(co_cancel.bind(
+                cancel,
+                co_bind([&result, task = std::move(tasks)]() mutable -> Task<> {
+                    auto res = (co_await std::move(task), Void());
+                    if (co_await co_cancel) {
+                        co_return;
+                    }
+                    co_await co_cancel.cancel();
+                    result.emplace(std::in_place_index<Is>, std::move(res));
+                }))...);
+            co_return std::move(result.value());
+        },
+        std::make_index_sequence<sizeof...(Ts)>());
+}
+
+template <Awaitable... Ts, class Common = std::common_type_t<
+                               typename AwaitableTraits<Ts>::AvoidRetType...>>
+Task<WhenAnyResult<Common>> when_any_common(Ts &&...tasks) {
+    return co_bind(
+        [&]<std::size_t... Is>(
+            std::index_sequence<Is...>) -> Task<WhenAnyResult<Common>> {
+            CancelSource cancel(co_await co_cancel);
+            std::size_t index = (std::size_t)-1;
+            std::optional<Common> result;
+            co_await when_all(co_cancel.bind(
+                cancel, co_bind([&index, &result,
+                                 task = std::move(tasks)]() mutable -> Task<> {
+                    auto res = (co_await std::move(task), Void());
+                    if (co_await co_cancel) {
+                        co_return;
+                    }
+                    co_await co_cancel.cancel();
+                    index = Is;
+                    result.emplace(std::move(res));
+                }))...);
+            co_return WhenAnyResult{std::move(result.value()), index};
+        },
+        std::make_index_sequence<sizeof...(Ts)>());
+}
+
+template <Awaitable A, class Timeout,
+          bool IsExp = std::convertible_to<
+                           std::errc, typename AwaitableTraits<A>::RetType> &&
+                       !std::is_void_v<typename AwaitableTraits<A>::RetType>>
+Task<std::conditional_t<IsExp, typename AwaitableTraits<A>::RetType,
+                        Expected<typename AwaitableTraits<A>::RetType>>>
+co_timeout(A &&a, Timeout timeout) {
+    auto res = co_await when_any(std::forward<A>(a), co_sleep(timeout));
+    if (auto ret = std::get_if<0>(&res)) {
+        if constexpr (std::is_void_v<typename AwaitableTraits<A>::RetType>) {
+            co_return {};
+        } else {
+            co_return std::move(*ret);
+        }
+    } else {
+        co_return std::errc::stream_timeout;
+    }
+}
+
+} // namespace co_async
+
+
+
+
+
+
+#include <linux/futex.h>
+#include <unistd.h>
+
+namespace co_async {
+template <class T>
+inline constexpr uint32_t getFutexFlagsFor() {
+    switch (sizeof(T)) {
+    case sizeof(uint8_t):  return FUTEX2_SIZE_U8 | FUTEX2_PRIVATE;
+    case sizeof(uint16_t): return FUTEX2_SIZE_U16 | FUTEX2_PRIVATE;
+    case sizeof(uint32_t): return FUTEX2_SIZE_U32 | FUTEX2_PRIVATE;
+    case sizeof(uint64_t): return FUTEX2_SIZE_U64 | FUTEX2_PRIVATE;
+    }
+}
+
+template <class T>
+inline constexpr uint64_t futexValueExtend(T value) {
+    uint64_t ret = 0;
+    std::memcpy(&ret, &value, sizeof(T));
+    return ret;
+}
+
+template <class T>
+inline Task<Expected<>> futex_wait(std::atomic<T> *futex,
+                                   std::type_identity_t<T> val,
+                                   uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    co_return expectError(co_await UringOp().prep_futex_wait(
+        reinterpret_cast<uint32_t *>(futex),
+        futexValueExtend(val),
+        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0).cancelGuard(co_await co_cancel));
+}
+
+template <class T>
+inline Task<Expected<>>
+futex_wake(std::atomic<T> *futex,
+           std::size_t count = static_cast<std::size_t>(-1),
+           uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    co_return expectError(co_await UringOp().prep_futex_wake(
+        reinterpret_cast<uint32_t *>(futex), static_cast<uint64_t>(count),
+        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0).cancelGuard(co_await co_cancel));
+}
+
+template <class T>
+inline void futex_notify(std::atomic<T> *futex,
+                         std::size_t count = static_cast<std::size_t>(-1),
+                         uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    UringOp()
+        .prep_futex_wake(reinterpret_cast<uint32_t *>(futex),
+                         static_cast<uint64_t>(count),
+                         static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0)
+        .startDetach();
+}
+
+template <class T>
+inline void futex_notify_sync(std::atomic<T> *futex,
+                              std::size_t count = static_cast<std::size_t>(-1),
+                              uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    syscall(SYS_futex_wake, reinterpret_cast<uint32_t *>(futex),
+            static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
+            getFutexFlagsFor<T>());
+}
+
+// struct Futex {
+// private:
+//     std::atomic<std::uint32_t> mValue;
+//
+// public:
+//     std::atomic<std::uint32_t> &raw_atomic() {
+//         return mValue;
+//     }
+//
+//     std::atomic<std::uint32_t> const &raw_atomic() const {
+//         return mValue;
+//     }
+//
+//     std::uint32_t load() const {
+//         return mValue.load(std::memory_order_relaxed);
+//     }
+//
+//     std::uint32_t fetch_add(std::uint32_t n) {
+//         std::uint32_t old = mValue.fetch_add(n, std::memory_order_release);
+//         return old;
+//     }
+//
+//     std::uint32_t fetch_sub(std::uint32_t n) {
+//         std::uint32_t old = mValue.fetch_sub(n, std::memory_order_release);
+//         return old;
+//     }
+//
+//     std::uint32_t fetch_xor(std::uint32_t n) {
+//         std::uint32_t old = mValue.fetch_xor(n, std::memory_order_release);
+//         return old;
+//     }
+//
+//     Task<Expected<>> wait(std::uint32_t old) {
+//         do
+//             co_await co_await futex_wait(&mValue, old);
+//         while (mValue.load(std::memory_order_acquire) == old);
+//         co_return {};
+//     }
+//
+//     Task<Expected<>> wait() {
+//         return wait(load());
+//     }
+//
+//     void notify_one() {
+//         futex_wake_detach(&mValue, 1);
+//     }
+//
+//     void notify_all() {
+//         futex_wake_detach(&mValue, static_cast<std::uint32_t>(-1));
+//     }
+// };
+
+} // namespace co_async
+
+
+
+
+
+
+
+
+
+
+
+namespace co_async {
+// struct TimedConditionVariable {
+// private:
+//     struct PromiseNode : CustomPromise<void, PromiseNode>,
+//                          IntrusiveList<PromiseNode>::NodeType {
+//         void doCancel() {
+//             mCancelled = true;
+//             this->erase_from_parent();
+//             co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
+//         }
+//
+//         bool mCancelled = false;
+//     };
+//
+//     IntrusiveList<PromiseNode> mWaitingList;
+//
+//     struct Awaiter {
+//         bool await_ready() const noexcept {
+//             return false;
+//         }
+//
+//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine) const {
+//             mThat->pushWaiting(coroutine.promise());
+//         }
+//
+//         void await_resume() const noexcept {}
+//
+//         TimedConditionVariable *mThat;
+//     };
+//
+//     PromiseNode *popWaiting() {
+//         return mWaitingList.pop_front();
+//     }
+//
+//     void pushWaiting(PromiseNode &promise) {
+//         mWaitingList.push_back(promise);
+//     }
+//
+//     /* struct Canceller { */
+//     /*     using OpType = Task<void, PromiseNode>; */
+//     /*  */
+//     /*     static Task<> doCancel(OpType *op) { */
+//     /*         op->get().promise().doCancel(); */
+//     /*         co_return; */
+//     /*     } */
+//     /*  */
+//     /*     static void earlyCancelValue(OpType *op) noexcept {} */
+//     /* }; */
+//
+// public:
+//     Task<void, PromiseNode> waitNotCancellable() {
+//         co_await Awaiter(this);
+//     }
+//
+//     Task<Expected<>> wait() {
+//         auto waiter = waitNotCancellable();
+//         CancelCallback _(co_await co_cancel, [&] {
+//             waiter.promise().doCancel();
+//         });
+//         co_await waiter;
+//         if (waiter.promise().mCancelled) {
+//             co_return std::errc::operation_canceled;
+//         }
+//         co_return {};
+//     }
+//
+//     Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
+//         auto res =
+//             co_await when_any(wait(), co_sleep(expires));
+//         if (auto r = std::get_if<0>(&res)) {
+//             co_return std::move(*r);
+//         }
+//         co_return std::errc::stream_timeout;
+//     }
+//
+//     Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
+//         return wait(std::chrono::steady_clock::now() + timeout);
+//     }
+//
+//     Task<Expected<>> wait_predicate(std::invocable<> auto &&pred) {
+//         while (!std::invoke(pred)) {
+//             co_await co_await wait();
+//         }
+//     }
+//
+//     Task<Expected<>>
+//     wait_predicate(std::invocable<> auto &&pred,
+//                    std::chrono::steady_clock::time_point expires) {
+//         while (!std::invoke(pred)) {
+//             if (co_await co_cancel) {
+//                 co_return std::errc::operation_canceled;
+//             }
+//             if (std::chrono::steady_clock::now() > expires) {
+//                 co_return std::errc::stream_timeout;
+//             }
+//             co_await co_await wait();
+//         }
+//         co_return {};
+//     }
+//
+//     Task<Expected<>>
+//     wait_predicate(std::invocable<> auto &&pred,
+//                    std::chrono::steady_clock::duration timeout) {
+//         return wait_predicate(std::forward<decltype(pred)>(pred),
+//                               std::chrono::steady_clock::now() + timeout);
+//     }
+//
+//     void notify() {
+//         while (auto promise = popWaiting()) {
+//             co_spawn(
+//                 std::coroutine_handle<PromiseNode>::from_promise(*promise));
+//         }
+//     }
+//
+//     void notify_one() {
+//         if (auto promise = popWaiting()) {
+//             co_spawn(
+//                 std::coroutine_handle<PromiseNode>::from_promise(*promise));
+//         }
+//     }
+//
+//     std::coroutine_handle<> notifyPopCoroutine() {
+//         if (auto promise = popWaiting()) {
+//             return std::coroutine_handle<PromiseNode>::from_promise(*promise);
+//         }
+//         return nullptr;
+//     }
+// };
+//
+// struct ConditionVariable {
+// private:
+//     std::deque<std::coroutine_handle<>> mWaitingList;
+//
+//     struct Awaiter {
+//         bool await_ready() const noexcept {
+//             return false;
+//         }
+//
+//         void await_suspend(std::coroutine_handle<> coroutine) const {
+//             mThat->mWaitingList.push_back(coroutine);
+//         }
+//
+//         void await_resume() const noexcept {}
+//
+//         ConditionVariable *mThat;
+//     };
+//
+// public:
+//     Awaiter operator co_await() noexcept {
+//         return Awaiter(this);
+//     }
+//
+//     Task<> wait() {
+//         co_await Awaiter(this);
+//     }
+//
+//     void notify() {
+//         while (!mWaitingList.empty()) {
+//             auto coroutine = mWaitingList.front();
+//             mWaitingList.pop_front();
+//             co_spawn(coroutine);
+//         }
+//     }
+//
+//     void notify_one() {
+//         if (!mWaitingList.empty()) {
+//             auto coroutine = mWaitingList.front();
+//             mWaitingList.pop_front();
+//             co_spawn(coroutine);
+//         }
+//     }
+//
+//     std::coroutine_handle<> notifyPopCoroutine() {
+//         if (!mWaitingList.empty()) {
+//             auto coroutine = mWaitingList.front();
+//             mWaitingList.pop_front();
+//             return coroutine;
+//         }
+//         return nullptr;
+//     }
+// };
+//
+// struct OneshotConditionVariable {
+// private:
+//     std::coroutine_handle<> mWaitingCoroutine{nullptr};
+//     bool mReady{false};
+//
+// public:
+//     struct Awaiter {
+//         bool await_ready() const noexcept {
+//             return mThat->mReady;
+//         }
+//
+//         void await_suspend(std::coroutine_handle<> coroutine) const {
+// #if CO_ASYNC_DEBUG
+//             if (mThat->mWaitingCoroutine) [[unlikely]] {
+//                 throw std::logic_error(
+//                     "please do not co_await on the same "
+//                     "OneshotConditionVariable or Future for multiple times");
+//             }
+// #endif
+//             mThat->mWaitingCoroutine = coroutine;
+//         }
+//
+//         void await_resume() const noexcept {
+// #if CO_ASYNC_DEBUG
+//             if (!mThat->mReady) [[unlikely]] {
+//                 throw std::logic_error("OneshotConditionVariable or Future "
+//                                        "waked up but not ready");
+//             }
+// #endif
+//             mThat->mReady = false;
+//         }
+//
+//         OneshotConditionVariable *mThat;
+//     };
+//
+//     Awaiter operator co_await() noexcept {
+//         return Awaiter(this);
+//     }
+//
+//     Task<> wait() {
+//         co_await Awaiter(this);
+//     }
+//
+//     void notify() {
+//         mReady = true;
+//         if (auto coroutine = mWaitingCoroutine) {
+//             mWaitingCoroutine = nullptr;
+//             co_spawn(coroutine);
+//         }
+//     }
+//
+//     std::coroutine_handle<> notifyPopCoroutine() {
+//         mReady = true;
+//         if (auto coroutine = mWaitingCoroutine) {
+//             mWaitingCoroutine = nullptr;
+//             return coroutine;
+//         }
+//         return nullptr;
+//     }
+// };
+//
+// struct ConcurrentConditionVariable {
+// private:
+//     struct WaitEntry {
+//         std::coroutine_handle<> coroutine;
+//         GenericIOContext *context;
+//     };
+//
+//     std::deque<WaitEntry> mWaitingList;
+//     std::mutex mMutex;
+//
+//     struct Awaiter {
+//         bool await_ready() const noexcept {
+//             return false;
+//         }
+//
+//         void await_suspend(std::coroutine_handle<> coroutine) const {
+//             std::lock_guard lock(mThat->mMutex);
+//             mThat->mWaitingList.emplace_back(coroutine,
+//                                              GenericIOContext::instance);
+//         }
+//
+//         void await_resume() const noexcept {}
+//
+//         ConcurrentConditionVariable *mThat;
+//     };
+//
+// public:
+//     Awaiter operator co_await() noexcept {
+//         return Awaiter(this);
+//     }
+//
+//     Task<> wait() {
+//         co_await Awaiter(this);
+//     }
+//
+//     void notify() {
+//         while (!mWaitingList.empty()) {
+//             auto waitEntry = mWaitingList.front();
+//             mWaitingList.pop_front();
+//             waitEntry.context->enqueueJobMT(waitEntry.coroutine);
+//         }
+//     }
+//
+//     void notify_one() {
+//         if (!mWaitingList.empty()) {
+//             auto waitEntry = mWaitingList.front();
+//             mWaitingList.pop_front();
+//             waitEntry.context->enqueueJobMT(waitEntry.coroutine);
+//         }
+//     }
+//
+//     std::optional<WaitEntry> notifyPopCoroutine() {
+//         std::lock_guard lock(mMutex);
+//         if (!mWaitingList.empty()) {
+//             auto waitEntry = mWaitingList.front();
+//             mWaitingList.pop_front();
+//             return waitEntry;
+//         }
+//         return std::nullopt;
+//     }
+// };
+//
+// struct ConcurrentTimedConditionVariable {
+// private:
+//     struct PromiseNode : CustomPromise<void, PromiseNode>,
+//                          ConcurrentIntrusiveList<PromiseNode>::NodeType {
+//         void doCancel() {
+//             mCancelled = true;
+//             this->erase_from_parent();
+//             co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
+//         }
+//
+//         bool mCancelled = false;
+//     };
+//
+//     ConcurrentIntrusiveList<PromiseNode> mWaitingList;
+//
+//     struct Awaiter {
+//         bool await_ready() const noexcept {
+//             return false;
+//         }
+//
+//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine) const {
+//             mThat->pushWaiting(coroutine.promise());
+//         }
+//
+//         void await_resume() const noexcept {}
+//
+//         ConcurrentTimedConditionVariable *mThat;
+//     };
+//
+//     PromiseNode *popWaiting() {
+//         return mWaitingList.pop_front();
+//     }
+//
+//     void pushWaiting(PromiseNode &promise) {
+//         return mWaitingList.push_back(promise);
+//     }
+//
+//     /* struct Canceller { */
+//     /*     using OpType = Task<void, PromiseNode>; */
+//     /*  */
+//     /*     static Task<> doCancel(OpType *op) { */
+//     /*         op->get().promise().doCancel(); */
+//     /*         co_return; */
+//     /*     } */
+//     /*  */
+//     /*     static void earlyCancelValue(OpType *op) noexcept {} */
+//     /* }; */
+//
+// public:
+//     Task<void, PromiseNode> waitNotCancellable() {
+//         co_await Awaiter(this);
+//     }
+//
+//     Task<Expected<>> wait() {
+//         auto waiter = waitNotCancellable();
+//         CancelCallback _(co_await co_cancel, [&] {
+//             waiter.promise().doCancel();
+//         });
+//         co_await waiter;
+//         if (waiter.promise().mCancelled) {
+//             co_return std::errc::operation_canceled;
+//         }
+//         co_return {};
+//     }
+//
+//     Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
+//         auto res =
+//             co_await when_any(wait(), co_sleep(expires));
+//         if (res.index() != 0) {
+//             co_return std::errc::stream_timeout;
+//         }
+//         co_return {};
+//     }
+//
+//     Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
+//         return wait(std::chrono::steady_clock::now() + timeout);
+//     }
+//
+//     Task<Expected<>>
+//     wait_predicate(std::invocable<> auto &&pred,
+//                    std::chrono::steady_clock::time_point expires) {
+//         while (!std::invoke(pred)) {
+//             if (co_await co_cancel) {
+//                 co_return std::errc::operation_canceled;
+//             }
+//             if (std::chrono::steady_clock::now() > expires) {
+//                 co_return std::errc::stream_timeout;
+//             }
+//             co_await co_await wait();
+//         }
+//         co_return {};
+//     }
+//
+//     Task<Expected<>>
+//     wait_predicate(std::invocable<> auto &&pred,
+//                    std::chrono::steady_clock::duration timeout) {
+//         return wait_predicate(std::forward<decltype(pred)>(pred),
+//                               std::chrono::steady_clock::now() + timeout);
+//     }
+//
+//     Task<Expected<>> wait_predicate(std::invocable<> auto &&pred) {
+//         while (!std::invoke(pred)) {
+//             co_await co_await wait();
+//         }
+//     }
+//
+//     void notify() {
+//         while (auto promise = popWaiting()) {
+//             co_spawn(
+//                 std::coroutine_handle<PromiseNode>::from_promise(*promise));
+//         }
+//     }
+//
+//     void notify_one() {
+//         if (auto promise = popWaiting()) {
+//             co_spawn(
+//                 std::coroutine_handle<PromiseNode>::from_promise(*promise));
+//         }
+//     }
+//
+//     std::coroutine_handle<> notifyPopCoroutine() {
+//         if (auto promise = popWaiting()) {
+//             return std::coroutine_handle<PromiseNode>::from_promise(*promise);
+//         }
+//         return nullptr;
+//     }
+// };
+
+struct ConditionVariable {
+private:
+    std::atomic<std::uint32_t> mFutex;
+
+public:
+    Task<Expected<>> wait() {
+        std::uint32_t old = mFutex.load(std::memory_order_relaxed);
+        do
+            co_return co_await futex_wait(&mFutex, old);
+        while (mFutex.load(std::memory_order_acquire) == old);
+    }
+
+    void notify_one() {
+        mFutex.fetch_add(1, std::memory_order_release);
+        futex_notify(&mFutex, static_cast<std::size_t>(-1));
+    }
+
+    void notify_all() {
+        mFutex.fetch_add(1, std::memory_order_release);
+        futex_notify(&mFutex, static_cast<std::size_t>(-1));
+    }
+
+    using Mask = std::uint32_t;
+
+    Task<Expected<>> wait(Mask mask) {
+        std::uint32_t old = mFutex.load(std::memory_order_relaxed);
+        do
+            co_await co_await futex_wait(&mFutex, old, mask);
+        while (mFutex.load(std::memory_order_acquire) == old);
+        co_return {};
+    }
+
+    void notify_one(Mask mask) {
+        mFutex.fetch_add(1, std::memory_order_release);
+        futex_notify(&mFutex, 1, mask);
+    }
+
+    void notify_all(Mask mask) {
+        mFutex.fetch_add(1, std::memory_order_release);
+        futex_notify(&mFutex, static_cast<std::size_t>(-1), mask);
+    }
+};
+
+} // namespace co_async
+
+
+
+
+
+
+
+
+namespace co_async {
+
+struct Semaphore {
+private:
+    std::atomic<std::uint32_t> mCounter;
+    std::uint32_t const mMaxCount;
+
+    static constexpr std::uint32_t kAcquireMask = 1;
+    static constexpr std::uint32_t kReleaseMask = 2;
+
+public:
+    explicit Semaphore(std::uint32_t maxCount, std::uint32_t initialCount)
+        : mCounter(initialCount),
+          mMaxCount(maxCount) {}
+
+    std::uint32_t count() const noexcept {
+        return mCounter.load(std::memory_order_relaxed);
+    }
+
+    std::uint32_t max_count() const noexcept {
+        return mMaxCount;
+    }
+
+    Task<Expected<>> acquire() {
+        std::uint32_t count = mCounter.load(std::memory_order_relaxed);
+        do {
+            while (count == 0) {
+                co_await co_await futex_wait(&mCounter, count, kAcquireMask);
+                count = mCounter.load(std::memory_order_relaxed);
+            }
+        } while (mCounter.compare_exchange_weak(count, count - 1, std::memory_order_acq_rel, std::memory_order_relaxed));
+        futex_notify(&mCounter, 1, kReleaseMask);
+        co_return {};
+    }
+
+    Task<Expected<>> release() {
+        std::uint32_t count = mCounter.load(std::memory_order_relaxed);
+        do {
+            while (count == mMaxCount) {
+                co_await co_await futex_wait(&mCounter, count, kReleaseMask);
+                count = mCounter.load(std::memory_order_relaxed);
+            }
+        } while (mCounter.compare_exchange_weak(count, count + 1, std::memory_order_acq_rel, std::memory_order_relaxed));
+        futex_notify(&mCounter, 1, kAcquireMask);
+        co_return {};
+    }
+};
+} // namespace co_async
+
+
+
+
+
+
+
+namespace co_async {
+// struct BasicMutex {
+//     ConditionVariable mReady;
+//     std::atomic_bool mLocked;
+//
+//     bool try_lock() {
+//         bool expect = false;
+//         return mLocked.compare_exchange_strong(
+//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//     }
+//
+//     Task<> lock() {
+//         while (!try_lock()) {
+//             co_await mReady.wait();
+//         }
+//     }
+//
+//     void unlock() {
+//         mLocked.store(false, std::memory_order_release);
+//         mReady.notify_one();
+//     }
+// };
+//
+// struct BasicConcurrentMutex {
+//     ConcurrentConditionVariable mReady;
+//     std::atomic_bool mLocked;
+//
+//     bool try_lock() {
+//         bool expect = false;
+//         return mLocked.compare_exchange_strong(
+//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//     }
+//
+//     Task<> lock() {
+//         while (!try_lock()) {
+//             co_await mReady.wait();
+//         }
+//     }
+//
+//     void unlock() {
+//         mLocked.store(false, std::memory_order_release);
+//         mReady.notify_one();
+//     }
+// };
+//
+// struct BasicTimedMutex {
+//     TimedConditionVariable mReady;
+//     std::atomic_bool mLocked;
+//
+//     bool try_lock() {
+//         bool expect = false;
+//         return mLocked.compare_exchange_strong(
+//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//     }
+//
+//     Task<> lock() {
+//         while (!try_lock()) {
+//             co_await mReady.wait();
+//         }
+//     }
+//
+//     Task<bool> try_lock(std::chrono::steady_clock::duration timeout) {
+//         return try_lock(std::chrono::steady_clock::now() + timeout);
+//     }
+//
+//     Task<bool> try_lock(std::chrono::steady_clock::time_point expires) {
+//         while (!try_lock()) {
+//             if (std::chrono::steady_clock::now() > expires ||
+//                 !co_await mReady.wait(expires)) {
+//                 co_return false;
+//             }
+//         }
+//         co_return true;
+//     }
+//
+//     void unlock() {
+//         mLocked.store(false, std::memory_order_release);
+//         mReady.notify_one();
+//     }
+// };
+
+struct BasicMutex {
+private:
+    std::atomic<bool> mFutex;
+
+public:
+    bool try_lock() {
+        bool old = mFutex.exchange(true, std::memory_order_acquire);
+        return old == false;
+    }
+
+    Task<Expected<>> lock() {
+        while (true) {
+            bool old = mFutex.exchange(true, std::memory_order_acquire);
+            if (old == false)
+                co_return {};
+            co_await co_await futex_wait(&mFutex, old);
+        }
+    }
+
+    void unlock() {
+        mFutex.store(false, std::memory_order_release);
+        futex_notify(&mFutex, 1);
+    }
+};
+
+template <class M, class T>
+struct alignas(hardware_destructive_interference_size) MutexImpl {
+private:
+    M mMutex;
+    T mValue;
+
+public:
+    struct Locked {
+    private:
+        explicit Locked(MutexImpl *impl) noexcept : mImpl(impl) {}
+
+        friend MutexImpl;
+
+    public:
+        Locked() noexcept : mImpl(nullptr) {}
+
+        T &operator*() const {
+            return mImpl->unsafe_access();
+        }
+
+        T *operator->() const {
+            return std::addressof(mImpl->unsafe_access());
+        }
+
+        explicit operator bool() const noexcept {
+            return mImpl != nullptr;
+        }
+
+        void unlock() {
+            if (mImpl) {
+                mImpl->mMutex.unlock();
+                mImpl = nullptr;
+            }
+        }
+
+        Locked(Locked &&that) noexcept
+            : mImpl(std::exchange(that.mImpl, nullptr)) {}
+
+        Locked &operator=(Locked &&that) noexcept {
+            std::swap(mImpl, that.mImpl);
+            return *this;
+        }
+
+        ~Locked() {
+            unlock();
+        }
+
+    private:
+        MutexImpl *mImpl;
+    };
+
+    MutexImpl(MutexImpl &&) = delete;
+    MutexImpl(MutexImpl const &) = delete;
+    MutexImpl() = default;
+
+    template <class ...Args> requires (!std::is_void_v<T> && std::constructible_from<T, Args...>)
+    explicit MutexImpl(Args &&...args) : mMutex(), mValue(std::forward<Args>(args)...) {
+    }
+
+    Locked try_lock() {
+        if (auto e = mMutex.try_lock()) {
+            return Locked(this);
+        } else {
+            return Locked();
+        }
+    }
+
+    Task<Locked> lock() {
+        co_await mMutex.lock();
+        co_return Locked(this);
+    }
+
+    // Task<Locked> try_lock_for(std::chrono::steady_clock::duration timeout) {
+    //     if (!co_await mMutex.try_lock_for(timeout)) {
+    //         co_return Locked();
+    //     }
+    //     co_return Locked(this);
+    // }
+    //
+    // Task<Locked> try_lock_until(std::chrono::steady_clock::time_point expires) {
+    //     if (!co_await mMutex.try_lock_for(expires)) {
+    //         co_return Locked();
+    //     }
+    //     co_return Locked(this);
+    // }
+
+    T &unsafe_access() {
+        return mValue;
+    }
+
+    T const &unsafe_access() const {
+        return mValue;
+    }
+
+    M &unsafe_basic_mutex() {
+        return mMutex;
+    }
+
+    M const &unsafe_basic_mutex() const {
+        return mMutex;
+    }
+};
+
+template <class M>
+struct MutexImpl<M, void> : MutexImpl<M, Void> {
+    using MutexImpl<M, Void>::MutexImpl;
+};
+
+template <class T = void>
+struct Mutex : MutexImpl<BasicMutex, T> {
+    using MutexImpl<BasicMutex, T>::MutexImpl;
+};
+
+struct CallOnce {
+private:
+    std::atomic_bool mCalled{false};
+    Mutex<> mMutex;
+
+public:
+    struct Locked {
+    private:
+        explicit Locked(Mutex<>::Locked locked,
+                        CallOnce *impl) noexcept
+            : mLocked(std::move(locked)),
+              mImpl(impl) {}
+
+        friend CallOnce;
+
+    public:
+        Locked() noexcept : mLocked(), mImpl(nullptr) {}
+
+        explicit operator bool() const noexcept {
+            return (bool)mLocked;
+        }
+
+        void set_ready() const {
+            mImpl->mCalled.store(true, std::memory_order_relaxed);
+        }
+
+    private:
+        Mutex<>::Locked mLocked;
+        CallOnce *mImpl;
+    };
+
+    Task<Locked> call_once() {
+        if (mCalled.load(std::memory_order_relaxed)) {
+            co_return Locked();
+        }
+        Locked locked(co_await mMutex.lock(), this);
+        if (mCalled.load(std::memory_order_relaxed)) {
+            co_return Locked();
+        }
+        co_return std::move(locked);
+    }
+};
+} // namespace co_async
+
+
+
+
+
+
+
+
+
+namespace co_async {
+
+struct ThreadPool {
+private:
+    struct Thread;
+
+    SpinMutex mWorkingMutex;
+    std::list<Thread *> mWorkingThreads;
+    SpinMutex mFreeMutex;
+    std::list<Thread *> mFreeThreads;
+    SpinMutex mThreadsMutex;
+    std::list<Thread> mThreads;
+
+    Thread *submitJob(std::function<void()> func);
+
+public:
+    Task<Expected<>> rawRun(std::function<void()> func) /* MT-safe */;
+    Task<Expected<>> rawRun(std::function<void(std::stop_token)> func,
+                            CancelToken cancel) /* MT-safe */;
+
+    auto run(std::invocable auto func) /* MT-safe */
+        -> Task<Expected<std::invoke_result_t<decltype(func)>>>
+        requires(!std::invocable<decltype(func), std::stop_token>)
+    {
+        std::optional<Avoid<std::invoke_result_t<decltype(func)>>> res;
+        co_await co_await rawRun([&res, func = std::move(func)]() mutable {
+            res = (func(), Void());
+        });
+        if (!res) [[unlikely]] {
+            co_return std::errc::operation_canceled;
+        }
+        co_return std::move(*res);
+    }
+
+    auto run(std::invocable<std::stop_token> auto func,
+             CancelToken cancel) /* MT-safe */
+        -> Task<
+            Expected<std::invoke_result_t<decltype(func), std::stop_token>>> {
+        std::optional<
+            Avoid<std::invoke_result_t<decltype(func), std::stop_token>>>
+            res;
+        auto e = co_await rawRun(
+            [&res, func = std::move(func)](std::stop_token stop) mutable {
+                res = (func(stop), Void());
+            });
+        if (e.has_error()) {
+            co_return e.error();
+        }
+        if (!res) {
+            co_return std::errc::operation_canceled;
+        }
+        co_return std::move(*res);
+    }
+
+    auto run(std::invocable<std::stop_token> auto func) /* MT-safe */
+        -> Task<
+            Expected<std::invoke_result_t<decltype(func), std::stop_token>>> {
+        co_return co_await run(func, co_await co_cancel);
+    }
+
+    std::size_t threads_count() /* MT-safe */;
+    std::size_t working_threads_count() /* MT-safe */;
+
+    ThreadPool();
+    ~ThreadPool();
+    ThreadPool &operator=(ThreadPool &&) = delete;
+};
+
+} // namespace co_async
+
+
+
+
+
+
+
+
+
+
+namespace co_async {
+template <class T>
+struct Queue {
+private:
+    RingQueue<T> mQueue;
+    ConditionVariable mReady;
+
+    static constexpr ConditionVariable::Mask kNonEmptyMask = 1;
+    static constexpr ConditionVariable::Mask kNonFullMask = 2;
+
+public:
+    explicit Queue(std::size_t size) : mQueue(size) {}
+
+    std::optional<T> try_pop() {
+        bool wasFull = mQueue.full();
+        auto value = mQueue.pop();
+        if (value && wasFull) {
+            mReady.notify_one(kNonFullMask);
+        }
+        return value;
+    }
+
+    bool try_push(T &&value) {
+        bool wasEmpty = mQueue.empty();
+        bool ok = mQueue.push(std::move(value));
+        if (ok && wasEmpty) {
+            mReady.notify_one(kNonEmptyMask);
+        }
+        return ok;
+    }
+
+    Task<Expected<>> push(T value) {
+        while (!mQueue.push(std::move(value))) {
+            co_await co_await mReady.wait(kNonFullMask);
+        }
+        mReady.notify_one(kNonEmptyMask);
+    }
+
+    Task<Expected<T>> pop() {
+        while (true) {
+            if (auto value = mQueue.pop()) {
+                mReady.notify_one(kNonFullMask);
+                co_return std::move(*value);
+            }
+            co_await co_await mReady.wait(kNonEmptyMask);
+        }
+    }
+};
+
+template <class T>
+struct alignas(hardware_destructive_interference_size) ConcurrentQueue {
+private:
+    RingQueue<T> mQueue;
+    ConditionVariable mReady;
+    SpinMutex mMutex;
+
+    static constexpr ConditionVariable::Mask kNonEmptyMask = 1;
+    static constexpr ConditionVariable::Mask kNonFullMask = 2;
+
+public:
+    explicit ConcurrentQueue(std::size_t maxSize = 0) : mQueue(maxSize) {}
+
+    void set_max_size(std::size_t maxSize) {
+        mQueue.set_max_size(maxSize);
+    }
+
+    ConcurrentQueue(ConcurrentQueue &&) = delete;
+
+    std::optional<T> try_pop() {
+        std::unique_lock lock(mMutex);
+        bool wasFull = mQueue.full();
+        auto value = mQueue.pop();
+        lock.unlock();
+        if (value && wasFull) {
+            mReady.notify_one(kNonFullMask);
+        }
+        return value;
+    }
+
+    bool try_push(T &&value) {
+        std::unique_lock lock(mMutex);
+        bool wasEmpty = mQueue.empty();
+        bool ok = mQueue.push(std::move(value));
+        lock.unlock();
+        if (ok && wasEmpty) {
+            mReady.notify_one(kNonEmptyMask);
+        }
+        return ok;
+    }
+
+    Task<Expected<T>> pop() {
+        std::unique_lock lock(mMutex);
+        while (mQueue.empty()) {
+            lock.unlock();
+            co_await co_await mReady.wait(kNonEmptyMask);
+            lock.lock();
+        }
+        bool wasFull = mQueue.full();
+        T value = mQueue.pop_unchecked();
+        lock.unlock();
+        if (wasFull) {
+            mReady.notify_one(kNonFullMask);
+        }
+        co_return std::move(value);
+    }
+
+    Task<Expected<>> push(T value) {
+        std::unique_lock lock(mMutex);
+        while (mQueue.full()) {
+            lock.unlock();
+            co_await co_await mReady.wait(kNonFullMask);
+            lock.lock();
+        }
+        bool wasEmpty = mQueue.empty();
+        mQueue.push_unchecked(std::move(value));
+        lock.unlock();
+        if (wasEmpty) {
+            mReady.notify_one(kNonEmptyMask);
+        }
+        co_return {};
+    }
+};
+} // namespace co_async
+
+
+
+
+
+
+
+
+namespace co_async {
+struct IOContextMT {
+private:
+    std::unique_ptr<IOContext[]> mWorkers;
+    std::size_t mNumWorkers = 0;
+
+public:
+    explicit IOContextMT(std::in_place_t);
+    explicit IOContextMT(PlatformIOContextOptions options = {},
+                         std::size_t numWorkers = 0);
+    ~IOContextMT();
+
+    static std::size_t get_worker_id(IOContext const &context) noexcept {
+        return static_cast<std::size_t>(&context - instance->mWorkers.get());
+    }
+
+    static std::size_t this_worker_id() noexcept {
+        return get_worker_id(*IOContext::instance);
+    }
+
+    static IOContext &nth_worker(std::size_t index) noexcept {
+        return instance->mWorkers[index];
+    }
+
+    static std::size_t num_workers() noexcept {
+        return instance->mNumWorkers;
+    }
+
+    static void start(PlatformIOContextOptions options = {},
+                      std::size_t numWorkers = 0);
+
+    static void spawn(std::coroutine_handle<> coroutine,
+                      std::size_t index = 0) {
+        instance->mWorkers[index].spawn(coroutine);
+    }
+
+    template <class T, class P>
+    static T join(Task<T, P> task, std::size_t index = 0) {
+        return instance->mWorkers[index].join(std::move(task));
+    }
+
+    static IOContextMT *instance;
+};
+} // namespace co_async
+
+
+
+
+
+namespace co_async {
+
+struct SpinBarrier {
+    explicit SpinBarrier(std::size_t n) noexcept
+        : m_top_waiting((std::uint32_t)n - 1),
+          m_num_waiting(0),
+          m_sync_flip(0) {}
+
+    bool arrive_and_wait() noexcept {
+        bool old_flip = m_sync_flip.load(std::memory_order_relaxed);
+        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) == m_top_waiting) {
+            m_num_waiting.store(0, std::memory_order_relaxed);
+            m_sync_flip.store(!old_flip, std::memory_order_release);
+            return true;
+        } else {
+            while (m_sync_flip.load(std::memory_order_acquire) == old_flip)
+                ;
+            m_sync_flip.wait(old_flip, std::memory_order_acquire);
+            return false;
+        }
+    }
+
+    bool arrive_and_drop() noexcept {
+        bool old_flip = m_sync_flip.load(std::memory_order_relaxed);
+        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) == m_top_waiting) {
+            m_num_waiting.store(0, std::memory_order_relaxed);
+            m_sync_flip.store(!old_flip, std::memory_order_release);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+private:
+    std::uint32_t const m_top_waiting;
+    std::atomic<std::uint32_t> m_num_waiting;
+    std::atomic<bool> m_sync_flip;
+};
+
+}
+
+
+
+
+namespace co_async {
+template <class K, class V>
+struct SimpleMap {
+    SimpleMap() = default;
+
+    SimpleMap(std::initializer_list<std::pair<K, V>> init)
+        : mData(init.begin(), init.end()) {}
+
+    template <class Key>
+        requires(requires(K k, Key key) {
+            k < key;
+            key < k;
+        })
+    V *at(Key const &key) noexcept {
+        auto it = mData.find(key);
+        if (it == mData.end()) {
+            return nullptr;
+        }
+        return std::addressof(it->second);
+    }
+
+    template <class Key>
+        requires(requires(K k, Key key) {
+            k < key;
+            key < k;
+        })
+    V const *at(Key const &key) const noexcept {
+        auto it = mData.find(key);
+        if (it == mData.end()) {
+            return nullptr;
+        }
+        return std::addressof(it->second);
+    }
+
+    template <class Key, class F = std::identity>
+        requires(requires(F f, V const &v, K const &k, Key const &key) {
+            std::invoke(f, v);
+            k < key;
+            key < k;
+        })
+    decltype(std::optional(std::declval<std::invoke_result_t<F, V const &>>()))
+    get(Key const &key, F &&func = {}) const noexcept {
+        auto it = mData.find(key);
+        if (it == mData.end()) {
+            return std::nullopt;
+        }
+        return std::invoke(func, it->second);
+    }
+
+    template <std::convertible_to<K> Key>
+    V &insert_or_assign(Key &&key, V value) {
+        return mData
+            .insert_or_assign(K(std::forward<Key>(key)), std::move(value))
+            .first->second;
+    }
+
+    template <std::convertible_to<K> Key>
+    V &insert(Key &&key, V value) {
+        return mData.emplace(K(std::forward<Key>(key)), std::move(value))
+            .first->second;
+    }
+
+    template <std::convertible_to<K> Key, class... Args>
+        requires std::constructible_from<V, Args...>
+    V &emplace(Key &&key, Args &&...args) {
+        return mData
+            .emplace(K(std::forward<Key>(key)), std::forward<Args>(args)...)
+            .first->second;
+    }
+
+    template <class Key>
+        requires(requires(K k, Key key) {
+            k < key;
+            key < k;
+        })
+    bool contains(Key &&key) const noexcept {
+        return mData.find(std::forward<Key>(key)) != mData.end();
+    }
+
+    template <class Key>
+        requires(requires(K k, Key key) {
+            k < key;
+            key < k;
+        })
+    bool erase(Key &&key) {
+        auto it = mData.find(std::forward<Key>(key));
+        if (it == mData.end()) {
+            return false;
+        }
+        mData.erase(it);
+        return true;
+    }
+
+    auto begin() const noexcept {
+        return mData.begin();
+    }
+
+    auto end() const noexcept {
+        return mData.end();
+    }
+
+    auto begin() noexcept {
+        return mData.begin();
+    }
+
+    auto end() noexcept {
+        return mData.end();
+    }
+
+    bool empty() const noexcept {
+        return mData.empty();
+    }
+
+    std::size_t size() const noexcept {
+        return mData.size();
+    }
+
+private:
+    std::map<K, V, std::less<>> mData;
+};
+} // namespace co_async
+
+
 //
 // debug.hpp - prints everything!
 //
@@ -1792,7 +7602,7 @@ public:
     debug &fail(bool fail = true) {
         if (fail) {
             DEBUG_UNLIKELY {
-                on_error("failed:");
+                on_error("(failed)");
             }
         } else {
             state = supress;
@@ -2257,4783 +8067,6 @@ DEBUG_NAMESPACE_END
 #endif
 
 
-#include <cassert>     // IWYU pragma: export
-#include <cctype>      // IWYU pragma: export
-#include <cerrno>      // IWYU pragma: export
-#include <cfloat>      // IWYU pragma: export
-#include <ciso646>     // IWYU pragma: export
-#include <climits>     // IWYU pragma: export
-#include <clocale>     // IWYU pragma: export
-#include <cmath>       // IWYU pragma: export
-#include <csetjmp>     // IWYU pragma: export
-#include <csignal>     // IWYU pragma: export
-#include <cstdarg>     // IWYU pragma: export
-#include <cstddef>     // IWYU pragma: export
-#include <cstdio>      // IWYU pragma: export
-#include <cstdlib>     // IWYU pragma: export
-#include <cstring>     // IWYU pragma: export
-#include <ctime>       // IWYU pragma: export
-#include <cwchar>      // IWYU pragma: export
-#include <cwctype>     // IWYU pragma: export
-#if __cplusplus >= 201103L
-# include <ccomplex>   // IWYU pragma: export
-# include <cfenv>      // IWYU pragma: export
-# include <cinttypes>  // IWYU pragma: export
-# if __has_include(<cstdalign>)
-#  include <cstdalign> // IWYU pragma: export
-# endif
-# include <cstdbool>   // IWYU pragma: export
-# include <cstdint>    // IWYU pragma: export
-# include <ctgmath>    // IWYU pragma: export
-# include <cuchar>     // IWYU pragma: export
-#endif
-// C++
-#include <algorithm>           // IWYU pragma: export
-#include <bitset>              // IWYU pragma: export
-#include <complex>             // IWYU pragma: export
-#include <deque>               // IWYU pragma: export
-#include <exception>           // IWYU pragma: export
-#include <fstream>             // IWYU pragma: export
-#include <functional>          // IWYU pragma: export
-#include <iomanip>             // IWYU pragma: export
-#include <ios>                 // IWYU pragma: export
-#include <iosfwd>              // IWYU pragma: export
-#include <iostream>            // IWYU pragma: export
-#include <istream>             // IWYU pragma: export
-#include <iterator>            // IWYU pragma: export
-#include <limits>              // IWYU pragma: export
-#include <list>                // IWYU pragma: export
-#include <locale>              // IWYU pragma: export
-#include <map>                 // IWYU pragma: export
-#include <memory>              // IWYU pragma: export
-#include <new>                 // IWYU pragma: export
-#include <numeric>             // IWYU pragma: export
-#include <ostream>             // IWYU pragma: export
-#include <queue>               // IWYU pragma: export
-#include <set>                 // IWYU pragma: export
-#include <sstream>             // IWYU pragma: export
-#include <stack>               // IWYU pragma: export
-#include <stdexcept>           // IWYU pragma: export
-#include <streambuf>           // IWYU pragma: export
-#include <string>              // IWYU pragma: export
-#include <typeinfo>            // IWYU pragma: export
-#include <utility>             // IWYU pragma: export
-#include <valarray>            // IWYU pragma: export
-#include <vector>              // IWYU pragma: export
-#if __cplusplus >= 201103L
-# include <array>              // IWYU pragma: export
-# include <atomic>             // IWYU pragma: export
-# include <chrono>             // IWYU pragma: export
-# include <codecvt>            // IWYU pragma: export
-# include <condition_variable> // IWYU pragma: export
-# include <forward_list>       // IWYU pragma: export
-# include <future>             // IWYU pragma: export
-# include <initializer_list>   // IWYU pragma: export
-# include <mutex>              // IWYU pragma: export
-# include <random>             // IWYU pragma: export
-# include <ratio>              // IWYU pragma: export
-# include <regex>              // IWYU pragma: export
-# include <scoped_allocator>   // IWYU pragma: export
-# include <system_error>       // IWYU pragma: export
-# include <thread>             // IWYU pragma: export
-# include <tuple>              // IWYU pragma: export
-# include <type_traits>        // IWYU pragma: export
-# include <typeindex>          // IWYU pragma: export
-# include <unordered_map>      // IWYU pragma: export
-# include <unordered_set>      // IWYU pragma: export
-#endif
-#if __cplusplus >= 201402L
-# include <shared_mutex> // IWYU pragma: export
-#endif
-#if __cplusplus >= 201703L
-# include <any>             // IWYU pragma: export
-# include <charconv>        // IWYU pragma: export
-# include <execution>       // IWYU pragma: export
-# include <filesystem>      // IWYU pragma: export
-# include <memory_resource> // IWYU pragma: export
-# include <optional>        // IWYU pragma: export
-# include <string_view>     // IWYU pragma: export
-# include <variant>         // IWYU pragma: export
-#endif
-#if __cplusplus >= 202002L
-# if __has_include(<barrier>)
-#  include <barrier> // IWYU pragma: export
-# endif
-# include <bit>      // IWYU pragma: export
-# include <compare>  // IWYU pragma: export
-# include <concepts> // IWYU pragma: export
-# if __cpp_impl_coroutine
-#  if __has_include(<coroutine>)
-#   include <coroutine> // IWYU pragma: export
-#  endif
-# endif
-# if __has_include(<latch>)
-#  include <latch>      // IWYU pragma: export
-# endif
-# include <numbers>     // IWYU pragma: export
-# include <ranges>      // IWYU pragma: export
-# include <span>        // IWYU pragma: export
-# if __has_include(<stop_token>)
-#  include <stop_token> // IWYU pragma: export
-# endif
-# if __has_include(<semaphore>)
-#  include <semaphore> // IWYU pragma: export
-# endif
-# if __has_include(<source_location>)
-#  include <source_location> // IWYU pragma: export
-# endif
-# if __has_include(<syncstream>)
-#  include <syncstream> // IWYU pragma: export
-# endif
-# include <version>     // IWYU pragma: export
-#endif
-#if __cplusplus > 202002L
-# if __has_include(<expected>)
-#  include <expected> // IWYU pragma: export
-# endif
-# if __has_include(<spanstream>)
-#  include <spanstream> // IWYU pragma: export
-# endif
-# if __has_include(<stacktrace>)
-#  include <stacktrace> // IWYU pragma: export
-# endif
-# if __has_include(<stdatomic.h>)
-#  include <stdatomic.h> // IWYU pragma: export
-# endif
-#endif
-/* #ifdef CO_ASYNC_DEBUG */
-/* #define DEBUG_LEVEL 1 */
-/*  */
-/* #endif */
-
-
-
-
-namespace co_async {
-struct PreviousAwaiter {
-    std::coroutine_handle<> mPrevious;
-
-    bool await_ready() const noexcept {
-        return false;
-    }
-
-    std::coroutine_handle<>
-    await_suspend(std::coroutine_handle<> coroutine) const noexcept {
-        return mPrevious;
-    }
-
-    void await_resume() const noexcept {}
-};
-} // namespace co_async
-
-
-
-
-namespace co_async {
-struct Void final {
-    explicit Void() = default;
-
-    template <class T>
-    friend constexpr T &&operator,(T &&t, Void) {
-        return std::forward<T>(t);
-    }
-
-    template <class T>
-    friend constexpr T &&operator|(Void, T &&t) {
-        return std::forward<T>(t);
-    }
-
-    friend constexpr void operator|(Void, Void) {}
-
-    char const *repr() const noexcept {
-        return "void";
-    }
-};
-
-template <class T = void>
-struct AvoidVoidTrait {
-    using Type = T;
-    using RefType = std::reference_wrapper<T>;
-    using CRefType = std::reference_wrapper<T const>;
-};
-
-template <>
-struct AvoidVoidTrait<void> final {
-    using Type = Void;
-    using RefType = Void;
-    using CRefType = Void;
-};
-template <class T>
-using Avoid = typename AvoidVoidTrait<T>::Type;
-template <class T>
-using AvoidRef = typename AvoidVoidTrait<T>::RefType;
-template <class T>
-using AvoidCRef = typename AvoidVoidTrait<T>::CRefType;
-} // namespace co_async
-
-
-
-
-
-namespace co_async {
-template <class T>
-struct Uninitialized {
-    union {
-        T mValue;
-    };
-#if CO_ASYNC_DEBUG
-    bool mHasValue = false;
-#endif
-    Uninitialized() noexcept {}
-
-    Uninitialized(Uninitialized &&) = delete;
-
-    ~Uninitialized() {
-#if CO_ASYNC_DEBUG
-        if (mHasValue) [[unlikely]] {
-            throw std::logic_error("Uninitialized destroyed with value");
-        }
-#endif
-    }
-
-    T const &refValue() const noexcept {
-#if CO_ASYNC_DEBUG
-        if (!mHasValue) [[unlikely]] {
-            throw std::logic_error(
-                "Uninitialized::refValue called in an unvalued slot");
-        }
-#endif
-        return mValue;
-    }
-
-    T &refValue() noexcept {
-#if CO_ASYNC_DEBUG
-        if (!mHasValue) [[unlikely]] {
-            throw std::logic_error(
-                "Uninitialized::refValue called in an unvalued slot");
-        }
-#endif
-        return mValue;
-    }
-
-    void destroyValue() {
-#if CO_ASYNC_DEBUG
-        if (!mHasValue) [[unlikely]] {
-            throw std::logic_error(
-                "Uninitialized::destroyValue called in an unvalued slot");
-        }
-#endif
-        mValue.~T();
-#if CO_ASYNC_DEBUG
-        mHasValue = false;
-#endif
-    }
-
-    T moveValue() {
-#if CO_ASYNC_DEBUG
-        if (!mHasValue) [[unlikely]] {
-            throw std::logic_error(
-                "Uninitialized::moveValue called in an unvalued slot");
-        }
-#endif
-        T ret(std::move(mValue));
-        mValue.~T();
-#if CO_ASYNC_DEBUG
-        mHasValue = false;
-#endif
-        return ret;
-    }
-
-    template <class... Ts>
-        requires std::constructible_from<T, Ts...>
-    void putValue(Ts &&...args) {
-#if CO_ASYNC_DEBUG
-        if (mHasValue) [[unlikely]] {
-            throw std::logic_error(
-                "Uninitialized::putValue with value already exist");
-        }
-#endif
-        new (std::addressof(mValue)) T(std::forward<Ts>(args)...);
-#if CO_ASYNC_DEBUG
-        mHasValue = true;
-#endif
-    }
-};
-
-template <>
-struct Uninitialized<void> {
-    void refValue() const noexcept {}
-
-    void destroyValue() {}
-
-    Void moveValue() {
-        return Void();
-    }
-
-    void putValue(Void) {}
-
-    void putValue() {}
-};
-
-template <>
-struct Uninitialized<Void> : Uninitialized<void> {};
-
-template <class T>
-struct Uninitialized<T const> : Uninitialized<T> {};
-
-template <class T>
-struct Uninitialized<T &> : Uninitialized<std::reference_wrapper<T>> {
-private:
-    using Base = Uninitialized<std::reference_wrapper<T>>;
-
-public:
-    T const &refValue() const noexcept {
-        return Base::refValue().get();
-    }
-
-    T &refValue() noexcept {
-        return Base::refValue().get();
-    }
-
-    T &moveValue() {
-        return Base::moveValue().get();
-    }
-};
-
-template <class T>
-struct Uninitialized<T &&> : Uninitialized<T &> {
-private:
-    using Base = Uninitialized<T &>;
-
-public:
-    T &&moveValue() {
-        return std::move(Base::moveValue().get());
-    }
-};
-} // namespace co_async
-
-
-
-
-
-
-namespace co_async {
-template <class T>
-struct GeneratorPromise {
-    auto initial_suspend() noexcept {
-        return std::suspend_always();
-    }
-
-    auto final_suspend() noexcept {
-        return PreviousAwaiter(mPrevious);
-    }
-
-    void unhandled_exception() noexcept {
-        mException = std::current_exception();
-        mFinal = true;
-    }
-
-    auto yield_value(T &&ret) {
-        mResult.putValue(std::move(ret));
-        return PreviousAwaiter(mPrevious);
-    }
-
-    auto yield_value(T const &ret) {
-        mResult.putValue(ret);
-        return PreviousAwaiter(mPrevious);
-    }
-
-    void return_void() {
-        mFinal = true;
-    }
-
-    bool final() {
-        if (mFinal) {
-            if (mException) [[unlikely]] {
-                std::rethrow_exception(mException);
-            }
-        }
-        return mFinal;
-    }
-
-    T result() {
-        return mResult.moveValue();
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<GeneratorPromise>::from_promise(*this);
-    }
-
-    std::coroutine_handle<> mPrevious;
-    bool mFinal = false;
-    Uninitialized<T> mResult;
-    std::exception_ptr mException{};
-    GeneratorPromise &operator=(GeneratorPromise &&) = delete;
-};
-
-template <class T>
-struct GeneratorPromise<T &> {
-    auto initial_suspend() noexcept {
-        return std::suspend_always();
-    }
-
-    auto final_suspend() noexcept {
-        return PreviousAwaiter(mPrevious);
-    }
-
-    void unhandled_exception() noexcept {
-        mException = std::current_exception();
-        mResult = nullptr;
-    }
-
-    auto yield_value(T &ret) {
-        mResult = std::addressof(ret);
-        return PreviousAwaiter(mPrevious);
-    }
-
-    void return_void() {
-        mResult = nullptr;
-    }
-
-    bool final() {
-        if (!mResult) {
-            if (mException) [[unlikely]] {
-                std::rethrow_exception(mException);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    T &result() {
-        return *mResult;
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<GeneratorPromise>::from_promise(*this);
-    }
-
-    std::coroutine_handle<> mPrevious{};
-    T *mResult;
-    std::exception_ptr mException{};
-    GeneratorPromise &operator=(GeneratorPromise &&) = delete;
-};
-
-template <class T, class P = GeneratorPromise<T>>
-struct [[nodiscard]] Generator {
-    using promise_type = P;
-
-    Generator(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
-        : mCoroutine(coroutine) {}
-
-    Generator(Generator &&that) noexcept : mCoroutine(that.mCoroutine) {
-        that.mCoroutine = nullptr;
-    }
-
-    Generator &operator=(Generator &&that) noexcept {
-        std::swap(mCoroutine, that.mCoroutine);
-    }
-
-    ~Generator() {
-        if (mCoroutine) {
-            mCoroutine.destroy();
-        }
-    }
-
-    struct Awaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        std::coroutine_handle<promise_type>
-        await_suspend(std::coroutine_handle<> coroutine) const noexcept {
-            mCoroutine.promise().mPrevious = coroutine;
-            return mCoroutine;
-        }
-
-        std::optional<T> await_resume() const {
-            if (mCoroutine.promise().final()) {
-                return std::nullopt;
-            }
-            return mCoroutine.promise().result();
-        }
-
-        std::coroutine_handle<promise_type> mCoroutine;
-    };
-
-    auto operator co_await() const noexcept {
-        return Awaiter(mCoroutine);
-    }
-
-    operator std::coroutine_handle<promise_type>() const noexcept {
-        return mCoroutine;
-    }
-
-private:
-    std::coroutine_handle<promise_type> mCoroutine;
-};
-#if 0
-template <class T, class A, class LoopRef>
-struct GeneratorIterator {
-    using iterator_category = std::input_iterator_tag;
-    using value_type = T;
-    using difference_type = std::ptrdiff_t;
-    using pointer = T *;
-    using reference = T &;
-
-    explicit GeneratorIterator(A awaiter, LoopRef loop) noexcept
-        : mAwaiter(awaiter),
-          mLoop(loop) {
-        ++*this;
-    }
-
-    bool operator!=(std::default_sentinel_t) const noexcept {
-        return mResult.has_value();
-    }
-
-    bool operator==(std::default_sentinel_t) const noexcept {
-        return !(*this != std::default_sentinel);
-    }
-
-    friend bool operator==(std::default_sentinel_t,
-                           GeneratorIterator const &it) noexcept {
-        return it == std::default_sentinel;
-    }
-
-    friend bool operator!=(std::default_sentinel_t,
-                           GeneratorIterator const &it) noexcept {
-        return it == std::default_sentinel;
-    }
-
-    GeneratorIterator &operator++() {
-        mAwaiter.mCoroutine.resume();
-        mLoop.run();
-        mResult = mAwaiter.await_resume();
-        return *this;
-    }
-
-    GeneratorIterator operator++(int) {
-        auto tmp = *this;
-        ++*this;
-        return tmp;
-    }
-
-    T &operator*() noexcept {
-        return *mResult;
-    }
-
-    T *operator->() noexcept {
-        return mResult.operator->();
-    }
-
-private:
-    A mAwaiter;
-    LoopRef mLoop;
-    std::optional<T> mResult;
-};
-
-template <class Loop, class T, class P>
-auto run_generator_on(Loop &loop, Generator<T, P> const &g) {
-    using Awaiter = typename Generator<T, P>::Awaiter;
-
-    struct GeneratorRange {
-        explicit GeneratorRange(Awaiter awaiter, Loop &loop)
-            : mAwaiter(awaiter),
-              mLoop(loop) {
-            mAwaiter.await_suspend(std::noop_coroutine());
-        }
-
-        auto begin() const noexcept {
-            return GeneratorIterator<T, Awaiter, Loop &>(mAwaiter, mLoop);
-        }
-
-        std::default_sentinel_t end() const noexcept {
-            return {};
-        }
-
-    private:
-        Awaiter mAwaiter;
-        Loop &mLoop;
-    };
-
-    return GeneratorRange(g.operator co_await(), loop);
-};
-#endif
-} // namespace co_async
-
-
-
-
-
-namespace co_async {
-template <class A>
-concept Awaiter = requires(A a, std::coroutine_handle<> h) {
-    { a.await_ready() };
-    { a.await_suspend(h) };
-    { a.await_resume() };
-};
-template <class A>
-concept Awaitable = Awaiter<A> || requires(A a) {
-    { a.operator co_await() } -> Awaiter;
-};
-
-template <class A>
-struct AwaitableTraits {
-    using Type = A;
-};
-
-template <Awaiter A>
-struct AwaitableTraits<A> {
-    using RetType = decltype(std::declval<A>().await_resume());
-    using AvoidRetType = Avoid<RetType>;
-    using Type = RetType;
-    using AwaiterType = A;
-};
-
-template <class A>
-    requires(!Awaiter<A> && Awaitable<A>)
-struct AwaitableTraits<A>
-    : AwaitableTraits<decltype(std::declval<A>().operator co_await())> {};
-
-template <class... Ts>
-struct TypeList {};
-
-template <class Last>
-struct TypeList<Last> {
-    using FirstType = Last;
-    using LastType = Last;
-};
-
-template <class First, class... Ts>
-struct TypeList<First, Ts...> {
-    using FirstType = First;
-    using LastType = typename TypeList<Ts...>::LastType;
-};
-} // namespace co_async
-
-
-
-
-
-namespace co_async {
-template <class T>
-struct ValueAwaiter {
-    std::coroutine_handle<> mPrevious;
-    Uninitialized<T> mValue;
-
-    template <class... Args>
-    explicit ValueAwaiter(std::in_place_t, Args &&...args) {
-        mValue.putValue(std::forward<Args>(args)...);
-    }
-
-    explicit ValueAwaiter(std::in_place_t)
-        requires(std::is_void_v<T>)
-    {
-        mValue.putValue(Void());
-    }
-
-    explicit ValueAwaiter(std::coroutine_handle<> previous)
-        : mPrevious(previous) {}
-
-    bool await_ready() const noexcept {
-        return mPrevious == nullptr;
-    }
-
-    std::coroutine_handle<>
-    await_suspend(std::coroutine_handle<> coroutine) const noexcept {
-        return mPrevious;
-    }
-
-    T await_resume() noexcept {
-        if constexpr (!std::is_void_v<T>) {
-            return mValue.moveValue();
-        }
-    }
-};
-} // namespace co_async
-
-
-
-
-namespace co_async {
-struct Perf {
-private:
-    char const *file;
-    std::uint_least32_t line;
-    std::chrono::steady_clock::time_point t0;
-
-    struct PerfTableEntry {
-        std::uint64_t duration;
-        char const *file;
-        int line;
-    };
-
-    struct PerfThreadLocal {
-        std::deque<PerfTableEntry> table;
-        PerfThreadLocal() = default;
-        PerfThreadLocal(PerfThreadLocal &&) = delete;
-
-        ~PerfThreadLocal() {
-            gather(*this);
-        }
-    };
-
-    struct PerfGather {
-        /* PerfGather() { */
-        /*     signal( */
-        /*         SIGINT, +[](int signo) { std::exit(130); }); */
-        /* } */
-
-        PerfGather &operator=(PerfGather &&) = delete;
-
-        void dump() const {
-            if (table.empty()) {
-                return;
-            }
-
-            struct PairLess {
-                bool
-                operator()(std::pair<std::string_view, int> const &a,
-                           std::pair<std::string_view, int> const &b) const {
-                    return std::tie(a.first, a.second) <
-                           std::tie(b.first, b.second);
-                }
-            };
-
-            struct Entry {
-                std::uint64_t min = std::numeric_limits<std::uint64_t>::max();
-                std::uint64_t sum = 0;
-                std::uint64_t max = 0;
-                std::uint64_t nr = 0;
-
-                Entry &operator+=(std::uint64_t d) {
-                    min = std::min(min, d);
-                    sum += d;
-                    max = std::max(max, d);
-                    ++nr;
-                    return *this;
-                }
-            };
-
-            std::map<std::pair<std::string_view, int>, Entry, PairLess> m;
-            for (auto const &e: table) {
-                m[{e.file, e.line}] += e.duration;
-            }
-            auto t = [](std::uint64_t d) -> std::string {
-                if (d < 10000) {
-                    return std::format("{}ns", d);
-                } else if (d < 10'000'000) {
-                    return std::format("{}us", d / 1000);
-                } else if (d < 10'000'000'000) {
-                    return std::format("{}ms", d / 1'000'000);
-                } else if (d < 10'000'000'000'000) {
-                    return std::format("{}s", d / 1'000'000'000);
-                } else {
-                    return std::format("{}h", d / 3'600'000'000'000);
-                }
-            };
-            auto p = [](std::string_view s) -> std::string {
-                auto p = s.rfind('/');
-                if (p == std::string_view::npos) {
-                    return std::string(s);
-                } else {
-                    return std::string(s.substr(p + 1));
-                }
-            };
-            std::vector<std::pair<std::pair<std::string_view, int>, Entry>>
-                sorted(m.begin(), m.end());
-            std::sort(sorted.begin(), sorted.end(),
-                      [](auto const &lhs, auto const &rhs) {
-                          return lhs.second.sum > rhs.second.sum;
-                      });
-            std::size_t w = 0, nw = 1;
-            for (auto const &[loc, e]: sorted) {
-                w = std::max(w, p(loc.first).size());
-                nw = std::max(nw, std::to_string(e.nr).size());
-            }
-            std::string o;
-            auto oit = std::back_inserter(o);
-            std::format_to(oit, "{:>{}}:{:<4} {:^6} {:^6} {:^6} {:^6} {:^{}}\n",
-                           "file", w, "line", "min", "avg", "max", "sum", "nr",
-                           nw + 1);
-            for (auto const &[loc, e]: sorted) {
-                std::format_to(oit,
-                               "{:>{}}:{:<4} {:>6} {:>6} {:>6} {:>6} {:>{}}x\n",
-                               p(loc.first), w, loc.second, t(e.min),
-                               t(e.sum / e.nr), t(e.max), t(e.sum), e.nr, nw);
-            }
-            fprintf(stderr, "%s", o.c_str());
-        }
-
-        ~PerfGather() {
-            for (auto *thread: threads) {
-                gather(*thread);
-            }
-            dump();
-        }
-
-        std::deque<PerfTableEntry> table;
-        std::set<PerfThreadLocal *> threads;
-        std::mutex lock;
-    };
-
-    static inline PerfGather gathered;
-    static inline thread_local PerfThreadLocal perthread;
-
-    static void gather(PerfThreadLocal &perthread) {
-        std::lock_guard guard(gathered.lock);
-        gathered.table.insert(gathered.table.end(), perthread.table.begin(),
-                              perthread.table.end());
-        gathered.threads.erase(&perthread);
-    }
-
-public:
-    Perf(std::source_location loc = std::source_location::current())
-        : file(loc.file_name()),
-          line(loc.line()),
-          t0(std::chrono::steady_clock::now()) {}
-
-    Perf(Perf &&) = delete;
-
-    ~Perf() {
-        auto t1 = std::chrono::steady_clock::now();
-        auto duration = (t1 - t0).count();
-        perthread.table.emplace_back(duration, file, line);
-    }
-};
-} // namespace co_async
-
-
-
-
-
-namespace co_async {
-template <class E = void>
-struct UnexpectedTraits {
-    static void throw_error(E const &error) {
-        throw error;
-    }
-
-    using inplace_storable = std::false_type;
-};
-
-template <>
-struct UnexpectedTraits<bool> {
-    static void throw_error(bool const &error) {
-        throw std::runtime_error("unexpected boolean error");
-    }
-
-    using inplace_storable = std::true_type;
-};
-
-template <>
-struct UnexpectedTraits<std::errc> {
-    static void throw_error(std::errc const &error) {
-        throw std::system_error(static_cast<int>(error),
-                                std::system_category());
-    }
-
-    using inplace_storable = std::true_type;
-};
-
-template <>
-struct UnexpectedTraits<std::error_code> {
-    static void throw_error(std::error_code const &error) {
-        throw std::system_error(error);
-    }
-
-    using inplace_storable = std::true_type;
-};
-
-template <>
-struct UnexpectedTraits<std::exception_ptr> {
-    static void throw_error(std::exception_ptr const &error) {
-        std::rethrow_exception(error);
-    }
-
-    using inplace_storable = std::true_type;
-};
-
-template <>
-struct UnexpectedTraits<void> {
-    static void throw_error() {
-        throw std::runtime_error("unexpected unknown error");
-    }
-
-    using inplace_storable = std::false_type;
-};
-
-template <class E = void>
-struct [[nodiscard]] Unexpected {
-private:
-    static_assert(!std::is_reference_v<E> && !std::is_void_v<E>);
-    std::optional<E> mErrorOpt;
-
-public:
-    bool has_error() const noexcept {
-        return mErrorOpt != nullptr;
-    }
-
-    void throw_error() const {
-        UnexpectedTraits<E>::throw_error(*mErrorOpt);
-    }
-
-    E const &error() const noexcept {
-        return *mErrorOpt;
-    }
-
-    explicit Unexpected(std::in_place_type_t<void>) noexcept : mErrorOpt() {}
-
-    explicit Unexpected(E error) {
-        mErrorOpt.emplace(std::move(error));
-    }
-
-    template <class... Es>
-        requires std::constructible_from<E, Es...>
-    explicit Unexpected(std::in_place_t, Es &&...args) {
-        mErrorOpt.emplace(std::forward<Es>(args)...);
-    }
-
-    std::optional<E> repr() const {
-        if (has_error()) {
-            return error();
-        }
-        return std::nullopt;
-    }
-};
-
-template <>
-struct [[nodiscard]] Unexpected<void> {
-private:
-    bool mHasError;
-    template <class, class>
-    friend struct Expected;
-
-    explicit Unexpected(std::in_place_type_t<void>) noexcept
-        : mHasError(false) {}
-
-public:
-    bool has_error() const noexcept {
-        return mHasError;
-    }
-
-    void throw_error() const {
-        UnexpectedTraits<void>::throw_error();
-    }
-
-    void error() const noexcept {}
-
-    explicit Unexpected() noexcept : mHasError(true) {}
-
-    std::optional<Void> repr() const {
-        if (has_error()) {
-            return Void();
-        }
-        return std::nullopt;
-    }
-};
-
-template <class E>
-    requires(UnexpectedTraits<E>::inplace_storable::value)
-struct [[nodiscard]] Unexpected<E> {
-private:
-    E mError;
-    template <class, class>
-    friend struct Expected;
-
-    explicit Unexpected(std::in_place_type_t<void>) noexcept : mError() {}
-
-public:
-    bool has_error() const noexcept {
-        return (bool)mError;
-    }
-
-    void throw_error() const {
-        UnexpectedTraits<E>::throw_error(mError);
-    }
-
-    E const &error() const noexcept {
-        return mError;
-    }
-
-    explicit Unexpected(E error) {
-        mError = E(std::move(error));
-#if CO_ASYNC_DEBUG
-        if (!has_error()) [[unlikely]] {
-            throw std::logic_error("Unexpected constructed with no error");
-        }
-#endif
-    }
-
-    template <class... Es>
-        requires std::constructible_from<E, Es...>
-    explicit Unexpected(std::in_place_t, Es &&...args) {
-        mError = E(std::forward<Es>(args)...);
-#if CO_ASYNC_DEBUG
-        if (!has_error()) [[unlikely]] {
-            throw std::logic_error("Unexpected constructed with no error");
-        }
-#endif
-    }
-
-    std::optional<E> repr() const {
-        if (has_error()) {
-            return error();
-        }
-        return std::nullopt;
-    }
-};
-template <class E>
-Unexpected(E) -> Unexpected<E>;
-Unexpected() -> Unexpected<>;
-
-template <class T = void, class E = std::error_code>
-struct [[nodiscard]] Expected {
-private:
-    static_assert(!std::is_reference_v<T> && !std::is_reference_v<E>);
-    Unexpected<E> mError;
-    Uninitialized<T> mValue;
-    template <class, class>
-    friend struct Expected;
-
-public:
-    template <std::convertible_to<T> U>
-    Expected(U &&value) : mError(std::in_place_type<void>) {
-        mValue.putValue(std::forward<U>(value));
-    }
-
-    Expected(T value) : mError(std::in_place_type<void>) {
-        mValue.putValue(std::move(value));
-    }
-
-    Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {}
-
-    Expected(Expected &&that) noexcept : mError(that.mError) {
-        if (has_value()) {
-            mValue.putValue(std::move(that.mValue.refValue()));
-        }
-    }
-
-    template <class U>
-        requires(!std::same_as<T, U> &&
-                 (std::convertible_to<U, T> || std::constructible_from<T, U>))
-    explicit(!std::convertible_to<U, T>) Expected(Expected<U, E> that) noexcept
-        : mError(that.mError) {
-        if (has_value()) {
-            mValue.putValue(std::move(that.mValue.refValue()));
-        }
-    }
-
-    Expected &operator=(Expected &&that) noexcept {
-        if (&that != this) [[likely]] {
-            if (has_value()) {
-                mValue.destroyValue();
-            }
-            mError = that.mError;
-            if (has_value()) {
-                mValue.putValue(std::move(that.mValue.refValue()));
-            }
-        }
-        return *this;
-    }
-
-    ~Expected() {
-        if (has_value()) {
-            mValue.destroyValue();
-        }
-    }
-
-    bool has_error() const noexcept {
-        return mError.has_error();
-    }
-
-    template <std::equality_comparable_with<E> U>
-        requires(!std::equality_comparable_with<U, T>)
-    bool operator==(U &&e) const {
-        return mError.has_error() && mError.error() == e;
-    }
-
-    template <std::equality_comparable_with<T> U>
-    bool operator==(U &&v) const {
-        return !mError.has_error() && mValue.refValue() == v;
-    }
-
-    bool has_value() const noexcept {
-        return !mError.has_error();
-    }
-
-    explicit operator bool() const noexcept {
-        return has_value();
-    }
-
-    T &&value() && {
-        if (mError.has_error()) [[unlikely]] {
-            mError.throw_error();
-        }
-        return std::move(mValue.refValue());
-    }
-
-    T &value() & {
-        if (mError.has_error()) [[unlikely]] {
-            mError.throw_error();
-        }
-        return mValue.refValue();
-    }
-
-    T const &value() const & {
-        if (mError.has_error()) [[unlikely]] {
-            mError.throw_error();
-        }
-        return mValue.refValue();
-    }
-
-    template <class... Ts>
-        requires std::constructible_from<T, Ts...>
-    T value_or(Ts &&...ts) const & {
-        if (mError.has_error()) {
-            return T(std::forward<Ts>(ts)...);
-        }
-        return operator*();
-    }
-
-    template <class... Ts>
-        requires std::constructible_from<T, Ts...>
-    T value_or(Ts &&...ts) && {
-        if (mError.has_error()) {
-            return T(std::forward<Ts>(ts)...);
-        }
-        return std::move(operator*());
-    }
-
-    T &&operator*() && {
-#if CO_ASYNC_DEBUG
-        if (mError.has_error()) [[unlikely]] {
-            throw std::logic_error(
-                "Expected: has error but operator*() is called");
-        }
-#endif
-        return std::move(mValue.refValue());
-    }
-
-    T &operator*() & {
-#if CO_ASYNC_DEBUG
-        if (mError.has_error()) [[unlikely]] {
-            throw std::logic_error(
-                "Expected: has error but operator*() is called");
-        }
-#endif
-        return mValue.refValue();
-    }
-
-    T const &operator*() const & {
-#if CO_ASYNC_DEBUG
-        if (mError.has_error()) [[unlikely]] {
-            throw std::logic_error(
-                "Expected: has error but operator*() is called");
-        }
-#endif
-        return mValue.refValue();
-    }
-
-    T *operator->() {
-        return std::addressof(operator*());
-    }
-
-    T const *operator->() const {
-        return std::addressof(operator*());
-    }
-
-    std::add_lvalue_reference_t<std::add_const_t<E>> error() const {
-#if CO_ASYNC_DEBUG
-        if (!mError.has_error()) [[unlikely]] {
-            throw std::logic_error("Expected: no error but error() is called");
-        }
-#endif
-        return mError.error();
-    }
-#if CO_ASYNC_DEBUG
-    std::variant<AvoidCRef<E>, AvoidCRef<T>> repr() const {
-        if (has_error()) {
-            return error();
-        }
-        return value();
-    }
-#endif
-};
-
-template <class E>
-struct [[nodiscard("did you forgot to co_await twice?")]] Expected<void, E> {
-private:
-    static_assert(!std::is_reference_v<E>);
-    Unexpected<E> mError;
-    template <class, class>
-    friend struct Expected;
-
-public:
-    Expected() : mError(std::in_place_type<void>) {}
-
-    Expected(Void) : mError(std::in_place_type<void>) {}
-
-    Expected(Unexpected<E> error) noexcept : mError(std::move(error)) {}
-
-    Expected(Expected &&that) noexcept : mError(that.mError) {}
-
-    template <class U>
-        requires(!std::is_void_v<U>)
-    Expected(Expected<U, E> that) noexcept : mError(that.mError) {}
-
-    Expected &operator=(Expected &&that) noexcept {
-        if (&that != this) [[likely]] {
-            mError = that.mError;
-        }
-        return *this;
-    }
-
-    ~Expected() = default;
-
-    bool has_error() const noexcept {
-        return mError.has_error();
-    }
-
-    bool has_value() const noexcept {
-        return !mError.has_error();
-    }
-
-    explicit operator bool() const noexcept {
-        return has_value();
-    }
-
-    void value() const {
-        if (mError.has_error()) [[unlikely]] {
-            mError.throw_error();
-        }
-    }
-
-    void value_or() const {}
-
-    void operator*() const {
-#if CO_ASYNC_DEBUG
-        if (mError.has_error()) [[unlikely]] {
-            throw std::logic_error(
-                "Expected: has error but operator*() is called");
-        }
-#endif
-    }
-
-    std::add_lvalue_reference_t<std::add_const_t<E>> error() const {
-#if CO_ASYNC_DEBUG
-        if constexpr (!UnexpectedTraits<E>::inplace_storable::value) {
-            if (!mError.has_error()) [[unlikely]] {
-                throw std::logic_error(
-                    "Expected: no error but error() is called");
-            }
-        }
-#endif
-        return mError.error();
-    }
-#if CO_ASYNC_DEBUG
-    std::variant<AvoidCRef<E>, Void> repr() const {
-        if (has_error()) {
-            return error();
-        }
-        return Void();
-    }
-#endif
-};
-template <class T>
-Expected(T) -> Expected<T>;
-template <class T, class E>
-Expected(Expected<T, E>) -> Expected<T, E>;
-template <class E>
-Expected(Unexpected<E>) -> Expected<void, E>;
-Expected() -> Expected<>;
-} // namespace co_async
-
-
-
-
-
-#if CO_ASYNC_PERF
-
-#endif
-
-
-
-
-namespace co_async {
-struct PromiseBase {
-    auto initial_suspend() noexcept {
-        return std::suspend_always();
-    }
-
-    struct FinalAwaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        template <class P>
-        std::coroutine_handle<>
-        await_suspend(std::coroutine_handle<P> coroutine) const noexcept {
-            return static_cast<PromiseBase &>(coroutine.promise()).mPrevious;
-        }
-
-        void await_resume() const noexcept {}
-    };
-
-    auto final_suspend() noexcept {
-        return FinalAwaiter();
-    }
-
-    void unhandled_exception() noexcept {
-#if CO_ASYNC_EXCEPT
-        mException = std::current_exception();
-#else
-        std::terminate();
-#endif
-    }
-
-    void setPrevious(std::coroutine_handle<> previous) noexcept {
-#if CO_ASYNC_DEBUG
-        if (mPrevious) [[unlikely]] {
-            std::cerr << "WARNING: co_wait'ing twice on a single task\n";
-        }
-#endif
-        mPrevious = previous;
-    }
-
-    PromiseBase &operator=(PromiseBase &&) = delete;
-
-protected:
-    std::coroutine_handle<> mPrevious;
-#if CO_ASYNC_EXCEPT
-    std::exception_ptr mException{};
-#endif
-};
-
-template <class T>
-struct TaskPromise : PromiseBase {
-    void return_value(T &&ret) {
-        mResult.putValue(std::move(ret));
-    }
-
-    void return_value(T const &ret) {
-        mResult.putValue(ret);
-    }
-
-    T result() {
-#if CO_ASYNC_EXCEPT
-        if (mException) [[unlikely]] {
-            std::rethrow_exception(mException);
-        }
-#endif
-        return mResult.moveValue();
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<TaskPromise>::from_promise(*this);
-    }
-
-private:
-    Uninitialized<T> mResult;
-#if CO_ASYNC_PERF
-public:
-    Perf mPerf;
-
-    TaskPromise(std::source_location loc = std::source_location::current())
-        : mPerf(loc) {}
-#endif
-};
-
-template <>
-struct TaskPromise<void> : PromiseBase {
-    void return_void() noexcept {}
-
-    void result() {
-#if CO_ASYNC_EXCEPT
-        if (mException) [[unlikely]] {
-            std::rethrow_exception(mException);
-        }
-#endif
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<TaskPromise>::from_promise(*this);
-    }
-#if CO_ASYNC_PERF
-    Perf mPerf;
-
-    TaskPromise(std::source_location loc = std::source_location::current())
-        : mPerf(loc) {}
-#endif
-};
-
-template <class T, class E>
-struct TaskPromise<Expected<T, E>> : PromiseBase {
-    void return_value(Expected<T, E> &&ret) {
-        mResult.putValue(std::move(ret));
-    }
-
-    void return_value(Expected<T, E> const &ret) {
-        mResult.putValue(ret);
-    }
-
-    /* void return_value(T &&ret) requires (!std::is_void_v<T>) { */
-    /*     mResult.putValue(std::move(ret)); */
-    /* } */
-    /*  */
-    /* void return_value(T const &ret) requires (!std::is_void_v<T>) { */
-    /*     mResult.putValue(ret); */
-    /* } */
-    /*  */
-    /* void return_void() requires (std::is_void_v<T>) { */
-    /*     mResult.putValue(); */
-    /* } */
-    Expected<T, E> result() {
-#if CO_ASYNC_EXCEPT
-        if (mException) [[unlikely]] {
-            std::rethrow_exception(mException);
-        }
-#endif
-        return mResult.moveValue();
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<TaskPromise>::from_promise(*this);
-    }
-
-    template <class T2, class E2>
-    ValueAwaiter<T2> await_transform(Expected<T2, E2> &&e) noexcept {
-        if (e.has_error()) [[unlikely]] {
-            if constexpr (std::is_void_v<E>) {
-                mResult.putValue(Unexpected<E>());
-            } else {
-                static_assert(std::same_as<E2, E>,
-                              "co_await'ing Expected's error type mismatch");
-                mResult.putValue(Unexpected<E>(std::move(e.error())));
-            }
-            return ValueAwaiter<T2>(mPrevious);
-        }
-        if constexpr (std::is_void_v<T2>) {
-            return ValueAwaiter<void>(std::in_place);
-        } else {
-            return ValueAwaiter<T2>(std::in_place, *std::move(e));
-        }
-    }
-
-    template <class T2, class E2>
-    ValueAwaiter<T2> await_transform(Expected<T2, E2> &e) noexcept {
-        return await_transform(std::move(e));
-    }
-
-    template <class E2>
-    ValueAwaiter<void>
-    await_transform(std::vector<Expected<void, E2>> &&e) noexcept {
-        for (std::size_t i = 0; i < e.size(); ++i) {
-            if (e[i].has_error()) [[unlikely]] {
-                if constexpr (std::is_void_v<E>) {
-                    mResult.putValue(Unexpected<E>());
-                } else {
-                    static_assert(
-                        std::same_as<E2, E>,
-                        "co_await'ing Expected's error type mismatch");
-                    mResult.putValue(Unexpected<E>(std::move(e[i].error())));
-                }
-                return ValueAwaiter<void>(mPrevious);
-            }
-        }
-        return ValueAwaiter<void>(std::in_place);
-    }
-
-    template <class T2, class E2>
-    ValueAwaiter<std::vector<T2>>
-    await_transform(std::vector<Expected<T2, E2>> &&e) noexcept {
-        for (std::size_t i = 0; i < e.size(); ++i) {
-            if (e[i].has_error()) [[unlikely]] {
-                if constexpr (std::is_void_v<E>) {
-                    mResult.putValue(Unexpected<E>());
-                } else {
-                    static_assert(
-                        std::same_as<E2, E>,
-                        "co_await'ing Expected's error type mismatch");
-                    mResult.putValue(Unexpected<E>(std::move(e[i].error())));
-                }
-                return ValueAwaiter<std::vector<T2>>(mPrevious);
-            }
-        }
-        std::vector<T2> ret;
-        ret.reserve(e.size());
-        for (std::size_t i = 0; i < e.size(); ++i) {
-            ret.emplace_back(*std::move(e[i]));
-        }
-        return ValueAwaiter<std::vector<T2>>(std::in_place, std::move(ret));
-    }
-
-    template <class T2, class E2>
-    ValueAwaiter<std::vector<T2>>
-    await_transform(std::vector<Expected<T2, E2>> &e) noexcept {
-        return await_transform(std::move(e));
-    }
-
-    template <class... Ts, class E2>
-    ValueAwaiter<std::tuple<Avoid<Ts>...>>
-    await_transform(std::tuple<Expected<Ts, E2>...> &&e) noexcept {
-        return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-            if (!([&] {
-                    if (std::get<Is>(e).has_error()) [[unlikely]] {
-                        if constexpr (std::is_void_v<E>) {
-                            mResult.putValue(Unexpected<E>());
-                        } else {
-                            static_assert(
-                                std::same_as<E2, E>,
-                                "co_await'ing Expected's error type mismatch");
-                            mResult.putValue(Unexpected<E>(
-                                std::move(std::get<Is>(e).error())));
-                        }
-                        return false;
-                    }
-                    return true;
-                }() &&
-                  ...)) {
-                return ValueAwaiter<std::tuple<Avoid<Ts>...>>(mPrevious);
-            }
-            return ValueAwaiter<std::tuple<Avoid<Ts>...>>(
-                std::in_place, [&]() -> decltype(auto) {
-                    return *std::move(std::get<Is>(e)), Void();
-                }()...);
-        }(std::make_index_sequence<sizeof...(Ts)>());
-    }
-
-    template <class... Ts, class E2>
-    ValueAwaiter<std::tuple<Avoid<Ts>...>>
-    await_transform(std::tuple<Expected<Ts, E2>...> &e) noexcept {
-        return await_transform(std::move(e));
-    }
-
-    template <class U>
-    U &&await_transform(U &&u) noexcept {
-        return std::forward<U>(u);
-    }
-
-private:
-    Uninitialized<Expected<T, E>> mResult;
-#if CO_ASYNC_PERF
-public:
-    Perf mPerf;
-
-    TaskPromise(std::source_location loc = std::source_location::current())
-        : mPerf(loc) {}
-#endif
-};
-
-template <class T, class P>
-struct CustomPromise : TaskPromise<T> {
-    auto get_return_object() {
-        static_assert(std::is_base_of_v<CustomPromise, P>);
-        return std::coroutine_handle<P>::from_promise(static_cast<P &>(*this));
-    }
-};
-
-template <class T = void, class P = TaskPromise<T>>
-struct [[nodiscard("did you forgot to co_await?")]] Task {
-    using promise_type = P;
-
-    /* Task(std::coroutine_handle<promise_type> coroutine) noexcept */
-    /*     : mCoroutine(coroutine) { */
-    /* } */
-    /* Task(Task &&) = delete; */
-    Task(std::coroutine_handle<promise_type> coroutine = nullptr) noexcept
-        : mCoroutine(coroutine) {}
-
-    Task(Task &&that) noexcept : mCoroutine(that.mCoroutine) {
-        that.mCoroutine = nullptr;
-    }
-
-    Task &operator=(Task &&that) noexcept {
-        std::swap(mCoroutine, that.mCoroutine);
-    }
-
-    ~Task() {
-        if (!mCoroutine) {
-            return;
-        }
-        // #if CO_ASYNC_DEBUG
-        // if (!mCoroutine.done()) [[unlikely]] {
-        // #if CO_ASYNC_PERF
-        // auto &perf = mCoroutine.promise().mPerf;
-        // std::cerr << "warning: task (" << perf.file << ":" << perf.line
-        //<< ") destroyed undone\n";
-        // #else
-        // std::cerr << "warning: task destroyed undone\n";
-        // #endif
-        // }
-        // #endif
-        mCoroutine.destroy();
-    }
-
-    struct Awaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        std::coroutine_handle<P>
-        await_suspend(std::coroutine_handle<> coroutine) const noexcept {
-            P &promise = mCoroutine.promise();
-            promise.setPrevious(coroutine);
-            return mCoroutine;
-        }
-#if CO_ASYNC_DEBUG
-        T await_resume() const {
-            auto coroutine = mCoroutine;
-            mCoroutine = nullptr;
-            return coroutine.promise().result();
-        }
-
-        explicit Awaiter(std::coroutine_handle<P> coroutine)
-            : mCoroutine(coroutine) {}
-
-        Awaiter(Awaiter &&that) noexcept
-            : mCoroutine(std::exchange(that.mCoroutine, nullptr)) {}
-
-        ~Awaiter() noexcept {
-            if (mCoroutine && mCoroutine.done()) [[unlikely]] {
-                std::cerr << "WARNING: done coroutine return value ignored\n";
-                (void)mCoroutine.promise().result();
-            }
-        }
-
-    private:
-        mutable std::coroutine_handle<P> mCoroutine;
-#else
-        T await_resume() const {
-            return mCoroutine.promise().result();
-        }
-
-        std::coroutine_handle<P> mCoroutine;
-#endif
-    };
-
-    auto operator co_await() const noexcept {
-        return Awaiter(mCoroutine);
-    }
-
-    std::coroutine_handle<promise_type> get() const noexcept {
-        return mCoroutine;
-    }
-
-    std::coroutine_handle<promise_type> release() noexcept {
-        return std::exchange(mCoroutine, nullptr);
-    }
-
-private:
-    std::coroutine_handle<promise_type> mCoroutine;
-};
-
-template <class F, class... Args>
-    requires(Awaitable<std::invoke_result_t<F, Args...>>)
-inline auto co_bind(F &&f, Args &&...args) {
-    return [](auto f) mutable -> std::invoke_result_t<F, Args...> {
-        co_return co_await std::move(f)();
-        /* std::optional o(std::move(f)); */
-        /* decltype(auto) r = co_await std::move(*o)(); */
-        /* o.reset(); */
-        /* co_return */
-        /*     typename AwaitableTraits<std::invoke_result_t<F,
-         * Args...>>::RetType( */
-        /*         std::forward<decltype(r)>(r)); */
-    }(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-}
-} // namespace co_async
-
-
-
-
-
-
-namespace co_async {
-template <Awaitable A, Awaitable F>
-    requires(!std::is_invocable_v<F> &&
-             !std::is_invocable_v<F, typename AwaitableTraits<A>::RetType>)
-Task<typename AwaitableTraits<F>::RetType> and_then(A a, F f) {
-    co_await std::move(a);
-    co_return co_await std::move(f);
-}
-} // namespace co_async
-
-
-
-
-
-namespace co_async {
-inline Task<> just_void() {
-    co_return;
-}
-
-template <class T>
-Task<T> just_value(T t) {
-    co_return std::move(t);
-}
-
-template <class F, class... Args>
-Task<std::invoke_result_t<F, Args...>> just_invoke(F &&f, Args &&...args) {
-    co_return std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-}
-} // namespace co_async
-
-
-
-
-
-namespace co_async {
-struct ReturnPreviousPromise {
-    auto initial_suspend() noexcept {
-        return std::suspend_always();
-    }
-
-    auto final_suspend() noexcept {
-        return PreviousAwaiter(mPrevious);
-    }
-
-    void unhandled_exception() {
-        throw;
-    }
-
-    void return_value(std::coroutine_handle<> previous) noexcept {
-        mPrevious = previous;
-    }
-
-    auto get_return_object() {
-        return std::coroutine_handle<ReturnPreviousPromise>::from_promise(
-            *this);
-    }
-
-    std::coroutine_handle<> mPrevious;
-    ReturnPreviousPromise &operator=(ReturnPreviousPromise &&) = delete;
-};
-
-using ReturnPreviousTask = Task<void, ReturnPreviousPromise>;
-} // namespace co_async
-
-
-
-
-
-
-
-
-namespace co_async {
-struct WhenAllCtlBlock {
-    std::size_t mCount;
-    std::coroutine_handle<> mPrevious{};
-#if CO_ASYNC_EXCEPT
-    std::exception_ptr mException{};
-#endif
-};
-
-struct WhenAllAwaiter {
-    bool await_ready() const noexcept {
-        return false;
-    }
-
-    std::coroutine_handle<>
-    await_suspend(std::coroutine_handle<> coroutine) const {
-        if (mTasks.empty()) {
-            return coroutine;
-        }
-        mControl.mPrevious = coroutine;
-        for (auto const &t: mTasks.subspan(0, mTasks.size() - 1)) {
-            t.get().resume();
-        }
-        return mTasks.back().get();
-    }
-
-    void await_resume() const {
-#if CO_ASYNC_EXCEPT
-        if (mControl.mException) [[unlikely]] {
-            std::rethrow_exception(mControl.mException);
-        }
-#endif
-    }
-
-    WhenAllCtlBlock &mControl;
-    std::span<ReturnPreviousTask const> mTasks;
-};
-
-template <class T>
-ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
-                                 Uninitialized<T> &result) {
-#if CO_ASYNC_EXCEPT
-    try {
-#endif
-        result.putValue(co_await std::forward<decltype(t)>(t));
-#if CO_ASYNC_EXCEPT
-    } catch (...) {
-        control.mException = std::current_exception();
-        co_return control.mPrevious;
-    }
-#endif
-    --control.mCount;
-    if (control.mCount == 0) {
-        co_return control.mPrevious;
-    }
-    co_return std::noop_coroutine();
-}
-
-template <class = void>
-ReturnPreviousTask whenAllHelper(auto &&t, WhenAllCtlBlock &control,
-                                 Uninitialized<void> &) {
-#if CO_ASYNC_EXCEPT
-    try {
-#endif
-        co_await std::forward<decltype(t)>(t);
-#if CO_ASYNC_EXCEPT
-    } catch (...) {
-        control.mException = std::current_exception();
-        co_return control.mPrevious;
-    }
-#endif
-    --control.mCount;
-    if (control.mCount == 0) {
-        co_return control.mPrevious;
-    }
-    co_return std::noop_coroutine();
-}
-
-template <std::size_t... Is, class... Ts>
-Task<std::tuple<typename AwaitableTraits<Ts>::AvoidRetType...>>
-whenAllImpl(std::index_sequence<Is...>, Ts &&...ts) {
-    WhenAllCtlBlock control{sizeof...(Ts)};
-    std::tuple<Uninitialized<typename AwaitableTraits<Ts>::RetType>...> result;
-    ReturnPreviousTask taskArray[]{
-        whenAllHelper(ts, control, std::get<Is>(result))...};
-    co_await WhenAllAwaiter(control, taskArray);
-    co_return std::tuple<typename AwaitableTraits<Ts>::AvoidRetType...>(
-        std::get<Is>(result).moveValue()...);
-}
-
-template <Awaitable... Ts>
-    requires(sizeof...(Ts) != 0)
-auto when_all(Ts &&...ts) {
-    return whenAllImpl(std::make_index_sequence<sizeof...(Ts)>{},
-                       std::forward<Ts>(ts)...);
-}
-
-template <Awaitable T, class Alloc = std::allocator<T>>
-Task<std::conditional_t<
-    !std::is_void_v<typename AwaitableTraits<T>::RetType>,
-    std::vector<typename AwaitableTraits<T>::RetType,
-                typename std::allocator_traits<Alloc>::template rebind_alloc<
-                    typename AwaitableTraits<T>::RetType>>,
-    void>>
-when_all(std::vector<T, Alloc> const &tasks) {
-    WhenAllCtlBlock control{tasks.size()};
-    Alloc alloc = tasks.get_allocator();
-    std::vector<Uninitialized<typename AwaitableTraits<T>::RetType>,
-                typename std::allocator_traits<Alloc>::template rebind_alloc<
-                    Uninitialized<typename AwaitableTraits<T>::RetType>>>
-        result(tasks.size(), alloc);
-    {
-        std::vector<ReturnPreviousTask,
-                    typename std::allocator_traits<
-                        Alloc>::template rebind_alloc<ReturnPreviousTask>>
-            taskArray(alloc);
-        taskArray.reserve(tasks.size());
-        for (std::size_t i = 0; i < tasks.size(); ++i) {
-            taskArray.push_back(whenAllHelper(tasks[i], control, result[i]));
-        }
-        co_await WhenAllAwaiter(control, taskArray);
-    }
-    if constexpr (!std::is_void_v<typename AwaitableTraits<T>::RetType>) {
-        std::vector<
-            typename AwaitableTraits<T>::RetType,
-            typename std::allocator_traits<Alloc>::template rebind_alloc<
-                typename AwaitableTraits<T>::RetType>>
-            res(alloc);
-        res.reserve(tasks.size());
-        for (auto &r: result) {
-            res.push_back(r.moveValue());
-        }
-        co_return res;
-    }
-}
-} // namespace co_async
-
-
-
-
-
-namespace co_async {
-template <class T = void, class P = TaskPromise<T>>
-struct TaskOwnedAwaiter : Task<T, P>::Awaiter {
-private:
-    Task<T, P> mTask;
-
-public:
-    explicit TaskOwnedAwaiter(Task<T, P> task)
-        : Task<T, P>::Awaiter(task.operator co_await()),
-          mTask(std::move(task)) {}
-};
-template <class T, class P>
-TaskOwnedAwaiter(Task<T, P>) -> TaskOwnedAwaiter<T, P>;
-} // namespace co_async
-
-
-
-
-
-
-namespace co_async {
-template <Awaitable A>
-A ensureAwaitable(A a) {
-    return std::move(a);
-}
-
-template <class A>
-    requires(!Awaitable<A>)
-Task<A> ensureAwaitable(A a) {
-    co_return std::move(a);
-}
-
-template <Awaitable A>
-Task<typename AwaitableTraits<A>::RetType> ensureTask(A a) {
-    co_return co_await std::move(a);
-}
-
-template <class T>
-Task<T> ensureTask(Task<T> &&t) {
-    return std::move(t);
-}
-
-template <class A>
-    requires(!Awaitable<A> && std::is_invocable_v<A> &&
-             Awaitable<std::invoke_result_t<A>>)
-Task<typename AwaitableTraits<std::invoke_result_t<A>>::RetType>
-ensureTask(A a) {
-    return ensureTask(std::invoke(std::move(a)));
-}
-} // namespace co_async
-
-
-
-
-namespace co_async {
-struct CurrentCoroutineAwaiter {
-    bool await_ready() const noexcept {
-        return false;
-    }
-
-    std::coroutine_handle<>
-    await_suspend(std::coroutine_handle<> coroutine) noexcept {
-        mCurrent = coroutine;
-        return coroutine;
-    }
-
-    auto await_resume() const noexcept {
-        return mCurrent;
-    }
-
-    std::coroutine_handle<> mCurrent;
-};
-} // namespace co_async
-
-
-#if defined(__unix__) && __has_include(<cxxabi.h>)
-# include <cxxabi.h>
-#endif
-
-
-
-namespace co_async {
-template <class FinalAwaiter = std::suspend_always>
-struct IgnoreReturnPromise {
-    auto initial_suspend() noexcept {
-        return std::suspend_always();
-    }
-
-    auto final_suspend() noexcept {
-        return FinalAwaiter();
-    }
-
-    void unhandled_exception() noexcept {
-#if CO_ASYNC_EXCEPT
-        /* #if CO_ASYNC_DEBUG */
-        try {
-            throw;
-        } catch (std::exception const &e) {
-            auto name = typeid(e).name();
-# if defined(__unix__) && __has_include(<cxxabi.h>)
-            int status;
-            char *p = abi::__cxa_demangle(name, 0, 0, &status);
-            std::string s = p ? p : name;
-            std::free(p);
-# else
-            std::string s = name;
-# endif
-            std::cerr
-                << "co_spawn coroutine terminated after thrown exception '" +
-                       s + "'\n  e.what(): " + std::string(e.what()) + "\n";
-        } catch (...) {
-            std::cerr
-                << "co_spawn coroutine terminated after thrown exception\n";
-        }
-/* #endif */
-#else
-        std::terminate();
-#endif
-    }
-
-    void result() noexcept {}
-
-    void return_void() noexcept {}
-
-    auto get_return_object() {
-        return std::coroutine_handle<IgnoreReturnPromise>::from_promise(*this);
-    }
-
-    void setPrevious(std::coroutine_handle<>) noexcept {}
-
-    IgnoreReturnPromise &operator=(IgnoreReturnPromise &&) = delete;
-#if CO_ASYNC_PERF
-    Perf mPerf;
-
-    IgnoreReturnPromise(
-        std::source_location loc = std::source_location::current())
-        : mPerf(loc) {}
-#endif
-};
-
-struct AutoDestroyFinalAwaiter {
-    bool await_ready() const noexcept {
-        return false;
-    }
-
-    void await_suspend(std::coroutine_handle<> coroutine) const noexcept {
-        coroutine.destroy();
-    }
-
-    void await_resume() const noexcept {}
-};
-} // namespace co_async
-
-
-
-
-namespace co_async {
-template <class Value, class Compare = std::less<>>
-struct RbTree : private Compare {
-private:
-    enum RbColor {
-        RED,
-        BLACK
-    };
-
-protected:
-    struct RbNode {
-        RbNode() noexcept
-            : rbLeft(nullptr),
-              rbRight(nullptr),
-              rbParent(nullptr),
-              rbTree(nullptr),
-              rbColor(RED) {}
-        friend struct RbTree;
-
-    private:
-        RbNode *rbLeft;
-        RbNode *rbRight;
-        RbNode *rbParent;
-
-    protected:
-        RbTree *rbTree;
-
-    private:
-        RbColor rbColor;
-    };
-
-public:
-    struct NodeType : RbNode {
-        NodeType() = default;
-        NodeType(NodeType &&) = delete;
-
-        ~NodeType() noexcept {
-            destructiveErase();
-        }
-
-    protected:
-        void destructiveErase() {
-            static_assert(
-                std::is_base_of_v<NodeType, Value>,
-                "Value type must be derived from RbTree<Value>::NodeType");
-            if (this->rbTree) {
-                this->rbTree->doErase(this);
-                this->rbTree = nullptr;
-            }
-        }
-    };
-
-private:
-    RbNode *root;
-
-    bool compare(RbNode *left, RbNode *right) const noexcept {
-        return static_cast<Compare const &>(*this)(
-            static_cast<Value &>(*left), static_cast<Value &>(*right));
-    }
-
-    void rotateLeft(RbNode *node) noexcept {
-        RbNode *rightChild = node->rbRight;
-        node->rbRight = rightChild->rbLeft;
-        if (rightChild->rbLeft != nullptr) {
-            rightChild->rbLeft->rbParent = node;
-        }
-        rightChild->rbParent = node->rbParent;
-        if (node->rbParent == nullptr) {
-            root = rightChild;
-        } else if (node == node->rbParent->rbLeft) {
-            node->rbParent->rbLeft = rightChild;
-        } else {
-            node->rbParent->rbRight = rightChild;
-        }
-        rightChild->rbLeft = node;
-        node->rbParent = rightChild;
-    }
-
-    void rotateRight(RbNode *node) noexcept {
-        RbNode *leftChild = node->rbLeft;
-        node->rbLeft = leftChild->rbRight;
-        if (leftChild->rbRight != nullptr) {
-            leftChild->rbRight->rbParent = node;
-        }
-        leftChild->rbParent = node->rbParent;
-        if (node->rbParent == nullptr) {
-            root = leftChild;
-        } else if (node == node->rbParent->rbRight) {
-            node->rbParent->rbRight = leftChild;
-        } else {
-            node->rbParent->rbLeft = leftChild;
-        }
-        leftChild->rbRight = node;
-        node->rbParent = leftChild;
-    }
-
-    void fixViolation(RbNode *node) noexcept {
-        RbNode *parent = nullptr;
-        RbNode *grandParent = nullptr;
-        while (node != root && node->rbColor != BLACK &&
-               node->rbParent->rbColor == RED) {
-            parent = node->rbParent;
-            grandParent = parent->rbParent;
-            if (parent == grandParent->rbLeft) {
-                RbNode *uncle = grandParent->rbRight;
-                if (uncle != nullptr && uncle->rbColor == RED) {
-                    grandParent->rbColor = RED;
-                    parent->rbColor = BLACK;
-                    uncle->rbColor = BLACK;
-                    node = grandParent;
-                } else {
-                    if (node == parent->rbRight) {
-                        rotateLeft(parent);
-                        node = parent;
-                        parent = node->rbParent;
-                    }
-                    rotateRight(grandParent);
-                    std::swap(parent->rbColor, grandParent->rbColor);
-                    node = parent;
-                }
-            } else {
-                RbNode *uncle = grandParent->rbLeft;
-                if (uncle != nullptr && uncle->rbColor == RED) {
-                    grandParent->rbColor = RED;
-                    parent->rbColor = BLACK;
-                    uncle->rbColor = BLACK;
-                    node = grandParent;
-                } else {
-                    if (node == parent->rbLeft) {
-                        rotateRight(parent);
-                        node = parent;
-                        parent = node->rbParent;
-                    }
-                    rotateLeft(grandParent);
-                    std::swap(parent->rbColor, grandParent->rbColor);
-                    node = parent;
-                }
-            }
-        }
-        root->rbColor = BLACK;
-    }
-
-    void doInsert(RbNode *node) noexcept {
-        node->rbLeft = nullptr;
-        node->rbRight = nullptr;
-        node->rbTree = this;
-        node->rbColor = RED;
-        RbNode *parent = nullptr;
-        RbNode *current = root;
-        while (current != nullptr) {
-            parent = current;
-            if (compare(node, current)) {
-                current = current->rbLeft;
-            } else {
-                current = current->rbRight;
-            }
-        }
-        node->rbParent = parent;
-        if (parent == nullptr) {
-            root = node;
-        } else if (compare(node, parent)) {
-            parent->rbLeft = node;
-        } else {
-            parent->rbRight = node;
-        }
-        fixViolation(node);
-    }
-
-    void doErase(RbNode *current) noexcept {
-        current->rbTree = nullptr;
-        RbNode *node = nullptr;
-        RbNode *child = nullptr;
-        RbColor color = RED;
-        if (current->rbLeft != nullptr && current->rbRight != nullptr) {
-            RbNode *replace = current;
-            replace = replace->rbRight;
-            while (replace->rbLeft != nullptr) {
-                replace = replace->rbLeft;
-            }
-            if (current != replace->rbParent) {
-                current->rbParent->rbLeft = replace->rbRight;
-                replace->rbRight = current->rbRight;
-                current->rbRight->rbParent = replace;
-            } else {
-                replace->rbParent = current;
-            }
-            if (current == root) {
-                root = replace;
-            } else if (current->rbParent->rbLeft == current) {
-                current->rbParent->rbLeft = replace;
-            } else {
-                current->rbParent->rbRight = replace;
-            }
-            replace->rbLeft = current->rbLeft;
-            current->rbLeft->rbParent = replace;
-            node = replace;
-            color = node->rbColor;
-            child = node->rbRight;
-        } else {
-            node = current;
-            color = node->rbColor;
-            child = (node->rbLeft != nullptr) ? node->rbLeft : node->rbRight;
-        }
-        if (child != nullptr) {
-            child->rbParent = node->rbParent;
-        }
-        if (node == root) {
-            root = child;
-        } else if (node->rbParent->rbLeft == node) {
-            node->rbParent->rbLeft = child;
-        } else {
-            node->rbParent->rbRight = child;
-        }
-        if (color == BLACK && root) {
-            fixViolation(child ? child : node->rbParent);
-        }
-    }
-
-    RbNode *getFront() const noexcept {
-        RbNode *current = root;
-        while (current->rbLeft != nullptr) {
-            current = current->rbLeft;
-        }
-        return current;
-    }
-
-    RbNode *getBack() const noexcept {
-        RbNode *current = root;
-        while (current->rbRight != nullptr) {
-            current = current->rbRight;
-        }
-        return current;
-    }
-
-    template <class Visitor>
-    void doTraverseInorder(RbNode *node, Visitor &&visitor) {
-        if (node == nullptr) {
-            return;
-        }
-        doTraverseInorder(node->rbLeft, visitor);
-        visitor(node);
-        doTraverseInorder(node->rbRight, visitor);
-    }
-
-    void doClear(RbNode *node) {
-        if (node == nullptr) {
-            return;
-        }
-        doClear(node->rbLeft);
-        node->rbTree = nullptr;
-        doClear(node->rbRight);
-    }
-
-    void doClear() {
-        doClear(root);
-        root = nullptr;
-    }
-
-public:
-    RbTree() noexcept(noexcept(Compare())) : Compare(), root(nullptr) {}
-
-    explicit RbTree(Compare comp) noexcept(noexcept(Compare(comp)))
-        : Compare(comp),
-          root(nullptr) {}
-
-    RbTree(RbTree &&) = delete;
-
-    ~RbTree() noexcept {}
-
-    void insert(Value &value) noexcept {
-        doInsert(&static_cast<RbNode &>(value));
-    }
-
-    void erase(Value &value) noexcept {
-        doErase(&static_cast<RbNode &>(value));
-    }
-
-    bool empty() const noexcept {
-        return root == nullptr;
-    }
-
-    Value &front() const noexcept {
-        return static_cast<Value &>(*getFront());
-    }
-
-    Value &back() const noexcept {
-        return static_cast<Value &>(*getBack());
-    }
-
-    template <class Visitor, class V>
-    std::pair<RbNode *, RbNode *> traverseEqualRange(Visitor &&visitor,
-                                                     V &&value) {}
-
-    template <class Visitor>
-    void traverseInorder(Visitor &&visitor) {
-        doTraverseInorder(root, [visitor = std::forward<Visitor>(visitor)](
-                                    RbNode *node) mutable {
-            visitor(static_cast<Value &>(*node));
-        });
-    }
-
-    void clear() {
-        doClear();
-    }
-};
-
-template <class Value, class Compare = std::less<>>
-struct ConcurrentRbTree : private RbTree<Value, Compare> {
-private:
-    using BaseTree = RbTree<Value, Compare>;
-
-    void onDestructiveErase(BaseTree::RbNode *current) noexcept {
-        std::lock_guard guard(mMutex);
-        BaseTree::onDestructiveErase(current);
-    }
-
-public:
-    struct NodeType : BaseTree::RbNode {
-        NodeType() = default;
-        NodeType(NodeType &&) = delete;
-
-        ~NodeType() noexcept {
-            destructiveErase();
-        }
-
-    protected:
-        bool destructiveErase() {
-            static_assert(
-                std::is_base_of_v<NodeType, Value>,
-                "Value type must be derived from RbTree<Value>::NodeType");
-            if (this->rbTree) {
-                auto lock =
-                    static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
-                if (this->rbTree) [[likely]] {
-                    lock->erase(static_cast<Value &>(*this));
-                    this->rbTree = nullptr;
-                    return true;
-                }
-            }
-            return false;
-        }
-    };
-
-    struct LockGuard {
-    private:
-        BaseTree *mThat;
-        std::unique_lock<std::mutex> mGuard;
-
-        explicit LockGuard(ConcurrentRbTree *that) noexcept
-            : mThat(that),
-              mGuard(that->mMutex) {}
-
-        friend ConcurrentRbTree;
-
-    public:
-        BaseTree &operator*() const noexcept {
-            return *mThat;
-        }
-
-        BaseTree *operator->() const noexcept {
-            return mThat;
-        }
-
-        void unlock() noexcept {
-            mGuard.unlock();
-            mThat = nullptr;
-        }
-    };
-
-    LockGuard lock() noexcept {
-        return LockGuard(this);
-    }
-
-private:
-    std::mutex mMutex;
-};
-} // namespace co_async
-
-
-
-
-
-
-
-namespace co_async {
-struct CancelToken;
-
-struct [[nodiscard]] CancelSource {
-private:
-    struct CancellerBase : RbTree<CancellerBase>::NodeType {
-        virtual Task<> doCancel() = 0;
-        CancellerBase &operator=(CancellerBase &&) = delete;
-
-        bool operator<(CancellerBase const &that) const noexcept {
-            return this < &that;
-        }
-
-        virtual ~CancellerBase() = default;
-    };
-
-    template <class Canceller>
-    struct CancellerImpl : CancellerBase {
-        typename Canceller::OpType *mOp;
-
-        explicit CancellerImpl(typename Canceller::OpType *op) : mOp(op) {}
-
-        virtual Task<> doCancel() {
-            return Canceller::doCancel(mOp);
-        }
-    };
-
-    struct Impl {
-        RbTree<CancellerBase> mCancellers;
-        bool mCanceled;
-
-        Task<> doCancel() {
-            mCanceled = true;
-            std::vector<Task<>> tasks;
-            mCancellers.traverseInorder([&](CancellerBase &canceller) {
-                tasks.push_back(canceller.doCancel());
-            });
-            mCancellers.clear();
-            co_await when_all(tasks);
-        }
-
-        bool doIsCanceled() const noexcept {
-            return mCanceled;
-        }
-
-        template <class Canceller, class Awaiter>
-        Task<typename AwaitableTraits<Awaiter>::RetType>
-        doGuard(Awaiter &&awaiter) {
-            typename Canceller::OpType *op = std::addressof(awaiter);
-            CancellerImpl<Canceller> cancellerImpl(op);
-            mCancellers.insert(static_cast<CancellerBase &>(cancellerImpl));
-            co_return co_await awaiter;
-        }
-    };
-
-    std::unique_ptr<Impl> mImpl = std::make_unique<Impl>();
-    friend CancelToken;
-
-public:
-    Task<> cancel() const {
-        return mImpl->doCancel();
-    }
-
-    bool is_canceled() const {
-        return mImpl->doIsCanceled();
-    }
-
-    template <class Canceller>
-    auto invoke(auto &&awaiter) const {
-        return mImpl->doGuard<Canceller>(
-            std::forward<decltype(awaiter)>(awaiter));
-    }
-
-    inline CancelToken token() const;
-    CancelSource() = default;
-    CancelSource(CancelSource &&) = default;
-    CancelSource &operator=(CancelSource &&) = default;
-};
-
-struct CancelToken {
-private:
-    CancelSource::Impl *mImpl;
-
-public:
-    CancelToken() noexcept : mImpl(nullptr) {}
-
-    CancelToken(CancelSource const &that) noexcept : mImpl(that.mImpl.get()) {}
-
-    Task<> cancel() const {
-        return mImpl->doCancel();
-    }
-
-    bool is_canceled() const noexcept {
-        return mImpl->doIsCanceled();
-    }
-
-    Expected<> check() {
-        if (mImpl->doIsCanceled()) [[unlikely]] {
-            return Unexpected{
-                std::make_error_code(std::errc::operation_canceled)};
-        }
-        return {};
-    }
-
-    template <class Canceller>
-    auto guard(auto &&awaiter) const {
-        return mImpl->doGuard<Canceller>(
-            std::forward<decltype(awaiter)>(awaiter));
-    }
-
-    auto guard(auto &&awaiter) const {
-        return guard<typename std::decay_t<decltype(awaiter)>::Canceller>(
-            std::forward<decltype(awaiter)>(awaiter));
-    }
-};
-
-inline CancelToken CancelSource::token() const {
-    return *this;
-}
-} // namespace co_async
-
-
-
-
-namespace co_async {
-template <class T, std::size_t Capacity = 0>
-struct ConcurrentQueue {
-    static constexpr std::size_t Shift = std::bit_width(Capacity);
-    using Stamp = std::conditional_t<
-        Shift <= 4, std::uint8_t,
-        std::conditional_t<
-            Shift <= 8, std::uint16_t,
-            std::conditional_t<Shift <= 16, std::uint32_t, std::uint64_t>>>;
-    static_assert(Shift * 2 <= sizeof(Stamp) * 8);
-    static_assert(Capacity < (1 << Shift));
-    static constexpr Stamp kSize = 1 << Shift;
-
-    [[nodiscard]] std::optional<T> pop() {
-        auto s = mStamp.load(std::memory_order_acquire);
-        if (!canRead(s)) {
-            /* mStamp.compare_exchange_weak(s, Stamp(0)); */
-            return std::nullopt;
-        }
-        while (!mStamp.compare_exchange_weak(s, advectRead(s),
-                                             std::memory_order_acq_rel)) {
-            if (!canRead(s)) {
-                return std::nullopt;
-            }
-        }
-        return mHead[offsetRead(s)];
-    }
-
-    [[nodiscard]] bool push(T value) {
-        auto s = mStamp.load(std::memory_order_acquire);
-        if (!canWrite(s)) [[unlikely]] {
-            return false;
-        }
-        while (!mStamp.compare_exchange_weak(s, advectWrite(s),
-                                             std::memory_order_acq_rel)) {
-            if (!canWrite(s)) [[unlikely]] {
-                return false;
-            }
-        }
-        mHead[offsetWrite(s)] = std::move(value);
-        return true;
-    }
-
-    ConcurrentQueue() = default;
-    ConcurrentQueue(ConcurrentQueue &&) = delete;
-
-private:
-    inline Stamp offsetRead(Stamp s) const {
-        return s >> Shift;
-    }
-
-    inline Stamp offsetWrite(Stamp s) const {
-        return s & (kSize - 1);
-    }
-
-    inline bool canRead(Stamp s) const {
-        return offsetRead(s) != offsetWrite(s);
-    }
-
-    inline bool canWrite(Stamp s) const {
-        return (offsetRead(s) & (Stamp)(kSize - 1)) !=
-               ((offsetWrite(s) + (Stamp)(kSize - Capacity)) &
-                (Stamp)(kSize - 1));
-    }
-
-    inline Stamp advectRead(Stamp s) const {
-        return (Stamp)((((Stamp)(s >> Shift) + (Stamp)1) & (Stamp)(kSize - 1))
-                       << Shift) |
-               (s & (Stamp)(kSize - 1));
-    }
-
-    inline Stamp advectWrite(Stamp s) const {
-        return (((s & (Stamp)(kSize - 1)) + (Stamp)1) & (Stamp)(kSize - 1)) |
-               (Stamp)(s & ((Stamp)(kSize - 1) << Shift));
-    }
-
-    std::unique_ptr<T[]> mHead = std::make_unique<T[]>(kSize);
-    std::atomic<Stamp> mStamp{0};
-};
-
-template <class T>
-struct ConcurrentQueue<T, 0> {
-    std::optional<T> pop() {
-        std::lock_guard lck(mMutex);
-        if (mQueue.empty()) {
-            return std::nullopt;
-        }
-        T p = std::move(mQueue.front());
-        mQueue.pop_front();
-        return p;
-    }
-
-    bool push(T p) {
-        std::lock_guard lck(mMutex);
-        mQueue.push_back(p);
-        return true;
-    }
-
-private:
-    std::deque<T> mQueue;
-    std::mutex mMutex;
-};
-
-template <class T>
-struct RingQueue {
-    std::unique_ptr<T[]> mHead;
-    T *mTail;
-    T *mRead;
-    T *mWrite;
-
-    explicit RingQueue(std::size_t size)
-        : mHead(std::make_unique<T[]>(size)),
-          mTail(mHead.get() + size),
-          mRead(mHead.get()),
-          mWrite(mHead.get()) {}
-
-    [[nodiscard]] std::size_t size() const noexcept {
-        return mTail - mHead.get();
-    }
-
-    [[nodiscard]] std::optional<T> pop() {
-        if (mRead == mWrite) {
-            return std::nullopt;
-        }
-        T p = std::move(*mRead);
-        mRead = mRead == mTail ? mHead.get() : mRead + 1;
-        return p;
-    }
-
-    [[nodiscard]] bool push(T p) {
-        T *nextWrite = mWrite == mTail ? mHead.get() : mWrite + 1;
-        if (nextWrite == mRead) {
-            return false;
-        }
-        *mWrite = std::move(p);
-        mWrite = nextWrite;
-        return true;
-    }
-};
-
-template <class T>
-struct InfinityQueue {
-    [[nodiscard]] std::optional<T> pop() {
-        if (mQueue.empty()) {
-            return std::nullopt;
-        }
-        T p = std::move(mQueue.front());
-        mQueue.pop_front();
-        return p;
-    }
-
-    bool push(T p) {
-        mQueue.push_back(p);
-        return true;
-    }
-
-private:
-    std::deque<T> mQueue;
-};
-} // namespace co_async
-
-
-
-
-namespace co_async {
-#if __cpp_lib_hardware_interference_size
-using std::hardware_constructive_interference_size;
-using std::hardware_destructive_interference_size;
-#else
-constexpr std::size_t hardware_constructive_interference_size = 64;
-constexpr std::size_t hardware_destructive_interference_size = 64;
-#endif
-} // namespace co_async
-
-
-
-
-
-
-
-
-
-#if CO_ASYNC_STEAL
-
-#endif
-
-
-
-
-namespace co_async {
-struct IOContext;
-
-struct GenericIOContext {
-    struct TimerNode : CustomPromise<Expected<>, TimerNode>,
-                       RbTree<TimerNode>::NodeType {
-        using RbTree<TimerNode>::NodeType::destructiveErase;
-        std::chrono::steady_clock::time_point mExpires;
-        bool mCancelled = false;
-
-        bool operator<(TimerNode const &that) const {
-            return mExpires < that.mExpires;
-        }
-
-        struct Awaiter {
-            std::chrono::steady_clock::time_point mExpires;
-            TimerNode *mPromise = nullptr;
-
-            bool await_ready() const noexcept {
-                return false;
-            }
-
-            inline void
-            await_suspend(std::coroutine_handle<TimerNode> coroutine);
-
-            Expected<> await_resume() const {
-                if (!mPromise->mCancelled) {
-                    return {};
-                } else {
-                    return Unexpected{
-                        std::make_error_code(std::errc::operation_canceled)};
-                }
-            }
-        };
-
-        struct Canceller {
-            using OpType = Task<Expected<>, GenericIOContext::TimerNode>;
-
-            static Task<> doCancel(OpType *op) {
-                auto &promise = op->get().promise();
-                promise.mCancelled = true;
-                promise.destructiveErase();
-                GenericIOContext::instance->enqueueJob(op->get());
-                co_return;
-            }
-
-            static Expected<> earlyCancelValue(OpType *op) {
-                return Unexpected{
-                    std::make_error_code(std::errc::operation_canceled)};
-            }
-        };
-    };
-
-    bool runComputeOnly() {
-        if (auto coroutine = mQueue.pop()) {
-            coroutine->resume();
-            return true;
-        }
-        return false;
-    }
-
-    bool runMTQueue() {
-        std::unique_lock lock(mMTMutex);
-        if (!mMTQueue.empty()) {
-            auto coroutine = mMTQueue.front();
-            mMTQueue.pop_front();
-            lock.unlock();
-            enqueueJob(coroutine);
-            return true;
-        }
-        lock.unlock();
-        return false;
-    }
-
-    std::optional<std::chrono::steady_clock::duration> runDuration() {
-        while (true) {
-            while (auto coroutine = mQueue.pop()) {
-                coroutine->resume();
-            }
-            if (!mTimers.empty()) {
-                auto &promise = mTimers.front();
-                std::chrono::steady_clock::time_point now =
-                    std::chrono::steady_clock::now();
-                if (promise.mExpires <= now) {
-                    promise.mCancelled = false;
-                    promise.destructiveErase();
-                    auto coroutine =
-                        std::coroutine_handle<TimerNode>::from_promise(promise);
-                    enqueueJob(coroutine);
-                    continue;
-                } else {
-                    return promise.mExpires - now;
-                }
-            }
-            return std::nullopt;
-        }
-    }
-
-    void enqueueJob(std::coroutine_handle<> coroutine) {
-        if (!mQueue.push(coroutine)) [[unlikely]] {
-#if CO_ASYNC_DEBUG
-            std::cerr << "WARNING: coroutine queue overrun\n";
-#endif
-            std::lock_guard lock(mMTMutex);
-            mMTQueue.push_back(coroutine);
-        }
-    }
-
-    void enqueueJobMT(std::coroutine_handle<> coroutine) {
-#if CO_ASYNC_STEAL
-        enqueueJob(coroutine);
-#else
-        std::lock_guard lock(mMTMutex);
-        mMTQueue.push_back(coroutine);
-#endif
-    }
-
-    void enqueueTimerNode(TimerNode &promise) {
-        mTimers.insert(promise);
-    }
-
-    void startMain(std::stop_token stop) {
-        while (!stop.stop_requested()) [[likely]] {
-            auto duration = runDuration();
-            if (runMTQueue()) {
-                continue;
-            }
-            if (duration) {
-                std::this_thread::sleep_for(*duration);
-            } else {
-                break;
-            }
-        }
-    }
-
-    GenericIOContext() : mQueue(1 << 8) {}
-
-    GenericIOContext(GenericIOContext &&) = delete;
-    static inline thread_local GenericIOContext *instance;
-
-private:
-#if CO_ASYNC_STEAL
-    ConcurrentQueue<std::coroutine_handle<>, (1 << 8) - 1> mQueue;
-#else
-    RingQueue<std::coroutine_handle<>> mQueue;
-#endif
-    RbTree<TimerNode> mTimers;
-    std::mutex mMTMutex;
-    std::list<std::coroutine_handle<>> mMTQueue;
-};
-
-inline void GenericIOContext::TimerNode::Awaiter::await_suspend(
-    std::coroutine_handle<GenericIOContext::TimerNode> coroutine) {
-    mPromise = &coroutine.promise();
-    mPromise->mExpires = mExpires;
-    GenericIOContext::instance->enqueueTimerNode(*mPromise);
-}
-
-template <class A>
-inline Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>>
-coSpawnStarter(A awaitable) {
-    (void)co_await std::move(awaitable);
-}
-
-template <Awaitable A>
-inline void co_spawn(A awaitable) {
-    auto wrapped = coSpawnStarter(std::move(awaitable));
-    auto coroutine = wrapped.get();
-    GenericIOContext::instance->enqueueJob(coroutine);
-    wrapped.release();
-}
-
-inline void co_spawn(std::coroutine_handle<> coroutine) {
-    GenericIOContext::instance->enqueueJob(coroutine);
-}
-
-inline Task<Expected<>, GenericIOContext::TimerNode>
-co_sleep(std::chrono::steady_clock::time_point expires) {
-    co_return co_await GenericIOContext::TimerNode::Awaiter(expires);
-}
-
-inline Task<Expected<>, GenericIOContext::TimerNode>
-co_sleep(std::chrono::steady_clock::time_point expires, CancelToken cancel) {
-    co_return co_await cancel.guard<GenericIOContext::TimerNode::Canceller>(
-        co_sleep(expires));
-}
-
-inline Task<Expected<>, GenericIOContext::TimerNode>
-co_sleep(std::chrono::steady_clock::duration timeout) {
-    return co_sleep(std::chrono::steady_clock::now() + timeout);
-}
-
-inline Task<Expected<>, GenericIOContext::TimerNode>
-co_sleep(std::chrono::steady_clock::duration timeout, CancelToken cancel) {
-    return co_sleep(std::chrono::steady_clock::now() + timeout, cancel);
-}
-
-inline Task<> co_forever() {
-    co_await std::suspend_always();
-#if defined(__GNUC__) && defined(__has_builtin)
-# if __has_builtin(__builtin_unreachable)
-    __builtin_unreachable();
-# endif
-#endif
-}
-
-inline Task<> co_forever(CancelToken cancel) {
-    struct ForeverAwaiter {
-        struct Canceller {
-            using OpType = ForeverAwaiter;
-
-            static Task<> doCancel(OpType *op) {
-                co_spawn(op->mPrevious);
-                co_return;
-            }
-
-            static void earlyCancelValue(OpType *op) noexcept {}
-        };
-
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) noexcept {
-            mPrevious = coroutine;
-        }
-
-        void await_resume() const noexcept {}
-
-        std::coroutine_handle<> mPrevious;
-    };
-
-    co_return co_await cancel.guard(ForeverAwaiter());
-}
-
-inline auto co_resume() {
-    struct ResumeAwaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) const {
-            co_spawn(coroutine);
-        }
-
-        void await_resume() const noexcept {}
-    };
-
-    return ResumeAwaiter();
-}
-} // namespace co_async
-
-
-
-
-
-
-
-
-namespace co_async {
-template <class F, class Timeout, class... Args>
-    requires Awaitable<std::invoke_result_t<F, Args..., CancelToken>>
-inline Task<std::optional<typename AwaitableTraits<
-    std::invoke_result_t<F, Args..., CancelToken>>::AvoidRetType>>
-co_timeout(F &&task, Timeout timeout, Args &&...args) {
-    CancelSource cs;
-    CancelSource ct;
-    std::optional<typename AwaitableTraits<
-        std::invoke_result_t<F, Args..., CancelToken>>::AvoidRetType>
-        result;
-    co_await when_all(
-        co_bind([&]() mutable -> Task<> {
-            auto res =
-                (co_await std::invoke(task, std::forward<Args>(args)..., ct),
-                 Void());
-            co_await cs.cancel();
-            if (!ct.is_canceled()) {
-                result = res;
-            }
-        }),
-        co_bind([&]() mutable -> Task<> {
-            (void)co_await co_sleep(timeout, cs);
-            co_await ct.cancel();
-        }));
-    co_return result;
-}
-} // namespace co_async
-
-
-
-
-
-
-
-
-
-namespace co_async {
-struct TimedConditionVariable {
-private:
-    struct PromiseNode : CustomPromise<void, PromiseNode>,
-                         RbTree<PromiseNode>::NodeType {
-        bool operator<(PromiseNode const &that) const {
-            if (!mExpires) {
-                return false;
-            }
-            if (!that.mExpires) {
-                return true;
-            }
-            return *mExpires < *that.mExpires;
-        }
-
-        void doCancel() {
-            this->destructiveErase();
-            co_spawn(std::coroutine_handle<PromiseNode>::from_promise(*this));
-        }
-
-        bool isCanceled() const noexcept {
-            return this->rbTree == nullptr;
-        }
-
-        std::optional<std::chrono::steady_clock::time_point> mExpires;
-    };
-
-    RbTree<PromiseNode> mWaitingList;
-
-    struct Awaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<PromiseNode> coroutine) const {
-            mThat->pushWaiting(coroutine.promise());
-        }
-
-        void await_resume() const noexcept {}
-
-        TimedConditionVariable *mThat;
-    };
-
-    PromiseNode *popWaiting() {
-        if (mWaitingList.empty()) {
-            return nullptr;
-        }
-        auto &promise = mWaitingList.front();
-        mWaitingList.erase(promise);
-        return &promise;
-    }
-
-    void pushWaiting(PromiseNode &promise) {
-        mWaitingList.insert(promise);
-    }
-
-    struct Canceller {
-        using OpType = Task<void, PromiseNode>;
-
-        static Task<> doCancel(OpType *op) {
-            op->get().promise().doCancel();
-            co_return;
-        }
-
-        static void earlyCancelValue(OpType *op) noexcept {}
-    };
-
-    Task<> waitCancellable(std::chrono::steady_clock::time_point expires,
-                           CancelToken cancel) {
-        auto waiter = wait();
-        waiter.get().promise().mExpires = expires;
-        co_await cancel.guard<Canceller>(waiter);
-    }
-
-public:
-    Task<void, PromiseNode> wait() {
-        co_await Awaiter(this);
-    }
-
-    Task<Expected<>> wait(CancelToken cancel) {
-        auto waiter = wait();
-        co_await cancel.guard<Canceller>(waiter);
-        if (waiter.get().promise().isCanceled()) {
-            co_return Unexpected{
-                std::make_error_code(std::errc::operation_canceled)};
-        }
-        co_return {};
-    }
-
-    Task<Expected<>> wait(std::chrono::steady_clock::time_point expires) {
-        auto res = co_await co_timeout(&TimedConditionVariable::waitCancellable,
-                                       expires, this, expires);
-        if (!res) {
-            co_return Unexpected{
-                std::make_error_code(std::errc::stream_timeout)};
-        }
-        co_return {};
-    }
-
-    Task<Expected<>> wait(std::chrono::steady_clock::duration timeout) {
-        return wait(std::chrono::steady_clock::now() + timeout);
-    }
-
-    Task<> wait_until(std::invocable<> auto &&pred) {
-        while (!std::invoke(pred)) {
-            co_await wait();
-        }
-    }
-
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
-                                std::chrono::steady_clock::time_point expires) {
-        while (!std::invoke(pred)) {
-            if (std::chrono::steady_clock::now() > expires ||
-                !co_await wait(expires)) {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::stream_timeout)};
-            }
-        }
-        co_return {};
-    }
-
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
-                                std::chrono::steady_clock::duration timeout) {
-        return wait_until(std::forward<decltype(pred)>(pred),
-                          std::chrono::steady_clock::now() + timeout);
-    }
-
-    Task<Expected<>> wait_until(std::invocable<> auto &&pred,
-                                CancelToken cancel) {
-        while (!std::invoke(pred)) {
-            if (cancel.is_canceled() || !co_await wait(cancel)) {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::operation_canceled)};
-            }
-        }
-    }
-
-    void notify() {
-        while (auto promise = popWaiting()) {
-            co_spawn(
-                std::coroutine_handle<PromiseNode>::from_promise(*promise));
-        }
-    }
-
-    void notify_one() {
-        if (auto promise = popWaiting()) {
-            co_spawn(
-                std::coroutine_handle<PromiseNode>::from_promise(*promise));
-        }
-    }
-
-    std::coroutine_handle<> notify_pop_coroutine() {
-        if (auto promise = popWaiting()) {
-            return std::coroutine_handle<PromiseNode>::from_promise(*promise);
-        }
-        return nullptr;
-    }
-};
-
-struct ConditionVariable {
-private:
-    std::deque<std::coroutine_handle<>> mWaitingList;
-
-    struct Awaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) const {
-            mThat->mWaitingList.push_back(coroutine);
-        }
-
-        void await_resume() const noexcept {}
-
-        ConditionVariable *mThat;
-    };
-
-public:
-    Awaiter operator co_await() noexcept {
-        return Awaiter(this);
-    }
-
-    Task<> wait() {
-        co_await Awaiter(this);
-    }
-
-    void notify() {
-        while (!mWaitingList.empty()) {
-            auto coroutine = mWaitingList.front();
-            mWaitingList.pop_front();
-            co_spawn(coroutine);
-        }
-    }
-
-    void notify_one() {
-        if (!mWaitingList.empty()) {
-            auto coroutine = mWaitingList.front();
-            mWaitingList.pop_front();
-            co_spawn(coroutine);
-        }
-    }
-
-    std::coroutine_handle<> notify_pop_coroutine() {
-        if (!mWaitingList.empty()) {
-            auto coroutine = mWaitingList.front();
-            mWaitingList.pop_front();
-            return coroutine;
-        }
-        return nullptr;
-    }
-};
-
-struct OneshotConditionVariable {
-private:
-    std::coroutine_handle<> mWaitingCoroutine{nullptr};
-    bool mReady{false};
-
-public:
-    struct Awaiter {
-        bool await_ready() const noexcept {
-            return mThat->mReady;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) const {
-#if CO_ASYNC_DEBUG
-            if (mThat->mWaitingCoroutine) [[unlikely]] {
-                throw std::logic_error(
-                    "please do not co_await on the same "
-                    "OneshotConditionVariable or Future for multiple times");
-            }
-#endif
-            mThat->mWaitingCoroutine = coroutine;
-        }
-
-        void await_resume() const noexcept {
-#if CO_ASYNC_DEBUG
-            if (!mThat->mReady) [[unlikely]] {
-                throw std::logic_error("OneshotConditionVariable or Future "
-                                       "waked up but not ready");
-            }
-#endif
-            mThat->mReady = false;
-        }
-
-        OneshotConditionVariable *mThat;
-    };
-
-    Awaiter operator co_await() noexcept {
-        return Awaiter(this);
-    }
-
-    Task<> wait() {
-        co_await Awaiter(this);
-    }
-
-    void notify() {
-        mReady = true;
-        if (auto coroutine = mWaitingCoroutine) {
-            mWaitingCoroutine = nullptr;
-            co_spawn(coroutine);
-        }
-    }
-
-    std::coroutine_handle<> notify_pop_coroutine() {
-        mReady = true;
-        if (auto coroutine = mWaitingCoroutine) {
-            mWaitingCoroutine = nullptr;
-            return coroutine;
-        }
-        return nullptr;
-    }
-};
-} // namespace co_async
-
-
-
-
-
-
-
-namespace co_async {
-struct Semaphore {
-private:
-    std::size_t mCounter;
-    std::size_t const mMaxCount;
-    ConditionVariable mChanged;
-
-public:
-    explicit Semaphore(std::size_t maxCount = 1, std::size_t initialCount = 0)
-        : mCounter(initialCount),
-          mMaxCount(maxCount) {}
-
-    std::size_t count() const noexcept {
-        return mCounter;
-    }
-
-    std::size_t max_count() const noexcept {
-        return mMaxCount;
-    }
-
-    bool try_acquire() {
-        auto count = mCounter;
-        if (count > 0) {
-            mCounter = count - 1;
-            if (count == mMaxCount) {
-                mChanged.notify_one();
-            }
-            return true;
-        }
-        return false;
-    }
-
-    bool try_release() {
-        auto count = mCounter;
-        if (count < mMaxCount) {
-            mCounter = count + 1;
-            if (count == 0) {
-                mChanged.notify_one();
-            }
-            return true;
-        }
-        return false;
-    }
-
-    Task<> acquire() {
-        while (!try_acquire()) {
-            co_await mChanged.wait();
-        }
-    }
-
-    Task<> release() {
-        while (!try_release()) {
-            co_await mChanged.wait();
-        }
-    }
-};
-
-struct TimedSemaphore {
-private:
-    std::size_t mCounter;
-    std::size_t const mMaxCount;
-    TimedConditionVariable mChanged;
-
-public:
-    explicit TimedSemaphore(std::size_t maxCount = 1,
-                            std::size_t initialCount = 0)
-        : mCounter(initialCount),
-          mMaxCount(maxCount) {}
-
-    std::size_t count() const noexcept {
-        return mCounter;
-    }
-
-    std::size_t max_count() const noexcept {
-        return mMaxCount;
-    }
-
-    bool try_acquire() {
-        auto count = mCounter;
-        if (count > 0) {
-            mCounter = count - 1;
-            if (count == mMaxCount) {
-                mChanged.notify_one();
-            }
-            return true;
-        }
-        return false;
-    }
-
-    bool try_release() {
-        auto count = mCounter;
-        if (count < mMaxCount) {
-            mCounter = count + 1;
-            if (count == 0) {
-                mChanged.notify_one();
-            }
-            return true;
-        }
-        return false;
-    }
-
-    Task<> acquire() {
-        while (!try_acquire()) {
-            co_await mChanged.wait();
-        }
-    }
-
-    Task<> release() {
-        while (!try_release()) {
-            co_await mChanged.wait();
-        }
-    }
-
-    Task<bool> try_acquire(std::chrono::steady_clock::duration timeout) {
-        return try_acquire(std::chrono::steady_clock::now() + timeout);
-    }
-
-    Task<bool> try_acquire(std::chrono::steady_clock::time_point expires) {
-        while (!try_acquire()) {
-            if (std::chrono::steady_clock::now() > expires ||
-                !co_await mChanged.wait(expires)) {
-                co_return false;
-            }
-        }
-        co_return true;
-    }
-
-    Task<bool> try_release(std::chrono::steady_clock::duration timeout) {
-        return try_release(std::chrono::steady_clock::now() + timeout);
-    }
-
-    Task<bool> try_release(std::chrono::steady_clock::time_point expires) {
-        while (!try_release()) {
-            if (std::chrono::steady_clock::now() > expires ||
-                !co_await mChanged.wait(expires)) {
-                co_return false;
-            }
-        }
-        co_return true;
-    }
-};
-} // namespace co_async
-
-
-
-
-
-
-
-namespace co_async {
-struct BasicMutex {
-    ConditionVariable mReady;
-    std::atomic_bool mLocked;
-
-    bool try_lock() {
-        bool expect = false;
-        return mLocked.compare_exchange_strong(
-            expect, true, std::memory_order_acquire, std::memory_order_relaxed);
-    }
-
-    Task<> lock() {
-        while (!try_lock()) {
-            co_await mReady.wait();
-        }
-    }
-
-    void unlock() {
-        mLocked.store(false, std::memory_order_release);
-        mReady.notify_one();
-    }
-};
-
-struct BasicTimedMutex {
-    TimedConditionVariable mReady;
-    std::atomic_bool mLocked;
-
-    bool try_lock() {
-        bool expect = false;
-        return mLocked.compare_exchange_strong(
-            expect, true, std::memory_order_acquire, std::memory_order_relaxed);
-    }
-
-    Task<> lock() {
-        while (!try_lock()) {
-            co_await mReady.wait();
-        }
-    }
-
-    Task<bool> try_lock(std::chrono::steady_clock::duration timeout) {
-        return try_lock(std::chrono::steady_clock::now() + timeout);
-    }
-
-    Task<bool> try_lock(std::chrono::steady_clock::time_point expires) {
-        while (!try_lock()) {
-            if (std::chrono::steady_clock::now() > expires ||
-                !co_await mReady.wait(expires)) {
-                co_return false;
-            }
-        }
-        co_return true;
-    }
-
-    void unlock() {
-        mLocked.store(false, std::memory_order_release);
-        mReady.notify_one();
-    }
-};
-
-template <class M, class T>
-struct alignas(hardware_destructive_interference_size) MutexImpl {
-private:
-    M mMutex;
-    T mValue;
-
-public:
-    struct Locked {
-    private:
-        explicit Locked(MutexImpl *impl) noexcept : mImpl(impl) {}
-
-        friend MutexImpl;
-
-    public:
-        Locked() noexcept : mImpl(nullptr) {}
-
-        T &operator*() const {
-            return mImpl->unsafe_access();
-        }
-
-        T *operator->() const {
-            return std::addressof(mImpl->unsafe_access());
-        }
-
-        explicit operator bool() const noexcept {
-            return mImpl != nullptr;
-        }
-
-        void unlock() {
-            if (mImpl) {
-                mImpl->mMutex.unlock();
-                mImpl = nullptr;
-            }
-        }
-
-        Locked(Locked &&that) noexcept
-            : mImpl(std::exchange(that.mImpl, nullptr)) {}
-
-        Locked &operator=(Locked &&that) noexcept {
-            std::swap(mImpl, that.mImpl);
-            return *this;
-        }
-
-        ~Locked() {
-            unlock();
-        }
-
-    private:
-        MutexImpl *mImpl;
-    };
-
-    Locked try_lock() {
-        if (auto e = mMutex.try_lock()) {
-            return Locked(this);
-        } else {
-            return Locked();
-        }
-    }
-
-    Task<Locked> lock() {
-        co_await mMutex.lock();
-        co_return Locked(this);
-    }
-
-    Task<Locked> try_lock_for(std::chrono::steady_clock::duration timeout) {
-        if (!co_await mMutex.try_lock_for(timeout)) {
-            co_return Locked();
-        }
-        co_return Locked(this);
-    }
-
-    Task<Locked> try_lock_until(std::chrono::steady_clock::time_point expires) {
-        if (!co_await mMutex.try_lock_for(expires)) {
-            co_return Locked();
-        }
-        co_return Locked(this);
-    }
-
-    T &unsafe_access() {
-        return mValue;
-    }
-
-    T const &unsafe_access() const {
-        return mValue;
-    }
-
-    M &unsafe_basic_mutex() {
-        return mMutex;
-    }
-
-    M const &unsafe_basic_mutex() const {
-        return mMutex;
-    }
-};
-
-template <class M>
-struct MutexImpl<M, void> : MutexImpl<M, Void> {};
-
-template <class T = void>
-struct Mutex : MutexImpl<BasicMutex, T> {};
-
-template <class T = void>
-struct TimedMutex : MutexImpl<BasicTimedMutex, T> {};
-
-struct CallOnce {
-private:
-    std::atomic_bool mCalled{false};
-    Mutex<> mMutex;
-
-public:
-    struct Locked {
-    private:
-        explicit Locked(Mutex<>::Locked locked, CallOnce *impl) noexcept
-            : mLocked(std::move(locked)),
-              mImpl(impl) {}
-
-        friend CallOnce;
-
-    public:
-        Locked() noexcept : mLocked(), mImpl(nullptr) {}
-
-        explicit operator bool() const noexcept {
-            return (bool)mLocked;
-        }
-
-        void set_ready() const {
-            mImpl->mCalled.store(true, std::memory_order_relaxed);
-        }
-
-    private:
-        Mutex<>::Locked mLocked;
-        CallOnce *mImpl;
-    };
-
-    Task<Locked> call_once() {
-        if (mCalled.load(std::memory_order_relaxed)) {
-            co_return Locked();
-        }
-        Locked locked(co_await mMutex.lock(), this);
-        if (mCalled.load(std::memory_order_relaxed)) {
-            co_return Locked();
-        }
-        co_return std::move(locked);
-    }
-};
-} // namespace co_async
-
-
-
-
-
-namespace co_async {
-inline Expected<int> expectError(int res) {
-    if (res < 0) [[unlikely]] {
-        return Unexpected{std::make_error_code(std::errc(-res))};
-    }
-    return res;
-}
-
-inline int throwingError(int res) {
-    if (res < 0) [[unlikely]] {
-        throw std::system_error(-res, std::system_category());
-    }
-    return res;
-}
-
-inline int throwingErrorErrno(int res) {
-    if (res == -1) [[unlikely]] {
-        throw std::system_error(errno, std::system_category());
-    }
-    return res;
-}
-} // namespace co_async
-
-
-
-
-
-
-#include <fcntl.h>
-#include <liburing.h>
-#include <sched.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
-namespace co_async {
-template <class Rep, class Period>
-struct __kernel_timespec
-durationToKernelTimespec(std::chrono::duration<Rep, Period> dur) {
-    struct __kernel_timespec ts;
-    auto secs = std::chrono::duration_cast<std::chrono::seconds>(dur);
-    auto nsecs =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(dur - secs);
-    ts.tv_sec = static_cast<__kernel_time64_t>(secs.count());
-    ts.tv_nsec = static_cast<__kernel_time64_t>(nsecs.count());
-    return ts;
-}
-
-template <class Clk, class Dur>
-struct __kernel_timespec
-timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
-    return durationToKernelTimespec(tp.time_since_epoch());
-}
-
-struct PlatformIOContextOptions {
-    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(5);
-    std::chrono::steady_clock::duration maxSleepInc =
-        std::chrono::milliseconds(8);
-    std::chrono::steady_clock::duration maxSleepLimit =
-        std::chrono::milliseconds(100);
-    std::optional<std::size_t> threadAffinity = std::nullopt;
-};
-
-struct PlatformIOContext {
-    static void schedSetThreadAffinity(size_t cpu);
-    bool
-    waitEventsFor(std::size_t numBatch,
-                  std::optional<std::chrono::steady_clock::duration> timeout);
-
-    std::size_t pendingEventCount() const {
-        return io_uring_cq_ready(&mRing);
-    }
-
-    struct io_uring *getRing() {
-        return &mRing;
-    }
-
-    PlatformIOContext &operator=(PlatformIOContext &&) = delete;
-    explicit PlatformIOContext(std::size_t entries = 512);
-    ~PlatformIOContext();
-    static thread_local PlatformIOContext *instance;
-
-private:
-    struct io_uring mRing;
-};
-
-struct [[nodiscard]] UringOp {
-    UringOp() {
-        struct io_uring *ring = PlatformIOContext::instance->getRing();
-        mSqe = io_uring_get_sqe(ring);
-        if (!mSqe) [[unlikely]] {
-            throw std::bad_alloc();
-        }
-        io_uring_sqe_set_data(mSqe, this);
-    }
-
-    UringOp(UringOp &&) = delete;
-
-    struct Awaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) {
-            mOp->mPrevious = coroutine;
-            mOp->mRes = -ENOSYS;
-        }
-
-        int await_resume() const noexcept {
-            return mOp->mRes;
-        }
-
-        UringOp *mOp;
-    };
-
-    Awaiter operator co_await() {
-        return Awaiter{this};
-    }
-
-    static UringOp &link_ops(UringOp &&lhs, UringOp &&rhs) {
-        lhs.mSqe->flags |= IOSQE_IO_LINK;
-        rhs.mPrevious = std::noop_coroutine();
-        return lhs;
-    }
-
-    struct io_uring_sqe *getSqe() const noexcept {
-        return mSqe;
-    }
-
-private:
-    std::coroutine_handle<> mPrevious;
-
-    union {
-        int mRes;
-        struct io_uring_sqe *mSqe;
-    };
-
-    friend PlatformIOContext;
-
-public:
-    UringOp &&prep_nop() && {
-        io_uring_prep_nop(mSqe);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_openat(int dirfd, char const *path, int flags,
-                          mode_t mode) && {
-        io_uring_prep_openat(mSqe, dirfd, path, flags, mode);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_openat_direct(int dirfd, char const *path, int flags,
-                                 mode_t mode, unsigned int file_index) && {
-        io_uring_prep_openat_direct(mSqe, dirfd, path, flags, mode, file_index);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_socket(int domain, int type, int protocol,
-                          unsigned int flags) && {
-        io_uring_prep_socket(mSqe, domain, type, protocol, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_accept(int fd, struct sockaddr *addr, socklen_t *addrlen,
-                          int flags) && {
-        io_uring_prep_accept(mSqe, fd, addr, addrlen, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_connect(int fd, const struct sockaddr *addr,
-                           socklen_t addrlen) && {
-        io_uring_prep_connect(mSqe, fd, addr, addrlen);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_mkdirat(int dirfd, char const *path, mode_t mode) && {
-        io_uring_prep_mkdirat(mSqe, dirfd, path, mode);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_linkat(int olddirfd, char const *oldpath, int newdirfd,
-                          char const *newpath, int flags) && {
-        io_uring_prep_linkat(mSqe, olddirfd, oldpath, newdirfd, newpath, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_renameat(int olddirfd, char const *oldpath, int newdirfd,
-                            char const *newpath, unsigned int flags) && {
-        io_uring_prep_renameat(mSqe, olddirfd, oldpath, newdirfd, newpath,
-                               flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_unlinkat(int dirfd, char const *path, int flags = 0) && {
-        io_uring_prep_unlinkat(mSqe, dirfd, path, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_symlinkat(char const *target, int newdirfd,
-                             char const *linkpath) && {
-        io_uring_prep_symlinkat(mSqe, target, newdirfd, linkpath);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_statx(int dirfd, char const *path, int flags,
-                         unsigned int mask, struct statx *statxbuf) && {
-        io_uring_prep_statx(mSqe, dirfd, path, flags, mask, statxbuf);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_read(int fd, std::span<char> buf, std::uint64_t offset) && {
-        io_uring_prep_read(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                           offset);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_write(int fd, std::span<char const> buf,
-                         std::uint64_t offset) && {
-        io_uring_prep_write(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                            offset);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_read_fixed(int fd, std::span<char> buf, std::uint64_t offset,
-                              int buf_index) && {
-        io_uring_prep_read_fixed(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                                 offset, buf_index);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_write_fixed(int fd, std::span<char const> buf,
-                               std::uint64_t offset, int buf_index) && {
-        io_uring_prep_write_fixed(mSqe, fd, buf.data(),
-                                  (unsigned int)buf.size(), offset, buf_index);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_readv(int fd, std::span<struct iovec const> buf,
-                         std::uint64_t offset, int flags) && {
-        io_uring_prep_readv2(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                             offset, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_writev(int fd, std::span<struct iovec const> buf,
-                          std::uint64_t offset, int flags) && {
-        io_uring_prep_writev2(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                              offset, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_recv(int fd, std::span<char> buf, int flags) && {
-        io_uring_prep_recv(mSqe, fd, buf.data(), buf.size(), flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_send(int fd, std::span<char const> buf, int flags) && {
-        io_uring_prep_send(mSqe, fd, buf.data(), buf.size(), flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_recvmsg(int fd, struct msghdr *msg, unsigned int flags) && {
-        io_uring_prep_recvmsg(mSqe, fd, msg, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_sendmsg(int fd, struct msghdr *msg, unsigned int flags) && {
-        io_uring_prep_sendmsg(mSqe, fd, msg, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_close(int fd) && {
-        io_uring_prep_close(mSqe, fd);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_shutdown(int fd, int how) && {
-        io_uring_prep_shutdown(mSqe, fd, how);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_fsync(int fd, unsigned int flags) && {
-        io_uring_prep_fsync(mSqe, fd, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_ftruncate(int fd, loff_t len) && {
-        io_uring_prep_ftruncate(mSqe, fd, len);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_cancel(UringOp *op, int flags) && {
-        io_uring_prep_cancel(mSqe, op, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_cancel_fd(int fd, unsigned int flags) && {
-        io_uring_prep_cancel_fd(mSqe, fd, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_waitid(idtype_t idtype, id_t id, siginfo_t *infop,
-                          int options, unsigned int flags) && {
-        io_uring_prep_waitid(mSqe, idtype, id, infop, options, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_timeout(struct __kernel_timespec *ts, unsigned int count,
-                           unsigned int flags) && {
-        io_uring_prep_timeout(mSqe, ts, count, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_link_timeout(struct __kernel_timespec *ts,
-                                unsigned int flags) && {
-        io_uring_prep_link_timeout(mSqe, ts, flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_timeout_update(UringOp *op, struct __kernel_timespec *ts,
-                                  unsigned int flags) && {
-        io_uring_prep_timeout_update(
-            mSqe, ts, reinterpret_cast<std::uintptr_t>(op), flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_timeout_remove(UringOp *op, unsigned int flags) && {
-        io_uring_prep_timeout_remove(mSqe, reinterpret_cast<std::uintptr_t>(op),
-                                     flags);
-        return std::move(*this);
-    }
-
-    UringOp &&prep_splice(int fd_in, std::int64_t off_in, int fd_out,
-                          std::int64_t off_out, std::size_t nbytes,
-                          unsigned int flags) && {
-        io_uring_prep_splice(mSqe, fd_in, off_in, fd_out, off_out,
-                             (unsigned int)nbytes, flags);
-        return std::move(*this);
-    }
-};
-
-struct UringOpCanceller {
-    using OpType = UringOp;
-
-    static Task<> doCancel(OpType *op) {
-        co_await UringOp().prep_cancel(op, IORING_ASYNC_CANCEL_ALL);
-    }
-
-    static int earlyCancelValue(OpType *op) noexcept {
-        return -ECANCELED;
-    }
-};
-} // namespace co_async
-
-
-
-
-
-
-
-namespace co_async {
-struct alignas(hardware_destructive_interference_size) IOContext {
-private:
-    GenericIOContext mGenericIO;
-    PlatformIOContext mPlatformIO;
-    std::jthread mThread;
-
-    struct IOContextGuard {
-        explicit IOContextGuard(IOContext *that) {
-            if (IOContext::instance || GenericIOContext::instance ||
-                PlatformIOContext::instance) [[unlikely]] {
-                throw std::logic_error(
-                    "each thread may contain only one IOContextGuard");
-            }
-            IOContext::instance = that;
-            GenericIOContext::instance = &that->mGenericIO;
-            PlatformIOContext::instance = &that->mPlatformIO;
-        }
-
-        ~IOContextGuard() {
-            IOContext::instance = nullptr;
-            GenericIOContext::instance = nullptr;
-            PlatformIOContext::instance = nullptr;
-        }
-
-        IOContextGuard(IOContextGuard &&) = delete;
-    };
-
-public:
-    explicit IOContext(std::in_place_t) {}
-
-    explicit IOContext(PlatformIOContextOptions options = {}) {
-        start(options);
-    }
-
-    IOContext(IOContext &&) = delete;
-
-    void startHere(std::stop_token stop, PlatformIOContextOptions options,
-                   std::span<IOContext> peerContexts) {
-        IOContextGuard guard(this);
-        if (options.threadAffinity) {
-            PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
-        }
-        auto maxSleep = options.maxSleep;
-        while (!stop.stop_requested()) [[likely]] {
-            auto duration = GenericIOContext::instance->runDuration();
-            if (GenericIOContext::instance->runMTQueue()) {
-                continue;
-            }
-            if (!duration || *duration > maxSleep) {
-                duration = maxSleep;
-            }
-            bool hasEvent =
-                PlatformIOContext::instance->waitEventsFor(1, duration);
-            if (hasEvent) {
-                auto t = maxSleep + options.maxSleepInc;
-                if (t > options.maxSleepLimit) {
-                    t = options.maxSleepLimit;
-                }
-                maxSleep = t;
-            } else {
-                maxSleep = options.maxSleep;
-            }
-#if CO_ASYNC_STEAL
-            if (!hasEvent && !peerContexts.empty()) {
-                for (IOContext *p = peerContexts.data();
-                     p != peerContexts.data() + peerContexts.size(); ++p) {
-                    if (p->mGenericIO.runComputeOnly()) {
-                        break;
-                    }
-                }
-            }
-#endif
-        }
-    }
-
-    void start(PlatformIOContextOptions options = {},
-               std::span<IOContext> peerContexts = {}) {
-        mThread = std::jthread([this, options = std::move(options),
-                                peerContexts](std::stop_token stop) {
-            this->startHere(stop, options, peerContexts);
-        });
-    }
-
-    void spawn(std::coroutine_handle<> coroutine) {
-        mGenericIO.enqueueJob(coroutine);
-    }
-
-    void spawn_mt(std::coroutine_handle<> coroutine) /* MT-safe */ {
-        mGenericIO.enqueueJobMT(coroutine);
-    }
-
-    template <class T, class P>
-    void spawn(Task<T, P> task) {
-        auto wrapped = coSpawnStarter(std::move(task));
-        auto coroutine = wrapped.get();
-        mGenericIO.enqueueJob(coroutine);
-        wrapped.release();
-    }
-
-    template <class T, class P>
-    T join(Task<T, P> task) {
-        return contextJoin(*this, std::move(task));
-    }
-
-    static inline thread_local IOContext *instance;
-};
-
-template <class T, class P>
-inline Task<> contextJoinHelper(Task<T, P> task, std::condition_variable &cv,
-                                Uninitialized<T> &result
-#if CO_ASYNC_EXCEPT
-                                ,
-                                std::exception_ptr exception
-#endif
-) {
-#if CO_ASYNC_EXCEPT
-    try {
-#endif
-        result.putValue((co_await task, Void()));
-#if CO_ASYNC_EXCEPT
-    } catch (...) {
-# if CO_ASYNC_DEBUG
-        std::cerr << "WARNING: exception occurred in IOContext::join\n";
-# endif
-        exception = std::current_exception();
-    }
-#endif
-    cv.notify_one();
-}
-
-template <class T, class P>
-T contextJoin(IOContext &context, Task<T, P> task) {
-    std::condition_variable cv;
-    std::mutex mtx;
-    Uninitialized<T> result;
-#if CO_ASYNC_EXCEPT
-    std::exception_ptr exception;
-#endif
-    context.spawn(contextJoinHelper(std::move(task), cv, result
-#if CO_ASYNC_EXCEPT
-                                    ,
-                                    exception
-#endif
-                                    ));
-    std::unique_lock lck(mtx);
-    cv.wait(lck);
-    lck.unlock();
-#if CO_ASYNC_EXCEPT
-    if (exception) [[unlikely]] {
-        std::rethrow_exception(exception);
-    }
-#endif
-    if constexpr (!std::is_void_v<T>) {
-        return result.moveValue();
-    }
-}
-
-inline auto co_resume_on(IOContext &context) {
-    struct ResumeOnAwaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) const {
-            mContext.spawn(coroutine);
-        }
-
-        void await_resume() const noexcept {}
-
-        IOContext &mContext;
-    };
-
-    return ResumeOnAwaiter(context);
-}
-} // namespace co_async
-
-
-
-
-
-
-
-
-namespace co_async {
-
-struct ThreadPool {
-private:
-    struct Thread;
-
-    std::mutex mWorkingMutex;
-    std::list<Thread *> mWorkingThreads;
-    std::mutex mFreeMutex;
-    std::list<Thread *> mFreeThreads;
-    std::mutex mThreadsMutex;
-    std::list<Thread> mThreads;
-
-    Thread *submitJob(std::function<void()> func);
-
-public:
-    Task<Expected<>> rawRun(std::function<void()> func) /* MT-safe */;
-    Task<Expected<>> rawRun(std::function<void(std::stop_token)> func,
-                            CancelToken cancel) /* MT-safe */;
-
-    auto run(std::invocable auto func) /* MT-safe */
-        -> Task<Expected<std::invoke_result_t<decltype(func)>>> {
-        std::optional<Avoid<std::invoke_result_t<decltype(func)>>> res;
-        auto e = co_await rawRun([&res, func = std::move(func)]() mutable {
-            res = (func(), Void());
-        });
-        if (e.has_error()) [[unlikely]] {
-            co_return Unexpected{e.error()};
-        }
-        if (!res) [[unlikely]] {
-            co_return Unexpected{
-                std::make_error_code(std::errc::operation_canceled)};
-        }
-        co_return std::move(*res);
-    }
-
-    auto run(std::invocable<std::stop_token> auto func,
-             CancelToken cancel) /* MT-safe */
-        -> Task<
-            Expected<std::invoke_result_t<decltype(func), std::stop_token>>> {
-        std::optional<
-            Avoid<std::invoke_result_t<decltype(func), std::stop_token>>>
-            res;
-        auto e = co_await rawRun(
-            [&res, func = std::move(func)](std::stop_token stop) mutable {
-                res = (func(stop), Void());
-            });
-        if (e.has_error()) {
-            co_return Unexpected{e.error()};
-        }
-        if (!res) {
-            co_return Unexpected{
-                std::make_error_code(std::errc::operation_canceled)};
-        }
-        co_return std::move(*res);
-    }
-
-    std::size_t threads_count() /* MT-safe */;
-    std::size_t working_threads_count() /* MT-safe */;
-
-    ThreadPool();
-    ~ThreadPool();
-    ThreadPool &operator=(ThreadPool &&) = delete;
-};
-
-} // namespace co_async
-
-
-
-
-
-
-
-
-
-namespace co_async {
-template <class T = void>
-struct [[nodiscard]] FutureToken;
-
-template <class T = void>
-struct [[nodiscard]] FutureSource {
-public:
-    struct Awaiter;
-
-private:
-    struct Impl : OneshotConditionVariable {
-        Uninitialized<T> mValue;
-#if CO_ASYNC_EXCEPT
-        std::exception_ptr mException{nullptr};
-#endif
-        inline FutureSource::Awaiter makeAwaiter();
-    };
-
-    std::unique_ptr<Impl> mImpl = std::make_unique<Impl>();
-
-public:
-    struct Awaiter : OneshotConditionVariable::Awaiter {
-        T await_resume() const noexcept {
-            OneshotConditionVariable::Awaiter::await_resume();
-            auto impl = static_cast<Impl *>(mThat);
-            if constexpr (!std::is_void_v<T>) {
-                return impl->mValue.moveValue();
-            }
-        }
-    };
-
-    FutureSource() = default;
-    FutureSource(FutureSource &&) = default;
-    FutureSource &operator=(FutureSource &&) = default;
-
-    auto operator co_await() const noexcept {
-        return mImpl->makeAwaiter();
-    }
-
-    inline FutureToken<T> token() const noexcept;
-    template <class>
-    friend struct FutureToken;
-};
-
-template <class T>
-auto FutureSource<T>::Impl::makeAwaiter() -> FutureSource::Awaiter {
-    return FutureSource::Awaiter(
-        static_cast<OneshotConditionVariable &>(*this).operator co_await());
-}
-
-template <class T>
-struct FutureToken {
-    FutureToken(FutureSource<T> const &that) noexcept
-        : mImpl(that.mImpl.get()) {}
-
-    template <class... Args>
-    void set_value(Args &&...args) {
-        mImpl->mValue.putValue(std::forward<Args>(args)...);
-        mImpl->notify();
-    }
-#if CO_ASYNC_EXCEPT
-    void set_exception(std::exception_ptr e) {
-        mImpl->mException = e;
-        mImpl->mCondition.notify();
-    }
-#endif
-    auto operator co_await() const noexcept {
-        return mImpl->makeAwaiter();
-    }
-
-private:
-    typename FutureSource<T>::Impl *mImpl;
-};
-template <class T>
-FutureToken(FutureSource<T> &) -> FutureToken<T>;
-
-template <class T>
-inline FutureToken<T> FutureSource<T>::token() const noexcept {
-    return FutureToken<T>(*this);
-}
-
-template <class T>
-inline Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>>
-coFutureHelper(FutureToken<T> future, Task<T> task) {
-#if CO_ASYNC_EXCEPT
-    try {
-#endif
-        future.set_value((co_await task, Void()));
-#if CO_ASYNC_EXCEPT
-    } catch (...) {
-        future.set_exception(std::current_exception());
-    }
-#endif
-}
-
-template <class T>
-inline FutureSource<T> co_future(Task<T> task) {
-    FutureSource<T> future;
-    auto wrapped = coFutureHelper(future.token(), std::move(task));
-    auto coroutine = wrapped.get();
-    GenericIOContext::instance->enqueueJob(coroutine);
-    wrapped.release();
-    return future;
-}
-} // namespace co_async
-
-
-
-
-
-
-
-
-namespace co_async {
-template <class T = void>
-struct TaskGroup {
-    std::vector<FutureSource<T>> mTasks;
-
-    TaskGroup &add(FutureSource<T> future) {
-        mTasks.push_back(std::move(future));
-        return *this;
-    }
-
-    TaskGroup &add(Task<T> task) {
-        add(co_future(std::move(task)));
-        return *this;
-    }
-
-    template <class F, class... Args>
-        requires(std::same_as<std::invoke_result_t<F, Args...>, Task<T>>)
-    TaskGroup &add(F &&f, Args &&...args) {
-        add(co_bind(std::forward<F>(f), std::forward<Args>(args)...));
-        return *this;
-    }
-
-    Task<std::conditional_t<!std::is_void_v<T>, std::vector<T>, void>> wait() {
-        auto ret = (co_await when_all(mTasks), Void());
-        mTasks.clear();
-        co_return Void() | std::move(ret);
-    }
-
-    auto operator co_await() {
-        return TaskOwnedAwaiter(wait());
-    }
-
-    TaskGroup() = default;
-    TaskGroup(TaskGroup &&) = default;
-    TaskGroup &operator=(TaskGroup &&) = default;
-};
-} // namespace co_async
-
-
-
-
-
-
-
-
-
-namespace co_async {
-template <class T>
-struct Queue {
-private:
-    RingQueue<T> mQueue;
-    ConditionVariable mChanged;
-
-public:
-    explicit Queue(std::size_t size) : mQueue(size) {}
-
-    Task<> push(T value) {
-        while (!mQueue.push(std::move(value))) {
-            co_await mChanged;
-        }
-        mChanged.notify_one();
-    }
-
-    Task<T> pop(T value) {
-        while (true) {
-            if (auto value = mQueue.pop()) {
-                mChanged.notify_one();
-                co_return std::move(*value);
-            }
-            co_await mChanged;
-        }
-    }
-};
-
-template <class T>
-struct TimedQueue {
-private:
-    RingQueue<T> mQueue;
-    TimedConditionVariable mChanged;
-
-public:
-    explicit TimedQueue(std::size_t size) : mQueue(size) {}
-
-    Task<> push(T value) {
-        while (!mQueue.push(std::move(value))) {
-            co_await mChanged.wait();
-        }
-        mChanged.notify_one();
-        co_return;
-    }
-
-    Task<Expected<>> push(T value,
-                          std::chrono::steady_clock::duration timeout) {
-        return push(std::move(value),
-                    std::chrono::steady_clock::now() + timeout);
-    }
-
-    Task<Expected<>> push(T value,
-                          std::chrono::steady_clock::time_point expires) {
-        while (!mQueue.push(std::move(value))) {
-            if (auto e = co_await mChanged.wait(expires); e.has_error()) {
-                co_return Unexpected{e.error()};
-            }
-        }
-        mChanged.notify_one();
-        co_return;
-    }
-
-    Task<T> pop() {
-        while (true) {
-            if (auto value = mQueue.pop()) {
-                mChanged.notify_one();
-                co_return std::move(*value);
-            }
-            co_await mChanged.wait();
-        }
-    }
-
-    Task<Expected<T>> pop(std::chrono::steady_clock::duration timeout) {
-        return pop(std::chrono::steady_clock::now() + timeout);
-    }
-
-    Task<Expected<T>> pop(std::chrono::steady_clock::time_point expires) {
-        while (true) {
-            if (auto value = mQueue.pop()) {
-                mChanged.notify_one();
-                co_return std::move(*value);
-            }
-            if (auto e = co_await mChanged.wait(expires); e.has_error()) {
-                co_return Unexpected{e.error()};
-            }
-        }
-    }
-};
-} // namespace co_async
-
-
-
-
-
-
-
-
-namespace co_async {
-struct IOContextMT {
-private:
-    std::unique_ptr<IOContext[]> mWorkers;
-    std::size_t mNumWorkers = 0;
-
-public:
-    explicit IOContextMT(std::in_place_t) {
-        if (IOContextMT::instance) [[unlikely]] {
-            throw std::logic_error(
-                "each process may contain only one IOContextMT");
-        }
-        IOContextMT::instance = this;
-    }
-
-    ~IOContextMT() {
-        IOContextMT::instance = nullptr;
-    }
-
-    explicit IOContextMT(PlatformIOContextOptions options = {},
-                         std::size_t numWorkers = 0)
-        : IOContextMT(std::in_place) {
-        start(options, numWorkers);
-    }
-
-    static std::size_t get_worker_id(IOContext const &context) noexcept {
-        return static_cast<std::size_t>(&context - instance->mWorkers.get());
-    }
-
-    static std::size_t this_worker_id() noexcept {
-        return get_worker_id(*IOContext::instance);
-    }
-
-    static IOContext &nth_worker(std::size_t index) noexcept {
-        return instance->mWorkers[index];
-    }
-
-    static std::size_t num_workers() noexcept {
-        return instance->mNumWorkers;
-    }
-
-    static void start(PlatformIOContextOptions options = {},
-                      std::size_t numWorkers = 0) {
-        bool setAffinity;
-        if (numWorkers == 0) {
-            setAffinity = true;
-            numWorkers = std::thread::hardware_concurrency();
-            if (!numWorkers) [[unlikely]] {
-                throw std::logic_error(
-                    "failed to detect number of hardware threads");
-            }
-        } else {
-            setAffinity = false;
-        }
-        instance->mWorkers = std::make_unique<IOContext[]>(numWorkers);
-        instance->mNumWorkers = numWorkers;
-        std::span<IOContext> peerSpan(instance->mWorkers.get(),
-                                      instance->mNumWorkers);
-        for (std::size_t i = 0; i < instance->mNumWorkers; ++i) {
-            if (setAffinity) {
-                options.threadAffinity = i;
-            }
-            instance->mWorkers[i].start(options, peerSpan);
-        }
-    }
-
-    static void spawn(std::coroutine_handle<> coroutine) {
-        instance->mWorkers[0].spawn(coroutine);
-    }
-
-    static void spawn_mt(std::coroutine_handle<> coroutine) {
-        instance->mWorkers[0].spawn_mt(coroutine);
-    }
-
-    template <class T, class P>
-    static T join(Task<T, P> task) {
-        return instance->mWorkers[0].join(std::move(task));
-    }
-
-    static inline IOContextMT *instance;
-};
-} // namespace co_async
-
-
-
-
-namespace co_async {
-template <class K, class V>
-struct SimpleMap {
-    SimpleMap() = default;
-
-    SimpleMap(std::initializer_list<std::pair<K, V>> init)
-        : mData(init.begin(), init.end()) {}
-
-    template <class Key>
-        requires(requires(K k, Key key) {
-            k < key;
-            key < k;
-        })
-    V *at(Key const &key) noexcept {
-        auto it = mData.find(key);
-        if (it == mData.end()) {
-            return nullptr;
-        }
-        return std::addressof(it->second);
-    }
-
-    template <class Key>
-        requires(requires(K k, Key key) {
-            k < key;
-            key < k;
-        })
-    V const *at(Key const &key) const noexcept {
-        auto it = mData.find(key);
-        if (it == mData.end()) {
-            return nullptr;
-        }
-        return std::addressof(it->second);
-    }
-
-    template <class Key, class F = std::identity>
-        requires(requires(F f, V const &v, K const &k, Key const &key) {
-            std::invoke(f, v);
-            k < key;
-            key < k;
-        })
-    decltype(std::optional(std::declval<std::invoke_result_t<F, V const &>>()))
-    get(Key const &key, F &&func = {}) const noexcept {
-        auto it = mData.find(key);
-        if (it == mData.end()) {
-            return std::nullopt;
-        }
-        return std::invoke(func, it->second);
-    }
-
-    template <std::convertible_to<K> Key>
-    V &insert_or_assign(Key &&key, V value) {
-        return mData
-            .insert_or_assign(K(std::forward<Key>(key)), std::move(value))
-            .first->second;
-    }
-
-    template <std::convertible_to<K> Key>
-    V &insert(Key &&key, V value) {
-        return mData.emplace(K(std::forward<Key>(key)), std::move(value))
-            .first->second;
-    }
-
-    template <std::convertible_to<K> Key, class... Args>
-        requires std::constructible_from<V, Args...>
-    V &emplace(Key &&key, Args &&...args) {
-        return mData
-            .emplace(K(std::forward<Key>(key)), std::forward<Args>(args)...)
-            .first->second;
-    }
-
-    template <class Key>
-        requires(requires(K k, Key key) {
-            k < key;
-            key < k;
-        })
-    bool contains(Key &&key) const noexcept {
-        return mData.find(std::forward<Key>(key)) != mData.end();
-    }
-
-    template <class Key>
-        requires(requires(K k, Key key) {
-            k < key;
-            key < k;
-        })
-    bool erase(Key &&key) {
-        auto it = mData.find(std::forward<Key>(key));
-        if (it == mData.end()) {
-            return false;
-        }
-        mData.erase(it);
-        return true;
-    }
-
-    auto begin() const noexcept {
-        return mData.begin();
-    }
-
-    auto end() const noexcept {
-        return mData.end();
-    }
-
-    auto begin() noexcept {
-        return mData.begin();
-    }
-
-    auto end() noexcept {
-        return mData.end();
-    }
-
-    bool empty() const noexcept {
-        return mData.empty();
-    }
-
-    std::size_t size() const noexcept {
-        return mData.size();
-    }
-
-private:
-    std::map<K, V, std::less<>> mData;
-};
-} // namespace co_async
-
-
 
 
 
@@ -7329,8 +8362,8 @@ struct JsonEncoder {
                 if ((c >= 0 && c < 0x20) || c == 0x7F) {
                     put("\\u00", 4);
                     auto u = static_cast<unsigned char>(c);
-                    put("0123456789abcdef"[u & 0x0F]);
                     put("0123456789abcdef"[u >> 4]);
+                    put("0123456789abcdef"[u & 0x0F]);
                 } else {
                     put(c);
                 }
@@ -8120,7 +9153,7 @@ inline Expected<T> json_decode(JsonValue &root) {
     T value{};
     std::error_code ec;
     if (!json_decode(root, value, ec)) [[unlikely]] {
-        return Unexpected{ec};
+        return ec;
     }
     return std::move(value);
 }
@@ -8130,7 +9163,7 @@ inline Expected<T> json_decode(std::string_view json) {
     T value{};
     std::error_code ec;
     if (!json_decode(json, value, ec)) [[unlikely]] {
-        return Unexpected{ec};
+        return ec;
     }
     return std::move(value);
 }
@@ -8222,14 +9255,74 @@ T &pimpl(PImplMethod<T> const *that) {
 
 
 
+
+namespace co_async {
+
+template <class F>
+struct Finally {
+private:
+    F func;
+    bool enable;
+
+public:
+    Finally(std::nullptr_t = nullptr) : enable(false) {}
+
+    Finally(std::convertible_to<F> auto &&func)
+        : func(std::forward<decltype(func)>(func)),
+          enable(true) {}
+
+    Finally(Finally &&that) : func(std::move(that.func)), enable(that.enable) {
+        that.enable = false;
+    }
+
+    Finally &operator=(Finally &&that) {
+        if (this != &that) {
+            if (enable) {
+                func();
+            }
+            func = std::move(that.func);
+            enable = that.enable;
+            that.enable = false;
+        }
+        return *this;
+    }
+
+    void reset() {
+        if (enable) {
+            func();
+        }
+        enable = false;
+    }
+
+    void release() {
+        enable = false;
+    }
+
+    ~Finally() {
+        if (enable) {
+            func();
+        }
+    }
+};
+
+template <class F>
+Finally(F &&) -> Finally<std::decay_t<F>>;
+
+} // namespace co_async
+
+
+
+
+
 namespace co_async {
 template <class T>
 struct from_string_t;
 
-template <>
-struct from_string_t<std::string> {
-    std::string operator()(std::string_view s) const {
-        return std::string(s);
+template <class Traits, class Alloc>
+struct from_string_t<std::basic_string<char, Traits, Alloc>> {
+    std::basic_string<char, Traits, Alloc>
+    operator()(std::string_view s) const {
+        return std::basic_string<char, Traits, Alloc>(s);
     }
 };
 
@@ -8281,35 +9374,37 @@ struct to_string_t;
 template <>
 struct to_string_t<void> {
     template <class U>
-    void operator()(std::string &result, U &&value) const {
+    void operator()(String &result, U &&value) const {
         to_string_t<std::decay_t<U>>()(result, std::forward<U>(value));
     }
 
     template <class U>
-    std::string operator()(U &&value) const {
-        std::string result;
+    String operator()(U &&value) const {
+        String result;
         operator()(result, std::forward<U>(value));
         return result;
     }
 };
 
 template <>
-struct to_string_t<std::string> {
-    void operator()(std::string &result, std::string const &value) const {
+struct to_string_t<String> {
+    template <class Traits, class Alloc>
+    void operator()(String &result,
+                    std::basic_string<char, Traits, Alloc> const &value) const {
         result.assign(value);
     }
 };
 
 template <>
 struct to_string_t<std::string_view> {
-    void operator()(std::string &result, std::string_view value) const {
+    void operator()(String &result, std::string_view value) const {
         result.assign(value);
     }
 };
 
 template <std::integral T>
 struct to_string_t<T> {
-    void operator()(std::string &result, T value) const {
+    void operator()(String &result, T value) const {
         result.resize(std::numeric_limits<T>::digits10 + 2, '\0');
         auto [p, ec] =
             std::to_chars(result.data(), result.data() + result.size(), value);
@@ -8322,7 +9417,7 @@ struct to_string_t<T> {
 
 template <std::floating_point T>
 struct to_string_t<T> {
-    void operator()(std::string &result, T value) const {
+    void operator()(String &result, T value) const {
         result.resize(std::numeric_limits<T>::max_digits10 + 2, '\0');
         auto [p, ec] =
             std::to_chars(result.data(), result.data() + result.size(), value);
@@ -8335,8 +9430,8 @@ struct to_string_t<T> {
 
 inline constexpr to_string_t<> to_string;
 
-inline std::string lower_string(std::string_view s) {
-    std::string ret;
+inline String lower_string(std::string_view s) {
+    String ret;
     ret.resize(s.size());
     std::transform(s.begin(), s.end(), ret.begin(), [](char c) {
         if (c >= 'A' && c <= 'Z') {
@@ -8347,8 +9442,8 @@ inline std::string lower_string(std::string_view s) {
     return ret;
 }
 
-inline std::string upper_string(std::string_view s) {
-    std::string ret;
+inline String upper_string(std::string_view s) {
+    String ret;
     ret.resize(s.size());
     std::transform(s.begin(), s.end(), ret.begin(), [](char c) {
         if (c >= 'a' && c <= 'z') {
@@ -8359,14 +9454,14 @@ inline std::string upper_string(std::string_view s) {
     return ret;
 }
 
-inline std::string trim_string(std::string_view s,
-                               std::string_view trims = {" \t\r\n", 4}) {
+inline String trim_string(std::string_view s,
+                          std::string_view trims = {" \t\r\n", 4}) {
     auto pos = s.find_first_not_of(trims);
     if (pos == std::string_view::npos) {
         return {};
     }
     auto end = s.find_last_not_of(trims);
-    return std::string(s.substr(pos, end - pos + 1));
+    return String(s.substr(pos, end - pos + 1));
 }
 
 template <class Delim>
@@ -8454,8 +9549,8 @@ struct SplitString {
         return sentinel();
     }
 
-    std::vector<std::string> collect() const {
-        std::vector<std::string> result;
+    std::vector<String> collect() const {
+        std::vector<String> result;
         for (auto &&part: *this) {
             result.emplace_back(part);
         }
@@ -8464,15 +9559,15 @@ struct SplitString {
 
     template <std::size_t N>
         requires(N > 0)
-    std::array<std::string, N> collect() const {
-        std::array<std::string, N> result;
+    std::array<String, N> collect() const {
+        std::array<String, N> result;
         std::size_t i = 0;
         for (auto it = begin(); it != end(); ++it, ++i) {
             if (i + 1 >= N) {
-                result[i] = std::string(it.rest());
+                result[i] = String(it.rest());
                 break;
             }
-            result[i] = std::string(*it);
+            result[i] = String(*it);
         }
         return result;
     }
@@ -8672,29 +9767,33 @@ inline Task<Expected<>> fs_close(FileHandle file) {
 }
 
 inline Task<Expected<>> fs_mkdir(DirFilePath path, mode_t access = 0755) {
-    co_return expectError(
-        co_await UringOp().prep_mkdirat(path.dir_file(), path.c_str(), access));
+    co_await expectError(co_await UringOp().prep_mkdirat(path.dir_file(), path.c_str(), access));
+    co_return {};
 }
 
 inline Task<Expected<>> fs_link(DirFilePath oldpath, DirFilePath newpath) {
-    co_return expectError(
+    co_await expectError(
         co_await UringOp().prep_linkat(oldpath.dir_file(), oldpath.c_str(),
                                        newpath.dir_file(), newpath.c_str(), 0));
+    co_return {};
 }
 
 inline Task<Expected<>> fs_symlink(DirFilePath target, DirFilePath linkpath) {
-    co_return expectError(co_await UringOp().prep_symlinkat(
+    co_await expectError(co_await UringOp().prep_symlinkat(
         target.c_str(), linkpath.dir_file(), linkpath.c_str()));
+    co_return {};
 }
 
 inline Task<Expected<>> fs_unlink(DirFilePath path) {
-    co_return expectError(
+    co_await expectError(
         co_await UringOp().prep_unlinkat(path.dir_file(), path.c_str(), 0));
+    co_return {};
 }
 
 inline Task<Expected<>> fs_rmdir(DirFilePath path) {
-    co_return expectError(co_await UringOp().prep_unlinkat(
+    co_await expectError(co_await UringOp().prep_unlinkat(
         path.dir_file(), path.c_str(), AT_REMOVEDIR));
+    co_return {};
 }
 
 inline Task<Expected<FileStat>>
@@ -8726,9 +9825,24 @@ fs_write(FileHandle &file, std::span<char const> buffer,
         co_await UringOp().prep_write(file.fileNo(), buffer, offset));
 }
 
+inline Task<Expected<std::size_t>>
+fs_read(FileHandle &file, std::span<char> buffer, CancelToken cancel,
+        std::uint64_t offset = (std::uint64_t)-1) {
+    co_return (std::size_t) co_await expectError(
+        co_await UringOp().prep_read(file.fileNo(), buffer, offset).cancelGuard(cancel));
+}
+
+inline Task<Expected<std::size_t>>
+fs_write(FileHandle &file, std::span<char const> buffer, CancelToken cancel,
+         std::uint64_t offset = (std::uint64_t)-1) {
+    co_return (std::size_t) co_await expectError(
+        co_await UringOp().prep_write(file.fileNo(), buffer, offset).cancelGuard(cancel));
+}
+
 inline Task<Expected<>> fs_truncate(FileHandle &file, std::uint64_t size = 0) {
-    co_return expectError(
+    co_await expectError(
         co_await UringOp().prep_ftruncate(file.fileNo(), (loff_t)size));
+    co_return {};
 }
 
 inline Task<Expected<std::size_t>>
@@ -8752,10 +9866,97 @@ inline Task<int> fs_nop() {
 }
 
 inline Task<Expected<>> fs_cancel_fd(FileHandle &file) {
-    co_return expectError(co_await UringOp().prep_cancel_fd(
+    co_await expectError(co_await UringOp().prep_cancel_fd(
         file.fileNo(), IORING_ASYNC_CANCEL_FD | IORING_ASYNC_CANCEL_ALL));
+    co_return {};
 }
 } // namespace co_async
+
+
+
+
+
+
+#if CO_ASYNC_ALLOC
+struct BytesBuffer {
+private:
+    struct Deleter {
+        std::size_t mSize;
+        std::pmr::memory_resource *mResource;
+
+        void operator()(char *p) noexcept {
+            mResource->deallocate(p, mSize);
+        }
+    };
+
+    std::unique_ptr<char[], Deleter> mData;
+
+public:
+    BytesBuffer() noexcept = default;
+
+    explicit BytesBuffer(std::size_t size,
+                         std::pmr::polymorphic_allocator<> alloc = {})
+        : mData(reinterpret_cast<char *>(alloc.resource()->allocate(size)),
+                Deleter{size, alloc.resource()}) {}
+
+    void allocate(std::size_t size,
+                  std::pmr::polymorphic_allocator<> alloc = {}) {
+        std::pmr::memory_resource *resource = alloc.resource();
+        mData.reset(reinterpret_cast<char *>(resource->allocate(size)));
+        mData.get_deleter() = {size, resource};
+    }
+
+    char *data() const noexcept {
+        return mData.get();
+    }
+
+    std::size_t size() const noexcept {
+        return mData.get_deleter().mSize;
+    }
+
+    explicit operator bool() const noexcept {
+        return (bool)mData;
+    }
+
+    char &operator[](std::size_t index) const noexcept {
+        return mData[index];
+    }
+};
+#else
+struct BytesBuffer {
+private:
+    std::unique_ptr<char[]> mData;
+    std::size_t mSize = 0;
+
+public:
+    BytesBuffer() noexcept = default;
+
+    explicit BytesBuffer(std::size_t size) : mData(std::make_unique<char[]>(size)), mSize(size) {}
+
+    void allocate(std::size_t size) {
+        mData = std::make_unique<char[]>(size);
+        mSize = size;
+    }
+
+    char *data() const noexcept {
+        return mData.get();
+    }
+
+    std::size_t size() const noexcept {
+        return mSize;
+    }
+
+    explicit operator bool() const noexcept {
+        return (bool)mData;
+    }
+
+    char &operator[](std::size_t index) const noexcept {
+        return mData[index];
+    }
+};
+#endif
+
+
 
 
 
@@ -8769,7 +9970,7 @@ struct Stream {
     virtual void raw_timeout(std::chrono::steady_clock::duration timeout) {}
 
     virtual Task<Expected<>> raw_seek(std::uint64_t pos) {
-        co_return Unexpected{std::make_error_code(std::errc::invalid_seek)};
+        co_return std::errc::invalid_seek;
     }
 
     virtual Task<Expected<>> raw_flush() {
@@ -8781,12 +9982,12 @@ struct Stream {
     }
 
     virtual Task<Expected<std::size_t>> raw_read(std::span<char> buffer) {
-        co_return Unexpected{std::make_error_code(std::errc::not_supported)};
+        co_return std::errc::not_supported;
     }
 
     virtual Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) {
-        co_return Unexpected{std::make_error_code(std::errc::not_supported)};
+        co_return std::errc::not_supported;
     }
 
     Stream &operator=(Stream &&) = delete;
@@ -8804,7 +10005,7 @@ struct BorrowedStream {
 
     Task<Expected<char>> getchar() {
         if (bufempty()) {
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
         }
         char c = mInBuffer[mInIndex];
@@ -8812,18 +10013,18 @@ struct BorrowedStream {
         co_return c;
     }
 
-    Task<Expected<>> getline(std::string &s, char eol) {
+    Task<Expected<>> getline(String &s, char eol) {
         std::size_t start = mInIndex;
         while (true) {
             for (std::size_t i = start; i < mInEnd; ++i) {
                 if (mInBuffer[i] == eol) {
-                    s.append(mInBuffer.get() + start, i - start);
+                    s.append(mInBuffer.data() + start, i - start);
                     mInIndex = i + 1;
                     co_return {};
                 }
             }
-            s.append(mInBuffer.get() + start, mInEnd - start);
-            mInIndex = 0;
+            s.append(mInBuffer.data() + start, mInEnd - start);
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
@@ -8838,18 +10039,18 @@ struct BorrowedStream {
                     co_return {};
                 }
             }
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
     }
 
-    Task<Expected<>> getline(std::string &s, std::string_view eol) {
+    Task<Expected<>> getline(String &s, std::string_view eol) {
     again:
         co_await co_await getline(s, eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
             if (bufempty()) {
-                mInIndex = 0;
+                mInEnd = mInIndex = 0;
                 co_await co_await fillbuf();
             }
             char c = mInBuffer[mInIndex];
@@ -8868,7 +10069,7 @@ struct BorrowedStream {
         co_await co_await dropline(eol.front());
         for (std::size_t i = 1; i < eol.size(); ++i) {
             if (bufempty()) {
-                mInIndex = 0;
+                mInEnd = mInIndex = 0;
                 co_await co_await fillbuf();
             }
             char c = mInBuffer[mInIndex];
@@ -8881,14 +10082,14 @@ struct BorrowedStream {
         co_return {};
     }
 
-    Task<Expected<std::string>> getline(char eol) {
-        std::string s;
+    Task<Expected<String>> getline(char eol) {
+        String s;
         co_await co_await getline(s, eol);
         co_return s;
     }
 
-    Task<Expected<std::string>> getline(std::string_view eol) {
-        std::string s;
+    Task<Expected<String>> getline(std::string_view eol) {
+        String s;
         co_await co_await getline(s, eol);
         co_return s;
     }
@@ -8900,13 +10101,13 @@ struct BorrowedStream {
         while (true) {
             auto end = start + n;
             if (end <= mInEnd) {
-                p = std::copy(mInBuffer.get() + start, mInBuffer.get() + end,
+                p = std::copy(mInBuffer.data() + start, mInBuffer.data() + end,
                               p);
                 mInIndex = end;
                 co_return {};
             }
-            p = std::copy(mInBuffer.get() + start, mInBuffer.get() + mInEnd, p);
-            mInIndex = 0;
+            p = std::copy(mInBuffer.data() + start, mInBuffer.data() + mInEnd, p);
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
@@ -8922,32 +10123,32 @@ struct BorrowedStream {
             }
             auto m = mInEnd - mInIndex;
             n -= m;
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
     }
 
-    Task<Expected<>> getn(std::string &s, std::size_t n) {
+    Task<Expected<>> getn(String &s, std::size_t n) {
         auto start = mInIndex;
         while (true) {
             auto end = start + n;
             if (end <= mInEnd) {
-                s.append(mInBuffer.get() + mInIndex, n);
+                s.append(mInBuffer.data() + mInIndex, n);
                 mInIndex = end;
                 co_return {};
             }
             auto m = mInEnd - mInIndex;
             n -= m;
-            s.append(mInBuffer.get() + mInIndex, m);
-            mInIndex = 0;
+            s.append(mInBuffer.data() + mInIndex, m);
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
         }
     }
 
-    Task<Expected<std::string>> getn(std::size_t n) {
-        std::string s;
+    Task<Expected<String>> getn(std::size_t n) {
+        String s;
         s.reserve(n);
         co_await co_await getn(s, n);
         co_return s;
@@ -8955,21 +10156,21 @@ struct BorrowedStream {
 
     Task<> dropall() {
         do {
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
         } while (co_await fillbuf());
     }
 
-    Task<> getall(std::string &s) {
+    Task<> getall(String &s) {
         std::size_t start = mInIndex;
         do {
-            s.append(mInBuffer.get() + start, mInEnd - start);
+            s.append(mInBuffer.data() + start, mInEnd - start);
             start = 0;
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
         } while (co_await fillbuf());
     }
 
-    Task<std::string> getall() {
-        std::string s;
+    Task<String> getall() {
+        String s;
         co_await getall(s);
         co_return s;
     }
@@ -8989,20 +10190,20 @@ struct BorrowedStream {
     }
 
     std::span<char const> peekbuf() const noexcept {
-        return {mInBuffer.get() + mInIndex, mInEnd - mInIndex};
+        return {mInBuffer.data() + mInIndex, mInEnd - mInIndex};
     }
 
     void seenbuf(std::size_t n) noexcept {
         mInIndex += n;
     }
 
-    Task<Expected<std::string>> getchunk() noexcept {
+    Task<Expected<String>> getchunk() noexcept {
         if (bufempty()) {
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
         }
         auto buf = peekbuf();
-        std::string ret(buf.data(), buf.size());
+        String ret(buf.data(), buf.size());
         seenbuf(buf.size());
         co_return std::move(ret);
     }
@@ -9017,30 +10218,38 @@ struct BorrowedStream {
 
     Task<Expected<char>> peekchar() {
         if (bufempty()) {
-            mInIndex = 0;
+            mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
         }
         co_return mInBuffer[mInIndex];
     }
 
-    Task<Expected<>> peekn(std::string &s, std::size_t n) {
+    Task<Expected<>> peekn(String &s, std::size_t n) {
+        if (mInBuffer.size() - mInIndex < n) {
+            if (mInBuffer.size() < n) [[unlikely]] {
+                co_return std::errc::value_too_large;
+            }
+            std::memmove(mInBuffer.data(), mInBuffer.data() + mInIndex,
+                         mInEnd - mInIndex);
+            mInEnd -= mInIndex;
+            mInIndex = 0;
+        }
         while (mInEnd - mInIndex < n) {
             co_await co_await fillbuf();
         }
-        s.append(mInBuffer.get() + mInIndex, n);
+        s.append(mInBuffer.data() + mInIndex, n);
         co_return {};
     }
 
-    Task<Expected<std::string>> peekn(std::size_t n) {
-        std::string s;
+    Task<Expected<String>> peekn(std::size_t n) {
+        String s;
         co_await co_await peekn(s, n);
         co_return s;
     }
 
-    void allocinbuf(std::size_t size = kStreamBufferSize) {
+    void allocinbuf(std::size_t size) {
         if (!mInBuffer) [[likely]] {
-            mInBuffer = std::make_unique<char[]>(size);
-            mInBufSize = size;
+            mInBuffer.allocate(size);
             mInIndex = 0;
             mInEnd = 0;
         }
@@ -9048,12 +10257,12 @@ struct BorrowedStream {
 
     Task<Expected<>> fillbuf() {
         if (!mInBuffer) {
-            allocinbuf();
+            allocinbuf(kStreamBufferSize);
         }
         auto n = co_await co_await mRaw->raw_read(
-            std::span(mInBuffer.get() + mInIndex, mInBufSize - mInIndex));
+            std::span(mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
         if (n == 0) [[unlikely]] {
-            co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+            co_return std::errc::broken_pipe;
         }
         mInEnd = mInIndex + n;
         co_return {};
@@ -9076,16 +10285,16 @@ struct BorrowedStream {
         auto p = s.data();
         auto const pe = s.data() + s.size();
     again:
-        if (std::size_t(pe - p) <= mOutBufSize - mOutIndex) {
-            auto b = mOutBuffer.get() + mOutIndex;
+        if (std::size_t(pe - p) <= mOutBuffer.size() - mOutIndex) {
+            auto b = mOutBuffer.data() + mOutIndex;
             mOutIndex += std::size_t(pe - p);
             while (p < pe) {
                 *b++ = *p++;
             }
         } else {
-            auto b = mOutBuffer.get() + mOutIndex;
-            auto const be = mOutBuffer.get() + mOutBufSize;
-            mOutIndex = mOutBufSize;
+            auto b = mOutBuffer.data() + mOutIndex;
+            auto const be = mOutBuffer.data() + mOutBuffer.size();
+            mOutIndex = mOutBuffer.size();
             while (b < be) {
                 *b++ = *p++;
             }
@@ -9098,23 +10307,23 @@ struct BorrowedStream {
 
     std::size_t trywrite(std::span<char const> s) {
         if (!mOutBuffer) {
-            allocoutbuf();
+            allocoutbuf(kStreamBufferSize);
         }
         auto p = s.data();
         auto const pe = s.data() + s.size();
-        auto nMax = mOutBufSize - mOutIndex;
+        auto nMax = mOutBuffer.size() - mOutIndex;
         auto n = std::size_t(pe - p);
         if (n <= nMax) {
-            auto b = mOutBuffer.get() + mOutIndex;
+            auto b = mOutBuffer.data() + mOutIndex;
             mOutIndex += std::size_t(pe - p);
             while (p < pe) {
                 *b++ = *p++;
             }
             return n;
         } else {
-            auto b = mOutBuffer.get() + mOutIndex;
-            auto const be = mOutBuffer.get() + mOutBufSize;
-            mOutIndex = mOutBufSize;
+            auto b = mOutBuffer.data() + mOutIndex;
+            auto const be = mOutBuffer.data() + mOutBuffer.size();
+            mOutIndex = mOutBuffer.size();
             while (b < be) {
                 *b++ = *p++;
             }
@@ -9143,32 +10352,30 @@ struct BorrowedStream {
         co_return co_await flush();
     }
 
-    void allocoutbuf(std::size_t size = kStreamBufferSize) {
+    void allocoutbuf(std::size_t size) {
         if (!mOutBuffer) [[likely]] {
-            mOutBuffer = std::make_unique<char[]>(size);
-            mOutBufSize = size;
+            mOutBuffer.allocate(size);
             mOutIndex = 0;
         }
     }
 
     Task<Expected<>> flush() {
         if (!mOutBuffer) {
-            allocoutbuf();
+            allocoutbuf(kStreamBufferSize);
             co_return {};
         }
         if (mOutIndex) [[likely]] {
-            auto buf = std::span(mOutBuffer.get(), mOutIndex);
+            auto buf = std::span(mOutBuffer.data(), mOutIndex);
             auto len = co_await mRaw->raw_write(buf);
             while (len.has_value() && *len > 0 && *len != buf.size()) {
                 buf = buf.subspan(*len);
                 len = co_await mRaw->raw_write(buf);
             }
             if (len.has_error()) [[unlikely]] {
-                co_return Unexpected{len.error()};
+                co_return len.error();
             }
             if (*len == 0) [[unlikely]] {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::broken_pipe)};
+                co_return std::errc::broken_pipe;
             }
             mOutIndex = 0;
             co_await co_await mRaw->raw_flush();
@@ -9177,7 +10384,7 @@ struct BorrowedStream {
     }
 
     bool buffull() const noexcept {
-        return mOutIndex == mOutBufSize;
+        return mOutIndex == mOutBuffer.size();
     }
 
     Stream &raw() const noexcept {
@@ -9201,7 +10408,7 @@ struct BorrowedStream {
     Task<Expected<std::size_t>> read(std::span<char> buffer) {
         if (!bufempty()) {
             auto n = std::min(mInEnd - mInIndex, buffer.size());
-            std::memcpy(buffer.data(), mInBuffer.get() + mInIndex, n);
+            std::memcpy(buffer.data(), mInBuffer.data() + mInIndex, n);
             mInIndex += n;
             co_return n;
         }
@@ -9218,7 +10425,7 @@ struct BorrowedStream {
 
     Task<Expected<std::size_t>> write(std::span<char const> buffer) {
         if (!buffull()) {
-            auto n = std::min(mInBufSize - mInIndex, buffer.size());
+            auto n = std::min(mInBuffer.size() - mInIndex, buffer.size());
             co_await co_await putspan(buffer.subspan(0, n));
             co_return n;
         }
@@ -9250,13 +10457,11 @@ struct BorrowedStream {
     }
 
 private:
-    std::unique_ptr<char[]> mInBuffer;
+    BytesBuffer mInBuffer;
     std::size_t mInIndex = 0;
     std::size_t mInEnd = 0;
-    std::size_t mInBufSize = 0;
-    std::unique_ptr<char[]> mOutBuffer;
+    BytesBuffer mOutBuffer;
     std::size_t mOutIndex = 0;
-    std::size_t mOutBufSize = 0;
     Stream *mRaw;
 };
 
@@ -9287,11 +10492,12 @@ OwningStream make_stream(Args &&...args) {
 
 
 
+
 namespace co_async {
 Task<Expected<OwningStream>> file_open(std::filesystem::path path,
                                        OpenMode mode);
 OwningStream file_from_handle(FileHandle handle);
-Task<Expected<std::string>> file_read(std::filesystem::path path);
+Task<Expected<String>> file_read(std::filesystem::path path);
 Task<Expected<>> file_write(std::filesystem::path path,
                             std::string_view content);
 Task<Expected<>> file_append(std::filesystem::path path,
@@ -9311,7 +10517,7 @@ Task<Expected<>> file_append(std::filesystem::path path,
 
 
 namespace co_async {
-struct PipeHandlePair {
+struct FSPipeHandlePair {
     FileHandle mReader;
     FileHandle mWriter;
 
@@ -9340,14 +10546,14 @@ struct PipeHandlePair {
     }
 };
 
-inline Task<Expected<PipeHandlePair>> fs_pipe() {
+inline Task<Expected<FSPipeHandlePair>> fs_pipe() {
     int p[2];
     int res = pipe2(p, 0);
     if (res < 0) [[unlikely]] {
         res = -errno;
     }
     co_await expectError(res);
-    co_return PipeHandlePair{FileHandle(p[0]), FileHandle(p[1])};
+    co_return FSPipeHandlePair{FileHandle(p[0]), FileHandle(p[1])};
 }
 
 inline Task<Expected<>> send_file(FileHandle &sock, FileHandle &&file) {
@@ -9442,7 +10648,7 @@ wait_process(Pid pid, std::chrono::steady_clock::duration timeout,
         UringOp().prep_waitid(P_PID, (id_t)pid, &info, options, 0),
         UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
     if (ret == std::make_error_code(std::errc::operation_canceled)) {
-        co_return Unexpected{std::make_error_code(std::errc::stream_timeout)};
+        co_return std::errc::stream_timeout;
     }
     co_await std::move(ret);
     co_return WaitProcessResult{
@@ -9574,7 +10780,7 @@ struct ProcessBuilder {
             &pid, mPath.c_str(), &mFileActions, &mAttr, argv.data(),
             mEnvpStore.empty() ? environ : envp.data());
         if (status != 0) [[unlikely]] {
-            co_return Unexpected{std::make_error_code(std::errc(errno))};
+            co_return std::errc(errno);
         }
         mPath.clear();
         mArgvStore.clear();
@@ -9662,7 +10868,7 @@ struct FileWatch {
         if (!co_await mStream.getstruct(*mEventBuffer)) [[unlikely]] {
             throw std::runtime_error("EOF while reading struct");
         }
-        std::string name;
+        String name;
         name.reserve(mEventBuffer->len);
         co_await co_await mStream.getn(name, mEventBuffer->len);
         name = name.c_str();
@@ -9713,7 +10919,7 @@ struct SignalingContextMT {
             waiters.swap(instance->mWaitingSignals.at(signo));
             lock.unlock();
             for (auto coroutine: waiters) {
-                IOContextMT::spawn_mt(coroutine);
+                IOContextMT::spawn(coroutine);
             }
         }
     }
@@ -9768,64 +10974,6 @@ private:
 
 
 
-
-
-namespace co_async {
-
-template <class F>
-struct Finally {
-private:
-    F func;
-    bool enable;
-
-public:
-    Finally(std::nullptr_t = nullptr) : enable(false) {}
-
-    Finally(std::convertible_to<F> auto &&func)
-        : func(std::forward<decltype(func)>(func)),
-          enable(true) {}
-
-    Finally(Finally &&that) : func(std::move(that.func)), enable(that.enable) {
-        that.enable = false;
-    }
-
-    Finally &operator=(Finally &&that) {
-        if (this != &that) {
-            if (enable) {
-                func();
-            }
-            func = std::move(that.func);
-            enable = that.enable;
-            that.enable = false;
-        }
-        return *this;
-    }
-
-    void reset() {
-        if (enable) {
-            func();
-        }
-        enable = false;
-    }
-
-    void release() {
-        enable = false;
-    }
-
-    ~Finally() {
-        if (enable) {
-            func();
-        }
-    }
-};
-
-template <class F>
-Finally(F &&) -> Finally<std::decay_t<F>>;
-
-} // namespace co_async
-
-
-
 #include <arpa/inet.h>
 
 
@@ -9853,7 +11001,7 @@ struct IpAddress {
     static Expected<IpAddress> parse(std::string_view host,
                                      bool allowIpv6 = true);
     static Expected<IpAddress> parse(char const *host, bool allowIpv6 = true);
-    std::string toString() const;
+    String toString() const;
 
     auto repr() const {
         return toString();
@@ -9883,7 +11031,7 @@ struct SocketAddress {
 
     int port() const;
 
-    std::string toString() const;
+    String toString() const;
 
     auto repr() const {
         return toString();
@@ -9911,7 +11059,7 @@ Expected<T> socketGetOption(SocketHandle &sock, int level, int optId) {
     socklen_t len = sizeof(val);
     if (auto e =
             expectError(getsockopt(sock.fileNo(), level, optId, &val, &len))) {
-        return Unexpected{e.error()};
+        return e.error();
     }
     return val;
 }
@@ -9934,7 +11082,7 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
 Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
                                              int backlog = SOMAXCONN);
 Task<Expected<SocketListener>>
-listener_bind(std::pair<std::string, int> const &addr, int backlog = SOMAXCONN);
+listener_bind(std::pair<String, int> const &addr, int backlog = SOMAXCONN);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              CancelToken cancel);
@@ -9957,6 +11105,12 @@ socket_write(SocketHandle &sock, std::span<char const> buf,
 Task<Expected<std::size_t>>
 socket_read(SocketHandle &sock, std::span<char> buf,
             std::chrono::steady_clock::duration timeout);
+Task<Expected<std::size_t>>
+socket_write(SocketHandle &sock, std::span<char const> buf,
+             std::chrono::steady_clock::duration timeout, CancelToken cancel);
+Task<Expected<std::size_t>>
+socket_read(SocketHandle &sock, std::span<char> buf,
+            std::chrono::steady_clock::duration timeout, CancelToken cancel);
 Task<Expected<>> socket_shutdown(SocketHandle &sock, int how = SHUT_RDWR);
 } // namespace co_async
 
@@ -9982,13 +11136,13 @@ namespace co_async {
 std::error_category const &bearSSLCategory();
 
 StructPImpl(SSLClientTrustAnchor) {
-    Expected<> add(std::string content);
+    Expected<> add(std::string_view content);
 };
 
 StructPImpl(SSLServerPrivateKey){};
 
 StructPImpl(SSLServerCertificate) {
-    void add(std::string content);
+    void add(std::string_view content);
 };
 
 StructPImpl(SSLServerSessionCache){};
@@ -10044,7 +11198,7 @@ struct CachedStream : Stream {
             mPos = pos;
             co_return {};
         } else {
-            co_return Unexpected{std::make_error_code(std::errc::invalid_seek)};
+            co_return std::errc::invalid_seek;
         }
     }
 
@@ -10054,6 +11208,7 @@ private:
     std::size_t mPos = 0;
 };
 } // namespace co_async
+
 
 
 
@@ -10091,7 +11246,7 @@ private:
 };
 
 struct OStringStream : Stream {
-    OStringStream(std::string &output) noexcept : mOutput(output) {}
+    OStringStream(String &output) noexcept : mOutput(output) {}
 
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
@@ -10099,16 +11254,16 @@ struct OStringStream : Stream {
         co_return buffer.size();
     }
 
-    std::string &str() const noexcept {
+    String &str() const noexcept {
         return mOutput;
     }
 
-    std::string release() noexcept {
+    String release() noexcept {
         return std::move(mOutput);
     }
 
 private:
-    std::string &mOutput;
+    String &mOutput;
 };
 } // namespace co_async
 
@@ -10119,7 +11274,7 @@ private:
 
 namespace co_async {
 
-Task<Expected<std::array<OwningStream, 2>>> pipe_stream();
+std::array<OwningStream, 2> pipe_stream();
 Task<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out);
 
 template <class Func, class... Args>
@@ -10147,7 +11302,9 @@ inline Task<Expected<>> pipe_bind(OwningStream w, Func &&func, Args &&...args) {
 
 namespace co_async {
 OwningStream &stdio();
+OwningStream &raw_stdio();
 } // namespace co_async
+
 
 
 
@@ -10162,7 +11319,7 @@ struct DirectoryWalker {
     DirectoryWalker(DirectoryWalker &&) = default;
     DirectoryWalker &operator=(DirectoryWalker &&) = default;
     ~DirectoryWalker();
-    Task<Expected<std::string>> next();
+    Task<Expected<String>> next();
 
 private:
     OwningStream mStream;
@@ -10190,25 +11347,24 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
 
 
 
+
 namespace co_async {
 struct SocketStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        auto ret = co_await socket_read(mFile, buffer, mTimeout);
+        auto ret = co_await socket_read(mFile, buffer, mTimeout, co_await co_cancel);
         if (ret == std::make_error_code(std::errc::operation_canceled))
             [[unlikely]] {
-            co_return Unexpected{
-                std::make_error_code(std::errc::stream_timeout)};
+            co_return std::errc::stream_timeout;
         }
         co_return ret;
     }
 
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
-        auto ret = co_await socket_write(mFile, buffer, mTimeout);
+        auto ret = co_await socket_write(mFile, buffer, mTimeout, co_await co_cancel);
         if (ret == std::make_error_code(std::errc::operation_canceled))
             [[unlikely]] {
-            co_return Unexpected{
-                std::make_error_code(std::errc::stream_timeout)};
+            co_return std::errc::stream_timeout;
         }
         co_return ret;
     }
@@ -10256,27 +11412,28 @@ tcp_accept(SocketListener &listener,
 
 
 
+
 namespace co_async {
-struct URIParams : SimpleMap<std::string, std::string> {
-    using SimpleMap<std::string, std::string>::SimpleMap;
+struct URIParams : SimpleMap<String, String> {
+    using SimpleMap<String, String>::SimpleMap;
 };
 
 struct URI {
-    std::string path;
+    String path;
     URIParams params;
 
 public:
-    static void url_decode(std::string &r, std::string_view s);
-    static std::string url_decode(std::string_view s);
-    static void url_encode(std::string &r, std::string_view s);
-    static std::string url_encode(std::string_view s);
-    static void url_encode_path(std::string &r, std::string_view s);
-    static std::string url_encode_path(std::string_view s);
+    static void url_decode(String &r, std::string_view s);
+    static String url_decode(std::string_view s);
+    static void url_encode(String &r, std::string_view s);
+    static String url_encode(std::string_view s);
+    static void url_encode_path(String &r, std::string_view s);
+    static String url_encode_path(std::string_view s);
     static URI parse(std::string_view uri);
-    void dump(std::string &r) const;
-    std::string dump() const;
+    void dump(String &r) const;
+    String dump() const;
 
-    std::string repr() const {
+    String repr() const {
         return dump();
     }
 };
@@ -10286,15 +11443,16 @@ public:
 
 
 
+
 namespace co_async {
-std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp);
+String timePointToHTTPDate(std::chrono::system_clock::time_point tp);
 Expected<std::chrono::system_clock::time_point>
-httpDateToTimePoint(std::string const &date);
-std::string httpDateNow();
+httpDateToTimePoint(String const &date);
+String httpDateNow();
 std::string_view getHTTPStatusName(int status);
-std::string guessContentTypeByExtension(
+String guessContentTypeByExtension(
     std::string_view ext, char const *defaultType = "text/plain;charset=utf-8");
-std::string capitalizeHTTPHeader(std::string_view key);
+String capitalizeHTTPHeader(std::string_view key);
 } // namespace co_async
 
 
@@ -10305,9 +11463,10 @@ std::string capitalizeHTTPHeader(std::string_view key);
 
 
 
+
 namespace co_async {
-struct HTTPHeaders : SimpleMap<std::string, std::string> {
-    using SimpleMap<std::string, std::string>::SimpleMap;
+struct HTTPHeaders : SimpleMap<String, String> {
+    using SimpleMap<String, String>::SimpleMap;
     // NOTE: user-specified http headers must not contain the following keys:
     // - connection
     // - acecpt-encoding
@@ -10323,8 +11482,8 @@ enum class HTTPContentEncoding {
 };
 
 struct HTTPRequest {
-    std::string method{"GET", 3};
-    URI uri{std::string{"/", 1}, {}};
+    String method{"GET", 3};
+    URI uri{String{"/", 1}, {}};
     HTTPHeaders headers{};
 
     auto repr() const {
@@ -10354,7 +11513,7 @@ public:
     virtual Task<Expected<>> writeBodyStream(BorrowedStream &body) = 0;
     virtual Task<Expected<>> readBodyStream(BorrowedStream &body) = 0;
     virtual Task<Expected<>> writeBody(std::string_view body) = 0;
-    virtual Task<Expected<>> readBody(std::string &body) = 0;
+    virtual Task<Expected<>> readBody(String &body) = 0;
     virtual Task<Expected<>> writeRequest(HTTPRequest const &req) = 0;
     virtual Task<Expected<>> readRequest(HTTPRequest &req) = 0;
     virtual Task<Expected<>> writeResponse(HTTPResponse const &res) = 0;
@@ -10366,7 +11525,7 @@ struct HTTPProtocolVersion11 : HTTPProtocol {
 
 protected:
     HTTPContentEncoding mContentEncoding;
-    std::string mAcceptEncoding;
+    String mAcceptEncoding;
     std::optional<std::size_t> mContentLength;
     HTTPContentEncoding httpContentEncodingByName(std::string_view name);
     Task<Expected<>> parseHeaders(HTTPHeaders &headers);
@@ -10379,11 +11538,11 @@ protected:
     Task<Expected<>> writeChunked(BorrowedStream &body);
     Task<Expected<>> writeChunkedString(std::string_view body);
     Task<Expected<>> readChunked(BorrowedStream &body);
-    Task<Expected<>> readChunkedString(std::string &body);
+    Task<Expected<>> readChunkedString(String &body);
     Task<Expected<>> writeEncoded(BorrowedStream &body);
     Task<Expected<>> writeEncodedString(std::string_view body);
     Task<Expected<>> readEncoded(BorrowedStream &body);
-    Task<Expected<>> readEncodedString(std::string &body);
+    Task<Expected<>> readEncodedString(String &body);
 #if CO_ASYNC_DEBUG
     void checkPhase(int from, int to);
 
@@ -10396,7 +11555,7 @@ public:
     Task<Expected<>> writeBodyStream(BorrowedStream &body) override;
     Task<Expected<>> writeBody(std::string_view body) override;
     Task<Expected<>> readBodyStream(BorrowedStream &body) override;
-    Task<Expected<>> readBody(std::string &body) override;
+    Task<Expected<>> readBody(String &body) override;
     Task<Expected<>> writeRequest(HTTPRequest const &req) override;
     void initServerState() override;
     void initClientState() override;
@@ -10445,7 +11604,7 @@ struct HTTPServer {
 
         HTTPRequest request;
         Task<Expected<>> readRequestHeader();
-        Task<Expected<std::string>> request_body();
+        Task<Expected<String>> request_body();
         Task<Expected<>> request_body_stream(OwningStream &out);
         Task<Expected<>> response(HTTPResponse resp, std::string_view content);
         Task<Expected<>> response(HTTPResponse resp, OwningStream &body);
@@ -10461,11 +11620,15 @@ struct HTTPServer {
     };
 
     using HTTPHandler = std::function<Task<Expected<>>(IO &)>;
-    using HTTPPrefixHandler =
-        std::function<Task<Expected<>>(IO &, std::string_view)>;
+    using HTTPPrefixHandler = std::function<Task<Expected<>>(IO &, std::string_view)>;
+    /* using HTTPHandler = Task<Expected<>>(*)(IO &); */
+    /* using HTTPPrefixHandler = Task<Expected<>>(*)(IO &, std::string_view); */
     HTTPServer();
     ~HTTPServer();
     HTTPServer(HTTPServer &&) = delete;
+#if CO_ASYNC_DEBUG
+    void enableLogRequests();
+#endif
     void timeout(std::chrono::steady_clock::duration timeout);
     void route(std::string_view methods, std::string_view path,
                HTTPHandler handler);
@@ -10494,12 +11657,13 @@ private:
 
 
 
+
 namespace co_async {
 struct HTTPServerUtils {
-    static std::string html_encode(std::string_view str);
+    static String html_encode(std::string_view str);
     static Task<Expected<>>
     make_ok_response(HTTPServer::IO &io, std::string_view body,
-                     std::string contentType = "text/html;charset=utf-8");
+                     String contentType = "text/html;charset=utf-8");
     static Task<Expected<>>
     make_response_from_directory(HTTPServer::IO &io,
                                  std::filesystem::path path);
@@ -10632,13 +11796,13 @@ private:
             throw std::logic_error("http factory not initialized");
         }
 #endif
-        req.headers.insert("host"s, mHttpFactory->hostName());
-        req.headers.insert("user-agent"s, "co_async/0.0.1"s);
-        req.headers.insert("accept"s, "*/*"s);
+        req.headers.insert("host"_s, String{mHttpFactory->hostName()});
+        req.headers.insert("user-agent"_s, "co_async/0.0.1"_s);
+        req.headers.insert("accept"_s, "*/*"_s);
 #if CO_ASYNC_ZLIB
-        req.headers.insert("accept-encoding"s, "deflate, gzip"s);
+        req.headers.insert("accept-encoding"_s, "deflate, gzip"_s);
 #else
-        req.headers.insert("accept-encoding"s, "gzip"s);
+        req.headers.insert("accept-encoding"_s, "gzip"_s);
 #endif
     }
 
@@ -10663,7 +11827,7 @@ private:
             }
             mHttp = nullptr;
         }
-        co_return Unexpected{ec};
+        co_return ec;
     }
 
     /* Task<Expected<>> */
@@ -10688,7 +11852,7 @@ private:
     /*         (void)cachedStream.seek(0); */
     /*         mHttp = nullptr; */
     /*     } */
-    /*     co_return Unexpected{std::errc::connection_aborted}; */
+    /*     co_return std::errc::connection_aborted; */
     /* } */
     HTTPConnection(std::unique_ptr<HTTPProtocolFactory> httpFactory)
         : mHttp(nullptr),
@@ -10739,20 +11903,19 @@ public:
                 std::move(h), p, host, std::move(proxy), timeout);
             return {};
         } else [[unlikely]] {
-            return Unexpected{
-                std::make_error_code(std::errc::protocol_not_supported)};
+            return std::errc::protocol_not_supported;
         }
     }
 
     HTTPConnection() = default;
 
-    Task<Expected<std::tuple<HTTPResponse, std::string>>>
+    Task<Expected<std::tuple<HTTPResponse, String>>>
     request(HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
         HTTPResponse res;
-        std::string body;
+        String body;
         co_await co_await mHttp->readResponse(res);
         co_await co_await mHttp->readBody(body);
         reset.neverMind();
@@ -10760,14 +11923,14 @@ public:
     }
 
     Task<Expected<std::tuple<HTTPResponse, OwningStream>>>
-    requestStreamed(HTTPRequest req, std::string_view in = {}) {
+    request_streamed(HTTPRequest req, std::string_view in = {}) {
         builtinHeaders(req);
         RAIIPointerResetter reset(&mHttp);
         co_await co_await tryWriteRequestAndBody(req, in);
         HTTPResponse res;
         std::string body;
         co_await co_await mHttp->readResponse(res);
-        auto [r, w] = co_await co_await pipe_stream();
+        auto [r, w] = pipe_stream();
         co_spawn(pipe_bind(std::move(w),
                            [this](OwningStream &w) -> Task<Expected<>> {
                                co_await co_await mHttp->readBodyStream(w);
@@ -10789,7 +11952,7 @@ private:
 
     struct HostPool {
         std::vector<PoolEntry> mPool;
-        TimedConditionVariable mFreeSlot;
+        ConditionVariable mFreeSlot;
 
         explicit HostPool(std::size_t size) : mPool(size) {}
     };
@@ -10877,7 +12040,7 @@ private:
                     if (auto e =
                             entry.mHttp.doConnect(host, mTimeout, mFollowProxy);
                         e.has_error()) [[unlikely]] {
-                        return Unexpected{e.error()};
+                        return std::move(e).error();
                     }
                     entry.mLastAccess = std::chrono::steady_clock::now();
                     entry.mValid = true;
@@ -10893,7 +12056,7 @@ private:
         auto *pool = mPools.at(host);
         lock.unlock();
         if (pool) [[likely]] {
-            (void)co_await pool->mFreeSlot.wait(std::chrono::milliseconds(100));
+            (void)co_await co_timeout(pool->mFreeSlot.wait(), std::chrono::milliseconds(100));
         }
     }
 
@@ -10998,7 +12161,45 @@ public:
 
 
 
+
+
+
+
+
+
 #ifdef CO_ASYNC_IMPLEMENTATION
+
+
+
+namespace co_async {
+thread_local std::pmr::memory_resource *currentAllocator =
+    std::pmr::new_delete_resource();
+
+#if CO_ASYNC_ALLOC
+namespace {
+inline struct DefaultResource : std::pmr::memory_resource {
+    void *do_allocate(size_t size, size_t align) override {
+        return currentAllocator->allocate(size, align);
+    }
+
+    void do_deallocate(void *p, size_t size, size_t align) override {
+        return currentAllocator->deallocate(p, size, align);
+    }
+
+    bool do_is_equal(
+        std::pmr::memory_resource const &other) const noexcept override {
+        return currentAllocator->is_equal(other);
+    }
+
+    DefaultResource() noexcept {
+        std::pmr::set_default_resource(this);
+    }
+
+    DefaultResource(DefaultResource &&) = delete;
+} defaultResource;
+} // namespace
+#endif
+} // namespace co_async
 
 
 
@@ -11080,20 +12281,20 @@ ThreadPool::Thread *ThreadPool::submitJob(std::function<void()> func) {
 }
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
-    auto cv = std::make_shared<ConditionVariable>();
+    auto ready = std::make_shared<std::atomic<bool>>(false);
     std::exception_ptr ep;
     submitJob(
-        [cv, ctx = IOContext::instance, func = std::move(func), &ep]() mutable {
+        [ready, func = std::move(func), &ep]() mutable {
             try {
                 func();
             } catch (...) {
                 ep = std::current_exception();
             }
-            if (auto coroutine = cv->notify_pop_coroutine()) [[likely]] {
-                ctx->spawn_mt(coroutine);
-            }
+            ready->store(true, std::memory_order_release);
+            futex_notify_sync(ready.get());
         });
-    co_await *cv;
+    while (ready->load(std::memory_order_acquire) == false)
+        co_await co_await futex_wait(ready.get(), false);
     if (ep) [[unlikely]] {
         std::rethrow_exception(ep);
     }
@@ -11102,49 +12303,35 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
                                     CancelToken cancel) {
-    auto cv = std::make_shared<ConditionVariable>();
+    auto ready = std::make_shared<std::atomic<bool>>(false);
     std::stop_source stop;
     bool stopped = false;
     std::exception_ptr ep;
-    submitJob([cv, ctx = IOContext::instance, func = std::move(func),
+    submitJob([ready, func = std::move(func),
                stop = stop.get_token(), &ep]() mutable {
         try {
             func(stop);
         } catch (...) {
             ep = std::current_exception();
         }
-        if (auto p = cv->notify_pop_coroutine()) [[likely]] {
-            ctx->spawn_mt(p);
-        }
+        ready->store(true, std::memory_order_release);
+        futex_notify_sync(ready.get());
     });
 
-    struct Awaitable {
-        ConditionVariable &cv;
-        std::stop_source &stop;
-        bool &stopped;
+    {
+        CancelCallback _(cancel, [&] {
+            stopped = true;
+            stop.request_stop();
+        });
+        while (ready->load(std::memory_order_acquire) == false)
+            co_await co_await futex_wait(ready.get(), false);
+    }
 
-        auto operator co_await() const noexcept {
-            return cv.operator co_await();
-        }
-
-        struct Canceller {
-            using OpType = Awaitable;
-
-            static Task<> doCancel(OpType *op) {
-                op->stopped = true;
-                op->stop.request_stop();
-                co_return;
-            }
-        };
-    };
-
-    co_await cancel.guard(Awaitable(*cv, stop, stopped));
     if (ep) [[unlikely]] {
         std::rethrow_exception(ep);
     }
     if (stopped) {
-        co_return Unexpected{
-            std::make_error_code(std::errc::operation_canceled)};
+        co_return std::errc::operation_canceled;
     }
     co_return {};
 }
@@ -11162,6 +12349,131 @@ std::size_t ThreadPool::working_threads_count() {
 ThreadPool::ThreadPool() = default;
 ThreadPool::~ThreadPool() = default;
 
+} // namespace co_async
+
+
+
+
+
+
+
+
+namespace co_async {
+
+struct IOContext::IOContextGuard {
+    explicit IOContextGuard(IOContext *that) {
+        if (IOContext::instance || GenericIOContext::instance ||
+            PlatformIOContext::instance) [[unlikely]] {
+            throw std::logic_error(
+                "each thread may contain only one IOContextGuard");
+        }
+        IOContext::instance = that;
+        GenericIOContext::instance = &that->mGenericIO;
+        PlatformIOContext::instance = &that->mPlatformIO;
+    }
+
+    ~IOContextGuard() {
+        IOContext::instance = nullptr;
+        GenericIOContext::instance = nullptr;
+        PlatformIOContext::instance = nullptr;
+    }
+
+    IOContextGuard(IOContextGuard &&) = delete;
+};
+
+void IOContext::startHere(std::stop_token stop,
+                          PlatformIOContextOptions options,
+                          std::span<IOContext> peerContexts) {
+    IOContextGuard guard(this);
+    if (options.threadAffinity) {
+        PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
+    }
+    auto maxSleep = options.maxSleep;
+    auto *genericIO = GenericIOContext::instance;
+    auto *platformIO = PlatformIOContext::instance;
+    while (!stop.stop_requested()) [[likely]] {
+        auto duration = genericIO->runDuration();
+        if (!duration || *duration > maxSleep) {
+            duration = maxSleep;
+        }
+#if !CO_ASYNC_STEAL
+        platformIO->waitEventsFor(1, duration);
+#else
+        bool hasEvent = platformIO->waitEventsFor(1, duration);
+        if (!hasEvent && !peerContexts.empty()) {
+            for (IOContext *p = peerContexts.data();
+                 p != peerContexts.data() + peerContexts.size(); ++p) {
+                if (p->mGenericIO.runComputeOnly()) {
+                    break;
+                }
+            }
+        }
+#endif
+    }
+}
+
+void IOContext::start(PlatformIOContextOptions options,
+                      std::span<IOContext> peerContexts) {
+    mThread = std::jthread([this, options = std::move(options),
+                            peerContexts](std::stop_token stop) {
+        this->startHere(stop, options, peerContexts);
+    });
+}
+
+thread_local IOContext *IOContext::instance;
+} // namespace co_async
+
+
+
+
+
+
+
+
+namespace co_async {
+IOContextMT::IOContextMT(std::in_place_t) {
+    if (IOContextMT::instance) [[unlikely]] {
+        throw std::logic_error("each process may contain only one IOContextMT");
+    }
+    IOContextMT::instance = this;
+}
+
+IOContextMT::~IOContextMT() {
+    IOContextMT::instance = nullptr;
+}
+
+IOContextMT::IOContextMT(PlatformIOContextOptions options,
+                         std::size_t numWorkers)
+    : IOContextMT(std::in_place) {
+    start(options, numWorkers);
+}
+
+void IOContextMT::start(PlatformIOContextOptions options,
+                        std::size_t numWorkers) {
+    bool setAffinity;
+    if (numWorkers == 0) {
+        setAffinity = true;
+        numWorkers = std::thread::hardware_concurrency();
+        if (!numWorkers) [[unlikely]] {
+            throw std::logic_error(
+                "failed to detect number of hardware threads");
+        }
+    } else {
+        setAffinity = false;
+    }
+    instance->mWorkers = std::make_unique<IOContext[]>(numWorkers);
+    instance->mNumWorkers = numWorkers;
+    std::span<IOContext> peerSpan(instance->mWorkers.get(),
+                                  instance->mNumWorkers);
+    for (std::size_t i = 0; i < instance->mNumWorkers; ++i) {
+        if (setAffinity) {
+            options.threadAffinity = i;
+        }
+        instance->mWorkers[i].start(options, peerSpan);
+    }
+}
+
+IOContextMT *IOContextMT::instance;
 } // namespace co_async
 
 
@@ -11279,9 +12591,9 @@ Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
     int err = getaddrinfo(host, NULL, &hints, &result);
     if (err) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << ip << ": " << gai_strerror(err) << '\n';
+        std::cerr << host << ": " << gai_strerror(err) << '\n';
 #endif
-        return Unexpected{std::error_code(err, getAddrInfoCategory())};
+        return std::error_code(err, getAddrInfoCategory());
     }
     Finally fin = [&] {
         freeaddrinfo(result);
@@ -11300,13 +12612,13 @@ Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
     }
     [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << ip << ": no matching host address with ipv4 or ipv6\n";
+        std::cerr << host << ": no matching host address with ipv4 or ipv6\n";
 #endif
-        return Unexpected{std::make_error_code(std::errc::bad_address)};
+        return std::errc::bad_address;
     }
 }
 
-std::string IpAddress::toString() const {
+String IpAddress::toString() const {
     if (mAddr.index() == 1) {
         char buf[INET6_ADDRSTRLEN + 1] = {};
         inet_ntop(AF_INET6, &std::get<1>(mAddr), buf, sizeof(buf));
@@ -11334,13 +12646,13 @@ Expected<SocketAddress> SocketAddress::parse(std::string_view host,
     }
     if (!port) {
         if (defaultPort == -1) [[unlikely]] {
-            return Unexpected{std::make_error_code(std::errc::bad_address)};
+            return std::errc::bad_address;
         }
         port = defaultPort;
     }
     auto ip = IpAddress::parse(hostPart.c_str());
     if (ip.has_error()) [[unlikely]] {
-        return Unexpected{ip.error()};
+        return ip.error();
     }
     return SocketAddress(*ip, *port);
 }
@@ -11374,8 +12686,8 @@ int SocketAddress::port() const {
     }
 }
 
-std::string SocketAddress::toString() const {
-    return host().toString() + ":" + to_string(port());
+String SocketAddress::toString() const {
+    return host().toString() + ':' + to_string(port());
 }
 
 void SocketAddress::initFromHostPort(struct in_addr const &host, int port) {
@@ -11445,13 +12757,10 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM);
     if (cancel.is_canceled()) [[unlikely]] {
-        co_return Unexpected{
-            std::make_error_code(std::errc::operation_canceled)};
+        co_return std::errc::operation_canceled;
     }
-    co_await expectError(co_await cancel.guard<UringOpCanceller>(
-        UringOp().prep_connect(sock.fileNo(),
-                               (const struct sockaddr *)&addr.mAddr,
-                               addr.mAddrLen)));
+    co_await expectError(co_await UringOp().prep_connect(
+        sock.fileNo(), (const struct sockaddr *)&addr.mAddr, addr.mAddrLen).cancelGuard(cancel));
     co_return sock;
 }
 
@@ -11471,7 +12780,7 @@ Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
 }
 
 Task<Expected<SocketListener>>
-listener_bind(std::pair<std::string, int> const &addr, int backlog) {
+listener_bind(std::pair<String, int> const &addr, int backlog) {
     co_return co_await listener_bind(
         co_await SocketAddress::parse(addr.first, addr.second));
 }
@@ -11485,8 +12794,7 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener) {
 
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              CancelToken cancel) {
-    int fd = co_await expectError(co_await cancel.guard<UringOpCanceller>(
-        UringOp().prep_accept(listener.fileNo(), nullptr, nullptr, 0)));
+    int fd = co_await expectError(co_await UringOp().prep_accept(listener.fileNo(), nullptr, nullptr, 0).cancelGuard(cancel));
     SocketHandle sock(fd);
     co_return sock;
 }
@@ -11503,10 +12811,9 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              SocketAddress &peerAddr,
                                              CancelToken cancel) {
-    int fd = co_await expectError(co_await cancel.guard<UringOpCanceller>(
-        UringOp().prep_accept(listener.fileNo(),
-                              (struct sockaddr *)&peerAddr.mAddr,
-                              &peerAddr.mAddrLen, 0)));
+    int fd = co_await expectError(co_await UringOp().prep_accept(
+        listener.fileNo(), (struct sockaddr *)&peerAddr.mAddr,
+        &peerAddr.mAddrLen, 0).cancelGuard(cancel));
     SocketHandle sock(fd);
     co_return sock;
 }
@@ -11527,15 +12834,13 @@ Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                          std::span<char const> buf,
                                          CancelToken cancel) {
     co_return (std::size_t) co_await expectError(
-        co_await cancel.guard<UringOpCanceller>(
-            UringOp().prep_send(sock.fileNo(), buf, 0)));
+        co_await UringOp().prep_send(sock.fileNo(), buf, 0).cancelGuard(cancel));
 }
 
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock, std::span<char> buf,
                                         CancelToken cancel) {
     co_return (std::size_t) co_await expectError(
-        co_await cancel.guard<UringOpCanceller>(
-            UringOp().prep_recv(sock.fileNo(), buf, 0)));
+        co_await UringOp().prep_recv(sock.fileNo(), buf, 0).cancelGuard(cancel));
 }
 
 Task<Expected<std::size_t>>
@@ -11554,6 +12859,26 @@ socket_read(SocketHandle &sock, std::span<char> buf,
     co_return (std::size_t) co_await expectError(co_await UringOp::link_ops(
         UringOp().prep_recv(sock.fileNo(), buf, 0),
         UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+}
+
+Task<Expected<std::size_t>>
+socket_write(SocketHandle &sock, std::span<char const> buf,
+             std::chrono::steady_clock::duration timeout, CancelToken cancel) {
+    auto ts = durationToKernelTimespec(timeout);
+    co_return (std::size_t) co_await expectError(
+        co_await UringOp::link_ops(
+            UringOp().prep_send(sock.fileNo(), buf, 0),
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)).cancelGuard(cancel));
+}
+
+Task<Expected<std::size_t>>
+socket_read(SocketHandle &sock, std::span<char> buf,
+            std::chrono::steady_clock::duration timeout, CancelToken cancel) {
+    auto ts = durationToKernelTimespec(timeout);
+    co_return (std::size_t) co_await expectError(
+        co_await UringOp::link_ops(
+            UringOp().prep_recv(sock.fileNo(), buf, 0),
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)).cancelGuard(cancel));
 }
 
 Task<Expected<>> socket_shutdown(SocketHandle &sock, int how) {
@@ -11827,7 +13152,7 @@ std::error_category const &bearSSLCategory() {
                     return errors[u].second;
                 }
             }
-            return to_string(e);
+            return std::to_string(e);
         }
     } instance;
 
@@ -11932,7 +13257,7 @@ public:
             std::cerr << "X509 decoder error: " +
                              bearSSLCategory().message(err) + "\n";
 #endif
-            return Unexpected{std::error_code(err, bearSSLCategory())};
+            return std::error_code(err, bearSSLCategory());
         }
         return result;
     }
@@ -11982,7 +13307,7 @@ public:
         x506.decode(certX506);
         auto dn = x506.getDN();
         if (dn.has_error()) {
-            return Unexpected{dn.error()};
+            return dn.error();
         }
         trustAnchors.push_back({
             {(unsigned char *)dn->data(), dn->size()},
@@ -12029,7 +13354,7 @@ public:
     }
 
 private:
-    std::vector<std::string> strStores;
+    std::vector<String> strStores;
 };
 
 struct SSLServerSessionCache {
@@ -12070,8 +13395,7 @@ protected:
                         << "SSL error: " + bearSSLCategory().message(err) +
                                "\n";
 #endif
-                    co_return Unexpected{
-                        std::error_code(err, bearSSLCategory())};
+                    co_return std::error_code(err, bearSSLCategory());
                 }
                 co_return {};
             }
@@ -12089,13 +13413,12 @@ protected:
                             eng->err = BR_ERR_IO;
                         }
                         if (e.has_error()) {
-                            co_return Unexpected{e.error()};
+                            co_return e.error();
                         } else {
-                            co_return Unexpected{
-                                std::make_error_code(std::errc::broken_pipe)};
+                            co_return std::errc::broken_pipe;
                         }
                     } else if (e.has_error()) [[unlikely]] {
-                        co_return Unexpected{e.error()};
+                        co_return e.error();
                     } else {
                         co_return {};
                     }
@@ -12126,13 +13449,12 @@ protected:
                             eng->err = BR_ERR_IO;
                         }
                         if (e.has_error()) {
-                            co_return Unexpected{e.error()};
+                            co_return e.error();
                         } else {
-                            co_return Unexpected{
-                                std::make_error_code(std::errc::broken_pipe)};
+                            co_return std::errc::broken_pipe;
                         }
                     } else if (e.has_error()) [[unlikely]] {
-                        co_return Unexpected{e.error()};
+                        co_return e.error();
                     } else {
                         co_return {};
                     }
@@ -12292,10 +13614,10 @@ OwningStream ssl_accept(SocketHandle file, SSLServerCertificate const &cert,
 
 DefinePImpl(SSLServerPrivateKey);
 DefinePImpl(SSLClientTrustAnchor);
-Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add, (std::string content),
+Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add, (std::string_view content),
                               content);
 DefinePImpl(SSLServerCertificate);
-void ForwardPImplMethod(SSLServerCertificate, add, (std::string content),
+void ForwardPImplMethod(SSLServerCertificate, add, (std::string_view content),
                         content);
 DefinePImpl(SSLServerSessionCache);
 } // namespace co_async
@@ -12324,7 +13646,7 @@ struct IPipeStream : Stream {
                 std::memcpy(buffer.data(), chunk->data(), n);
                 co_return n;
             }
-            co_await mPipe->mNonEmpty;
+            co_await co_await mPipe->mNonEmpty.wait();
         }
     }
 
@@ -12351,7 +13673,7 @@ struct OPipeStream : Stream {
             p->mNonEmpty.notify_one();
             co_return buffer.size();
         } else {
-            co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+            co_return std::errc::broken_pipe;
         }
     }
 
@@ -12379,11 +13701,11 @@ private:
 
 } // namespace
 
-Task<Expected<std::array<OwningStream, 2>>> pipe_stream() {
+std::array<OwningStream, 2> pipe_stream() {
     auto pipePtr = std::make_shared<PipeStreamBuffer>();
     auto pipeWeakPtr = std::weak_ptr(pipePtr);
-    co_return std::array{make_stream<IPipeStream>(std::move(pipePtr)),
-                         make_stream<OPipeStream>(std::move(pipeWeakPtr))};
+    return std::array{make_stream<IPipeStream>(std::move(pipePtr)),
+                      make_stream<OPipeStream>(std::move(pipeWeakPtr))};
 }
 
 Task<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out) {
@@ -12395,7 +13717,7 @@ Task<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out) {
         }
         auto n = co_await co_await out.write(in.peekbuf());
         if (n == 0) [[unlikely]] {
-            co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+            co_return std::errc::broken_pipe;
         }
         in.seenbuf(n);
     }
@@ -12409,16 +13731,17 @@ Task<Expected<>> pipe_forward(BorrowedStream &in, BorrowedStream &out) {
 
 
 
+
 namespace co_async {
 namespace {
 struct FileStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        co_return co_await fs_read(mFile, buffer);
+        co_return co_await fs_read(mFile, buffer, co_await co_cancel);
     }
 
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
-        co_return co_await fs_write(mFile, buffer);
+        co_return co_await fs_write(mFile, buffer, co_await co_cancel);
     }
 
     Task<> raw_close() override {
@@ -12449,7 +13772,7 @@ OwningStream file_from_handle(FileHandle handle) {
     return make_stream<FileStream>(std::move(handle));
 }
 
-Task<Expected<std::string>> file_read(std::filesystem::path path) {
+Task<Expected<String>> file_read(std::filesystem::path path) {
     auto file = co_await co_await file_open(path, OpenMode::Read);
     co_return co_await file.getall();
 }
@@ -12481,27 +13804,17 @@ Task<Expected<>> file_append(std::filesystem::path path,
 namespace co_async {
 namespace {
 struct StdioStream : Stream {
-    void disableTTYCanonAndEcho() {
-        if (isatty(mFileIn.fileNo())) {
-            struct termios tc;
-            tcgetattr(mFileIn.fileNo(), &tc);
-            tc.c_lflag &= ~(tcflag_t)ICANON;
-            tc.c_lflag &= ~(tcflag_t)ECHO;
-            tcsetattr(mFileIn.fileNo(), TCSANOW, &tc);
-        }
-    }
-
     explicit StdioStream(FileHandle &fileIn, FileHandle &fileOut)
         : mFileIn(fileIn),
           mFileOut(fileOut) {}
 
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        co_return co_await fs_read(mFileIn, buffer);
+        co_return co_await fs_read(mFileIn, buffer, co_await co_cancel);
     }
 
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
-        co_return co_await fs_write(mFileOut, buffer);
+        co_return co_await fs_write(mFileOut, buffer, co_await co_cancel);
     }
 
     FileHandle &in() const noexcept {
@@ -12522,11 +13835,34 @@ FileHandle &stdFileHandle() {
     static FileHandle h(fileNo);
     return h;
 }
+
+int rawStdinFileHandleImpl() {
+    if (isatty(STDIN_FILENO)) {
+        struct termios tc;
+        tcgetattr(STDIN_FILENO, &tc);
+        tc.c_lflag &= ~(tcflag_t)ICANON;
+        tc.c_lflag &= ~(tcflag_t)ECHO;
+        tcsetattr(STDIN_FILENO, TCSANOW, &tc);
+    }
+    return STDIN_FILENO;
+}
+
+FileHandle &rawStdinFileHandle() {
+    static FileHandle h(rawStdinFileHandleImpl());
+    return h;
+}
+
 } // namespace
 
 OwningStream &stdio() {
     static thread_local OwningStream s = make_stream<StdioStream>(
         stdFileHandle<STDIN_FILENO>(), stdFileHandle<STDOUT_FILENO>());
+    return s;
+}
+
+OwningStream &raw_stdio() {
+    static thread_local OwningStream s = make_stream<StdioStream>(
+        rawStdinFileHandle(), stdFileHandle<STDOUT_FILENO>());
     return s;
 }
 } // namespace co_async
@@ -12565,7 +13901,7 @@ DirectoryWalker::DirectoryWalker(FileHandle file)
 
 DirectoryWalker::~DirectoryWalker() = default;
 
-Task<Expected<std::string>> DirectoryWalker::DirectoryWalker::next() {
+Task<Expected<String>> DirectoryWalker::DirectoryWalker::next() {
     struct LinuxDirent64 {
         int64_t d_ino;           /* 64-bit inode number */
         int64_t d_off;           /* 64-bit offset to next structure */
@@ -12574,10 +13910,10 @@ Task<Expected<std::string>> DirectoryWalker::DirectoryWalker::next() {
     } dent;
 
     co_await co_await mStream.getspan(std::span<char>((char *)&dent, 19));
-    std::string rest;
+    String rest;
     rest.reserve(dent.d_reclen - 19);
     co_await co_await mStream.getn(rest, dent.d_reclen - 19);
-    co_return std::string(rest.data());
+    co_return String(rest.data());
 }
 
 Task<Expected<DirectoryWalker>> dir_open(std::filesystem::path path) {
@@ -12616,8 +13952,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
 # if CO_ASYNC_DEBUG
         std::cerr << "WARNING: inflateInit returned error\n";
 # endif
-        co_return Unexpected{
-            std::make_error_code(std::errc::not_enough_memory)};
+        co_return std::errc::not_enough_memory;
     }
     do {
         if (auto e = co_await source.read(std::span<char>((char *)in, chunk));
@@ -12626,7 +13961,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
             std::cerr << "WARNING: inflate source read failed with error\n";
 # endif
             (void)inflateEnd(&strm);
-            co_return Unexpected{e.error()};
+            co_return e.error();
         } else {
             strm.avail_in = *e;
         }
@@ -12647,7 +13982,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: inflate error: " + std::to_string(ret) +
                                  ": " + std::string(strm.msg) + "\n";
 # endif
-                co_return Unexpected{std::make_error_code(std::errc::io_error)};
+                co_return std::errc::io_error;
             }
             have = chunk - strm.avail_out;
             if (auto e = co_await dest.putspan(
@@ -12657,7 +13992,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: inflate dest write failed with error\n";
 # endif
                 (void)inflateEnd(&strm);
-                co_return Unexpected{e.error()};
+                co_return e.error();
             }
         } while (strm.avail_out == 0);
     } while (ret != Z_STREAM_END);
@@ -12666,7 +14001,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
 # if CO_ASYNC_DEBUG
         std::cerr << "WARNING: inflate got unexpected end of file\n";
 # endif
-        co_return Unexpected{std::make_error_code(std::errc::io_error)};
+        co_return std::errc::io_error;
     }
     co_return {};
 }
@@ -12689,8 +14024,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
 # if CO_ASYNC_DEBUG
         std::cerr << "WARNING: deflateInit returned error\n";
 # endif
-        co_return Unexpected{
-            std::make_error_code(std::errc::not_enough_memory)};
+        co_return std::errc::not_enough_memory;
     }
     do {
         if (auto e = co_await source.read(std::span<char>((char *)in, chunk));
@@ -12699,7 +14033,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
             std::cerr << "WARNING: deflate source read failed with error\n";
 # endif
             (void)deflateEnd(&strm);
-            co_return Unexpected{e.error()};
+            co_return e.error();
         } else {
             strm.avail_in = *e;
         }
@@ -12722,7 +14056,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: deflate dest write failed with error\n";
 # endif
                 (void)deflateEnd(&strm);
-                co_return Unexpected{e.error()};
+                co_return e.error();
             }
         } while (strm.avail_out == 0);
         assert(strm.avail_in == 0); /* all input will be used */
@@ -12732,13 +14066,11 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
 }
 #else
 Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
-    co_return Unexpected{
-        std::make_error_code(std::errc::function_not_supported)};
+    co_return std::errc::function_not_supported;
 }
 
 Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
-    co_return Unexpected{
-        std::make_error_code(std::errc::function_not_supported)};
+    co_return std::errc::function_not_supported;
 }
 #endif
 } // namespace co_async
@@ -12776,7 +14108,7 @@ bool isCharUrlSafe(char c) {
 }
 } // namespace
 
-void URI::url_decode(std::string &r, std::string_view s) {
+void URI::url_decode(String &r, std::string_view s) {
     std::size_t b = 0;
     while (true) {
         auto i = s.find('%', b);
@@ -12792,14 +14124,14 @@ void URI::url_decode(std::string &r, std::string_view s) {
     }
 }
 
-std::string URI::url_decode(std::string_view s) {
-    std::string r;
+String URI::url_decode(std::string_view s) {
+    String r;
     r.reserve(s.size());
     url_decode(r, s);
     return r;
 }
 
-void URI::url_encode(std::string &r, std::string_view s) {
+void URI::url_encode(String &r, std::string_view s) {
     static constexpr char lut[] = "0123456789ABCDEF";
     for (char c: s) {
         if (isCharUrlSafe(c)) {
@@ -12812,14 +14144,14 @@ void URI::url_encode(std::string &r, std::string_view s) {
     }
 }
 
-std::string URI::url_encode(std::string_view s) {
-    std::string r;
+String URI::url_encode(std::string_view s) {
+    String r;
     r.reserve(s.size());
     url_encode(r, s);
     return r;
 }
 
-void URI::url_encode_path(std::string &r, std::string_view s) {
+void URI::url_encode_path(String &r, std::string_view s) {
     static constexpr char lut[] = "0123456789ABCDEF";
     for (char c: s) {
         if (isCharUrlSafe(c) || c == '/') {
@@ -12832,8 +14164,8 @@ void URI::url_encode_path(std::string &r, std::string_view s) {
     }
 }
 
-std::string URI::url_encode_path(std::string_view s) {
-    std::string r;
+String URI::url_encode_path(std::string_view s) {
+    String r;
     r.reserve(s.size());
     url_encode_path(r, s);
     return r;
@@ -12852,18 +14184,18 @@ URI URI::parse(std::string_view uri) {
             if (m != std::string_view::npos) {
                 auto k = pair.substr(0, m);
                 auto v = pair.substr(m + 1);
-                params.insert_or_assign(std::string(k), url_decode(v));
+                params.insert_or_assign(String(k), url_decode(v));
             }
         } while (i != std::string_view::npos);
     }
-    std::string spath(path);
+    String spath(path);
     if (spath.empty() || spath.front() != '/') [[unlikely]] {
         spath.insert(spath.begin(), '/');
     }
     return URI{spath, std::move(params)};
 }
 
-void URI::dump(std::string &r) const {
+void URI::dump(String &r) const {
     r.append(path);
     char queryChar = '?';
     for (auto &[k, v]: params) {
@@ -12875,13 +14207,12 @@ void URI::dump(std::string &r) const {
     }
 }
 
-std::string URI::dump() const {
-    std::string r;
+String URI::dump() const {
+    String r;
     dump(r);
     return r;
 }
 } // namespace co_async
-
 
 
 
@@ -12917,7 +14248,7 @@ HTTPProtocolVersion11::httpContentEncodingByName(std::string_view name) {
 
 Task<Expected<>> HTTPProtocolVersion11::parseHeaders(HTTPHeaders &headers) {
     using namespace std::string_view_literals;
-    std::string line;
+    String line;
     while (true) {
         line.clear();
         co_await co_await sock.getline(line, "\r\n"sv);
@@ -12927,8 +14258,7 @@ Task<Expected<>> HTTPProtocolVersion11::parseHeaders(HTTPHeaders &headers) {
         auto pos = line.find(':');
         if (pos == line.npos || pos == line.size() - 1 || line[pos + 1] != ' ')
             [[unlikely]] {
-            co_return Unexpected{
-                std::make_error_code(std::errc::protocol_error)};
+            co_return std::errc::protocol_error;
         }
         auto key = line.substr(0, pos);
         for (auto &c: key) {
@@ -13011,7 +14341,7 @@ void HTTPProtocolVersion11::negotiateAcceptEncoding(
 
 Task<Expected<>> HTTPProtocolVersion11::writeChunked(BorrowedStream &body) {
     using namespace std::string_view_literals;
-    bool hadHeader = false;
+    co_await co_await sock.puts("transfer-encoding: chunked\r\n\r\n"sv);
     do {
         auto bufSpan = body.peekbuf();
         auto n = bufSpan.size();
@@ -13024,11 +14354,6 @@ Task<Expected<>> HTTPProtocolVersion11::writeChunked(BorrowedStream &body) {
             std::reverse(buf, ep);
             *ep++ = '\r';
             *ep++ = '\n';
-            if (!hadHeader) {
-                co_await co_await sock.puts(
-                    "transfer-encoding: chunked\r\n\r\n"sv);
-                hadHeader = true;
-            }
             co_await co_await sock.puts(
                 std::string_view{buf, static_cast<std::size_t>(ep - buf)});
             co_await co_await sock.putspan(bufSpan);
@@ -13036,11 +14361,7 @@ Task<Expected<>> HTTPProtocolVersion11::writeChunked(BorrowedStream &body) {
             co_await co_await sock.flush();
         }
     } while (co_await body.fillbuf());
-    if (hadHeader) {
-        co_await co_await sock.puts("0\r\n\r\n"sv);
-    } else {
-        co_await co_await sock.puts("\r\n"sv);
-    }
+    co_await co_await sock.puts("0\r\n\r\n"sv);
     co_await co_await sock.flush();
     co_return {};
 }
@@ -13063,13 +14384,13 @@ Task<Expected<>> HTTPProtocolVersion11::readChunked(BorrowedStream &body) {
     using namespace std::string_view_literals;
     if (mContentLength) {
         if (auto n = *mContentLength; n > 0) {
-            std::string line;
+            String line;
             co_await co_await sock.getn(line, n);
             co_await co_await body.puts(line);
             co_await co_await body.flush();
         }
     } else {
-        std::string line;
+        String line;
         while (true) {
             line.clear();
             co_await co_await sock.getline(line, "\r\n"sv);
@@ -13089,14 +14410,14 @@ Task<Expected<>> HTTPProtocolVersion11::readChunked(BorrowedStream &body) {
     co_return {};
 }
 
-Task<Expected<>> HTTPProtocolVersion11::readChunkedString(std::string &body) {
+Task<Expected<>> HTTPProtocolVersion11::readChunkedString(String &body) {
     using namespace std::string_view_literals;
     if (mContentLength) {
         if (auto n = *mContentLength; n > 0) {
             co_await co_await sock.getn(body, n);
         }
     } else {
-        std::string line;
+        String line;
         while (true) {
             line.clear();
             co_await co_await sock.getline(line, "\r\n"sv);
@@ -13119,16 +14440,15 @@ Task<Expected<>> HTTPProtocolVersion11::writeEncoded(BorrowedStream &body) {
     } break;
     case HTTPContentEncoding::Deflate: {
         co_await co_await sock.puts("content-encoding: deflate\r\n"sv);
-        auto [r, w] = co_await co_await pipe_stream();
-        TaskGroup<Expected<>> group;
-        group.add([&body, w = std::move(w)]() mutable -> Task<Expected<>> {
-            co_await co_await zlib_deflate(body, w);
-            co_await co_await w.flush();
-            co_await w.close();
-            co_return {};
-        });
-        group.add(writeChunked(r));
-        co_await co_await group.wait();
+        auto [r, w] = pipe_stream();
+        co_await co_await when_all(
+            co_bind([&body, w = std::move(w)]() mutable -> Task<Expected<>> {
+                co_await co_await zlib_deflate(body, w);
+                co_await co_await w.flush();
+                co_await w.close();
+                co_return {};
+            }),
+            writeChunked(r));
     } break;
     case HTTPContentEncoding::Gzip: {
         co_await co_await sock.puts("content-encoding: gzip\r\n"sv);
@@ -13139,10 +14459,7 @@ Task<Expected<>> HTTPProtocolVersion11::writeEncoded(BorrowedStream &body) {
                        .pipe_in(0, pin)
                        .pipe_out(1, pout)
                        .spawn();
-        TaskGroup<Expected<>> group;
-        group.add(pipe_forward(body, pin));
-        group.add(writeChunked(pout));
-        co_await co_await group.wait();
+        co_await co_await when_all(pipe_forward(body, pin), writeChunked(pout));
         co_await co_await wait_process(pid);
     } break;
     };
@@ -13171,18 +14488,17 @@ Task<Expected<>> HTTPProtocolVersion11::readEncoded(BorrowedStream &body) {
         co_await co_await readChunked(body);
     } break;
     case HTTPContentEncoding::Deflate: {
-        auto [r, w] = co_await co_await pipe_stream();
-        TaskGroup<Expected<>> group;
-        group.add(pipe_bind(std::move(w),
-                            &std::decay_t<decltype(*this)>::readChunked, this));
-        group.add([this, w = std::move(w)]() mutable -> Task<Expected<>> {
-            co_await co_await readChunked(w);
-            co_await co_await w.flush();
-            co_await w.close();
-            co_return {};
-        });
-        group.add(zlib_deflate(r, body));
-        co_await co_await group.wait();
+        auto [r, w] = pipe_stream();
+        co_await co_await when_all(
+            pipe_bind(std::move(w), &std::decay_t<decltype(*this)>::readChunked,
+                      this),
+            co_bind([this, w = std::move(w)]() mutable -> Task<Expected<>> {
+                co_await co_await readChunked(w);
+                co_await co_await w.flush();
+                co_await w.close();
+                co_return {};
+            }),
+            zlib_deflate(r, body));
     } break;
     case HTTPContentEncoding::Gzip: {
         OwningStream pin, pout;
@@ -13193,22 +14509,21 @@ Task<Expected<>> HTTPProtocolVersion11::readEncoded(BorrowedStream &body) {
                        .pipe_in(0, pin)
                        .pipe_out(1, pout)
                        .spawn();
-        TaskGroup<Expected<>> group;
-        group.add([this, pin = std::move(pin)]() mutable -> Task<Expected<>> {
-            co_await co_await readChunked(pin);
-            co_await co_await pin.flush();
-            co_await pin.close();
-            co_return {};
-        });
-        group.add(pipe_forward(pout, body));
-        co_await co_await group.wait();
+        co_await co_await when_all(
+            co_bind([this, pin = std::move(pin)]() mutable -> Task<Expected<>> {
+                co_await co_await readChunked(pin);
+                co_await co_await pin.flush();
+                co_await pin.close();
+                co_return {};
+            }),
+            pipe_forward(pout, body));
         co_await co_await wait_process(pid);
     } break;
     };
     co_return {};
 }
 
-Task<Expected<>> HTTPProtocolVersion11::readEncodedString(std::string &body) {
+Task<Expected<>> HTTPProtocolVersion11::readEncodedString(String &body) {
     using namespace std::string_view_literals;
     switch (mContentEncoding) {
     case HTTPContentEncoding::Identity: {
@@ -13227,8 +14542,8 @@ void HTTPProtocolVersion11::checkPhase(int from, int to) {
     if (mPhase != from) [[unlikely]] {
         throw std::logic_error(
             "HTTPProtocol member function calling order wrong (phase = " +
-            to_string(mPhase) + ", from = " + to_string(from) +
-            ", to = " + to_string(to) + ")");
+            std::to_string(mPhase) + ", from = " + std::to_string(from) +
+            ", to = " + std::to_string(to) + ")");
     }
     mPhase = to;
 }
@@ -13255,7 +14570,7 @@ Task<Expected<>> HTTPProtocolVersion11::readBodyStream(BorrowedStream &body) {
     co_return {};
 }
 
-Task<Expected<>> HTTPProtocolVersion11::readBody(std::string &body) {
+Task<Expected<>> HTTPProtocolVersion11::readBody(String &body) {
     checkPhase(-1, 0);
     co_await co_await readEncodedString(body);
     co_return {};
@@ -13288,18 +14603,18 @@ void HTTPProtocolVersion11::initClientState() {
 Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
-    std::string line;
-    if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) {
-        co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+    String line;
+    if (!co_await sock.getline(line, "\r\n"sv)) {
+        co_return std::errc::broken_pipe;
     }
     auto pos = line.find(' ');
     if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
+        co_return std::errc::protocol_error;
     }
     req.method = line.substr(0, pos);
     auto pos2 = line.find(' ', pos + 1);
     if (pos2 == line.npos || pos2 == line.size() - 1) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
+        co_return std::errc::protocol_error;
     }
     req.uri = URI::parse(line.substr(pos + 1, pos2 - pos - 1));
     co_await co_await parseHeaders(req.headers);
@@ -13324,18 +14639,18 @@ Task<Expected<>> HTTPProtocolVersion11::writeResponse(HTTPResponse const &res) {
 Task<Expected<>> HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
-    std::string line;
-    if (!co_await sock.getline(line, "\r\n"sv) || line.empty()) [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::broken_pipe)};
+    String line;
+    if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
+        co_return std::errc::broken_pipe;
     }
     if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv || line[8] != ' ')
         [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
+        co_return std::errc::protocol_error;
     }
     if (auto statusOpt = from_string<int>(line.substr(9, 3))) [[likely]] {
         res.status = *statusOpt;
     } else [[unlikely]] {
-        co_return Unexpected{std::make_error_code(std::errc::protocol_error)};
+        co_return std::errc::protocol_error;
     }
     co_await co_await parseHeaders(res.headers);
     handleContentEncoding(res.headers);
@@ -13360,8 +14675,8 @@ HTTPProtocolVersion11::~HTTPProtocolVersion11() = default;
 
 
 namespace co_async {
-std::string HTTPServerUtils::html_encode(std::string_view str) {
-    std::string res;
+String HTTPServerUtils::html_encode(std::string_view str) {
+    String res;
     res.reserve(str.size());
     for (auto c: str) {
         switch (c) {
@@ -13378,7 +14693,7 @@ std::string HTTPServerUtils::html_encode(std::string_view str) {
 
 Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO &io,
                                                    std::string_view body,
-                                                   std::string contentType) {
+                                                   String contentType) {
     HTTPResponse res{
         .status = 200,
         .headers =
@@ -13393,8 +14708,8 @@ Task<Expected<>> HTTPServerUtils::make_ok_response(HTTPServer::IO &io,
 Task<Expected<>>
 HTTPServerUtils::make_response_from_directory(HTTPServer::IO &io,
                                               std::filesystem::path path) {
-    auto dirPath = path.generic_string();
-    std::string content = "<h1>Files in " + dirPath + ":</h1>";
+    String dirPath{path.generic_string()};
+    String content = "<h1>Files in " + dirPath + ":</h1>";
     auto parentPath = path.parent_path().generic_string();
     content +=
         "<a href=\"/" + URI::url_encode_path(parentPath) + "\">..</a><br>";
@@ -13415,7 +14730,7 @@ HTTPServerUtils::make_response_from_directory(HTTPServer::IO &io,
 Task<Expected<>> HTTPServerUtils::make_error_response(HTTPServer::IO &io,
                                                       int status) {
     auto error =
-        to_string(status) + " " + std::string(getHTTPStatusName(status));
+        to_string(status) + ' ' + String(getHTTPStatusName(status));
     HTTPResponse res{
         .status = status,
         .headers =
@@ -13514,8 +14829,9 @@ HTTPServerUtils::make_response_from_file(HTTPServer::IO &io,
 
 
 
+
 namespace co_async {
-std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
+String timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
     // format chrono time point into HTTP date format, e.g.:
     // Tue, 30 Apr 2024 07:31:38 GMT
     std::time_t time = std::chrono::system_clock::to_time_t(tp);
@@ -13523,29 +14839,29 @@ std::string timePointToHTTPDate(std::chrono::system_clock::time_point tp) {
     std::ostringstream ss;
     ss.imbue(std::locale::classic());
     ss << std::put_time(&tm, "%a, %d %b %Y %H:%M:%S GMT");
-    return ss.str();
+    return String{ss.str()};
 }
 
 Expected<std::chrono::system_clock::time_point>
-httpDateToTimePoint(std::string const &date) {
+httpDateToTimePoint(String const &date) {
     std::tm tm = {};
     std::istringstream ss(date);
     ss.imbue(std::locale::classic());
     ss >> std::get_time(&tm, "%a, %d %b %Y %H:%M:%S GMT");
     if (ss.fail()) [[unlikely]] {
-        return Unexpected{std::make_error_code(std::errc::invalid_argument)};
+        return std::errc::invalid_argument;
     }
     std::time_t time = std::mktime(&tm);
     return std::chrono::system_clock::from_time_t(time);
 }
 
-std::string httpDateNow() {
+String httpDateNow() {
     std::time_t time = std::time(nullptr);
     std::tm tm = *std::gmtime(&time);
     std::ostringstream ss;
     ss.imbue(std::locale::classic());
     ss << std::put_time(&tm, "%a, %d %b %Y %H:%M:%S GMT");
-    return ss.str();
+    return String{ss.str()};
 }
 
 std::string_view getHTTPStatusName(int status) {
@@ -13626,92 +14942,91 @@ std::string_view getHTTPStatusName(int status) {
     }
 }
 
-std::string guessContentTypeByExtension(std::string_view ext,
-                                        char const *defaultType) {
+String guessContentTypeByExtension(std::string_view ext,
+                                   char const *defaultType) {
     using namespace std::string_view_literals;
-    using namespace std::string_literals;
     if (ext == ".html"sv || ext == ".htm"sv) {
-        return "text/html;charset=utf-8"s;
+        return String{"text/html;charset=utf-8"sv};
     } else if (ext == ".css"sv) {
-        return "text/css;charset=utf-8"s;
+        return String{"text/css;charset=utf-8"sv};
     } else if (ext == ".js"sv) {
-        return "application/javascript;charset=utf-8"s;
+        return String{"application/javascript;charset=utf-8"sv};
     } else if (ext == ".txt"sv || ext == ".md"sv) {
-        return "text/plain;charset=utf-8"s;
+        return String{"text/plain;charset=utf-8"sv};
     } else if (ext == ".json"sv) {
-        return "application/json"s;
+        return String{"application/json"sv};
     } else if (ext == ".png"sv) {
-        return "image/png"s;
+        return String{"image/png"sv};
     } else if (ext == ".jpg"sv || ext == ".jpeg"sv) {
-        return "image/jpeg"s;
+        return String{"image/jpeg"sv};
     } else if (ext == ".gif"sv) {
-        return "image/gif"s;
+        return String{"image/gif"sv};
     } else if (ext == ".xml"sv) {
-        return "application/xml"s;
+        return String{"application/xml"sv};
     } else if (ext == ".pdf"sv) {
-        return "application/pdf"s;
+        return String{"application/pdf"sv};
     } else if (ext == ".mp4"sv) {
-        return "video/mp4"s;
+        return String{"video/mp4"sv};
     } else if (ext == ".mp3"sv) {
-        return "audio/mp3"s;
+        return String{"audio/mp3"sv};
     } else if (ext == ".zip"sv) {
-        return "application/zip"s;
+        return String{"application/zip"sv};
     } else if (ext == ".svg"sv) {
-        return "image/svg+xml"s;
+        return String{"image/svg+xml"sv};
     } else if (ext == ".wav"sv) {
-        return "audio/wav"s;
+        return String{"audio/wav"sv};
     } else if (ext == ".ogg"sv) {
-        return "audio/ogg"s;
+        return String{"audio/ogg"sv};
     } else if (ext == ".mpg"sv || ext == ".mpeg"sv) {
-        return "video/mpeg"s;
+        return String{"video/mpeg"sv};
     } else if (ext == ".webm"sv) {
-        return "video/webm"s;
+        return String{"video/webm"sv};
     } else if (ext == ".ico"sv) {
-        return "image/x-icon"s;
+        return String{"image/x-icon"sv};
     } else if (ext == ".rar"sv) {
-        return "application/x-rar-compressed"s;
+        return String{"application/x-rar-compressed"sv};
     } else if (ext == ".7z"sv) {
-        return "application/x-7z-compressed"s;
+        return String{"application/x-7z-compressed"sv};
     } else if (ext == ".tar"sv) {
-        return "application/x-tar"s;
+        return String{"application/x-tar"sv};
     } else if (ext == ".gz"sv) {
-        return "application/gzip"s;
+        return String{"application/gzip"sv};
     } else if (ext == ".bz2"sv) {
-        return "application/x-bzip2"s;
+        return String{"application/x-bzip2"sv};
     } else if (ext == ".xz"sv) {
-        return "application/x-xz"s;
+        return String{"application/x-xz"sv};
     } else if (ext == ".zip"sv) {
-        return "application/zip"s;
+        return String{"application/zip"sv};
     } else if (ext == ".tar.gz"sv || ext == ".tgz"sv) {
-        return "application/tar+gzip"s;
+        return String{"application/tar+gzip"sv};
     } else if (ext == ".tar.bz2"sv || ext == ".tbz2"sv) {
-        return "application/tar+bzip2"s;
+        return String{"application/tar+bzip2"sv};
     } else if (ext == ".tar.xz"sv || ext == ".txz"sv) {
-        return "application/tar+xz"s;
+        return String{"application/tar+xz"sv};
     } else if (ext == ".doc"sv || ext == ".docx"sv) {
-        return "application/msword"s;
+        return String{"application/msword"sv};
     } else if (ext == ".xls"sv || ext == ".xlsx"sv) {
-        return "application/vnd.ms-excel"s;
+        return String{"application/vnd.ms-excel"sv};
     } else if (ext == ".ppt"sv || ext == ".pptx"sv) {
-        return "application/vnd.ms-powerpoint"s;
+        return String{"application/vnd.ms-powerpoint"sv};
     } else if (ext == ".csv"sv) {
-        return "text/csv;charset=utf-8"s;
+        return String{"text/csv;charset=utf-8"sv};
     } else if (ext == ".rtf"sv) {
-        return "application/rtf"s;
+        return String{"application/rtf"sv};
     } else if (ext == ".exe"sv) {
-        return "application/x-msdownload"s;
+        return String{"application/x-msdownload"sv};
     } else if (ext == ".msi"sv) {
-        return "application/x-msi"s;
+        return String{"application/x-msi"sv};
     } else if (ext == ".bin"sv) {
-        return "application/octet-stream"s;
+        return String{"application/octet-stream"sv};
     } else {
-        return std::string(defaultType);
+        return String{defaultType};
     }
 }
 
-std::string capitalizeHTTPHeader(std::string_view key) {
+String capitalizeHTTPHeader(std::string_view key) {
     // e.g.: user-agent -> User-Agent
-    std::string result(key);
+    String result(key);
     if (!result.empty()) [[likely]] {
         if ('a' <= result[0] && result[0] <= 'z') [[likely]] {
             result[0] -= 'a' - 'A';
@@ -13744,7 +15059,7 @@ namespace co_async {
 struct HTTPServer::Impl {
     struct Route {
         HTTPHandler mHandler;
-        std::vector<std::string> mMethods;
+        std::vector<String> mMethods;
 
         bool checkMethod(std::string_view method) const {
             return std::find(mMethods.begin(), mMethods.end(), method) !=
@@ -13755,7 +15070,7 @@ struct HTTPServer::Impl {
     struct PrefixRoute {
         HTTPPrefixHandler mHandler;
         HTTPRouteMode mRouteMode;
-        std::vector<std::string> mMethods;
+        std::vector<String> mMethods;
 
         bool checkMethod(std::string_view method) const {
             return std::find(mMethods.begin(), mMethods.end(), method) !=
@@ -13807,15 +15122,16 @@ struct HTTPServer::Impl {
         }
     };
 
-    SimpleMap<std::string, Route> mRoutes;
-    std::vector<std::pair<std::string, PrefixRoute>> mPrefixRoutes;
+    SimpleMap<String, Route> mRoutes;
+    std::vector<std::pair<String, PrefixRoute>> mPrefixRoutes;
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
     };
-    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(5);
+    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(10);
 #if CO_ASYNC_DEBUG
     bool mLogRequests = false;
 #endif
+
     Task<Expected<>> doHandleRequest(IO &io) const {
         if (auto route = mRoutes.at(io.request.uri.path)) {
             if (!route->checkMethod(io.request.method)) [[unlikely]] {
@@ -13837,8 +15153,16 @@ struct HTTPServer::Impl {
                     co_await co_await make_error_response(io, 405);
                     co_return {};
                 }
+#if CO_ASYNC_DEBUG
+                auto ret = co_await route.mHandler(io, suffix);
+                if (ret.has_error() && mLogRequests) {
+                    std::clog << "SERVER ERROR: " << ret.error() << '\n';
+                }
+                co_return ret;
+#else
                 co_await co_await route.mHandler(io, suffix);
                 co_return {};
+#endif
             }
         }
         co_await co_await mDefaultRoute(io);
@@ -13852,14 +15176,14 @@ Task<Expected<>> HTTPServer::IO::readRequestHeader() {
     co_return {};
 }
 
-Task<Expected<std::string>> HTTPServer::IO::request_body() {
+Task<Expected<String>> HTTPServer::IO::request_body() {
 #if CO_ASYNC_DEBUG
     if (mBodyRead) [[unlikely]] {
         throw std::runtime_error("request_body() may only be called once");
     }
 #endif
     mBodyRead = true;
-    std::string body;
+    String body;
     co_await co_await mHttp->readBody(body);
     co_return body;
 }
@@ -13906,16 +15230,21 @@ Task<Expected<>> HTTPServer::IO::response(HTTPResponse resp,
 }
 
 void HTTPServer::IO::builtinHeaders(HTTPResponse &res) {
-    using namespace std::string_literals;
-    res.headers.insert("server"s, "co_async/0.0.1"s);
-    res.headers.insert("accept"s, "*/*"s);
-    res.headers.insert("accept-ranges"s, "bytes"s);
-    res.headers.insert("date"s, httpDateNow());
+    res.headers.insert("server"_s, "co_async/0.0.1"_s);
+    res.headers.insert("accept"_s, "*/*"_s);
+    res.headers.insert("accept-ranges"_s, "bytes"_s);
+    res.headers.insert("date"_s, httpDateNow());
 }
 
 HTTPServer::HTTPServer() : mImpl(std::make_unique<Impl>()) {}
 
 HTTPServer::~HTTPServer() = default;
+
+#if CO_ASYNC_DEBUG
+void HTTPServer::enableLogRequests() {
+    mImpl->mLogRequests = true;
+}
+#endif
 
 void HTTPServer::timeout(std::chrono::steady_clock::duration timeout) {
     mImpl->mTimeout = timeout;
@@ -13924,7 +15253,7 @@ void HTTPServer::timeout(std::chrono::steady_clock::duration timeout) {
 void HTTPServer::route(std::string_view methods, std::string_view path,
                        HTTPHandler handler) {
     mImpl->mRoutes.insert_or_assign(
-        std::string(path),
+        String(path),
         {handler, split_string(upper_string(methods), ' ').collect()});
 }
 
@@ -13937,7 +15266,7 @@ void HTTPServer::route(std::string_view methods, std::string_view prefix,
                                });
     mImpl->mPrefixRoutes.insert(
         it,
-        {std::string(prefix),
+        {String(prefix),
          {handler, mode, split_string(upper_string(methods), ' ').collect()}});
 }
 
@@ -13969,6 +15298,10 @@ HTTPServer::prepareHTTP(SocketHandle handle) const {
 }
 
 Task<Expected<>> HTTPServer::handle_http(SocketHandle handle) const {
+// #if CO_ASYNC_ALLOC
+//     std::pmr::unsynchronized_pool_resource pool{currentAllocator};
+//     ReplaceAllocator _ = &pool;
+// #endif
     /* int h = handle.fileNo(); */
     co_await co_await doHandleConnection(
         co_await prepareHTTP(std::move(handle)));
@@ -13986,13 +15319,13 @@ HTTPServer::handle_http_redirect_to_https(SocketHandle handle) const {
             break;
         }
         if (auto host = io.request.headers.get("host")) {
-            auto location = "https://"s + *host + io.request.uri.dump();
+            auto location = "https://"_s + *host + io.request.uri.dump();
             HTTPResponse res = {
                 .status = 302,
                 .headers =
                     {
-                        {"location", location},
-                        {"content-type", "text/plain"},
+                        {"location"_s, location},
+                        {"content-type"_s, "text/plain"_s},
                     },
             };
             co_await co_await io.response(res, location);
@@ -14015,13 +15348,19 @@ Task<Expected<>> HTTPServer::handle_https(SocketHandle handle,
 Task<Expected<>>
 HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
     while (true) {
+// #if CO_ASYNC_ALLOC
+//         BytesBuffer buf(8192 * 4);
+//         std::pmr::monotonic_buffer_resource mono{buf.data(), buf.size(), currentAllocator};
+//         ReplaceAllocator _ = &mono;
+// #endif
+
         IO io(http.get());
         if (!co_await io.readRequestHeader()) {
             break;
         }
 #if CO_ASYNC_DEBUG
         std::chrono::steady_clock::time_point t0;
-        if (mLogRequests) {
+        if (mImpl->mLogRequests) {
             std::clog << io.request.method + ' ' + io.request.uri.dump() + '\n';
             for (auto [k, v]: io.request.headers) {
                 if (k == "cookie" || k == "set-cookie" ||
@@ -14036,17 +15375,16 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
 #endif
         co_await co_await mImpl->doHandleRequest(io);
 #if CO_ASYNC_DEBUG
-        if (mLogRequests) {
+        if (mImpl->mLogRequests) {
             auto dt = std::chrono::steady_clock::now() - t0;
             std::clog << io.request.method + ' ' + io.request.uri.dump() + ' ' +
-                             std::to_string(io.mResponseSavedForDebug.status) +
-                             ' ' +
-                             std::string(getHTTPStatusName(
+                             to_string(io.mResponseSavedForDebug.status) + ' ' +
+                             String(getHTTPStatusName(
                                  io.mResponseSavedForDebug.status)) +
                              ' ' +
-                             std::to_string(std::chrono::duration_cast<
-                                                std::chrono::milliseconds>(dt)
-                                                .count()) +
+                             to_string(std::chrono::duration_cast<
+                                           std::chrono::milliseconds>(dt)
+                                           .count()) +
                              "ms\n";
             for (auto [k, v]: io.mResponseSavedForDebug.headers) {
                 if (k == "cookie" || k == "set-cookie") {
@@ -14063,7 +15401,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
 
 Task<Expected<>> HTTPServer::make_error_response(IO &io, int status) {
     auto error =
-        to_string(status) + " " + std::string(getHTTPStatusName(status));
+        to_string(status) + ' ' + String(getHTTPStatusName(status));
     HTTPResponse res{
         .status = status,
         .headers =
@@ -14090,27 +15428,31 @@ namespace co_async {
 Task<Expected<SocketHandle>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout) {
+    using namespace std::string_view_literals;
     if (proxy.starts_with("http://")) {
         proxy.remove_prefix(7);
         auto sock = co_await co_await socket_connect(
-            co_await SocketAddress::parse(proxy, 80));
-        auto hostName = std::string(host) + ":" + to_string(port);
-        std::string header = "CONNECT " + hostName +
-                             " HTTP/1.1\r\nHost: " + hostName +
-                             "\r\nProxy-Connection: Keep-Alive\r\n\r\n";
+            co_await SocketAddress::parse(proxy, 80), co_await co_cancel);
+        String hostName(host);
+        hostName += ':';
+        hostName += to_string(port);
+        String header("CONNECT "sv);
+        header += hostName;
+        header += " HTTP/1.1\r\nHost: "sv;
+        header += hostName;
+        header += "\r\nProxy-Connection: Keep-Alive\r\n\r\n"sv;
         std::span<char const> buf = header;
         std::size_t n = 0;
         do {
             n = co_await co_await socket_write(sock, buf, timeout);
             if (!n) [[unlikely]] {
-                co_return Unexpected{
-                    std::make_error_code(std::errc::connection_reset)};
+                co_return std::errc::connection_reset;
             }
             buf = buf.subspan(n);
         } while (buf.size() > 0);
         using namespace std::string_view_literals;
         auto desiredResponse = "HTTP/1.1 200 Connection established\r\n\r\n"sv;
-        std::string response(39, '\0');
+        String response(39, '\0');
         std::span<char> outbuf = response;
         do {
             n = co_await co_await socket_read(sock, outbuf, timeout);
@@ -14122,8 +15464,7 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
                                                         outbuf.size()) +
                                  "]\n";
 #endif
-                co_return Unexpected{
-                    std::make_error_code(std::errc::connection_reset)};
+                co_return std::errc::connection_reset;
             }
             outbuf = outbuf.subspan(n);
         } while (outbuf.size() > 0);
@@ -14134,14 +15475,14 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
                          "connection: [" +
                              response + "]\n";
 #endif
-            co_return Unexpected{
-                std::make_error_code(std::errc::connection_reset)};
+            co_return std::errc::connection_reset;
         }
         co_return sock;
     } else {
 #if CO_ASYNC_DEBUG
         if (!proxy.empty()) {
-            std::cerr << "WARNING: unsupported proxy scheme [" + proxy + "]\n";
+            std::cerr << "WARNING: unsupported proxy scheme [" +
+                             std::string(proxy) + "]\n";
         }
 #endif
         co_return co_await socket_connect(co_await SocketAddress::parse(proxy));

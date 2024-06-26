@@ -7,6 +7,8 @@ using namespace std::literals;
 static Task<Expected<>> handle_connection(SocketHandle income) {
     BytesBuffer buf(256);
     while (true) {
+        // co_await UringOp::link_ops(UringOp().prep_recv(income.fileNo(), buf, 0),
+        //     UringOp().prep_send(income.fileNo(), "HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv, 0));
         co_await co_await socket_read(income, buf);
         co_await co_await socket_write(income, "HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv);
     }

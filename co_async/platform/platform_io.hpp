@@ -30,14 +30,10 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
     return durationToKernelTimespec(tp.time_since_epoch());
 }
 
-struct PlatformIOContextOptions {
-    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(10);
-    std::optional<std::size_t> threadAffinity = std::nullopt;
-};
-
 struct PlatformIOContext {
-    static void schedSetThreadAffinity(size_t cpu);
-    static bool ioUringIsOpCodeSupported(int op) noexcept;
+    [[gnu::cold]] static void schedSetThreadAffinity(size_t cpu);
+    [[gnu::cold]] static bool ioUringIsOpCodeSupported(int op) noexcept;
+    [[gnu::cold]] static void dumpIOUringDiagnostics();
 
     [[gnu::hot]] bool
     waitEventsFor(std::optional<std::chrono::steady_clock::duration> timeout);
@@ -47,8 +43,9 @@ struct PlatformIOContext {
     }
 
     PlatformIOContext &operator=(PlatformIOContext &&) = delete;
-    explicit PlatformIOContext(std::size_t entries = 2048);
-    ~PlatformIOContext();
+    [[gnu::cold]] PlatformIOContext() noexcept;
+    [[gnu::cold]] void setup(std::size_t entries);
+    [[gnu::cold]] ~PlatformIOContext();
     static thread_local PlatformIOContext *instance;
 
 private:

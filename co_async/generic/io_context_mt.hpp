@@ -13,7 +13,7 @@ private:
 
 public:
     explicit IOContextMT(std::in_place_t);
-    explicit IOContextMT(PlatformIOContextOptions options = {},
+    explicit IOContextMT(IOContextOptions options = {},
                          std::size_t numWorkers = 0);
     ~IOContextMT();
 
@@ -33,7 +33,7 @@ public:
         return instance->mNumWorkers;
     }
 
-    static void start(PlatformIOContextOptions options = {},
+    static void start(IOContextOptions options = {},
                       std::size_t numWorkers = 0);
 
     static void spawn(std::coroutine_handle<> coroutine,

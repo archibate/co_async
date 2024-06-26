@@ -21,44 +21,58 @@ void PlatformIOContext::schedSetThreadAffinity(size_t cpu) {
 
 bool PlatformIOContext::ioUringIsOpCodeSupported(int op) noexcept {
     struct io_uring_probe *probe = io_uring_get_probe();
-    if (!probe) [[unlikely]]
+    if (!probe) [[unlikely]] {
         return false;
-
-    // Available since 6.0.
+    }
     bool res = io_uring_opcode_supported(probe, op);
     io_uring_free_probe(probe);
     return res;
 }
 
-PlatformIOContext::PlatformIOContext(std::size_t entries) {
-    unsigned int flags = IORING_SETUP_SQPOLL;
-    throwingError(io_uring_queue_init((unsigned int)entries, &mRing, flags));
+void PlatformIOContext::dumpIOUringDiagnostics() {
+    struct io_uring_probe *probe = io_uring_get_probe();
+    if (!probe) [[unlikely]] {
+        return;
+    }
+    for (int op = IORING_OP_NOP; op < IORING_OP_LAST; ++op) {
+        bool ok = io_uring_opcode_supported(probe, op);
+        std::cerr << "opcode " << op << (ok ? "" : " not") << " supported"
+                  << '\n';
+    }
+    io_uring_free_probe(probe);
+}
+
+PlatformIOContext::PlatformIOContext() noexcept {
+    mRing.ring_fd = -1;
+}
+
+void PlatformIOContext::setup(std::size_t entries) {
+    struct io_uring_params params = {};
+    // params.flags = IORING_SETUP_SQPOLL;
+    // params.sq_thread_cpu = 1;
+    // params.sq_thread_idle = 1000;
+    throwingError(
+        io_uring_queue_init_params((unsigned int)entries, &mRing, &params));
 }
 
 PlatformIOContext::~PlatformIOContext() {
-    io_uring_queue_exit(&mRing);
+    if (mRing.ring_fd != -1) {
+        io_uring_queue_exit(&mRing);
+    }
 }
 
 thread_local PlatformIOContext *PlatformIOContext::instance;
 
-FILE *out = fopen("/tmp/rec.txt", "wb");
-
-bool PlatformIOContext::waitEventsFor(std::optional<std::chrono::steady_clock::duration> timeout) {
+bool PlatformIOContext::waitEventsFor(
+    std::optional<std::chrono::steady_clock::duration> timeout) {
     struct io_uring_cqe *cqe;
     struct __kernel_timespec ts, *tsp;
-    unsigned int numBatch = io_uring_cq_ready(&mRing);
-    if (numBatch == 0) {
-        numBatch = 1;
-    } else {
-        fprintf(out, "%d\n", numBatch);
-    }
     if (timeout) {
         tsp = &(ts = durationToKernelTimespec(*timeout));
     } else {
         tsp = nullptr;
     }
-    int res = io_uring_submit_and_wait_timeout(
-        &mRing, &cqe, numBatch, tsp, nullptr);
+    int res = io_uring_submit_and_wait_timeout(&mRing, &cqe, 1, tsp, nullptr);
     if (res == -ETIME) {
         return false;
     } else if (res < 0) [[unlikely]] {
@@ -77,39 +91,4 @@ bool PlatformIOContext::waitEventsFor(std::optional<std::chrono::steady_clock::d
     io_uring_cq_advance(&mRing, numGot);
     return true;
 }
-
-// bool PlatformIOContext::pollEvents(std::optional<std::chrono::steady_clock::duration> timeout) {
-//     struct io_uring_cqe *cqe;
-//     struct __kernel_timespec ts, *tsp;
-//     unsigned int numBatch = io_uring_cq_ready(&mRing);
-//     if (numBatch == 0) {
-//         numBatch = 1;
-//     } else {
-//         fprintf(out, "%d\n", numBatch);
-//     }
-//     if (timeout) {
-//         tsp = &(ts = durationToKernelTimespec(*timeout));
-//     } else {
-//         tsp = nullptr;
-//     }
-//     int res = io_uring_submit(&mRing);
-//     if (res == -ETIME) {
-//         return false;
-//     } else if (res < 0) [[unlikely]] {
-//         if (res == -EINTR) {
-//             return false;
-//         }
-//         throw std::system_error(-res, std::system_category());
-//     }
-//     unsigned head, numGot = 0;
-//     io_uring_for_each_cqe(&mRing, head, cqe) {
-//         auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
-//         op->mRes = cqe->res;
-//         GenericIOContext::instance->enqueueJob(op->mPrevious);
-//         ++numGot;
-//     }
-//     io_uring_cq_advance(&mRing, numGot);
-//     return true;
-// }
-
 } // namespace co_async

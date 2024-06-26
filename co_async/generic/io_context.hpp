@@ -6,6 +6,12 @@
 #include <co_async/utils/cacheline.hpp>
 
 namespace co_async {
+struct IOContextOptions {
+    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(100);
+    std::optional<std::size_t> threadAffinity = std::nullopt;
+    std::size_t queueEntries = 512;
+};
+
 struct alignas(hardware_destructive_interference_size) IOContext {
 private:
     GenericIOContext mGenericIO;
@@ -17,29 +23,30 @@ private:
 public:
     explicit IOContext(std::in_place_t) {}
 
-    explicit IOContext(PlatformIOContextOptions options = {}) {
+    explicit IOContext(IOContextOptions options = {}) {
         start(options);
     }
 
     IOContext(IOContext &&) = delete;
 
     [[gnu::hot]] void startHere(std::stop_token stop,
-                                PlatformIOContextOptions options,
+                                IOContextOptions options,
                                 std::span<IOContext> peerContexts);
 
-    void start(PlatformIOContextOptions options = {},
+    void start(IOContextOptions options = {},
                std::span<IOContext> peerContexts = {});
 
     [[gnu::hot]] void spawn(std::coroutine_handle<> coroutine) {
         mGenericIO.enqueueJob(coroutine);
+        wakeUp();
     }
 
     template <class T, class P>
     void spawn(Task<T, P> task) {
         auto wrapped = coSpawnStarter(std::move(task));
-        auto coroutine = wrapped.get();
-        mGenericIO.enqueueJob(coroutine);
+        mGenericIO.enqueueJob(wrapped.get());
         wrapped.release();
+        wakeUp();
     }
 
     template <class T, class P>
@@ -51,6 +58,11 @@ public:
 #if CO_ASYNC_ALLOC
     static thread_local std::pmr::memory_resource *currentAllocator;
 #endif
+
+    void wakeUp();
+private:
+    Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>> watchDogTask();
+    std::atomic<std::uint8_t> mWake{0};
 };
 
 template <class T, class P>

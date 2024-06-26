@@ -17,13 +17,13 @@ IOContextMT::~IOContextMT() {
     IOContextMT::instance = nullptr;
 }
 
-IOContextMT::IOContextMT(PlatformIOContextOptions options,
+IOContextMT::IOContextMT(IOContextOptions options,
                          std::size_t numWorkers)
     : IOContextMT(std::in_place) {
     start(options, numWorkers);
 }
 
-void IOContextMT::start(PlatformIOContextOptions options,
+void IOContextMT::start(IOContextOptions options,
                         std::size_t numWorkers) {
     bool setAffinity;
     if (numWorkers == 0) {

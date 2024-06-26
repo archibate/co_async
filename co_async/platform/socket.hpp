@@ -107,8 +107,8 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
                                             CancelToken cancel);
 Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
                                              int backlog = SOMAXCONN);
-Task<Expected<SocketListener>>
-listener_bind(std::pair<String, int> const &addr, int backlog = SOMAXCONN);
+Task<Expected<SocketListener>> listener_bind(std::pair<String, int> const &addr,
+                                             int backlog = SOMAXCONN);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              CancelToken cancel);
@@ -119,10 +119,15 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              CancelToken cancel);
 Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                          std::span<char const> buf);
+Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
+                                            std::span<char const> buf);
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock,
                                         std::span<char> buf);
 Task<Expected<std::size_t>>
 socket_write(SocketHandle &sock, std::span<char const> buf, CancelToken cancel);
+Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
+                                            std::span<char const> buf,
+                                            CancelToken cancel);
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock, std::span<char> buf,
                                         CancelToken cancel);
 Task<Expected<std::size_t>>

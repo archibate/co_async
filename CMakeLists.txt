@@ -9,6 +9,7 @@
 #set(CO_ASYNC_CUDA ON)
 #set(CO_ASYNC_FIND_LIBURING ON)
 #set(CO_ASYNC_FIND_BEARSSL ON)
+#set(CO_ASYNC_JEMALLOC ON)
 
 if (CO_ASYNC_MODULE)
     cmake_minimum_required(VERSION 3.28)
@@ -143,6 +144,14 @@ target_link_libraries(co_async PUBLIC Threads::Threads)
 
 find_package(TBB REQUIRED COMPONENTS tbb REQUIRED)
 target_link_libraries(co_async PUBLIC TBB::tbb)
+
+if (CO_ASYNC_JEMALLOC)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(JEMALLOC jemalloc)
+    pkg_search_module(JEMALLOC REQUIRED jemalloc)
+    include_directories(${JEMALLOC_INCLUDE_DIRS})
+    target_link_libraries(co_async PUBLIC ${JEMALLOC_LIBRARIES})
+endif()
 
 if (PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     file(GLOB example_sources examples/*.cpp)

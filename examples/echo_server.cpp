@@ -4,12 +4,11 @@
 using namespace co_async;
 using namespace std::literals;
 
-static Task<Expected<>> handle_connection(OwningStream income) {
-    while (auto line = co_await income.getline("\r\n"sv)) {
-        if (line->empty()) {
-            co_await co_await income.puts("HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv);
-            co_await co_await income.flush();
-        }
+static Task<Expected<>> handle_connection(SocketHandle income) {
+    BytesBuffer buf(256);
+    while (true) {
+        co_await co_await socket_read(income, buf);
+        co_await co_await socket_write(income, "HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv);
     }
     co_return {};
 }
@@ -18,37 +17,31 @@ static Task<Expected<>> amain(std::string serveAt) {
     co_await co_await stdio().putline("listening at: "s + serveAt);
     auto listener = co_await co_await listener_bind(co_await SocketAddress::parse(serveAt, 80));
 
-#if 1
+#if 0
     ConcurrentQueue<OwningStream> incoming;
     incoming.set_max_size(1024);
     
     for (std::size_t i = 0; i < IOContextMT::num_workers(); ++i) {
         IOContextMT::nth_worker(i).spawn(co_bind([&]() -> Task<> {
             while (true) {
-                    debug(), 2;
                 if (auto income = co_await incoming.pop()) [[likely]] {
-                    debug(), 3;
                     co_spawn(handle_connection(std::move(*income)));
                 }
-                    debug(), 4;
             }
         }));
     }
 
     while (true) {
-        if (auto income = co_await tcp_accept(listener, std::chrono::seconds(3))) [[likely]] {
-            co_await co_await incoming.push(std::move(*income));
-        }
+        co_await co_await listener_accept(listener);
+        co_await co_await incoming.push(std::move(*income));
     }
 #else
     std::size_t i = 0;
     while (true) {
-        if (auto income = co_await tcp_accept(listener, std::chrono::seconds(5))) [[likely]] {
-            IOContextMT::nth_worker(i).spawn(handle_connection(std::move(*income)));
-            ++i;
-            if (i >= IOContextMT::num_workers()) {
-                i = 0;
-            }
+        auto income = co_await co_await listener_accept(listener);
+        IOContextMT::nth_worker(i).spawn(handle_connection(std::move(income)));
+        if (++i >= IOContextMT::num_workers()) {
+            i = 0;
         }
     }
 #endif

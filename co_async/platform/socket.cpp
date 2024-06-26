@@ -284,6 +284,12 @@ Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
         co_await UringOp().prep_send(sock.fileNo(), buf, 0));
 }
 
+Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
+                                         std::span<char const> buf) {
+    co_return (std::size_t) co_await expectError(
+        co_await UringOp().prep_send_zc(sock.fileNo(), buf, 0, 0));
+}
+
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock,
                                         std::span<char> buf) {
     co_return (std::size_t) co_await expectError(
@@ -295,6 +301,13 @@ Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                          CancelToken cancel) {
     co_return (std::size_t) co_await expectError(
         co_await UringOp().prep_send(sock.fileNo(), buf, 0).cancelGuard(cancel));
+}
+
+Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
+                                         std::span<char const> buf,
+                                         CancelToken cancel) {
+    co_return (std::size_t) co_await expectError(
+        co_await UringOp().prep_send_zc(sock.fileNo(), buf, 0, 0).cancelGuard(cancel));
 }
 
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock, std::span<char> buf,

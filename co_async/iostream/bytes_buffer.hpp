@@ -47,6 +47,10 @@ public:
     char &operator[](std::size_t index) const noexcept {
         return mData[index];
     }
+
+    operator std::span<char>() const noexcept {
+        return {data(), size()};
+    }
 };
 #else
 struct BytesBuffer {
@@ -78,6 +82,10 @@ public:
 
     char &operator[](std::size_t index) const noexcept {
         return mData[index];
+    }
+
+    operator std::span<char>() const noexcept {
+        return {data(), size()};
     }
 };
 #endif

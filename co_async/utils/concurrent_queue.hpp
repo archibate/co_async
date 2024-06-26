@@ -18,12 +18,12 @@ struct alignas(hardware_destructive_interference_size) ConcurrentRingQueue {
     static constexpr Stamp kSize = 1 << Shift;
 
     [[nodiscard]] std::optional<T> pop() {
-        auto s = mStamp.load(std::memory_order_acquire);
+        auto s = mStamp.load(std::memory_order_relaxed);
         if (!canRead(s)) {
             return std::nullopt;
         }
         while (!mStamp.compare_exchange_weak(s, advectRead(s),
-                                             std::memory_order_acq_rel, std::memory_order_acquire)) {
+                                             std::memory_order_acq_rel, std::memory_order_relaxed)) {
             if (!canRead(s)) {
                 return std::nullopt;
             }
@@ -32,12 +32,12 @@ struct alignas(hardware_destructive_interference_size) ConcurrentRingQueue {
     }
 
     [[nodiscard]] bool push(T &&value) {
-        auto s = mStamp.load(std::memory_order_acquire);
+        auto s = mStamp.load(std::memory_order_relaxed);
         if (!canWrite(s)) [[unlikely]] {
             return false;
         }
         while (!mStamp.compare_exchange_weak(s, advectWrite(s),
-                                             std::memory_order_acq_rel, std::memory_order_acquire)) {
+                                             std::memory_order_acq_rel, std::memory_order_relaxed)) {
             if (!canWrite(s)) [[unlikely]] {
                 return false;
             }

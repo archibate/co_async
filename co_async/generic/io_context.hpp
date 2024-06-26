@@ -23,13 +23,14 @@ public:
 
     IOContext(IOContext &&) = delete;
 
-    void startHere(std::stop_token stop, PlatformIOContextOptions options,
-                   std::span<IOContext> peerContexts);
+    [[gnu::hot]] void startHere(std::stop_token stop,
+                                PlatformIOContextOptions options,
+                                std::span<IOContext> peerContexts);
 
     void start(PlatformIOContextOptions options = {},
                std::span<IOContext> peerContexts = {});
 
-    void spawn(std::coroutine_handle<> coroutine) {
+    [[gnu::hot]] void spawn(std::coroutine_handle<> coroutine) {
         mGenericIO.enqueueJob(coroutine);
     }
 

@@ -44,9 +44,9 @@ void IOContext::startHere(std::stop_token stop,
             duration = maxSleep;
         }
 #if !CO_ASYNC_STEAL
-        platformIO->waitEventsFor(1, duration);
+        platformIO->waitEventsFor(duration);
 #else
-        bool hasEvent = platformIO->waitEventsFor(1, duration);
+        bool hasEvent = platformIO->waitEventsFor(duration);
         if (!hasEvent && !peerContexts.empty()) {
             for (IOContext *p = peerContexts.data();
                  p != peerContexts.data() + peerContexts.size(); ++p) {

@@ -37,15 +37,12 @@ struct PlatformIOContextOptions {
 
 struct PlatformIOContext {
     static void schedSetThreadAffinity(size_t cpu);
-    bool
-    waitEventsFor(std::size_t numBatch,
-                  std::optional<std::chrono::steady_clock::duration> timeout);
+    static bool ioUringIsOpCodeSupported(int op) noexcept;
 
-    std::size_t pendingEventCount() const {
-        return io_uring_cq_ready(&mRing);
-    }
+    [[gnu::hot]] bool
+    waitEventsFor(std::optional<std::chrono::steady_clock::duration> timeout);
 
-    struct io_uring *getRing() {
+    [[gnu::hot]] struct io_uring *getRing() {
         return &mRing;
     }
 
@@ -241,6 +238,11 @@ public:
 
     UringOp &&prep_send(int fd, std::span<char const> buf, int flags) && {
         io_uring_prep_send(mSqe, fd, buf.data(), buf.size(), flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_send_zc(int fd, std::span<char const> buf, int flags, unsigned int zc_flags) && {
+        io_uring_prep_send_zc(mSqe, fd, buf.data(), buf.size(), flags, zc_flags);
         return std::move(*this);
     }
 

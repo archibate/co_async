@@ -57,11 +57,9 @@ tcp_connect(char const *host, int port, std::string_view proxy,
 }
 
 inline Task<Expected<OwningStream>>
-tcp_accept(SocketListener &listener,
-           std::chrono::steady_clock::duration timeout) {
+tcp_accept(SocketListener &listener) {
     auto handle = co_await co_await listener_accept(listener);
     OwningStream sock = make_stream<SocketStream>(std::move(handle));
-    sock.timeout(timeout);
     co_return sock;
 }
 } // namespace co_async

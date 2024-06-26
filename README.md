@@ -144,10 +144,14 @@ cmake -B build -DCO_ASYNC_ALLOC=ON  # 启用自定义分配器（基于 C++17 PM
 
 ## 性能测试
 
-测试平台：AMD Ryzen 7 7800X3D（8 核心 16 线程 4.5 GHz）
-Linux 内核：6.8.2
-GCC 编译器：13.2.1
-内存：2 x 16 GB（DDR5 4800 MHz）
+测试平台：
+
+- AMD Ryzen 7 7800X3D（8 核心 16 线程 4.5 GHz）
+- Linux 内核：6.8.2
+- GCC 编译器：13.2.1
+- 内存：2 x 16 GB（DDR5 4800 MHz）
+
+测试结果：
 
 - 普通函数调用 25ns
 - 协程函数调用 80ns

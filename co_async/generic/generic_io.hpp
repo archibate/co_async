@@ -7,9 +7,7 @@
 #include <co_async/generic/cancel.hpp>
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/ring_queue.hpp>
-#if CO_ASYNC_STEAL
-# include <co_async/utils/concurrent_queue.hpp>
-#endif
+#include <co_async/utils/concurrent_queue.hpp>
 #include <co_async/utils/non_void_helper.hpp>
 #include <co_async/utils/rbtree.hpp>
 #include <co_async/utils/uninitialized.hpp>
@@ -54,98 +52,27 @@ struct GenericIOContext {
                 }
             }
         };
-
-        /* struct Canceller { */
-        /*     using OpType = Task<Expected<>, GenericIOContext::TimerNode>; */
-        /*  */
-        /*     static Task<> doCancel(OpType *op) { */
-        /*         auto &promise = op->get().promise(); */
-        /*         promise.mCancelled = true; */
-        /*         promise.erase_from_parent(); */
-        /*         GenericIOContext::instance->enqueueJob(op->get()); */
-        /*         co_return; */
-        /*     } */
-        /*  */
-        /*     static Expected<> earlyCancelValue(OpType *op) { */
-        /*         return std::errc::operation_canceled; */
-        /*     } */
-        /* }; */
     };
 
-    bool runComputeOnly() {
-        std::unique_lock lock(mMutex);
-        if (auto coroutine = mQueue.pop()) {
-            lock.unlock();
-            coroutine->resume();
-            return true;
-        }
-        lock.unlock();
-        return false;
+    [[gnu::hot]] std::optional<std::chrono::steady_clock::duration> runDuration();
+
+    [[gnu::hot]] void enqueueJob(std::coroutine_handle<> coroutine) {
+        while (!mQueue.push(std::move(coroutine))) [[unlikely]]
+            ;
     }
 
-    std::optional<std::chrono::steady_clock::duration> runDuration() {
-        while (true) {
-            std::unique_lock lock(mMutex);
-            while (auto coroutine = mQueue.pop()) {
-                lock.unlock();
-                coroutine->resume();
-                lock.lock();
-            }
-            lock.unlock();
-            if (!mTimers.empty()) {
-                auto &promise = mTimers.front();
-                std::chrono::steady_clock::time_point now =
-                    std::chrono::steady_clock::now();
-                /* now += std::chrono::nanoseconds(1000); */
-                if (promise.mExpires <= now) {
-                    promise.mCancelled = false;
-                    promise.erase_from_parent();
-                    auto coroutine =
-                        std::coroutine_handle<TimerNode>::from_promise(promise);
-                    enqueueJob(coroutine);
-                    continue;
-                } else {
-                    return promise.mExpires - now;
-                }
-            } else {
-                return std::nullopt;
-            }
-        }
-    }
-
-    void enqueueJob(std::coroutine_handle<> coroutine) {
-        std::unique_lock lock(mMutex);
-        mQueue.push(std::move(coroutine));
-    }
-
-    void enqueueTimerNode(TimerNode &promise) {
+    [[gnu::hot]] void enqueueTimerNode(TimerNode &promise) {
         mTimers.insert(promise);
     }
 
-    void startMain(std::stop_token stop) {
-        while (!stop.stop_requested()) [[likely]] {
-            auto duration = runDuration();
-            if (duration) {
-                std::this_thread::sleep_for(*duration);
-            } else {
-                break;
-            }
-        }
-    }
-
-    GenericIOContext() = default;
+    GenericIOContext();
+    ~GenericIOContext();
 
     GenericIOContext(GenericIOContext &&) = delete;
     static inline thread_local GenericIOContext *instance;
 
 private:
-#if CO_ASYNC_STEAL
     ConcurrentRingQueue<std::coroutine_handle<>, 1024 - 1> mQueue;
-#else
-    /* RingQueue<std::coroutine_handle<>> mQueue{1024}; */
-    InfinityQueue<std::coroutine_handle<>> mQueue;
-    SpinMutex mMutex;
-#endif
     RbTree<TimerNode> mTimers;
 };
 

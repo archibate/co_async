@@ -1,5 +1,4 @@
 #include <co_async/std.hpp>
-#include "co_async/utils/debug.hpp"
 #include <co_async/awaiter/task.hpp>
 #include <co_async/platform/futex.hpp>
 #include <co_async/generic/generic_io.hpp>
@@ -38,7 +37,6 @@ void IOContext::startHere(std::stop_token stop,
         PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
     }
 
-    auto maxSleep = options.maxSleep;
     auto *genericIO = GenericIOContext::instance;
     auto *platformIO = PlatformIOContext::instance;
     platformIO->setup(options.queueEntries);
@@ -46,9 +44,9 @@ void IOContext::startHere(std::stop_token stop,
 
     while (!stop.stop_requested()) [[likely]] {
         auto duration = genericIO->runDuration();
-        if (!duration || *duration > maxSleep) {
-            duration = maxSleep;
-        }
+        // if (!duration || *duration > options.maxSleep) {
+        //     duration = options.maxSleep;
+        // }
 #if !CO_ASYNC_STEAL
         platformIO->waitEventsFor(duration);
 #else

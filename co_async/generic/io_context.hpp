@@ -7,7 +7,8 @@
 
 namespace co_async {
 struct IOContextOptions {
-    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(100);
+    // std::chrono::steady_clock::duration maxSleep =
+    // std::chrono::milliseconds(100);
     std::optional<std::size_t> threadAffinity = std::nullopt;
     std::size_t queueEntries = 512;
 };
@@ -29,8 +30,7 @@ public:
 
     IOContext(IOContext &&) = delete;
 
-    [[gnu::hot]] void startHere(std::stop_token stop,
-                                IOContextOptions options,
+    [[gnu::hot]] void startHere(std::stop_token stop, IOContextOptions options,
                                 std::span<IOContext> peerContexts);
 
     void start(IOContextOptions options = {},
@@ -59,8 +59,8 @@ public:
     static thread_local std::pmr::memory_resource *currentAllocator;
 #endif
 
-    void wakeUp();
 private:
+    void wakeUp();
     Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>> watchDogTask();
     std::atomic<std::uint8_t> mWake{0};
 };

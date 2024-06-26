@@ -33,20 +33,16 @@ void IOContext::startHere(std::stop_token stop,
                           IOContextOptions options,
                           std::span<IOContext> peerContexts) {
     IOContextGuard guard(this);
-    if (options.threadAffinity) {
-        PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
-    }
 
     auto *genericIO = GenericIOContext::instance;
     auto *platformIO = PlatformIOContext::instance;
-    platformIO->setup(options.queueEntries);
-    genericIO->enqueueJob(watchDogTask().release());
+    // genericIO->enqueueJob(watchDogTask().release());
 
     while (!stop.stop_requested()) [[likely]] {
         auto duration = genericIO->runDuration();
-        // if (!duration || *duration > options.maxSleep) {
-        //     duration = options.maxSleep;
-        // }
+        if (!duration || *duration > options.maxSleep) {
+            duration = options.maxSleep;
+        }
 #if !CO_ASYNC_STEAL
         platformIO->waitEventsFor(duration);
 #else
@@ -67,23 +63,28 @@ void IOContext::start(IOContextOptions options,
                       std::span<IOContext> peerContexts) {
     mThread = std::jthread([this, options = std::move(options),
                             peerContexts](std::stop_token stop) {
+        mPlatformIO.setup(options.queueEntries);
+        if (options.threadAffinity) {
+            PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
+        }
         this->startHere(stop, options, peerContexts);
     });
 }
 
 thread_local IOContext *IOContext::instance;
 
-void IOContext::wakeUp() {
-    if (mWake.fetch_add(1, std::memory_order_relaxed) == 0)
-        futex_notify_sync(&mWake, 1);
-}
-
-Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>> IOContext::watchDogTask() {
-    while (true) {
-        while (mWake.load(std::memory_order_relaxed) == 0)
-            (void)co_await futex_wait(&mWake, 0);
-        mWake.store(0, std::memory_order_relaxed);
-    }
-}
+// void IOContext::wakeUp() {
+//     if (mWake.fetch_add(1, std::memory_order_relaxed) == 0)
+//         futex_notify_sync(&mWake, 1);
+// }
+//
+// Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>> IOContext::watchDogTask() {
+//     // helps wake up main loop when IOContext::spawn called
+//     while (true) {
+//         while (mWake.load(std::memory_order_relaxed) == 0)
+//             (void)co_await futex_wait(&mWake, 0);
+//         mWake.store(0, std::memory_order_relaxed);
+//     }
+// }
 
 } // namespace co_async

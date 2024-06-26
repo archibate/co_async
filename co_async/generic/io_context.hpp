@@ -7,8 +7,7 @@
 
 namespace co_async {
 struct IOContextOptions {
-    // std::chrono::steady_clock::duration maxSleep =
-    // std::chrono::milliseconds(100);
+    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(10);
     std::optional<std::size_t> threadAffinity = std::nullopt;
     std::size_t queueEntries = 512;
 };
@@ -18,13 +17,17 @@ private:
     GenericIOContext mGenericIO;
     PlatformIOContext mPlatformIO;
     std::jthread mThread;
+    // std::atomic<std::uint8_t> mWake{0};
 
     struct IOContextGuard;
 
-public:
-    explicit IOContext(std::in_place_t) {}
+    // void wakeUp();
+    // Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>> watchDogTask();
 
-    explicit IOContext(IOContextOptions options = {}) {
+public:
+    [[gnu::cold]] explicit IOContext(std::in_place_t) {}
+
+    [[gnu::cold]] explicit IOContext(IOContextOptions options = {}) {
         start(options);
     }
 
@@ -33,12 +36,11 @@ public:
     [[gnu::hot]] void startHere(std::stop_token stop, IOContextOptions options,
                                 std::span<IOContext> peerContexts);
 
-    void start(IOContextOptions options = {},
+    [[gnu::cold]] void start(IOContextOptions options = {},
                std::span<IOContext> peerContexts = {});
 
     [[gnu::hot]] void spawn(std::coroutine_handle<> coroutine) {
         mGenericIO.enqueueJob(coroutine);
-        wakeUp();
     }
 
     template <class T, class P>
@@ -46,7 +48,6 @@ public:
         auto wrapped = coSpawnStarter(std::move(task));
         mGenericIO.enqueueJob(wrapped.get());
         wrapped.release();
-        wakeUp();
     }
 
     template <class T, class P>
@@ -55,14 +56,6 @@ public:
     }
 
     static thread_local IOContext *instance;
-#if CO_ASYNC_ALLOC
-    static thread_local std::pmr::memory_resource *currentAllocator;
-#endif
-
-private:
-    void wakeUp();
-    Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>> watchDogTask();
-    std::atomic<std::uint8_t> mWake{0};
 };
 
 template <class T, class P>

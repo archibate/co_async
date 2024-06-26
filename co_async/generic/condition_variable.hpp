@@ -468,13 +468,14 @@ public:
     Task<Expected<>> wait(Mask mask) {
         std::uint32_t old = mFutex.load(std::memory_order_relaxed);
         do
-            co_return co_await futex_wait(&mFutex, old, mask);
+            co_await co_await futex_wait(&mFutex, old, mask);
         while (mFutex.load(std::memory_order_acquire) == old);
+        co_return {};
     }
 
     void notify_one(Mask mask) {
         mFutex.fetch_add(1, std::memory_order_release);
-        futex_notify(&mFutex, static_cast<std::size_t>(-1), mask);
+        futex_notify(&mFutex, 1, mask);
     }
 
     void notify_all(Mask mask) {

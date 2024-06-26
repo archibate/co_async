@@ -97,11 +97,11 @@ public:
         return ok;
     }
 
-    Task<T> pop() {
+    Task<Expected<T>> pop() {
         std::unique_lock lock(mMutex);
         while (mQueue.empty()) {
             lock.unlock();
-            co_await mReady.wait(kNonEmptyMask);
+            co_await co_await mReady.wait(kNonEmptyMask);
             lock.lock();
         }
         bool wasFull = mQueue.full();
@@ -113,11 +113,11 @@ public:
         co_return std::move(value);
     }
 
-    Task<> push(T value) {
+    Task<Expected<>> push(T value) {
         std::unique_lock lock(mMutex);
         while (mQueue.full()) {
             lock.unlock();
-            co_await mReady.wait(kNonFullMask);
+            co_await co_await mReady.wait(kNonFullMask);
             lock.lock();
         }
         bool wasEmpty = mQueue.empty();
@@ -126,7 +126,7 @@ public:
         if (wasEmpty) {
             mReady.notify_one(kNonEmptyMask);
         }
-        co_return;
+        co_return {};
     }
 };
 } // namespace co_async

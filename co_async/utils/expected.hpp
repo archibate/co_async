@@ -314,7 +314,7 @@ public:
 };
 
 template <>
-struct [[nodiscard]] Expected<void> : Expected<Void> {
+struct [[nodiscard("Expected<T> return values must be handled, use co_await to propagate")]] Expected<void> : Expected<Void> {
     using Expected<Void>::Expected;
 };
 

@@ -1,4 +1,3 @@
-#include "co_async/utils/debug.hpp"
 #include <co_async/co_async.hpp>
 #include <co_async/std.hpp>
 
@@ -26,16 +25,19 @@ static Task<Expected<>> amain(std::string serveAt) {
     for (std::size_t i = 0; i < IOContextMT::num_workers(); ++i) {
         IOContextMT::nth_worker(i).spawn(co_bind([&]() -> Task<> {
             while (true) {
-                auto income = co_await incoming.pop();
-                co_spawn(handle_connection(std::move(income)));
+                    debug(), 2;
+                if (auto income = co_await incoming.pop()) [[likely]] {
+                    debug(), 3;
+                    co_spawn(handle_connection(std::move(*income)));
+                }
+                    debug(), 4;
             }
         }));
     }
 
     while (true) {
         if (auto income = co_await tcp_accept(listener, std::chrono::seconds(3))) [[likely]] {
-            debug(), income;
-            co_await incoming.push(std::move(*income));
+            co_await co_await incoming.push(std::move(*income));
         }
     }
 #else

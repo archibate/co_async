@@ -12,7 +12,6 @@ struct ThreadPool::Thread {
     std::jthread mThread;
 
     ~Thread() {
-        futex_wake();
         mThread.request_stop();
         mCV.notify_one();
         mThread.join();

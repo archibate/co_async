@@ -41,11 +41,11 @@ inline Task<Expected<WaitProcessResult>> wait_process(Pid pid,
                                                       int options = WEXITED) {
     siginfo_t info{};
     co_await expectError(
-        co_await UringOp().prep_waitid(P_PID, (id_t)pid, &info, options, 0));
+        co_await UringOp().prep_waitid(P_PID, static_cast<id_t>(pid), &info, options, 0));
     co_return WaitProcessResult{
         .pid = info.si_pid,
         .status = info.si_status,
-        .exitType = (WaitProcessResult::ExitType)info.si_code,
+        .exitType = static_cast<WaitProcessResult::ExitType>(info.si_code),
     };
 }
 
@@ -55,7 +55,7 @@ wait_process(Pid pid, std::chrono::steady_clock::duration timeout,
     siginfo_t info{};
     auto ts = durationToKernelTimespec(timeout);
     auto ret = expectError(co_await UringOp::link_ops(
-        UringOp().prep_waitid(P_PID, (id_t)pid, &info, options, 0),
+        UringOp().prep_waitid(P_PID, static_cast<id_t>(pid), &info, options, 0),
         UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
     if (ret == std::make_error_code(std::errc::operation_canceled)) {
         co_return std::errc::stream_timeout;
@@ -64,7 +64,7 @@ wait_process(Pid pid, std::chrono::steady_clock::duration timeout,
     co_return WaitProcessResult{
         .pid = info.si_pid,
         .status = info.si_status,
-        .exitType = (WaitProcessResult::ExitType)info.si_code,
+        .exitType = static_cast<WaitProcessResult::ExitType>(info.si_code),
     };
 }
 

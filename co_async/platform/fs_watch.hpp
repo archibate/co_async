@@ -75,7 +75,7 @@ struct FileWatch {
         }
         co_return WaitFileResult{
             .path = std::move(path),
-            .event = (FileEvent)mEventBuffer->mask,
+            .event = static_cast<FileEvent>(mEventBuffer->mask),
         };
     }
 

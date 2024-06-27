@@ -137,7 +137,7 @@ public:
     }
 
     static CancelToken from_address(void *impl) noexcept {
-        return CancelToken((CancelSourceImpl *)impl);
+        return CancelToken(static_cast<CancelSourceImpl *>(impl));
     }
 
     auto repr() const {
@@ -188,7 +188,7 @@ public:
 struct CancelSource : private CancelSourceImpl::CancellerBase,
                       public CancelSourceBase {
 private:
-    virtual Task<> doCancel() {
+    Task<> doCancel() override {
         return cancel();
     }
 
@@ -220,7 +220,7 @@ struct [[nodiscard]] CancelCallback : private CancelSourceImpl::CancellerBase {
     }
 
 private:
-    virtual Task<> doCancel() {
+    Task<> doCancel() override {
         std::invoke(std::move(mCallback));
         co_return;
     }
@@ -240,7 +240,7 @@ struct [[nodiscard]] CancelCallback<Callback>
     }
 
 private:
-    virtual Task<> doCancel() {
+    Task<> doCancel() override {
         co_await std::invoke(std::move(mCallback));
     }
 

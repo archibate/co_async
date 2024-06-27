@@ -8,7 +8,7 @@
 namespace co_async {
 namespace {
 struct DirectoryStream : Stream {
-    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) {
+    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         co_return co_await fs_getdents(mFile, buffer);
     }
 
@@ -40,7 +40,7 @@ Task<Expected<String>> DirectoryWalker::DirectoryWalker::next() {
         unsigned char d_type;    /* File type */
     } dent;
 
-    co_await co_await mStream.getspan(std::span<char>((char *)&dent, 19));
+    co_await co_await mStream.getspan(std::span<char>(reinterpret_cast<char *>(&dent), 19));
     String rest;
     rest.reserve(dent.d_reclen - 19);
     co_await co_await mStream.getn(rest, dent.d_reclen - 19);

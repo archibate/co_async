@@ -6,7 +6,7 @@ namespace co_async {
 
 struct SpinBarrier {
     explicit SpinBarrier(std::size_t n) noexcept
-        : m_top_waiting((std::uint32_t)n - 1),
+        : m_top_waiting(static_cast<std::uint32_t>(n) - 1),
           m_num_waiting(0),
           m_sync_flip(0) {}
 

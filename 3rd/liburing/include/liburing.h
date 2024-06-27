@@ -73,6 +73,8 @@ extern "C" {
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 
 /*
  * IO submission data structure (Submission Queue Entry)
@@ -1577,7 +1579,7 @@ IOURINGINLINE void io_uring_prep_fallocate(struct io_uring_sqe *sqe, int fd,
 					   int mode, __u64 offset, __u64 len)
 {
 	io_uring_prep_rw(IORING_OP_FALLOCATE, sqe, fd,
-			0, (unsigned int) mode, (__u64) offset);
+			NULL, (unsigned int) mode, (__u64) offset);
 	sqe->addr = (__u64) len;
 }
 
@@ -2101,7 +2103,7 @@ IOURINGINLINE void io_uring_prep_fixed_fd_install(struct io_uring_sqe *sqe,
 IOURINGINLINE void io_uring_prep_ftruncate(struct io_uring_sqe *sqe,
 				       int fd, loff_t len)
 {
-	io_uring_prep_rw(IORING_OP_FTRUNCATE, sqe, fd, 0, 0, len);
+	io_uring_prep_rw(IORING_OP_FTRUNCATE, sqe, fd, NULL, 0, len);
 }
 
 /*

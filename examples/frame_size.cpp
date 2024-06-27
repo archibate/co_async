@@ -37,7 +37,7 @@ extern "C" void *malloc(size_t size) {
 static Task<> test() {
     /* [[maybe_unused]] int volatile i = 55; */
     /* [[maybe_unused]] int volatile j = 66; */
-    temp((int const &)resu());
+    temp(static_cast<int const &>(resu()));
     co_return;
 }
 

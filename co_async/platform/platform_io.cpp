@@ -52,7 +52,7 @@ void PlatformIOContext::setup(std::size_t entries) {
     // params.sq_thread_cpu = 1;
     // params.sq_thread_idle = 1000;
     throwingError(
-        io_uring_queue_init_params((unsigned int)entries, &mRing, &params));
+        io_uring_queue_init_params(static_cast<unsigned int>(entries), &mRing, &params));
 }
 
 PlatformIOContext::~PlatformIOContext() {

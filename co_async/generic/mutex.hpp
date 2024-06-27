@@ -242,7 +242,7 @@ public:
         Locked() noexcept : mLocked(), mImpl(nullptr) {}
 
         explicit operator bool() const noexcept {
-            return (bool)mLocked;
+            return static_cast<bool>(mLocked);
         }
 
         void set_ready() const {

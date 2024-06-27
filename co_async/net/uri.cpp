@@ -6,9 +6,9 @@ namespace co_async {
 namespace {
 std::uint8_t fromHex(char c) {
     if ('0' <= c && c <= '9') {
-        return (std::uint8_t)(c - '0');
+        return static_cast<std::uint8_t>(c - '0');
     } else if ('A' <= c && c <= 'F') {
-        return (std::uint8_t)(c - 'A' + 10);
+        return static_cast<std::uint8_t>(c - 'A' + 10);
     } else [[unlikely]] {
         return 0;
     }
@@ -42,7 +42,7 @@ void URI::url_decode(String &r, std::string_view s) {
         r.append(s.data() + b, s.data() + i);
         char c1 = s[i + 1];
         char c2 = s[i + 2];
-        r.push_back((char)((fromHex(c1) << 4) | fromHex(c2)));
+        r.push_back(static_cast<char>((fromHex(c1) << 4) | fromHex(c2)));
         b = i + 3;
     }
 }

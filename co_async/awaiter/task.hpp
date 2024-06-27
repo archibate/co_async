@@ -213,6 +213,12 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
         return TaskYieldAwaiter();
     }
 
+#if CO_ASYNC_DEBUG
+    template <class U, class Loc>
+    void returnValue(U &&result, Loc &&loc) {
+        mResult.emplace(std::in_place_index<1>, std::forward<U>(result), std::forward<Loc>(loc));
+    }
+#endif
     template <class U>
     void returnValue(U &&result) {
         mResult.emplace(std::in_place_index<1>, std::forward<U>(result));

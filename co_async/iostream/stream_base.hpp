@@ -220,7 +220,7 @@ struct BorrowedStream {
     template <class T>
         requires std::is_trivial_v<T>
     Task<Expected<>> getstruct(T &ret) {
-        return getspan(std::span<char>((char *)&ret, sizeof(T)));
+        return getspan(std::span<char>(reinterpret_cast<char *>(&ret), sizeof(T)));
     }
 
     template <class T>
@@ -380,7 +380,7 @@ struct BorrowedStream {
     template <class T>
     Task<Expected<>> putstruct(T const &s) {
         return putspan(
-            std::span<char const>((char const *)std::addressof(s), sizeof(T)));
+            std::span<char const>(reinterpret_cast<char const *>(std::addressof(s)), sizeof(T)));
     }
 
     Task<Expected<>> putchunk(std::string_view s) {
@@ -458,11 +458,11 @@ struct BorrowedStream {
     }
 
     Task<Expected<std::size_t>> read(void *buffer, std::size_t len) {
-        return read(std::span<char>((char *)buffer, len));
+        return read(std::span<char>(static_cast<char *>(buffer), len));
     }
 
     std::size_t tryread(void *buffer, std::size_t len) {
-        return tryread(std::span<char>((char *)buffer, len));
+        return tryread(std::span<char>(static_cast<char *>(buffer), len));
     }
 
     Task<Expected<std::size_t>> write(std::span<char const> buffer) {
@@ -475,15 +475,15 @@ struct BorrowedStream {
     }
 
     Task<Expected<std::size_t>> write(void const *buffer, std::size_t len) {
-        return write(std::span<char const>((char const *)buffer, len));
+        return write(std::span<char const>(static_cast<char const *>(buffer), len));
     }
 
     Task<Expected<>> putspan(void const *buffer, std::size_t len) {
-        return putspan(std::span<char const>((char const *)buffer, len));
+        return putspan(std::span<char const>(static_cast<char const *>(buffer), len));
     }
 
     std::size_t trywrite(void const *buffer, std::size_t len) {
-        return trywrite(std::span<char const>((char const *)buffer, len));
+        return trywrite(std::span<char const>(static_cast<char const *>(buffer), len));
     }
 
     void timeout(std::chrono::steady_clock::duration timeout) {

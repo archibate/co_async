@@ -528,7 +528,7 @@ private:
     static std::string debug_demangle(char const *name) {
 #  ifdef DEBUG_HAS_CXXABI_H
         int status;
-        char *p = abi::__cxa_demangle(name, 0, 0, &status);
+        char *p = abi::__cxa_demangle(name, nullptr, nullptr, &status);
         std::string s = p ? p : name;
         std::free(p);
 #  else
@@ -769,9 +769,9 @@ private:
 #  endif
         } else if constexpr (requires(T const &t) {
                                  (void)(*t);
-                                 (void)(bool)t;
+                                 (void)static_cast<bool>(t);
                              }) {
-            if ((bool)t) {
+            if (static_cast<bool>(t)) {
                 debug_format(oss, debug_deref_avoid(t));
             } else {
                 oss << DEBUG_NULLOPT_STRING;
@@ -834,7 +834,7 @@ private:
     DEBUG_COND(is_smart_pointer, static_cast<void const volatile *>(
                                      std::declval<T const &>().get()));
     DEBUG_COND(is_optional, (((void)*std::declval<T const &>(), (void)0),
-                             ((void)(bool)std::declval<T const &>(), (void)0)));
+                   ((void)static_cast<bool>(std::declval<T const &>()), (void)0)));
     DEBUG_COND(
         reference_wrapper,
         (typename std::enable_if<
@@ -1520,7 +1520,7 @@ private:
             !debug_cond_is_variant<T>::value &&
             debug_cond_is_optional<T>::value>::type> {
         void operator()(std::ostream &oss, T const &t) const {
-            if ((bool)t) {
+            if (static_cast<bool>(t)) {
                 debug_format(oss, debug_deref_avoid(t));
             } else {
                 oss << DEBUG_NULLOPT_STRING;

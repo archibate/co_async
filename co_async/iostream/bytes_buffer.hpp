@@ -77,7 +77,7 @@ public:
     }
 
     explicit operator bool() const noexcept {
-        return (bool)mData;
+        return static_cast<bool>(mData);
     }
 
     char &operator[](std::size_t index) const noexcept {

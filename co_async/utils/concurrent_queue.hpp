@@ -1,8 +1,8 @@
 #pragma once
 #include <co_async/std.hpp>
-#include <co_async/utils/spin_mutex.hpp>
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/ring_queue.hpp>
+#include <co_async/utils/spin_mutex.hpp>
 
 namespace co_async {
 template <class T, std::size_t Capacity = 0>
@@ -23,7 +23,8 @@ struct alignas(hardware_destructive_interference_size) ConcurrentRingQueue {
             return std::nullopt;
         }
         while (!mStamp.compare_exchange_weak(s, advectRead(s),
-                                             std::memory_order_acq_rel, std::memory_order_relaxed)) {
+                                             std::memory_order_acq_rel,
+                                             std::memory_order_relaxed)) {
             if (!canRead(s)) {
                 return std::nullopt;
             }
@@ -37,7 +38,8 @@ struct alignas(hardware_destructive_interference_size) ConcurrentRingQueue {
             return false;
         }
         while (!mStamp.compare_exchange_weak(s, advectWrite(s),
-                                             std::memory_order_acq_rel, std::memory_order_relaxed)) {
+                                             std::memory_order_acq_rel,
+                                             std::memory_order_relaxed)) {
             if (!canWrite(s)) [[unlikely]] {
                 return false;
             }
@@ -63,20 +65,23 @@ private:
     }
 
     inline bool canWrite(Stamp s) const {
-        return (offsetRead(s) & (Stamp)(kSize - 1)) !=
-               ((offsetWrite(s) + (Stamp)(kSize - Capacity)) &
-                (Stamp)(kSize - 1));
+        return (offsetRead(s) & static_cast<Stamp>(kSize - 1)) !=
+               ((offsetWrite(s) + static_cast<Stamp>(kSize - Capacity)) &
+                static_cast<Stamp>(kSize - 1));
     }
 
     inline Stamp advectRead(Stamp s) const {
-        return (Stamp)((((Stamp)(s >> Shift) + (Stamp)1) & (Stamp)(kSize - 1))
-                       << Shift) |
-               (s & (Stamp)(kSize - 1));
+        return static_cast<Stamp>(
+                   ((static_cast<Stamp>(s >> Shift) + static_cast<Stamp>(1)) &
+                    static_cast<Stamp>(kSize - 1))
+                   << Shift) |
+               (s & static_cast<Stamp>(kSize - 1));
     }
 
     inline Stamp advectWrite(Stamp s) const {
-        return (((s & (Stamp)(kSize - 1)) + (Stamp)1) & (Stamp)(kSize - 1)) |
-               (Stamp)(s & ((Stamp)(kSize - 1) << Shift));
+        return (((s & static_cast<Stamp>(kSize - 1)) + static_cast<Stamp>(1)) &
+                static_cast<Stamp>(kSize - 1)) |
+               static_cast<Stamp>(s & (static_cast<Stamp>(kSize - 1) << Shift));
     }
 
     std::unique_ptr<T[]> const mHead = std::make_unique<T[]>(kSize);

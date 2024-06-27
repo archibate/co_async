@@ -21,7 +21,7 @@ when_any(std::vector<T, Alloc> const &tasks) {
     CancelSource cancel(co_await co_cancel);
     std::vector<Task<>, Alloc> newTasks(tasks.size(), tasks.get_allocator());
     std::optional<typename AwaitableTraits<T>::RetType> result;
-    std::size_t index = (std::size_t)-1;
+    std::size_t index = static_cast<std::size_t>(-1);
     std::size_t i = 0;
     for (auto &&task: tasks) {
         newTasks.push_back(co_cancel.bind(
@@ -73,7 +73,7 @@ Task<WhenAnyResult<Common>> when_any_common(Ts &&...tasks) {
         [&]<std::size_t... Is>(
             std::index_sequence<Is...>) -> Task<WhenAnyResult<Common>> {
             CancelSource cancel(co_await co_cancel);
-            std::size_t index = (std::size_t)-1;
+            std::size_t index = static_cast<std::size_t>(-1);
             std::optional<Common> result;
             co_await when_all(co_cancel.bind(
                 cancel, co_bind([&index, &result,

@@ -14,11 +14,11 @@
 namespace co_async {
 std::error_category const &bearSSLCategory() {
     static struct : std::error_category {
-        virtual char const *name() const noexcept {
+        char const *name() const noexcept override {
             return "BearSSL";
         }
 
-        virtual std::string message(int e) const {
+        std::string message(int e) const override {
             static std::pair<int, char const *> errors[] = {
                 {
                     BR_ERR_OK,
@@ -256,7 +256,7 @@ std::error_category const &bearSSLCategory() {
                     BR_ERR_X509_NOT_TRUSTED,
                     "BR_ERR_X509_NOT_TRUSTED",
                 },
-                {0, 0},
+                {0, nullptr},
             };
             std::size_t u;
             for (u = 0; errors[u].second; u++) {
@@ -422,7 +422,7 @@ public:
             return dn.error();
         }
         trustAnchors.push_back({
-            {(unsigned char *)dn->data(), dn->size()},
+            {reinterpret_cast<unsigned char *>(const_cast<char *>(dn->data())), dn->size()},
             BR_X509_TA_CA,
             *x506.getPubKey(),
         });
@@ -456,7 +456,7 @@ public:
 
     void addBinary(std::string certX506) {
         auto &cert = strStores.emplace_back(std::move(certX506));
-        certificates.push_back({(unsigned char *)cert.data(), cert.size()});
+        certificates.push_back({reinterpret_cast<unsigned char *>(cert.data()), cert.size()});
     }
 
     void add(std::string_view certX506) {
@@ -515,7 +515,7 @@ protected:
                 unsigned char *buf;
                 std::size_t len, wlen;
                 buf = br_ssl_engine_sendrec_buf(eng, &len);
-                if (auto e = co_await raw.raw_write({(char const *)buf, len});
+                if (auto e = co_await raw.raw_write({reinterpret_cast<char const *>(buf), len});
                     e && *e != 0) {
                     wlen = *e;
                 } else {
@@ -551,7 +551,7 @@ protected:
                 unsigned char *buf;
                 std::size_t len, rlen;
                 buf = br_ssl_engine_recvrec_buf(eng, &len);
-                if (auto e = co_await raw.raw_read({(char *)buf, len});
+                if (auto e = co_await raw.raw_read({reinterpret_cast<char *>(buf), len});
                     e && *e != 0) {
                     rlen = *e;
                 } else {

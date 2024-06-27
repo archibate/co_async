@@ -330,11 +330,11 @@ enum class JsonError : int {
 
 inline std::error_category const &jsonCategory() {
     static struct : std::error_category {
-        virtual char const *name() const noexcept {
+        char const *name() const noexcept override {
             return "json";
         }
 
-        virtual std::string message(int e) const {
+        std::string message(int e) const override {
             using namespace std::string_literals;
             switch (static_cast<JsonError>(e)) {
             case JsonError::Success:         return "success"s;
@@ -378,6 +378,9 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
         unsigned int lasthex = 0;
         unsigned int hex = 0;
         std::size_t i;
+        auto unsignedExtent = [] (unsigned int x) {
+            return static_cast<char>(static_cast<unsigned char>(x));
+        };
         for (i = 0;; ++i) {
             if (i == json.size()) {
                 ec = make_error_code(JsonError::NonTerminatedString);
@@ -420,11 +423,11 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
             } else {
                 hex <<= 4;
                 if ('0' <= c && c <= '9') {
-                    hex |= (unsigned int)(c - '0');
+                    hex |= static_cast<unsigned int>(c - '0');
                 } else if ('a' <= c && c <= 'f') {
-                    hex |= (unsigned int)(c - 'a' + 10);
+                    hex |= static_cast<unsigned int>(c - 'a' + 10);
                 } else if ('A' <= c && c <= 'F') {
-                    hex |= (unsigned int)(c - 'A' + 10);
+                    hex |= static_cast<unsigned int>(c - 'A' + 10);
                 }
                 if (phase == 5) {
                     if (0xD800 <= hex && hex < 0xDC00) {
@@ -449,27 +452,27 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                         }
                     }
                     if (hex <= 0x7F) {
-                        str.push_back((char)(unsigned char)(hex));
+                        str.push_back(unsignedExtent(hex));
                     } else if (hex <= 0x7FF) {
-                        str.push_back((char)(unsigned char)(0xC0 | (hex >> 6)));
+                        str.push_back(unsignedExtent(0xC0 | (hex >> 6)));
                         str.push_back(
-                            (char)(unsigned char)(0x80 | (hex & 0x3F)));
+                            unsignedExtent(0x80 | (hex & 0x3F)));
                     } else if (hex <= 0xFFFF) {
                         str.push_back(
-                            (char)(unsigned char)(0xE0 | (hex >> 12)));
+                            unsignedExtent(0xE0 | (hex >> 12)));
                         str.push_back(
-                            (char)(unsigned char)(0x80 | ((hex >> 6) & 0x3F)));
+                            unsignedExtent(0x80 | ((hex >> 6) & 0x3F)));
                         str.push_back(
-                            (char)(unsigned char)(0x80 | (hex & 0x3F)));
+                            unsignedExtent(0x80 | (hex & 0x3F)));
                     } else if (hex <= 0x10FFFF) {
                         str.push_back(
-                            (char)(unsigned char)(0xF0 | (hex >> 18)));
+                            unsignedExtent(0xF0 | (hex >> 18)));
                         str.push_back(
-                            (char)(unsigned char)(0x80 | ((hex >> 12) & 0x3F)));
+                            unsignedExtent(0x80 | ((hex >> 12) & 0x3F)));
                         str.push_back(
-                            (char)(unsigned char)(0x80 | ((hex >> 6) & 0x3F)));
+                            unsignedExtent(0x80 | ((hex >> 6) & 0x3F)));
                         str.push_back(
-                            (char)(unsigned char)(0x80 | (hex & 0x3F)));
+                            unsignedExtent(0x80 | (hex & 0x3F)));
                     } else {
                         ec = make_error_code(JsonError::InvalidUTF16String);
                         return nullptr;

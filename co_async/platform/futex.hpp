@@ -19,6 +19,7 @@ inline constexpr uint32_t getFutexFlagsFor() {
 
 template <class T>
 inline constexpr uint64_t futexValueExtend(T value) {
+    static_assert(std::is_aggregate_v<T> && sizeof(T) <= sizeof(uint64_t));
     uint64_t ret = 0;
     std::memcpy(&ret, &value, sizeof(T));
     return ret;
@@ -36,7 +37,7 @@ inline Task<Expected<>> futex_wait(std::atomic<T> *futex,
 
 template <class T>
 inline Task<Expected<>>
-futex_wake(std::atomic<T> *futex,
+futex_notify_async(std::atomic<T> *futex,
            std::size_t count = static_cast<std::size_t>(-1),
            uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
     co_return expectError(co_await UringOp().prep_futex_wake(
@@ -60,6 +61,15 @@ inline void futex_notify_sync(std::atomic<T> *futex,
                               std::size_t count = static_cast<std::size_t>(-1),
                               uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
     syscall(SYS_futex_wake, reinterpret_cast<uint32_t *>(futex),
+            static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
+            getFutexFlagsFor<T>());
+}
+
+template <class T>
+inline void futex_wait_sync(std::atomic<T> *futex,
+                              std::size_t count = static_cast<std::size_t>(-1),
+                              uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    syscall(SYS_futex_wait, reinterpret_cast<uint32_t *>(futex),
             static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
             getFutexFlagsFor<T>());
 }

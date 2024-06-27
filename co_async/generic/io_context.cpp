@@ -34,19 +34,17 @@ void IOContext::startHere(std::stop_token stop,
                           std::span<IOContext> peerContexts) {
     IOContextGuard guard(this);
 
-    auto *genericIO = GenericIOContext::instance;
-    auto *platformIO = PlatformIOContext::instance;
     // genericIO->enqueueJob(watchDogTask().release());
 
     while (!stop.stop_requested()) [[likely]] {
-        auto duration = genericIO->runDuration();
+        auto duration = mGenericIO.runDuration();
         if (!duration || *duration > options.maxSleep) {
             duration = options.maxSleep;
         }
 #if !CO_ASYNC_STEAL
-        platformIO->waitEventsFor(duration);
+        mPlatformIO.waitEventsFor(duration);
 #else
-        bool hasEvent = platformIO->waitEventsFor(duration);
+        bool hasEvent = mPlatformIO.waitEventsFor(duration);
         if (!hasEvent && !peerContexts.empty()) {
             for (IOContext *p = peerContexts.data();
                  p != peerContexts.data() + peerContexts.size(); ++p) {

@@ -44,8 +44,8 @@ int rawStdinFileHandleImpl() {
     if (isatty(STDIN_FILENO)) {
         struct termios tc;
         tcgetattr(STDIN_FILENO, &tc);
-        tc.c_lflag &= ~(tcflag_t)ICANON;
-        tc.c_lflag &= ~(tcflag_t)ECHO;
+        tc.c_lflag &= ~static_cast<tcflag_t>(ICANON);
+        tc.c_lflag &= ~static_cast<tcflag_t>(ECHO);
         tcsetattr(STDIN_FILENO, TCSANOW, &tc);
     }
     return STDIN_FILENO;

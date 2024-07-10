@@ -140,6 +140,8 @@ cmake -B build -DCO_ASYNC_PERF=ON  # 启用性能测试（程序结束时自动�
 cmake -B build -DCO_ASYNC_ZLIB=ON  # 启用压缩支持（需要链接 /usr/lib/libz.so）
 cmake -B build -DCO_ASYNC_STEAL=ON  # 启用任务窃取队列（类似于 TBB）
 cmake -B build -DCO_ASYNC_ALLOC=ON  # 启用自定义分配器（基于 C++17 PMR）
+cmake -B build -DCO_ASYNC_DIRECT=ON  # 启用直接 IO 轮询（仅限数据库应用场景）
+cmake -B build -DCO_ASYNC_NATIVE=ON  # 启用本机指令集（-march=native）
 ```
 
 ## 性能测试

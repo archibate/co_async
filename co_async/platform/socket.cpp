@@ -48,7 +48,7 @@ Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     struct addrinfo *result;
-    int err = getaddrinfo(host, NULL, &hints, &result);
+    int err = getaddrinfo(host, nullptr, &hints, &result);
     if (err) [[unlikely]] {
 #if CO_ASYNC_DEBUG
         std::cerr << host << ": " << gai_strerror(err) << '\n';
@@ -58,7 +58,7 @@ Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
     Finally fin = [&] {
         freeaddrinfo(result);
     };
-    for (struct addrinfo *rp = result; rp != NULL; rp = rp->ai_next) {
+    for (struct addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
         if (rp->ai_family == AF_INET) {
             std::memcpy(&addr, &reinterpret_cast<struct sockaddr_in *>(rp->ai_addr)->sin_addr,
                         sizeof(in_addr));

@@ -43,6 +43,7 @@ public:
             co_await co_await mReady.wait(kNonFullMask);
         }
         mReady.notify_one(kNonEmptyMask);
+        co_return {};
     }
 
     Task<Expected<T>> pop() {

@@ -177,8 +177,8 @@ public:
         }
     }
 
-    Task<Locked> lock() {
-        co_await mMutex.lock();
+    Task<Expected<Locked>> lock() {
+        co_await co_await mMutex.lock();
         co_return Locked(this);
     }
 
@@ -258,11 +258,15 @@ public:
         if (mCalled.load(std::memory_order_relaxed)) {
             co_return Locked();
         }
-        Locked locked(co_await mMutex.lock(), this);
-        if (mCalled.load(std::memory_order_relaxed)) {
-            co_return Locked();
+        while (true) {
+            if (auto mtxLock = co_await mMutex.lock()) {
+                Locked locked(std::move(*mtxLock), this);
+                if (mCalled.load(std::memory_order_relaxed)) {
+                    co_return Locked();
+                }
+                co_return std::move(locked);
+            }
         }
-        co_return std::move(locked);
     }
 };
 } // namespace co_async

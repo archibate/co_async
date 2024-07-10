@@ -144,12 +144,19 @@ private:
             std::chrono::nanoseconds(time.tv_nsec));
     }
 };
+
+#if CO_ASYNC_DIRECT
+static constexpr size_t kOpenModeDefaultFlags = O_LARGEFILE | O_CLOEXEC | O_DIRECT;
+#else
+static constexpr size_t kOpenModeDefaultFlags = O_LARGEFILE | O_CLOEXEC;
+#endif
+
 enum class OpenMode : int {
-    Read = O_RDONLY | O_LARGEFILE | O_CLOEXEC,
-    Write = O_WRONLY | O_TRUNC | O_CREAT | O_LARGEFILE | O_CLOEXEC,
-    ReadWrite = O_RDWR | O_CREAT | O_LARGEFILE | O_CLOEXEC,
-    Append = O_WRONLY | O_APPEND | O_CREAT | O_LARGEFILE | O_CLOEXEC,
-    Directory = O_RDONLY | O_DIRECTORY | O_LARGEFILE | O_CLOEXEC,
+    Read = O_RDONLY | kOpenModeDefaultFlags,
+    Write = O_WRONLY | O_TRUNC | O_CREAT | kOpenModeDefaultFlags,
+    ReadWrite = O_RDWR | O_CREAT | kOpenModeDefaultFlags,
+    Append = O_WRONLY | O_APPEND | O_CREAT | kOpenModeDefaultFlags,
+    Directory = O_RDONLY | O_DIRECTORY | kOpenModeDefaultFlags,
 };
 
 inline std::filesystem::path make_path(std::string_view path) {

@@ -5,12 +5,12 @@ using namespace co_async;
 using namespace std::literals;
 
 static Task<Expected<>> handle_connection(SocketHandle income) {
-    BytesBuffer buf(256);
+    BytesBuffer buf(4096);
     while (true) {
-        // co_await UringOp::link_ops(UringOp().prep_recv(income.fileNo(), buf, 0),
-        //     UringOp().prep_send(income.fileNo(), "HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv, 0));
-        co_await co_await socket_read(income, buf);
-        co_await co_await socket_write(income, "HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv);
+        co_await UringOp::link_ops(UringOp().prep_recv(income.fileNo(), buf, 0),
+            UringOp().prep_send(income.fileNo(), "HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv, 0));
+        // co_await co_await socket_read(income, buf);
+        // co_await co_await socket_write(income, "HTTP/1.1 200 OK\r\nContent-length: 2\r\n\r\nOK"sv);
     }
     co_return {};
 }
@@ -55,9 +55,6 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         serveAt = argv[1];
     }
-    if (auto e = IOContextMT().join(amain(serveAt)); e.has_error()) {
-        std::cerr << argv[0] << ": " << e.error().message() << '\n';
-        return e.error().value();
-    }
+    IOContextMT().join(amain(serveAt)).value();
     return 0;
 }

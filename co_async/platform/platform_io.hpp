@@ -48,8 +48,19 @@ struct PlatformIOContext {
     [[gnu::cold]] ~PlatformIOContext();
     static thread_local PlatformIOContext *instance;
 
+    void reserveBuffers(std::size_t nbufs);
+    std::size_t addBuffers(std::span<std::span<char> const> bufs);
+    void reserveFiles(std::size_t nfiles);
+    std::size_t addFiles(std::span<int const> files);
+
 private:
     struct io_uring mRing;
+    std::unique_ptr<struct iovec[]> mBuffers;
+    unsigned int mNumBufs = 0;
+    unsigned int mCapBufs = 0;
+    std::unique_ptr<int[]> mFiles;
+    unsigned int mNumFiles = 0;
+    unsigned int mCapFiles = 0;
 };
 
 struct [[nodiscard]] UringOp {
@@ -140,9 +151,21 @@ public:
         return std::move(*this);
     }
 
+    UringOp &&prep_socket_direct(int domain, int type, int protocol,
+                          unsigned int flags, unsigned int file_index) && {
+        io_uring_prep_socket_direct(mSqe, domain, type, protocol, flags, file_index);
+        return std::move(*this);
+    }
+
     UringOp &&prep_accept(int fd, struct sockaddr *addr, socklen_t *addrlen,
                           int flags) && {
         io_uring_prep_accept(mSqe, fd, addr, addrlen, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_accept_direct(int fd, struct sockaddr *addr, socklen_t *addrlen,
+                          int flags, unsigned int file_index) && {
+        io_uring_prep_accept_direct(mSqe, fd, addr, addrlen, flags, file_index);
         return std::move(*this);
     }
 
@@ -240,6 +263,12 @@ public:
 
     UringOp &&prep_send_zc(int fd, std::span<char const> buf, int flags, unsigned int zc_flags) && {
         io_uring_prep_send_zc(mSqe, fd, buf.data(), buf.size(), flags, zc_flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_send_zc_fixed(int fd, std::span<char const> buf, int flags,
+                                 unsigned int zc_flags, unsigned int buf_index) && {
+        io_uring_prep_send_zc_fixed(mSqe, fd, buf.data(), buf.size(), flags, zc_flags, buf_index);
         return std::move(*this);
     }
 

@@ -1,4 +1,3 @@
-#include <arpa/inet.h>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/cancel.hpp>
 #include <co_async/platform/error_handling.hpp>
@@ -8,6 +7,7 @@
 #include <co_async/utils/finally.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <netdb.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>

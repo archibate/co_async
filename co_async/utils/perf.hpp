@@ -149,4 +149,8 @@ public:
     }
 };
 } // namespace co_async
+#else
+namespace co_async {
+struct Perf {};
+} // namespace co_async
 #endif

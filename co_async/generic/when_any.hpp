@@ -86,7 +86,7 @@ Task<WhenAnyResult<Common>> when_any_common(Ts &&...tasks) {
                     index = Is;
                     result.emplace(std::move(res));
                 }))...);
-            co_return WhenAnyResult{std::move(result.value()), index};
+            co_return WhenAnyResult<Common>{std::move(result.value()), index};
         },
         std::make_index_sequence<sizeof...(Ts)>());
 }

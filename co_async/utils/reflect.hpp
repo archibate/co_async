@@ -378,7 +378,7 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
         unsigned int lasthex = 0;
         unsigned int hex = 0;
         std::size_t i;
-        auto unsignedExtent = [] (unsigned int x) {
+        auto unsignedExtent = [](unsigned int x) {
             return static_cast<char>(static_cast<unsigned char>(x));
         };
         for (i = 0;; ++i) {
@@ -455,24 +455,19 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                         str.push_back(unsignedExtent(hex));
                     } else if (hex <= 0x7FF) {
                         str.push_back(unsignedExtent(0xC0 | (hex >> 6)));
-                        str.push_back(
-                            unsignedExtent(0x80 | (hex & 0x3F)));
+                        str.push_back(unsignedExtent(0x80 | (hex & 0x3F)));
                     } else if (hex <= 0xFFFF) {
-                        str.push_back(
-                            unsignedExtent(0xE0 | (hex >> 12)));
+                        str.push_back(unsignedExtent(0xE0 | (hex >> 12)));
                         str.push_back(
                             unsignedExtent(0x80 | ((hex >> 6) & 0x3F)));
-                        str.push_back(
-                            unsignedExtent(0x80 | (hex & 0x3F)));
+                        str.push_back(unsignedExtent(0x80 | (hex & 0x3F)));
                     } else if (hex <= 0x10FFFF) {
-                        str.push_back(
-                            unsignedExtent(0xF0 | (hex >> 18)));
+                        str.push_back(unsignedExtent(0xF0 | (hex >> 18)));
                         str.push_back(
                             unsignedExtent(0x80 | ((hex >> 12) & 0x3F)));
                         str.push_back(
                             unsignedExtent(0x80 | ((hex >> 6) & 0x3F)));
-                        str.push_back(
-                            unsignedExtent(0x80 | (hex & 0x3F)));
+                        str.push_back(unsignedExtent(0x80 | (hex & 0x3F)));
                     } else {
                         ec = make_error_code(JsonError::InvalidUTF16String);
                         return nullptr;

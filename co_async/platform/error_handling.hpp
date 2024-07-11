@@ -4,7 +4,9 @@
 
 namespace co_async {
 #if CO_ASYNC_DEBUG
-inline Expected<int> expectError(int res, std::source_location loc = std::source_location::current()) {
+inline Expected<int>
+expectError(int res,
+            std::source_location loc = std::source_location::current()) {
     if (res < 0) [[unlikely]] {
         return Expected<int>(std::errc(-res), loc);
     }

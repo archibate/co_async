@@ -36,20 +36,27 @@ template <class T>
 inline Task<Expected<>> futex_wait(std::atomic<T> *futex,
                                    std::type_identity_t<T> val,
                                    uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
-    co_return expectError(co_await UringOp().prep_futex_wait(
-        reinterpret_cast<uint32_t *>(futex),
-        futexValueExtend(val),
-        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0).cancelGuard(co_await co_cancel)).ignore_error(std::errc::resource_unavailable_try_again);
+    co_return expectError(
+        co_await UringOp()
+            .prep_futex_wait(reinterpret_cast<uint32_t *>(futex),
+                             futexValueExtend(val), static_cast<uint64_t>(mask),
+                             getFutexFlagsFor<T>(), 0)
+            .cancelGuard(co_await co_cancel))
+        .ignore_error(std::errc::resource_unavailable_try_again);
 }
 
 template <class T>
 inline Task<Expected<>>
 futex_notify_async(std::atomic<T> *futex,
-           std::size_t count = static_cast<std::size_t>(-1),
-           uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
-    co_return expectError(co_await UringOp().prep_futex_wake(
-        reinterpret_cast<uint32_t *>(futex), static_cast<uint64_t>(count),
-        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0).cancelGuard(co_await co_cancel));
+                   std::size_t count = static_cast<std::size_t>(-1),
+                   uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    co_return expectError(
+        co_await UringOp()
+            .prep_futex_wake(reinterpret_cast<uint32_t *>(futex),
+                             static_cast<uint64_t>(count),
+                             static_cast<uint64_t>(mask), getFutexFlagsFor<T>(),
+                             0)
+            .cancelGuard(co_await co_cancel));
 }
 
 template <class T>

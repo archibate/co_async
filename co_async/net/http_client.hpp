@@ -1,9 +1,9 @@
 #pragma once
 #include <co_async/std.hpp>
-#include <co_async/generic/when_any.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/condition_variable.hpp>
 #include <co_async/generic/mutex.hpp>
+#include <co_async/generic/when_any.hpp>
 #include <co_async/iostream/cached_stream.hpp>
 #include <co_async/iostream/file_stream.hpp>
 #include <co_async/iostream/pipe_stream.hpp>
@@ -376,7 +376,8 @@ private:
         auto *pool = mPools.at(host);
         lock.unlock();
         if (pool) [[likely]] {
-            (void)co_await co_timeout(pool->mFreeSlot.wait(), std::chrono::milliseconds(100));
+            (void)co_await co_timeout(pool->mFreeSlot.wait(),
+                                      std::chrono::milliseconds(100));
         }
         co_return;
     }

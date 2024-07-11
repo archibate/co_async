@@ -1,9 +1,9 @@
 #pragma once
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/utils/expected.hpp>
 #include <co_async/generic/allocator.hpp>
 #include <co_async/iostream/bytes_buffer.hpp>
+#include <co_async/utils/expected.hpp>
 
 namespace co_async {
 inline constexpr std::size_t kStreamBufferSize = 8192;
@@ -148,7 +148,8 @@ struct BorrowedStream {
                 mInIndex = end;
                 co_return {};
             }
-            p = std::copy(mInBuffer.data() + start, mInBuffer.data() + mInEnd, p);
+            p = std::copy(mInBuffer.data() + start, mInBuffer.data() + mInEnd,
+                          p);
             mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
@@ -220,7 +221,8 @@ struct BorrowedStream {
     template <class T>
         requires std::is_trivial_v<T>
     Task<Expected<>> getstruct(T &ret) {
-        return getspan(std::span<char>(reinterpret_cast<char *>(&ret), sizeof(T)));
+        return getspan(
+            std::span<char>(reinterpret_cast<char *>(&ret), sizeof(T)));
     }
 
     template <class T>
@@ -301,13 +303,14 @@ struct BorrowedStream {
         if (!mInBuffer) {
             allocinbuf(kStreamBufferSize);
         }
-// #if CO_ASYNC_DEBUG
-//         if (!bufempty()) [[unlikely]] {
-//             throw std::logic_error("buf must be empty before fillbuf");
-//         }
-// #endif
-        auto n = co_await co_await mRaw->raw_read(
-            std::span(mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
+        // #if CO_ASYNC_DEBUG
+        //         if (!bufempty()) [[unlikely]] {
+        //             throw std::logic_error("buf must be empty before
+        //             fillbuf");
+        //         }
+        // #endif
+        auto n = co_await co_await mRaw->raw_read(std::span(
+            mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
         // auto n = co_await co_await mRaw->raw_read(mInBuffer);
         if (n == 0) [[unlikely]] {
             co_return std::errc::broken_pipe;
@@ -385,8 +388,8 @@ struct BorrowedStream {
 
     template <class T>
     Task<Expected<>> putstruct(T const &s) {
-        return putspan(
-            std::span<char const>(reinterpret_cast<char const *>(std::addressof(s)), sizeof(T)));
+        return putspan(std::span<char const>(
+            reinterpret_cast<char const *>(std::addressof(s)), sizeof(T)));
     }
 
     Task<Expected<>> putchunk(std::string_view s) {
@@ -481,15 +484,18 @@ struct BorrowedStream {
     }
 
     Task<Expected<std::size_t>> write(void const *buffer, std::size_t len) {
-        return write(std::span<char const>(static_cast<char const *>(buffer), len));
+        return write(
+            std::span<char const>(static_cast<char const *>(buffer), len));
     }
 
     Task<Expected<>> putspan(void const *buffer, std::size_t len) {
-        return putspan(std::span<char const>(static_cast<char const *>(buffer), len));
+        return putspan(
+            std::span<char const>(static_cast<char const *>(buffer), len));
     }
 
     std::size_t trywrite(void const *buffer, std::size_t len) {
-        return trywrite(std::span<char const>(static_cast<char const *>(buffer), len));
+        return trywrite(
+            std::span<char const>(static_cast<char const *>(buffer), len));
     }
 
     void timeout(std::chrono::steady_clock::duration timeout) {

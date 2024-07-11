@@ -64,8 +64,7 @@ HTTPServerUtils::make_response_from_directory(HTTPServer::IO &io,
 
 Task<Expected<>> HTTPServerUtils::make_error_response(HTTPServer::IO &io,
                                                       int status) {
-    auto error =
-        to_string(status) + ' ' + String(getHTTPStatusName(status));
+    auto error = to_string(status) + ' ' + String(getHTTPStatusName(status));
     HTTPResponse res{
         .status = status,
         .headers =

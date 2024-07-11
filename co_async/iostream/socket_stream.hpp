@@ -9,7 +9,8 @@
 namespace co_async {
 struct SocketStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        auto ret = co_await socket_read(mFile, buffer, mTimeout, co_await co_cancel);
+        auto ret =
+            co_await socket_read(mFile, buffer, mTimeout, co_await co_cancel);
         if (ret == std::make_error_code(std::errc::operation_canceled))
             [[unlikely]] {
             co_return std::errc::stream_timeout;
@@ -19,7 +20,8 @@ struct SocketStream : Stream {
 
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
-        auto ret = co_await socket_write(mFile, buffer, mTimeout, co_await co_cancel);
+        auto ret =
+            co_await socket_write(mFile, buffer, mTimeout, co_await co_cancel);
         if (ret == std::make_error_code(std::errc::operation_canceled))
             [[unlikely]] {
             co_return std::errc::stream_timeout;
@@ -56,8 +58,7 @@ tcp_connect(char const *host, int port, std::string_view proxy,
     co_return sock;
 }
 
-inline Task<Expected<OwningStream>>
-tcp_accept(SocketListener &listener) {
+inline Task<Expected<OwningStream>> tcp_accept(SocketListener &listener) {
     auto handle = co_await co_await listener_accept(listener);
     OwningStream sock = make_stream<SocketStream>(std::move(handle));
     co_return sock;

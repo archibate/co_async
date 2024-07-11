@@ -1,11 +1,11 @@
 #pragma once
 #include <co_async/std.hpp>
-#include <co_async/utils/spin_mutex.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/condition_variable.hpp>
 #include <co_async/utils/cacheline.hpp>
 #include <co_async/utils/non_void_helper.hpp>
 #include <co_async/utils/ring_queue.hpp>
+#include <co_async/utils/spin_mutex.hpp>
 
 namespace co_async {
 template <class T>

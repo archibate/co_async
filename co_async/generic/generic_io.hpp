@@ -1,15 +1,15 @@
 #pragma once
 #include <co_async/std.hpp>
-#include <co_async/utils/spin_mutex.hpp>
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/details/ignore_return_promise.hpp>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/cancel.hpp>
 #include <co_async/utils/cacheline.hpp>
-#include <co_async/utils/ring_queue.hpp>
 #include <co_async/utils/concurrent_queue.hpp>
 #include <co_async/utils/non_void_helper.hpp>
 #include <co_async/utils/rbtree.hpp>
+#include <co_async/utils/ring_queue.hpp>
+#include <co_async/utils/spin_mutex.hpp>
 #include <co_async/utils/uninitialized.hpp>
 
 namespace co_async {
@@ -47,18 +47,19 @@ struct GenericIOContext {
                 if (!mPromise->mCancelled) {
                     return {};
                 } else {
-                    return 
-                        std::errc::operation_canceled;
+                    return std::errc::operation_canceled;
                 }
             }
         };
     };
 
-    [[gnu::hot]] std::optional<std::chrono::steady_clock::duration> runDuration();
+    [[gnu::hot]] std::optional<std::chrono::steady_clock::duration>
+    runDuration();
 
     [[gnu::hot]] void enqueueJob(std::coroutine_handle<> coroutine) {
-        while (!mQueue.push(std::move(coroutine))) [[unlikely]]
-            ;
+        while (!mQueue.push(std::move(coroutine))) {
+            [[unlikely]];
+        }
     }
 
     [[gnu::hot]] void enqueueTimerNode(TimerNode &promise) {

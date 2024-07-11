@@ -422,7 +422,8 @@ public:
             return dn.error();
         }
         trustAnchors.push_back({
-            {reinterpret_cast<unsigned char *>(const_cast<char *>(dn->data())), dn->size()},
+            {reinterpret_cast<unsigned char *>(const_cast<char *>(dn->data())),
+             dn->size()},
             BR_X509_TA_CA,
             *x506.getPubKey(),
         });
@@ -456,7 +457,8 @@ public:
 
     void addBinary(std::string certX506) {
         auto &cert = strStores.emplace_back(std::move(certX506));
-        certificates.push_back({reinterpret_cast<unsigned char *>(cert.data()), cert.size()});
+        certificates.push_back(
+            {reinterpret_cast<unsigned char *>(cert.data()), cert.size()});
     }
 
     void add(std::string_view certX506) {
@@ -515,7 +517,8 @@ protected:
                 unsigned char *buf;
                 std::size_t len, wlen;
                 buf = br_ssl_engine_sendrec_buf(eng, &len);
-                if (auto e = co_await raw.raw_write({reinterpret_cast<char const *>(buf), len});
+                if (auto e = co_await raw.raw_write(
+                        {reinterpret_cast<char const *>(buf), len});
                     e && *e != 0) {
                     wlen = *e;
                 } else {
@@ -551,7 +554,8 @@ protected:
                 unsigned char *buf;
                 std::size_t len, rlen;
                 buf = br_ssl_engine_recvrec_buf(eng, &len);
-                if (auto e = co_await raw.raw_read({reinterpret_cast<char *>(buf), len});
+                if (auto e = co_await raw.raw_read(
+                        {reinterpret_cast<char *>(buf), len});
                     e && *e != 0) {
                     rlen = *e;
                 } else {
@@ -726,8 +730,8 @@ OwningStream ssl_accept(SocketHandle file, SSLServerCertificate const &cert,
 
 DefinePImpl(SSLServerPrivateKey);
 DefinePImpl(SSLClientTrustAnchor);
-Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add, (std::string_view content),
-                              content);
+Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add,
+                              (std::string_view content), content);
 DefinePImpl(SSLServerCertificate);
 void ForwardPImplMethod(SSLServerCertificate, add, (std::string_view content),
                         content);

@@ -29,7 +29,8 @@ namespace co_async {
 //             return false;
 //         }
 //
-//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine) const {
+//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine)
+//         const {
 //             mThat->pushWaiting(coroutine.promise());
 //         }
 //
@@ -131,7 +132,8 @@ namespace co_async {
 //
 //     std::coroutine_handle<> notifyPopCoroutine() {
 //         if (auto promise = popWaiting()) {
-//             return std::coroutine_handle<PromiseNode>::from_promise(*promise);
+//             return
+//             std::coroutine_handle<PromiseNode>::from_promise(*promise);
 //         }
 //         return nullptr;
 //     }
@@ -333,7 +335,8 @@ namespace co_async {
 //             return false;
 //         }
 //
-//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine) const {
+//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine)
+//         const {
 //             mThat->pushWaiting(coroutine.promise());
 //         }
 //
@@ -435,7 +438,8 @@ namespace co_async {
 //
 //     std::coroutine_handle<> notifyPopCoroutine() {
 //         if (auto promise = popWaiting()) {
-//             return std::coroutine_handle<PromiseNode>::from_promise(*promise);
+//             return
+//             std::coroutine_handle<PromiseNode>::from_promise(*promise);
 //         }
 //         return nullptr;
 //     }
@@ -448,9 +452,9 @@ private:
 public:
     Task<Expected<>> wait() {
         std::uint32_t old = mFutex.load(std::memory_order_relaxed);
-        do
+        do {
             co_await co_await futex_wait(&mFutex, old);
-        while (mFutex.load(std::memory_order_acquire) == old);
+        } while (mFutex.load(std::memory_order_acquire) == old);
         co_return {};
     }
 
@@ -468,9 +472,9 @@ public:
 
     Task<Expected<>> wait(Mask mask) {
         std::uint32_t old = mFutex.load(std::memory_order_relaxed);
-        do
+        do {
             co_await co_await futex_wait(&mFutex, old, mask);
-        while (mFutex.load(std::memory_order_acquire) == old);
+        } while (mFutex.load(std::memory_order_acquire) == old);
         co_return {};
     }
 

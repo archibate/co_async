@@ -327,7 +327,8 @@ struct IntrusiveList : private ListHead {
 
         iterator() noexcept : node(nullptr) {}
 
-        explicit iterator(Value &value) noexcept : node(&static_cast<ListNode &>(value)) {}
+        explicit iterator(Value &value) noexcept
+            : node(&static_cast<ListNode &>(value)) {}
 
         Value &operator*() const noexcept {
             return *static_cast<Value *>(node);
@@ -359,11 +360,11 @@ struct IntrusiveList : private ListHead {
             return copy;
         }
 
-        bool operator==(const iterator &other) const noexcept {
+        bool operator==(iterator const &other) const noexcept {
             return node == other.node;
         }
 
-        bool operator!=(const iterator &other) const noexcept {
+        bool operator!=(iterator const &other) const noexcept {
             return node != other.node;
         }
     };
@@ -434,7 +435,8 @@ struct IntrusiveList : private ListHead {
 //     ConcurrentIntrusiveList() noexcept {
 //         static_assert(
 //             std::is_base_of_v<NodeType, Value>,
-//             "Value type must be derived from ConcurrentIntrusiveList<Value>::NodeType");
+//             "Value type must be derived from
+//             ConcurrentIntrusiveList<Value>::NodeType");
 //     }
 //
 //     void push_front(Value &value) noexcept {

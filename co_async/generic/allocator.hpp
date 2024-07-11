@@ -8,7 +8,7 @@ using String = std::pmr::string;
 using String = std::string;
 #endif
 
-inline String operator""_s(const char *str, size_t len) {
+inline String operator""_s(char const *str, size_t len) {
     return String(str, len);
 }
 

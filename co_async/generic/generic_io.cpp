@@ -39,6 +39,7 @@ GenericIOContext::runDuration() {
         }
     }
 }
+
 //
 // void GenericIOContext::startMain(std::stop_token stop) {
 //     while (!stop.stop_requested()) [[likely]] {

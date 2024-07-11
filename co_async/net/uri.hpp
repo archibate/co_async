@@ -1,7 +1,7 @@
 #pragma once
 #include <co_async/std.hpp>
-#include <co_async/utils/simple_map.hpp>
 #include <co_async/generic/allocator.hpp>
+#include <co_async/utils/simple_map.hpp>
 
 namespace co_async {
 struct URIParams : SimpleMap<String, String> {

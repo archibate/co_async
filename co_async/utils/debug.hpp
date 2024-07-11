@@ -833,8 +833,9 @@ private:
     DEBUG_COND(is_variant, std::variant_size<T>::value);
     DEBUG_COND(is_smart_pointer, static_cast<void const volatile *>(
                                      std::declval<T const &>().get()));
-    DEBUG_COND(is_optional, (((void)*std::declval<T const &>(), (void)0),
-                   ((void)static_cast<bool>(std::declval<T const &>()), (void)0)));
+    DEBUG_COND(is_optional,
+               (((void)*std::declval<T const &>(), (void)0),
+                ((void)static_cast<bool>(std::declval<T const &>()), (void)0)));
     DEBUG_COND(
         reference_wrapper,
         (typename std::enable_if<

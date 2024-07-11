@@ -7,7 +7,8 @@
 
 namespace co_async {
 struct IOContextOptions {
-    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(10);
+    std::chrono::steady_clock::duration maxSleep =
+        std::chrono::milliseconds(10);
     std::optional<std::size_t> threadAffinity = std::nullopt;
     std::size_t queueEntries = 512;
 };
@@ -37,7 +38,7 @@ public:
                                 std::span<IOContext> peerContexts);
 
     [[gnu::cold]] void start(IOContextOptions options = {},
-               std::span<IOContext> peerContexts = {});
+                             std::span<IOContext> peerContexts = {});
 
     [[gnu::hot]] void spawn(std::coroutine_handle<> coroutine) {
         mGenericIO.enqueueJob(coroutine);

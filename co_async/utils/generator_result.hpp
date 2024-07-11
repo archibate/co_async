@@ -103,6 +103,7 @@ struct GeneratorResult {
         return std::move(std::get<1>(mValue));
     }
 };
+
 template <class T>
 struct GeneratorResult<T, void> : GeneratorResult<T, Void> {
     using GeneratorResult<T, Void>::GeneratorResult;

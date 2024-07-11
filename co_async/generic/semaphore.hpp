@@ -35,7 +35,9 @@ public:
                 co_await co_await futex_wait(&mCounter, count, kAcquireMask);
                 count = mCounter.load(std::memory_order_relaxed);
             }
-        } while (mCounter.compare_exchange_weak(count, count - 1, std::memory_order_acq_rel, std::memory_order_relaxed));
+        } while (mCounter.compare_exchange_weak(count, count - 1,
+                                                std::memory_order_acq_rel,
+                                                std::memory_order_relaxed));
         futex_notify(&mCounter, 1, kReleaseMask);
         co_return {};
     }
@@ -47,7 +49,9 @@ public:
                 co_await co_await futex_wait(&mCounter, count, kReleaseMask);
                 count = mCounter.load(std::memory_order_relaxed);
             }
-        } while (mCounter.compare_exchange_weak(count, count + 1, std::memory_order_acq_rel, std::memory_order_relaxed));
+        } while (mCounter.compare_exchange_weak(count, count + 1,
+                                                std::memory_order_acq_rel,
+                                                std::memory_order_relaxed));
         futex_notify(&mCounter, 1, kAcquireMask);
         co_return {};
     }

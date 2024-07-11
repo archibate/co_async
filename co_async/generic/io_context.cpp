@@ -1,8 +1,8 @@
 #include <co_async/std.hpp>
 #include <co_async/awaiter/task.hpp>
-#include <co_async/platform/futex.hpp>
 #include <co_async/generic/generic_io.hpp>
 #include <co_async/generic/io_context.hpp>
+#include <co_async/platform/futex.hpp>
 #include <co_async/platform/platform_io.hpp>
 #include <co_async/utils/cacheline.hpp>
 
@@ -29,8 +29,7 @@ struct IOContext::IOContextGuard {
     IOContextGuard(IOContextGuard &&) = delete;
 };
 
-void IOContext::startHere(std::stop_token stop,
-                          IOContextOptions options,
+void IOContext::startHere(std::stop_token stop, IOContextOptions options,
                           std::span<IOContext> peerContexts) {
     IOContextGuard guard(this);
 
@@ -76,7 +75,8 @@ thread_local IOContext *IOContext::instance;
 //         futex_notify_sync(&mWake, 1);
 // }
 //
-// Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>> IOContext::watchDogTask() {
+// Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>>
+// IOContext::watchDogTask() {
 //     // helps wake up main loop when IOContext::spawn called
 //     while (true) {
 //         while (mWake.load(std::memory_order_relaxed) == 0)

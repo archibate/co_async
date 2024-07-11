@@ -58,7 +58,7 @@ bool PlatformIOContext::IOUringProbe::isSupported(int op) noexcept {
 }
 
 void PlatformIOContext::IOUringProbe::dumpDiagnostics() {
-    static const char *ops[IORING_OP_LAST + 1] = {
+    static char const *ops[IORING_OP_LAST + 1] = {
         "IORING_OP_NOP",
         "IORING_OP_READV",
         "IORING_OP_WRITEV",
@@ -119,7 +119,8 @@ void PlatformIOContext::IOUringProbe::dumpDiagnostics() {
     };
     for (int op = IORING_OP_NOP; op < IORING_OP_LAST; ++op) {
         bool ok = isSupported(op);
-        std::cerr << "opcode " << ops[op] << (ok ? "" : " not") << " supported" << '\n';
+        std::cerr << "opcode " << ops[op] << (ok ? "" : " not") << " supported"
+                  << '\n';
     }
 }
 
@@ -132,7 +133,8 @@ void PlatformIOContext::setup(std::size_t entries) {
 #if CO_ASYNC_DIRECT
     flags |= IORING_SETUP_IOPOLL;
 #endif
-    throwingError(io_uring_queue_init(static_cast<unsigned int>(entries), &mRing, flags));
+    throwingError(
+        io_uring_queue_init(static_cast<unsigned int>(entries), &mRing, flags));
 }
 
 void PlatformIOContext::reserveBuffers(std::size_t nbufs) {
@@ -143,12 +145,16 @@ void PlatformIOContext::reserveBuffers(std::size_t nbufs) {
     }
     mCapBufs = static_cast<unsigned int>(nbufs);
     std::memcpy(mBuffers.get(), oldBuf.get(), sizeof(struct iovec) * mNumBufs);
-    throwingError(io_uring_register_buffers_sparse(&mRing, static_cast<unsigned int>(nbufs)));
+    throwingError(io_uring_register_buffers_sparse(
+        &mRing, static_cast<unsigned int>(nbufs)));
     std::vector<__u64> tags(mNumBufs, 0);
-    throwingError(io_uring_register_buffers_update_tag(&mRing, 0, mBuffers.get(), tags.data(), static_cast<unsigned int>(mNumBufs)));
+    throwingError(io_uring_register_buffers_update_tag(
+        &mRing, 0, mBuffers.get(), tags.data(),
+        static_cast<unsigned int>(mNumBufs)));
 }
 
-std::size_t PlatformIOContext::addBuffers(std::span<std::span<char> const> bufs) {
+std::size_t
+PlatformIOContext::addBuffers(std::span<std::span<char> const> bufs) {
     if (mNumBufs >= mCapBufs) {
         reserveBuffers(mCapBufs * 2 + 1);
     }
@@ -160,7 +166,9 @@ std::size_t PlatformIOContext::addBuffers(std::span<std::span<char> const> bufs)
         *outP++ = iov;
     }
     std::vector<__u64> tags(bufs.size(), 0);
-    throwingError(io_uring_register_buffers_update_tag(&mRing, mNumBufs, mBuffers.get() + mNumBufs, tags.data(), static_cast<unsigned int>(bufs.size())));
+    throwingError(io_uring_register_buffers_update_tag(
+        &mRing, mNumBufs, mBuffers.get() + mNumBufs, tags.data(),
+        static_cast<unsigned int>(bufs.size())));
     size_t ret = mNumBufs;
     mNumBufs += static_cast<unsigned int>(bufs.size());
     return ret;
@@ -174,9 +182,11 @@ void PlatformIOContext::reserveFiles(std::size_t nfiles) {
     }
     mCapFiles = static_cast<unsigned int>(nfiles);
     std::memcpy(mBuffers.get(), oldBuf.get(), sizeof(struct iovec) * mNumBufs);
-    throwingError(io_uring_register_files_sparse(&mRing, static_cast<unsigned int>(nfiles)));
+    throwingError(io_uring_register_files_sparse(
+        &mRing, static_cast<unsigned int>(nfiles)));
     std::vector<__u64> tags(mNumFiles, 0);
-    throwingError(io_uring_register_files_update_tag(&mRing, 0, mFiles.get(), tags.data(), mNumFiles));
+    throwingError(io_uring_register_files_update_tag(&mRing, 0, mFiles.get(),
+                                                     tags.data(), mNumFiles));
 }
 
 std::size_t PlatformIOContext::addFiles(std::span<int const> files) {
@@ -188,7 +198,9 @@ std::size_t PlatformIOContext::addFiles(std::span<int const> files) {
         *outP++ = file;
     }
     std::vector<__u64> tags(files.size(), 0);
-    throwingError(io_uring_register_files_update_tag(&mRing, mNumFiles, mFiles.get() + mNumFiles, tags.data(), static_cast<unsigned int>(files.size())));
+    throwingError(io_uring_register_files_update_tag(
+        &mRing, mNumFiles, mFiles.get() + mNumFiles, tags.data(),
+        static_cast<unsigned int>(files.size())));
     size_t ret = mNumFiles;
     mNumFiles += static_cast<unsigned int>(files.size());
     return ret;

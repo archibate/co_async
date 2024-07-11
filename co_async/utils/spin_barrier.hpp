@@ -12,7 +12,8 @@ struct SpinBarrier {
 
     bool arrive_and_wait() noexcept {
         bool old_flip = m_sync_flip.load(std::memory_order_relaxed);
-        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) == m_top_waiting) {
+        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) ==
+            m_top_waiting) {
             m_num_waiting.store(0, std::memory_order_relaxed);
             m_sync_flip.store(!old_flip, std::memory_order_release);
             return true;
@@ -28,7 +29,8 @@ struct SpinBarrier {
 
     bool arrive_and_drop() noexcept {
         bool old_flip = m_sync_flip.load(std::memory_order_relaxed);
-        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) == m_top_waiting) {
+        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) ==
+            m_top_waiting) {
             m_num_waiting.store(0, std::memory_order_relaxed);
             m_sync_flip.store(!old_flip, std::memory_order_release);
             return true;
@@ -43,4 +45,4 @@ private:
     std::atomic<bool> m_sync_flip;
 };
 
-}
+} // namespace co_async

@@ -7,9 +7,9 @@
 #include <co_async/awaiter/concepts.hpp>
 #include <co_async/awaiter/details/previous_awaiter.hpp>
 #include <co_async/awaiter/details/value_awaiter.hpp>
+#include <co_async/generic/allocator.hpp>
 #include <co_async/utils/generator_result.hpp>
 #include <co_async/utils/uninitialized.hpp>
-#include <co_async/generic/allocator.hpp>
 
 namespace co_async {
 
@@ -216,7 +216,8 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
 #if CO_ASYNC_DEBUG
     template <class U, class Loc>
     void returnValue(U &&result, Loc &&loc) {
-        mResult.emplace(std::in_place_index<1>, std::forward<U>(result), std::forward<Loc>(loc));
+        mResult.emplace(std::in_place_index<1>, std::forward<U>(result),
+                        std::forward<Loc>(loc));
     }
 #endif
     template <class U>

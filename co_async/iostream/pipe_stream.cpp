@@ -1,9 +1,9 @@
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/condition_variable.hpp>
+#include <co_async/generic/queue.hpp>
 #include <co_async/iostream/pipe_stream.hpp>
 #include <co_async/iostream/stream_base.hpp>
 #include <co_async/platform/fs.hpp>
-#include <co_async/generic/queue.hpp>
 
 namespace co_async {
 
@@ -49,7 +49,8 @@ struct OPipeStream : Stream {
             if (buffer.empty()) [[unlikely]] {
                 co_return std::size_t(0);
             }
-            co_await co_await p->mChunks.push(std::string(buffer.data(), buffer.size()));
+            co_await co_await p->mChunks.push(
+                std::string(buffer.data(), buffer.size()));
             co_return buffer.size();
         } else {
             co_return std::errc::broken_pipe;

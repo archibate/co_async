@@ -11,15 +11,18 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout) {
     using namespace std::string_view_literals;
     if (proxy.empty()) {
-        co_return co_await socket_connect(co_await AddressResolver().host(host).port(port).resolve_one());
+        co_return co_await socket_connect(
+            co_await AddressResolver().host(host).port(port).resolve_one());
     } else {
 #if CO_ASYNC_DEBUG
         if (!proxy.starts_with("http://")) {
-            std::cerr << "WARNING: both http_proxy and https_proxy variable should starts with http://\n";
+            std::cerr << "WARNING: both http_proxy and https_proxy variable "
+                         "should starts with http://\n";
         }
 #endif
         auto sock = co_await co_await socket_connect(
-            co_await AddressResolver().host(proxy).resolve_one(), co_await co_cancel);
+            co_await AddressResolver().host(proxy).resolve_one(),
+            co_await co_cancel);
         String hostName(host);
         hostName += ':';
         hostName += to_string(port);

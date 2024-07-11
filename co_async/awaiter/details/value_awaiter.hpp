@@ -32,8 +32,7 @@ private:
 
 public:
     template <class... Args>
-    ValueOrReturnAwaiter(std::in_place_t, Args &&...args)
-        : mPrevious() {
+    ValueOrReturnAwaiter(std::in_place_t, Args &&...args) : mPrevious() {
         mValue.emplace(std::forward<Args>(args)...);
     }
 

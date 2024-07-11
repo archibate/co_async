@@ -161,8 +161,10 @@ public:
     }
 
     UringOp &&prep_socket_direct(int domain, int type, int protocol,
-                          unsigned int flags, unsigned int file_index) && {
-        io_uring_prep_socket_direct(mSqe, domain, type, protocol, flags, file_index);
+                                 unsigned int flags,
+                                 unsigned int file_index) && {
+        io_uring_prep_socket_direct(mSqe, domain, type, protocol, flags,
+                                    file_index);
         return std::move(*this);
     }
 
@@ -172,8 +174,9 @@ public:
         return std::move(*this);
     }
 
-    UringOp &&prep_accept_direct(int fd, struct sockaddr *addr, socklen_t *addrlen,
-                          int flags, unsigned int file_index) && {
+    UringOp &&prep_accept_direct(int fd, struct sockaddr *addr,
+                                 socklen_t *addrlen, int flags,
+                                 unsigned int file_index) && {
         io_uring_prep_accept_direct(mSqe, fd, addr, addrlen, flags, file_index);
         return std::move(*this);
     }
@@ -220,43 +223,47 @@ public:
     }
 
     UringOp &&prep_read(int fd, std::span<char> buf, std::uint64_t offset) && {
-        io_uring_prep_read(mSqe, fd, buf.data(), static_cast<unsigned int>(buf.size()),
-                           offset);
+        io_uring_prep_read(mSqe, fd, buf.data(),
+                           static_cast<unsigned int>(buf.size()), offset);
         return std::move(*this);
     }
 
     UringOp &&prep_write(int fd, std::span<char const> buf,
                          std::uint64_t offset) && {
-        io_uring_prep_write(mSqe, fd, buf.data(), static_cast<unsigned int>(buf.size()),
-                            offset);
+        io_uring_prep_write(mSqe, fd, buf.data(),
+                            static_cast<unsigned int>(buf.size()), offset);
         return std::move(*this);
     }
 
     UringOp &&prep_read_fixed(int fd, std::span<char> buf, std::uint64_t offset,
                               int buf_index) && {
-        io_uring_prep_read_fixed(mSqe, fd, buf.data(), static_cast<unsigned int>(buf.size()),
-                                 offset, buf_index);
+        io_uring_prep_read_fixed(mSqe, fd, buf.data(),
+                                 static_cast<unsigned int>(buf.size()), offset,
+                                 buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_write_fixed(int fd, std::span<char const> buf,
                                std::uint64_t offset, int buf_index) && {
         io_uring_prep_write_fixed(mSqe, fd, buf.data(),
-                                  static_cast<unsigned int>(buf.size()), offset, buf_index);
+                                  static_cast<unsigned int>(buf.size()), offset,
+                                  buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_readv(int fd, std::span<struct iovec const> buf,
                          std::uint64_t offset, int flags) && {
-        io_uring_prep_readv2(mSqe, fd, buf.data(), static_cast<unsigned int>(buf.size()),
-                             offset, flags);
+        io_uring_prep_readv2(mSqe, fd, buf.data(),
+                             static_cast<unsigned int>(buf.size()), offset,
+                             flags);
         return std::move(*this);
     }
 
     UringOp &&prep_writev(int fd, std::span<struct iovec const> buf,
                           std::uint64_t offset, int flags) && {
-        io_uring_prep_writev2(mSqe, fd, buf.data(), static_cast<unsigned int>(buf.size()),
-                              offset, flags);
+        io_uring_prep_writev2(mSqe, fd, buf.data(),
+                              static_cast<unsigned int>(buf.size()), offset,
+                              flags);
         return std::move(*this);
     }
 
@@ -270,14 +277,18 @@ public:
         return std::move(*this);
     }
 
-    UringOp &&prep_send_zc(int fd, std::span<char const> buf, int flags, unsigned int zc_flags) && {
-        io_uring_prep_send_zc(mSqe, fd, buf.data(), buf.size(), flags, zc_flags);
+    UringOp &&prep_send_zc(int fd, std::span<char const> buf, int flags,
+                           unsigned int zc_flags) && {
+        io_uring_prep_send_zc(mSqe, fd, buf.data(), buf.size(), flags,
+                              zc_flags);
         return std::move(*this);
     }
 
     UringOp &&prep_send_zc_fixed(int fd, std::span<char const> buf, int flags,
-                                 unsigned int zc_flags, unsigned int buf_index) && {
-        io_uring_prep_send_zc_fixed(mSqe, fd, buf.data(), buf.size(), flags, zc_flags, buf_index);
+                                 unsigned int zc_flags,
+                                 unsigned int buf_index) && {
+        io_uring_prep_send_zc_fixed(mSqe, fd, buf.data(), buf.size(), flags,
+                                    zc_flags, buf_index);
         return std::move(*this);
     }
 
@@ -366,8 +377,10 @@ public:
         return std::move(*this);
     }
 
-    UringOp &&prep_futex_waitv(std::span<struct futex_waitv> futex, unsigned int flags) && {
-        io_uring_prep_futex_waitv(mSqe, futex.data(), static_cast<uint32_t>(futex.size()), flags);
+    UringOp &&prep_futex_waitv(std::span<struct futex_waitv> futex,
+                               unsigned int flags) && {
+        io_uring_prep_futex_waitv(mSqe, futex.data(),
+                                  static_cast<uint32_t>(futex.size()), flags);
         return std::move(*this);
     }
 
@@ -377,16 +390,16 @@ public:
         return std::move(*this);
     }
 
-    struct Canceller {
-        using OpType = UringOp;
-
-        static Task<> doCancel(OpType *op) {
-            co_await UringOp().prep_cancel(op, IORING_ASYNC_CANCEL_ALL);
-        }
-    };
+    // struct Canceller {
+    //     using OpType = UringOp;
+    //
+    //     static Task<> doCancel(OpType *op) {
+    //         co_await UringOp().prep_cancel(op, IORING_ASYNC_CANCEL_ALL);
+    //     }
+    // };
 
     Task<int> cancelGuard(CancelToken cancel) && {
-        CancelCallback _(cancel, [this] () -> Task<> {
+        CancelCallback _(cancel, [this]() -> Task<> {
             co_await UringOp().prep_cancel(this, IORING_ASYNC_CANCEL_ALL);
         });
         co_return co_await std::move(*this);

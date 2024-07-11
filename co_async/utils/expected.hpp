@@ -1,18 +1,20 @@
 #pragma once
 #include <co_async/std.hpp>
 #include <co_async/utils/non_void_helper.hpp>
+
 namespace co_async {
 
-template<class T, class U>
+template <class T, class U>
 concept WeaklyEqComparable = requires(T const &t, U const &u) {
-{ t == u } -> std::convertible_to<bool>;
-{ t != u } -> std::convertible_to<bool>;
-{ u == t } -> std::convertible_to<bool>;
-{ u != t } -> std::convertible_to<bool>;
+    { t == u } -> std::convertible_to<bool>;
+    { t != u } -> std::convertible_to<bool>;
+    { u == t } -> std::convertible_to<bool>;
+    { u != t } -> std::convertible_to<bool>;
 };
 
 template <class T = void>
-struct [[nodiscard("Expected<T> return values must be handled, use co_await to propagate")]] Expected {
+struct [[nodiscard("Expected<T> return values must be handled, use co_await to "
+                   "propagate")]] Expected {
 protected:
     static_assert(!std::is_reference_v<T>);
     std::error_category const *mErrorCatgory;
@@ -28,17 +30,21 @@ protected:
 #if CO_ASYNC_DEBUG
 public:
     std::source_location mErrorLocation;
-#define CO_ASYNC_EXPECTED_LOCATION , std::source_location const &errLoc = std::source_location::current()
-#define CO_ASYNC_EXPECTED_LOCATION_INIT , mErrorLocation(errLoc)
-#define CO_ASYNC_EXPECTED_LOCATION_MESSAGE , std::string(mErrorLocation.file_name()) + ":" + std::to_string(mErrorLocation.line()) + ": " + mErrorLocation.function_name()
-#define CO_ASYNC_EXPECTED_LOCATION_COPY , mErrorLocation(that.mErrorLocation)
-#define CO_ASYNC_EXPECTED_LOCATION_ASSIGN mErrorLocation = that.mErrorLocation
+# define CO_ASYNC_EXPECTED_LOCATION \
+     , std::source_location const &errLoc = std::source_location::current()
+# define CO_ASYNC_EXPECTED_LOCATION_INIT , mErrorLocation(errLoc)
+# define CO_ASYNC_EXPECTED_LOCATION_MESSAGE \
+     , std::string(mErrorLocation.file_name()) + ":" + \
+           std::to_string(mErrorLocation.line()) + ": " + \
+           mErrorLocation.function_name()
+# define CO_ASYNC_EXPECTED_LOCATION_COPY   , mErrorLocation(that.mErrorLocation)
+# define CO_ASYNC_EXPECTED_LOCATION_ASSIGN mErrorLocation = that.mErrorLocation
 #else
-#define CO_ASYNC_EXPECTED_LOCATION
-#define CO_ASYNC_EXPECTED_LOCATION_INIT
-#define CO_ASYNC_EXPECTED_LOCATION_MESSAGE
-#define CO_ASYNC_EXPECTED_LOCATION_COPY
-#define CO_ASYNC_EXPECTED_LOCATION_ASSIGN
+# define CO_ASYNC_EXPECTED_LOCATION
+# define CO_ASYNC_EXPECTED_LOCATION_INIT
+# define CO_ASYNC_EXPECTED_LOCATION_MESSAGE
+# define CO_ASYNC_EXPECTED_LOCATION_COPY
+# define CO_ASYNC_EXPECTED_LOCATION_ASSIGN
 #endif
 
 public:
@@ -47,22 +53,27 @@ public:
                  !std::convertible_to<U, std::errc> &&
                  !std::convertible_to<U, std::in_place_t>)
     Expected(U &&value) noexcept(std::is_nothrow_constructible_v<T, U>)
-        : mErrorCatgory(nullptr), mValue(std::forward<U>(value)) {}
+        : mErrorCatgory(nullptr),
+          mValue(std::forward<U>(value)) {}
 
     template <class... Args>
         requires std::constructible_from<T, Args...>
     Expected(std::in_place_t, Args &&...args) noexcept(
         std::is_nothrow_constructible_v<T, Args...>)
-        : mErrorCatgory(nullptr), mValue(std::forward<Args>(args)...) {}
+        : mErrorCatgory(nullptr),
+          mValue(std::forward<Args>(args)...) {}
 
     Expected() noexcept(std::is_nothrow_default_constructible_v<T>)
-        : mErrorCatgory(nullptr), mValue() {}
+        : mErrorCatgory(nullptr),
+          mValue() {}
 
     Expected(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>)
-        : mErrorCatgory(nullptr), mValue(std::move(value)) {}
+        : mErrorCatgory(nullptr),
+          mValue(std::move(value)) {}
 
     Expected(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>)
-        : mErrorCatgory(nullptr), mValue(value) {}
+        : mErrorCatgory(nullptr),
+          mValue(value) {}
 
     Expected(std::error_code const &ec CO_ASYNC_EXPECTED_LOCATION) noexcept
         : mErrorCatgory(&ec.category()),
@@ -172,7 +183,8 @@ public:
     template <WeaklyEqComparable<std::error_code> U>
         requires(!std::equality_comparable_with<U, T>)
     bool operator==(U &&e) const {
-        return has_error() && std::error_code(mErrorCode, *mErrorCatgory) == std::forward<U>(e);
+        return has_error() && std::error_code(mErrorCode, *mErrorCatgory) ==
+                                  std::forward<U>(e);
     }
 
     template <std::equality_comparable_with<T> U>
@@ -189,28 +201,32 @@ public:
         if (has_value()) [[likely]] {
             return std::move(mValue);
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory)
+                                    CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     T &value() & {
         if (has_value()) [[likely]] {
             return mValue;
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory)
+                                    CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     T const &value() const & {
         if (has_value()) [[likely]] {
             return mValue;
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory)
+                                    CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     T const &&value() const && {
         if (has_value()) [[likely]] {
             return std::move(mValue);
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory)
+                                    CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     template <class... Ts>
@@ -354,7 +370,8 @@ public:
         return *this;
     }
 
-    std::variant<std::reference_wrapper<T const>, std::error_code> repr() const {
+    std::variant<std::reference_wrapper<T const>, std::error_code>
+    repr() const {
         if (has_error()) {
             return std::error_code(mErrorCode, *mErrorCatgory);
         } else {
@@ -364,7 +381,8 @@ public:
 };
 
 template <>
-struct [[nodiscard("Expected<T> return values must be handled, use co_await to propagate")]] Expected<void> : Expected<Void> {
+struct [[nodiscard("Expected<T> return values must be handled, use co_await to "
+                   "propagate")]] Expected<void> : Expected<Void> {
     using Expected<Void>::Expected;
 };
 

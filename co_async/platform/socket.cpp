@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/cancel.hpp>
 #include <co_async/platform/error_handling.hpp>
@@ -7,7 +8,6 @@
 #include <co_async/utils/finally.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <netdb.h>
-#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
@@ -56,19 +56,21 @@ std::error_category const &getAddrInfoCategory() {
 //     };
 //     for (struct addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
 //         if (rp->ai_family == AF_INET) {
-//             std::memcpy(&addr, &reinterpret_cast<struct sockaddr_in *>(rp->ai_addr)->sin_addr,
+//             std::memcpy(&addr, &reinterpret_cast<struct sockaddr_in
+//             *>(rp->ai_addr)->sin_addr,
 //                         sizeof(in_addr));
 //             return IpAddress(addr);
 //         } else if (rp->ai_family == AF_INET6) {
 //             std::memcpy(&addr6,
-//                         &reinterpret_cast<struct sockaddr_in6 *>(rp->ai_addr)->sin6_addr,
-//                         sizeof(in6_addr));
+//                         &reinterpret_cast<struct sockaddr_in6
+//                         *>(rp->ai_addr)->sin6_addr, sizeof(in6_addr));
 //             return IpAddress(addr6);
 //         }
 //     }
 //     [[unlikely]] {
 // #if CO_ASYNC_DEBUG
-//         std::cerr << host << ": no matching host address with ipv4 or ipv6\n";
+//         std::cerr << host << ": no matching host address with ipv4 or
+//         ipv6\n";
 // #endif
 //         return std::errc::bad_address;
 //     }
@@ -108,8 +110,10 @@ auto AddressResolver::resolve_all() -> Expected<ResolveResult> {
     };
     ResolveResult res;
     for (struct addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
-        res.addrs.emplace_back(rp->ai_addr, rp->ai_addrlen, rp->ai_family,
-                         rp->ai_socktype, rp->ai_protocol).trySetPort(m_port);
+        res.addrs
+            .emplace_back(rp->ai_addr, rp->ai_addrlen, rp->ai_family,
+                          rp->ai_socktype, rp->ai_protocol)
+            .trySetPort(m_port);
     }
     if (res.addrs.empty()) [[unlikely]] {
 #if CO_ASYNC_DEBUG
@@ -140,7 +144,8 @@ Expected<SocketAddress> AddressResolver::resolve_one(std::string &service) {
 
 SocketAddress::SocketAddress(struct sockaddr const *addr, socklen_t addrLen,
                              sa_family_t family, int sockType, int protocol)
-    : mSockType(sockType), mProtocol(protocol) {
+    : mSockType(sockType),
+      mProtocol(protocol) {
     std::memcpy(&mAddr, addr, addrLen);
     mAddr.ss_family = family;
     mAddrLen = addrLen;
@@ -148,12 +153,14 @@ SocketAddress::SocketAddress(struct sockaddr const *addr, socklen_t addrLen,
 
 std::string SocketAddress::host() const {
     if (family() == AF_INET) {
-        auto &sin = reinterpret_cast<struct sockaddr_in const &>(mAddr).sin_addr;
+        auto &sin =
+            reinterpret_cast<struct sockaddr_in const &>(mAddr).sin_addr;
         char buf[INET_ADDRSTRLEN] = {};
         inet_ntop(family(), &sin, buf, sizeof(buf));
         return buf;
     } else if (family() == AF_INET6) {
-        auto &sin6 = reinterpret_cast<struct sockaddr_in6 const &>(mAddr).sin6_addr;
+        auto &sin6 =
+            reinterpret_cast<struct sockaddr_in6 const &>(mAddr).sin6_addr;
         char buf[INET6_ADDRSTRLEN] = {};
         inet_ntop(AF_INET6, &sin6, buf, sizeof(buf));
         return buf;
@@ -164,10 +171,12 @@ std::string SocketAddress::host() const {
 
 int SocketAddress::port() const {
     if (family() == AF_INET) {
-        auto port = reinterpret_cast<struct sockaddr_in const &>(mAddr).sin_port;
+        auto port =
+            reinterpret_cast<struct sockaddr_in const &>(mAddr).sin_port;
         return ntohs(port);
     } else if (family() == AF_INET6) {
-        auto port = reinterpret_cast<struct sockaddr_in6 const &>(mAddr).sin6_port;
+        auto port =
+            reinterpret_cast<struct sockaddr_in6 const &>(mAddr).sin6_port;
         return ntohs(port);
     } else [[unlikely]] {
         throw std::runtime_error("address family not ipv4 or ipv6");
@@ -176,9 +185,11 @@ int SocketAddress::port() const {
 
 void SocketAddress::trySetPort(int port) {
     if (family() == AF_INET) {
-        reinterpret_cast<struct sockaddr_in &>(mAddr).sin_port = htons(static_cast<uint16_t>(port));
+        reinterpret_cast<struct sockaddr_in &>(mAddr).sin_port =
+            htons(static_cast<uint16_t>(port));
     } else if (family() == AF_INET6) {
-        reinterpret_cast<struct sockaddr_in6 &>(mAddr).sin6_port = htons(static_cast<uint16_t>(port));
+        reinterpret_cast<struct sockaddr_in6 &>(mAddr).sin6_port =
+            htons(static_cast<uint16_t>(port));
     }
 }
 
@@ -207,49 +218,53 @@ String SocketAddress::toString() const {
 SocketAddress get_socket_address(SocketHandle &sock) {
     SocketAddress sa;
     sa.mAddrLen = sizeof(sa.mAddr);
-    throwingErrorErrno(
-        getsockname(sock.fileNo(), reinterpret_cast<struct sockaddr *>(&sa.mAddr), &sa.mAddrLen));
+    throwingErrorErrno(getsockname(
+        sock.fileNo(), reinterpret_cast<struct sockaddr *>(&sa.mAddr),
+        &sa.mAddrLen));
     return sa;
 }
 
 SocketAddress get_socket_peer_address(SocketHandle &sock) {
     SocketAddress sa;
     sa.mAddrLen = sizeof(sa.mAddr);
-    throwingErrorErrno(
-        getpeername(sock.fileNo(), reinterpret_cast<struct sockaddr *>(&sa.mAddr), &sa.mAddrLen));
+    throwingErrorErrno(getpeername(
+        sock.fileNo(), reinterpret_cast<struct sockaddr *>(&sa.mAddr),
+        &sa.mAddrLen));
     return sa;
 }
 
 Task<Expected<SocketHandle>> createSocket(int family, int type, int protocol) {
     int fd = co_await expectError(
-        co_await UringOp().prep_socket(family, type, protocol, 0))
+                 co_await UringOp().prep_socket(family, type, protocol, 0))
 #if CO_ASYNC_INVALFIX
-        .on_error(std::errc::invalid_argument, [&] {
-            return socket(family, type, protocol);
-        })
+                 .on_error(std::errc::invalid_argument,
+                           [&] { return socket(family, type, protocol); })
 #endif
-    ;
+        ;
     SocketHandle sock(fd);
     co_return sock;
 }
 
 Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr) {
-    SocketHandle sock =
-        co_await co_await createSocket(addr.family(), addr.socktype(), addr.protocol());
+    SocketHandle sock = co_await co_await createSocket(
+        addr.family(), addr.socktype(), addr.protocol());
     co_await expectError(co_await UringOp().prep_connect(
-        sock.fileNo(), reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen));
+        sock.fileNo(), reinterpret_cast<const struct sockaddr *>(&addr.mAddr),
+        addr.mAddrLen));
     co_return sock;
 }
 
 Task<Expected<SocketHandle>>
 socket_connect(SocketAddress const &addr,
                std::chrono::steady_clock::duration timeout) {
-    SocketHandle sock =
-        co_await co_await createSocket(addr.family(), addr.socktype(), addr.protocol());
+    SocketHandle sock = co_await co_await createSocket(
+        addr.family(), addr.socktype(), addr.protocol());
     auto ts = durationToKernelTimespec(timeout);
     co_await expectError(co_await UringOp::link_ops(
         UringOp().prep_connect(
-            sock.fileNo(), reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen),
+            sock.fileNo(),
+            reinterpret_cast<const struct sockaddr *>(&addr.mAddr),
+            addr.mAddrLen),
         UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
     co_return sock;
 }
@@ -261,8 +276,13 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
     if (cancel.is_canceled()) [[unlikely]] {
         co_return std::errc::operation_canceled;
     }
-    co_await expectError(co_await UringOp().prep_connect(
-        sock.fileNo(), reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen).cancelGuard(cancel));
+    co_await expectError(
+        co_await UringOp()
+            .prep_connect(
+                sock.fileNo(),
+                reinterpret_cast<const struct sockaddr *>(&addr.mAddr),
+                addr.mAddrLen)
+            .cancelGuard(cancel));
     co_return sock;
 }
 
@@ -276,7 +296,8 @@ Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
     /* co_await socketSetOption(sock, SOL_SOCKET, SO_KEEPALIVE, 1); */
     SocketListener serv(sock.releaseFile());
     co_await expectError(bind(
-        serv.fileNo(), reinterpret_cast<struct sockaddr const *>(&addr.mAddr), addr.mAddrLen));
+        serv.fileNo(), reinterpret_cast<struct sockaddr const *>(&addr.mAddr),
+        addr.mAddrLen));
     co_await expectError(listen(serv.fileNo(), backlog));
     co_return serv;
 }
@@ -290,7 +311,10 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener) {
 
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              CancelToken cancel) {
-    int fd = co_await expectError(co_await UringOp().prep_accept(listener.fileNo(), nullptr, nullptr, 0).cancelGuard(cancel));
+    int fd = co_await expectError(
+        co_await UringOp()
+            .prep_accept(listener.fileNo(), nullptr, nullptr, 0)
+            .cancelGuard(cancel));
     SocketHandle sock(fd);
     co_return sock;
 }
@@ -307,9 +331,12 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              SocketAddress &peerAddr,
                                              CancelToken cancel) {
-    int fd = co_await expectError(co_await UringOp().prep_accept(
-        listener.fileNo(), reinterpret_cast<struct sockaddr *>(&peerAddr.mAddr),
-        &peerAddr.mAddrLen, 0).cancelGuard(cancel));
+    int fd = co_await expectError(
+        co_await UringOp()
+            .prep_accept(listener.fileNo(),
+                         reinterpret_cast<struct sockaddr *>(&peerAddr.mAddr),
+                         &peerAddr.mAddrLen, 0)
+            .cancelGuard(cancel));
     SocketHandle sock(fd);
     co_return sock;
 }
@@ -321,7 +348,7 @@ Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
 }
 
 Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
-                                         std::span<char const> buf) {
+                                            std::span<char const> buf) {
     co_return static_cast<std::size_t>(co_await expectError(
         co_await UringOp().prep_send_zc(sock.fileNo(), buf, 0, 0)));
 }
@@ -335,39 +362,47 @@ Task<Expected<std::size_t>> socket_read(SocketHandle &sock,
 Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                          std::span<char const> buf,
                                          CancelToken cancel) {
-    co_return static_cast<std::size_t>(co_await expectError(
-        co_await UringOp().prep_send(sock.fileNo(), buf, 0).cancelGuard(cancel)));
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp()
+                                 .prep_send(sock.fileNo(), buf, 0)
+                                 .cancelGuard(cancel)));
 }
 
 Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
-                                         std::span<char const> buf,
-                                         CancelToken cancel) {
-    co_return static_cast<std::size_t>(co_await expectError(
-        co_await UringOp().prep_send_zc(sock.fileNo(), buf, 0, 0).cancelGuard(cancel)));
+                                            std::span<char const> buf,
+                                            CancelToken cancel) {
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp()
+                                 .prep_send_zc(sock.fileNo(), buf, 0, 0)
+                                 .cancelGuard(cancel)));
 }
 
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock, std::span<char> buf,
                                         CancelToken cancel) {
-    co_return static_cast<std::size_t>(co_await expectError(
-        co_await UringOp().prep_recv(sock.fileNo(), buf, 0).cancelGuard(cancel)));
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp()
+                                 .prep_recv(sock.fileNo(), buf, 0)
+                                 .cancelGuard(cancel)));
 }
 
 Task<Expected<std::size_t>>
 socket_write(SocketHandle &sock, std::span<char const> buf,
              std::chrono::steady_clock::duration timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return static_cast<std::size_t>(co_await expectError(co_await UringOp::link_ops(
-        UringOp().prep_send(sock.fileNo(), buf, 0),
-        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))));
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp::link_ops(
+            UringOp().prep_send(sock.fileNo(), buf, 0),
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))));
 }
 
 Task<Expected<std::size_t>>
 socket_read(SocketHandle &sock, std::span<char> buf,
             std::chrono::steady_clock::duration timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return static_cast<std::size_t>(co_await expectError(co_await UringOp::link_ops(
-        UringOp().prep_recv(sock.fileNo(), buf, 0),
-        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))));
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp::link_ops(
+            UringOp().prep_recv(sock.fileNo(), buf, 0),
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))));
 }
 
 Task<Expected<std::size_t>>
@@ -377,7 +412,8 @@ socket_write(SocketHandle &sock, std::span<char const> buf,
     co_return static_cast<std::size_t>(co_await expectError(
         co_await UringOp::link_ops(
             UringOp().prep_send(sock.fileNo(), buf, 0),
-            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)).cancelGuard(cancel)));
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))
+            .cancelGuard(cancel)));
 }
 
 Task<Expected<std::size_t>>
@@ -387,7 +423,8 @@ socket_read(SocketHandle &sock, std::span<char> buf,
     co_return static_cast<std::size_t>(co_await expectError(
         co_await UringOp::link_ops(
             UringOp().prep_recv(sock.fileNo(), buf, 0),
-            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)).cancelGuard(cancel)));
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))
+            .cancelGuard(cancel)));
 }
 
 Task<Expected<>> socket_shutdown(SocketHandle &sock, int how) {

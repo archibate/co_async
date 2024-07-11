@@ -16,7 +16,9 @@ co_sleep(std::chrono::steady_clock::time_point expires) {
     auto task = coSleep(expires);
     CancelCallback _(co_await co_cancel, [p = &task.promise()] {
         p->doCancel();
-        GenericIOContext::instance->enqueueJob(std::coroutine_handle<GenericIOContext::TimerNode>::from_promise(*p));
+        GenericIOContext::instance->enqueueJob(
+            std::coroutine_handle<GenericIOContext::TimerNode>::from_promise(
+                *p));
     });
     co_return co_await task;
 }
@@ -26,8 +28,7 @@ coSleep(std::chrono::steady_clock::duration timeout) {
     return coSleep(std::chrono::steady_clock::now() + timeout);
 }
 
-inline Task<Expected<>>
-co_sleep(std::chrono::steady_clock::duration timeout) {
+inline Task<Expected<>> co_sleep(std::chrono::steady_clock::duration timeout) {
     return co_sleep(std::chrono::steady_clock::now() + timeout);
 }
 
@@ -56,9 +57,8 @@ inline Task<> co_forever() {
     };
 
     ForeverAwaiter awaiter;
-    CancelCallback _(co_await co_cancel, [&awaiter] {
-        co_spawn(awaiter.mPrevious);
-    });
+    CancelCallback _(co_await co_cancel,
+                     [&awaiter] { co_spawn(awaiter.mPrevious); });
     co_return co_await awaiter;
 }
 } // namespace co_async

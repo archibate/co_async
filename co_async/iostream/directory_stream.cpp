@@ -40,7 +40,8 @@ Task<Expected<String>> DirectoryWalker::DirectoryWalker::next() {
         unsigned char d_type;    /* File type */
     } dent;
 
-    co_await co_await mStream.getspan(std::span<char>(reinterpret_cast<char *>(&dent), 19));
+    co_await co_await mStream.getspan(
+        std::span<char>(reinterpret_cast<char *>(&dent), 19));
     String rest;
     rest.reserve(dent.d_reclen - 19);
     co_await co_await mStream.getn(rest, dent.d_reclen - 19);

@@ -61,7 +61,8 @@ public:
 // public:
 //     BytesBuffer() noexcept = default;
 //
-//     explicit BytesBuffer(std::size_t size) : mData(std::make_unique<char[]>(size)), mSize(size) {}
+//     explicit BytesBuffer(std::size_t size) :
+//     mData(std::make_unique<char[]>(size)), mSize(size) {}
 //
 //     void allocate(std::size_t size) {
 //         mData = std::make_unique<char[]>(size);
@@ -93,7 +94,7 @@ private:
     char *mData;
     std::size_t mSize;
 
-#if __unix__
+# if __unix__
     void *pageAlignedAlloc(size_t n) {
         return valloc(n);
     }
@@ -101,16 +102,15 @@ private:
     void pageAlignedFree(void *p, size_t) {
         free(p);
     }
-#elif _WIN32
-    __
-    void *pageAlignedAlloc(size_t n) {
+# elif _WIN32
+    __ void *pageAlignedAlloc(size_t n) {
         return _aligned_malloc(n, 4096);
     }
 
     void pageAlignedFree(void *p, size_t) {
         _aligned_free(p);
     }
-#else
+# else
     void *pageAlignedAlloc(size_t n) {
         return malloc(n);
     }
@@ -118,14 +118,18 @@ private:
     void pageAlignedFree(void *p, size_t) {
         free(p);
     }
-#endif
+# endif
 
 public:
     BytesBuffer() noexcept : mData(nullptr), mSize(0) {}
 
-    explicit BytesBuffer(std::size_t size) : mData(static_cast<char *>(pageAlignedAlloc(size))), mSize(size) {}
+    explicit BytesBuffer(std::size_t size)
+        : mData(static_cast<char *>(pageAlignedAlloc(size))),
+          mSize(size) {}
 
-    BytesBuffer(BytesBuffer &&that) noexcept : mData(that.mData), mSize(that.mSize) {
+    BytesBuffer(BytesBuffer &&that) noexcept
+        : mData(that.mData),
+          mSize(that.mSize) {
         that.mData = nullptr;
         that.mSize = 0;
     }

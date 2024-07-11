@@ -327,9 +327,9 @@ public:
 //                 std::is_base_of_v<NodeType, Value>,
 //                 "Value type must be derived from RbTree<Value>::NodeType");
 //             if (this->rbTree) {
-//                 auto lock = static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
-//                 lock->erase(static_cast<Value &>(*this));
-//                 this->rbTree = nullptr;
+//                 auto lock = static_cast<ConcurrentRbTree
+//                 *>(this->rbTree)->lock(); lock->erase(static_cast<Value
+//                 &>(*this)); this->rbTree = nullptr;
 //             }
 //         }
 //     };

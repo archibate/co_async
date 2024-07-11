@@ -12,7 +12,8 @@ namespace co_async {
 //     bool try_lock() {
 //         bool expect = false;
 //         return mLocked.compare_exchange_strong(
-//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//             expect, true, std::memory_order_acquire,
+//             std::memory_order_relaxed);
 //     }
 //
 //     Task<> lock() {
@@ -34,7 +35,8 @@ namespace co_async {
 //     bool try_lock() {
 //         bool expect = false;
 //         return mLocked.compare_exchange_strong(
-//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//             expect, true, std::memory_order_acquire,
+//             std::memory_order_relaxed);
 //     }
 //
 //     Task<> lock() {
@@ -56,7 +58,8 @@ namespace co_async {
 //     bool try_lock() {
 //         bool expect = false;
 //         return mLocked.compare_exchange_strong(
-//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//             expect, true, std::memory_order_acquire,
+//             std::memory_order_relaxed);
 //     }
 //
 //     Task<> lock() {
@@ -98,8 +101,9 @@ public:
     Task<Expected<>> lock() {
         while (true) {
             bool old = mFutex.exchange(true, std::memory_order_acquire);
-            if (old == false)
+            if (old == false) {
                 co_return {};
+            }
             co_await co_await futex_wait(&mFutex, old);
         }
     }
@@ -165,9 +169,11 @@ public:
     MutexImpl(MutexImpl const &) = delete;
     MutexImpl() = default;
 
-    template <class ...Args> requires (!std::is_void_v<T> && std::constructible_from<T, Args...>)
-    explicit MutexImpl(Args &&...args) : mMutex(), mValue(std::forward<Args>(args)...) {
-    }
+    template <class... Args>
+        requires(!std::is_void_v<T> && std::constructible_from<T, Args...>)
+    explicit MutexImpl(Args &&...args)
+        : mMutex(),
+          mValue(std::forward<Args>(args)...) {}
 
     Locked try_lock() {
         if (auto e = mMutex.try_lock()) {
@@ -189,7 +195,8 @@ public:
     //     co_return Locked(this);
     // }
     //
-    // Task<Locked> try_lock_until(std::chrono::steady_clock::time_point expires) {
+    // Task<Locked> try_lock_until(std::chrono::steady_clock::time_point
+    // expires) {
     //     if (!co_await mMutex.try_lock_for(expires)) {
     //         co_return Locked();
     //     }
@@ -231,8 +238,7 @@ private:
 public:
     struct Locked {
     private:
-        explicit Locked(Mutex<>::Locked locked,
-                        CallOnce *impl) noexcept
+        explicit Locked(Mutex<>::Locked locked, CallOnce *impl) noexcept
             : mLocked(std::move(locked)),
               mImpl(impl) {}
 

@@ -8,9 +8,9 @@
 #include <co_async/platform/fs.hpp>
 #include <co_async/platform/pipe.hpp>
 #include <co_async/platform/socket.hpp>
+#include <co_async/utils/expected.hpp>
 #include <co_async/utils/simple_map.hpp>
 #include <co_async/utils/string_utils.hpp>
-#include <co_async/utils/expected.hpp>
 
 namespace co_async {
 struct HTTPServer::Impl {
@@ -255,19 +255,19 @@ HTTPServer::prepareHTTP(SocketHandle handle) const {
 }
 
 Task<Expected<>> HTTPServer::handle_http(SocketHandle handle) const {
-// #if CO_ASYNC_ALLOC
-//     std::pmr::unsynchronized_pool_resource pool{currentAllocator};
-//     ReplaceAllocator _ = &pool;
-// #endif
+    // #if CO_ASYNC_ALLOC
+    //     std::pmr::unsynchronized_pool_resource pool{currentAllocator};
+    //     ReplaceAllocator _ = &pool;
+    // #endif
     /* int h = handle.fileNo(); */
 #if CO_ASYNC_DEBUG
-    auto err = co_await doHandleConnection(
-        co_await prepareHTTP(std::move(handle)));
+    auto err =
+        co_await doHandleConnection(co_await prepareHTTP(std::move(handle)));
     if (err.has_error()) [[unlikely]] {
-        std::cerr << err.mErrorLocation.file_name()
-            << ":" << err.mErrorLocation.line()
-            << ": " << err.mErrorLocation.function_name()
-            << ": " << err.error().message() << '\n';
+        std::cerr << err.mErrorLocation.file_name() << ":"
+                  << err.mErrorLocation.line() << ": "
+                  << err.mErrorLocation.function_name() << ": "
+                  << err.error().message() << '\n';
         co_return err;
     }
 #else
@@ -317,11 +317,11 @@ Task<Expected<>> HTTPServer::handle_https(SocketHandle handle,
 Task<Expected<>>
 HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
     while (true) {
-// #if CO_ASYNC_ALLOC
-//         BytesBuffer buf(8192 * 4);
-//         std::pmr::monotonic_buffer_resource mono{buf.data(), buf.size(), currentAllocator};
-//         ReplaceAllocator _ = &mono;
-// #endif
+        // #if CO_ASYNC_ALLOC
+        //         BytesBuffer buf(8192 * 4);
+        //         std::pmr::monotonic_buffer_resource mono{buf.data(),
+        //         buf.size(), currentAllocator}; ReplaceAllocator _ = &mono;
+        // #endif
 
         IO io(http.get());
         if (!co_await io.readRequestHeader()) {
@@ -369,8 +369,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
 }
 
 Task<Expected<>> HTTPServer::make_error_response(IO &io, int status) {
-    auto error =
-        to_string(status) + ' ' + String(getHTTPStatusName(status));
+    auto error = to_string(status) + ' ' + String(getHTTPStatusName(status));
     HTTPResponse res{
         .status = status,
         .headers =

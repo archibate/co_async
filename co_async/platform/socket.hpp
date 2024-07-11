@@ -22,7 +22,8 @@ std::error_category const &getAddrInfoCategory();
 // struct IpAddress {
 //     explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
 //
-//     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
+//     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6)
+//     {}
 //
 //     static Expected<IpAddress> fromString(char const *host);
 //
@@ -38,7 +39,8 @@ std::error_category const &getAddrInfoCategory();
 struct SocketAddress {
     SocketAddress() = default;
 
-    explicit SocketAddress(struct sockaddr const *addr, socklen_t addrLen, sa_family_t family, int sockType, int protocol);
+    explicit SocketAddress(struct sockaddr const *addr, socklen_t addrLen,
+                           sa_family_t family, int sockType, int protocol);
 
     struct sockaddr_storage mAddr;
     socklen_t mAddrLen;
@@ -90,7 +92,8 @@ public:
             host.remove_prefix(i + 3);
         }
         if (auto i = host.rfind(':'); i != host.npos) {
-            if (auto portOpt = from_string<int>(host.substr(i + 1))) [[likely]] {
+            if (auto portOpt = from_string<int>(host.substr(i + 1)))
+                [[likely]] {
                 m_port = *portOpt;
                 host.remove_suffix(host.size() - i);
             }

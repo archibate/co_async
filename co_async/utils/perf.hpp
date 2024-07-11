@@ -1,6 +1,6 @@
 #pragma once
 #if CO_ASYNC_PERF
-#include <co_async/std.hpp>
+# include <co_async/std.hpp>
 
 namespace co_async {
 struct Perf {

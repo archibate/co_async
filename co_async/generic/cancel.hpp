@@ -97,7 +97,8 @@ public:
     CancelSourceBase &operator=(CancelSourceBase &&) = default;
 };
 
-struct [[nodiscard("did you forget to capture or co_await the cancel token?")]] CancelToken {
+struct [[nodiscard(
+    "did you forget to capture or co_await the cancel token?")]] CancelToken {
 private:
     CancelSourceImpl *mImpl;
 
@@ -253,7 +254,8 @@ CancelCallback(CancelToken, Callback) -> CancelCallback<Callback>;
 struct GetThisCancel {
     template <class T>
     ValueAwaiter<CancelToken> operator()(TaskPromise<T> &promise) const {
-        return ValueAwaiter<CancelToken>(CancelToken::from_address(promise.mLocals.mCancelToken));
+        return ValueAwaiter<CancelToken>(
+            CancelToken::from_address(promise.mLocals.mCancelToken));
     }
 
     template <class T>
@@ -265,7 +267,9 @@ struct GetThisCancel {
     struct DoCancelThis {
         template <class T>
         Task<> operator()(TaskPromise<T> &promise) const {
-            co_return co_await CancelToken::from_address(promise.mLocals.mCancelToken).cancel();
+            co_return co_await CancelToken::from_address(
+                promise.mLocals.mCancelToken)
+                .cancel();
         }
     };
 

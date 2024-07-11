@@ -6,7 +6,7 @@ using namespace std::literals;
 
 static Task<Expected<>> amain(std::string serveAt) {
     co_await co_await stdio().putline("listening at: "s + serveAt);
-    auto listener = co_await co_await listener_bind(co_await SocketAddress::parse(serveAt, 80));
+    auto listener = co_await co_await listener_bind(co_await AddressResolver().host(serveAt).resolve_one());
 
     HTTPServer server;
     server.route("GET", "/", [](HTTPServer::IO &io) -> Task<Expected<>> {

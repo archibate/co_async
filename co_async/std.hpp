@@ -123,6 +123,13 @@
 # endif
 # if __has_include(<source_location>)
 #  include <source_location> // IWYU pragma: export
+# elif __has_include(<experimental/source_location>)
+#  include <experimental/source_location> // IWYU pragma: export
+#  if __cpp_lib_experimental_source_location
+namespace std {
+using experimental::source_location;
+} // namespace std
+#  endif
 # endif
 # if __has_include(<syncstream>)
 #  include <syncstream> // IWYU pragma: export

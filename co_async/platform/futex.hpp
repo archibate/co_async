@@ -10,10 +10,17 @@ namespace co_async {
 template <class T>
 inline constexpr uint32_t getFutexFlagsFor() {
     switch (sizeof(T)) {
+#ifdef FUTEX2_PRIVATE
     case sizeof(uint8_t):  return FUTEX2_SIZE_U8 | FUTEX2_PRIVATE;
     case sizeof(uint16_t): return FUTEX2_SIZE_U16 | FUTEX2_PRIVATE;
     case sizeof(uint32_t): return FUTEX2_SIZE_U32 | FUTEX2_PRIVATE;
     case sizeof(uint64_t): return FUTEX2_SIZE_U64 | FUTEX2_PRIVATE;
+#else
+    case sizeof(uint8_t):  return 0 | FUTEX_PRIVATE_FLAG;
+    case sizeof(uint16_t): return 1 | FUTEX_PRIVATE_FLAG;
+    case sizeof(uint32_t): return 2 | FUTEX_PRIVATE_FLAG;
+    case sizeof(uint64_t): return 3 | FUTEX_PRIVATE_FLAG;
+#endif
     }
 }
 

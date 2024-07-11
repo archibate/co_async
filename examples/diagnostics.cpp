@@ -61,12 +61,12 @@ int main() {
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); ++i) {
         sqe = io_uring_get_sqe(&ring);
         auto name = tests[i]();
-        // struct __kernel_timespec ts = {
-        //     .tv_sec = 0,
-        //     .tv_nsec = 1000000,
-        // };
-        // sqe->flags |= IOSQE_IO_LINK;
-        // io_uring_prep_link_timeout(io_uring_get_sqe(&ring), &ts, 0);
+        struct __kernel_timespec ts = {
+            .tv_sec = 0,
+            .tv_nsec = 1000000,
+        };
+        sqe->flags |= IOSQE_IO_LINK;
+        io_uring_prep_link_timeout(io_uring_get_sqe(&ring), &ts, 0);
         struct io_uring_cqe *cqe;
         if (io_uring_submit(&ring) >= 0) {
             if (io_uring_wait_cqe_nr(&ring, &cqe, 2) == 0) {

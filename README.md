@@ -141,8 +141,8 @@ cmake -B build -DCO_ASYNC_ZLIB=ON  # 启用压缩支持（需要链接 /usr/lib/
 cmake -B build -DCO_ASYNC_STEAL=ON  # 启用多线程任务窃取（类似于 TBB）
 cmake -B build -DCO_ASYNC_ALLOC=ON  # 启用自定义分配器（基于 C++17 PMR）
 cmake -B build -DCO_ASYNC_DIRECT=ON  # 启用直接 IO 轮询（仅限数据库应用场景）
+cmake -B build -DCO_ASYNC_INVALFIX=ON  # 尝试修复低 Linux 内核版本的错误
 cmake -B build -DCO_ASYNC_NATIVE=ON  # 启用本机指令集（-march=native）
-cmake -B build -DCO_ASYNC_URING=ON   # 启用 io_uring（比 epoll 更快）
 ```
 
 ## 性能测试

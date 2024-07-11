@@ -223,9 +223,12 @@ SocketAddress get_socket_peer_address(SocketHandle &sock) {
 Task<Expected<SocketHandle>> createSocket(int family, int type, int protocol) {
     int fd = co_await expectError(
         co_await UringOp().prep_socket(family, type, protocol, 0))
+#if CO_ASYNC_INVALFIX
         .on_error(std::errc::invalid_argument, [&] {
             return socket(family, type, protocol);
-        });
+        })
+#endif
+    ;
     SocketHandle sock(fd);
     co_return sock;
 }

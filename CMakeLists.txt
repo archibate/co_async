@@ -69,7 +69,7 @@ foreach (flag IN LISTS CXXFLAGS)
     # check if the compiler supports the warning
     check_cxx_compiler_flag(${flag} HAS_${name})
     if (HAS_${name})
-        add_compile_options(${warn})
+        add_compile_options(${flag})
     endif()
 endforeach()
 

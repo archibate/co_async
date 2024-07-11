@@ -3,27 +3,22 @@
 #include <co_async/iostream/pipe_stream.hpp>
 #include <co_async/iostream/stream_base.hpp>
 #include <co_async/platform/fs.hpp>
-#include <co_async/utils/ring_queue.hpp>
+#include <co_async/generic/queue.hpp>
 
 namespace co_async {
 
 namespace {
 
 struct PipeStreamBuffer {
-    InfinityQueue<std::string> mChunks;
-    ConditionVariable mNonEmpty;
+    ConcurrentQueue<std::string> mChunks{64};
 };
 
 struct IPipeStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        while (true) {
-            if (auto chunk = mPipe->mChunks.pop()) {
-                auto n = std::min(buffer.size(), chunk->size());
-                std::memcpy(buffer.data(), chunk->data(), n);
-                co_return n;
-            }
-            co_await co_await mPipe->mNonEmpty.wait();
-        }
+        auto chunk = co_await co_await mPipe->mChunks.pop();
+        auto n = std::min(buffer.size(), chunk.size());
+        std::memcpy(buffer.data(), chunk.data(), n);
+        co_return n;
     }
 
     Task<> raw_close() override {
@@ -45,8 +40,7 @@ struct OPipeStream : Stream {
             if (buffer.empty()) [[unlikely]] {
                 co_return std::size_t(0);
             }
-            p->mChunks.push(std::string(buffer.data(), buffer.size()));
-            p->mNonEmpty.notify_one();
+            co_await co_await p->mChunks.push(std::string(buffer.data(), buffer.size()));
             co_return buffer.size();
         } else {
             co_return std::errc::broken_pipe;
@@ -55,16 +49,14 @@ struct OPipeStream : Stream {
 
     Task<> raw_close() override {
         if (auto p = mPipe.lock()) {
-            p->mChunks.push(std::string());
-            p->mNonEmpty.notify_one();
+            (void)co_await p->mChunks.push(std::string());
         }
         co_return;
     }
 
-    ~OPipeStream() override {
+    ~OPipeStream() {
         if (auto p = mPipe.lock()) {
-            p->mChunks.push(std::string());
-            p->mNonEmpty.notify_one();
+            p->mChunks.try_push(std::string());
         }
     }
 

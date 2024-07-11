@@ -10,10 +10,16 @@ Task<Expected<SocketHandle>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout) {
     using namespace std::string_view_literals;
-    if (proxy.starts_with("http://")) {
-        proxy.remove_prefix(7);
+    if (proxy.empty()) {
+        co_return co_await socket_connect(co_await AddressResolver().host(host).port(port).resolve_one());
+    } else {
+#if CO_ASYNC_DEBUG
+        if (!proxy.starts_with("http://")) {
+            std::cerr << "WARNING: both http_proxy and https_proxy variable should starts with http://\n";
+        }
+#endif
         auto sock = co_await co_await socket_connect(
-            co_await SocketAddress::parse(proxy, 80), co_await co_cancel);
+            co_await AddressResolver().host(proxy).resolve_one(), co_await co_cancel);
         String hostName(host);
         hostName += ':';
         hostName += to_string(port);
@@ -59,14 +65,6 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
             co_return std::errc::connection_reset;
         }
         co_return sock;
-    } else {
-#if CO_ASYNC_DEBUG
-        if (!proxy.empty()) {
-            std::cerr << "WARNING: unsupported proxy scheme [" +
-                             std::string(proxy) + "]\n";
-        }
-#endif
-        co_return co_await socket_connect(co_await SocketAddress::parse(proxy));
     }
 }
 } // namespace co_async

@@ -8,7 +8,7 @@ static Task<Expected<>> amain(String serveAt, String targetHost,
                               String headers) {
     co_await co_await stdio().putline("listening at: "_s + serveAt);
     auto listener = co_await co_await listener_bind(
-        co_await SocketAddress::parse(serveAt, 80));
+        co_await AddressResolver().host(serveAt).resolve_one());
     HTTPConnectionPool pool;
     HTTPServer server;
     server.route(
@@ -36,6 +36,7 @@ static Task<Expected<>> amain(String serveAt, String targetHost,
                 co_return {};
             }
         }
+        debug(), host;
         auto connection = co_await co_await pool.connect(host);
         HTTPRequest request = {
             .method = io.request.method,

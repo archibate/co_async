@@ -19,43 +19,49 @@
 namespace co_async {
 std::error_category const &getAddrInfoCategory();
 
-struct IpAddress {
-    explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
-
-    explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
-
-    static Expected<IpAddress> parse(std::string_view host,
-                                     bool allowIpv6 = true);
-    static Expected<IpAddress> parse(char const *host, bool allowIpv6 = true);
-    String toString() const;
-
-    auto repr() const {
-        return toString();
-    }
-
-    std::variant<struct in_addr, struct in6_addr> mAddr;
-};
+// struct IpAddress {
+//     explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
+//
+//     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
+//
+//     static Expected<IpAddress> fromString(char const *host);
+//
+//     String toString() const;
+//
+//     auto repr() const {
+//         return toString();
+//     }
+//
+//     std::variant<struct in_addr, struct in6_addr> mAddr;
+// };
 
 struct SocketAddress {
     SocketAddress() = default;
 
-    static Expected<SocketAddress> parse(std::string_view host,
-                                         int defaultPort = -1);
-    explicit SocketAddress(IpAddress ip, int port);
+    explicit SocketAddress(struct sockaddr const *addr, socklen_t addrLen, sa_family_t family, int sockType, int protocol);
 
-    union {
-        struct sockaddr_in mAddrIpv4;
-        struct sockaddr_in6 mAddrIpv6;
-        struct sockaddr mAddr;
-    };
-
+    struct sockaddr_storage mAddr;
     socklen_t mAddrLen;
+    int mSockType;
+    int mProtocol;
 
-    sa_family_t family() const noexcept;
+    sa_family_t family() const noexcept {
+        return mAddr.ss_family;
+    }
 
-    IpAddress host() const;
+    int socktype() const noexcept {
+        return mSockType;
+    }
+
+    int protocol() const noexcept {
+        return mProtocol;
+    }
+
+    std::string host() const;
 
     int port() const;
+
+    void trySetPort(int port);
 
     String toString() const;
 
@@ -66,6 +72,61 @@ struct SocketAddress {
 private:
     void initFromHostPort(struct in_addr const &host, int port);
     void initFromHostPort(struct in6_addr const &host, int port);
+};
+
+struct AddressResolver {
+private:
+    std::string m_host;
+    int m_port = -1;
+    std::string m_service;
+    struct addrinfo m_hints = {};
+
+public:
+    AddressResolver &host(std::string_view host) {
+        if (auto i = host.find("://"); i != host.npos) {
+            if (auto service = host.substr(0, i); !service.empty()) {
+                m_service = service;
+            }
+            host.remove_prefix(i + 3);
+        }
+        if (auto i = host.rfind(':'); i != host.npos) {
+            if (auto portOpt = from_string<int>(host.substr(i + 1))) [[likely]] {
+                m_port = *portOpt;
+                host.remove_suffix(host.size() - i);
+            }
+        }
+        m_host = host;
+        return *this;
+    }
+
+    AddressResolver &port(int port) {
+        m_port = port;
+        return *this;
+    }
+
+    AddressResolver &service(std::string_view service) {
+        m_service = service;
+        return *this;
+    }
+
+    AddressResolver &family(int family) {
+        m_hints.ai_family = family;
+        return *this;
+    }
+
+    AddressResolver &socktype(int socktype) {
+        m_hints.ai_socktype = socktype;
+        return *this;
+    }
+
+    struct ResolveResult {
+        std::vector<SocketAddress> addrs;
+        std::string service;
+    };
+
+    Expected<ResolveResult> resolve_all();
+    Expected<SocketAddress> resolve_one();
+    Expected<SocketAddress> resolve_one(std::string &service);
 };
 
 struct [[nodiscard]] SocketHandle : FileHandle {
@@ -97,7 +158,7 @@ Expected<> socketSetOption(SocketHandle &sock, int level, int opt,
         setsockopt(sock.fileNo(), level, opt, &optVal, sizeof(optVal)));
 }
 
-Task<Expected<SocketHandle>> createSocket(int family, int type);
+Task<Expected<SocketHandle>> createSocket(int family, int type, int protocol);
 Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr);
 Task<Expected<SocketHandle>>
 socket_connect(SocketAddress const &addr,
@@ -106,8 +167,6 @@ socket_connect(SocketAddress const &addr,
 Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
                                             CancelToken cancel);
 Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
-                                             int backlog = SOMAXCONN);
-Task<Expected<SocketListener>> listener_bind(std::pair<String, int> const &addr,
                                              int backlog = SOMAXCONN);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,

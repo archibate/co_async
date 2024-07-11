@@ -30,107 +30,133 @@ std::error_category const &getAddrInfoCategory() {
     return instance;
 }
 
-Expected<IpAddress> IpAddress::parse(std::string_view host, bool allowIpv6) {
-    return parse(std::string(host).c_str(), allowIpv6);
-}
+// Expected<IpAddress> IpAddress::fromString(char const *host) {
+//     struct in_addr addr = {};
+//     struct in6_addr addr6 = {};
+//     if (1 == inet_pton(AF_INET, host, &addr)) {
+//         return IpAddress(addr);
+//     }
+//     if (1 == inet_pton(AF_INET6, host, &addr6)) {
+//         return IpAddress(addr6);
+//     }
+//     // gethostbyname is deprecated, let's use getaddrinfo instead:
+//     struct addrinfo hints = {};
+//     hints.ai_family = AF_UNSPEC;
+//     hints.ai_socktype = SOCK_STREAM;
+//     struct addrinfo *result;
+//     int err = getaddrinfo(host, nullptr, &hints, &result);
+//     if (err) [[unlikely]] {
+// #if CO_ASYNC_DEBUG
+//         std::cerr << host << ": " << gai_strerror(err) << '\n';
+// #endif
+//         return std::error_code(err, getAddrInfoCategory());
+//     }
+//     Finally fin = [&] {
+//         freeaddrinfo(result);
+//     };
+//     for (struct addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
+//         if (rp->ai_family == AF_INET) {
+//             std::memcpy(&addr, &reinterpret_cast<struct sockaddr_in *>(rp->ai_addr)->sin_addr,
+//                         sizeof(in_addr));
+//             return IpAddress(addr);
+//         } else if (rp->ai_family == AF_INET6) {
+//             std::memcpy(&addr6,
+//                         &reinterpret_cast<struct sockaddr_in6 *>(rp->ai_addr)->sin6_addr,
+//                         sizeof(in6_addr));
+//             return IpAddress(addr6);
+//         }
+//     }
+//     [[unlikely]] {
+// #if CO_ASYNC_DEBUG
+//         std::cerr << host << ": no matching host address with ipv4 or ipv6\n";
+// #endif
+//         return std::errc::bad_address;
+//     }
+// }
+//
+// String IpAddress::toString() const {
+//     if (mAddr.index() == 1) {
+//         char buf[INET6_ADDRSTRLEN + 1] = {};
+//         inet_ntop(AF_INET6, &std::get<1>(mAddr), buf, sizeof(buf));
+//         return buf;
+//     } else if (mAddr.index() == 0) {
+//         char buf[INET_ADDRSTRLEN + 1] = {};
+//         inet_ntop(AF_INET, &std::get<0>(mAddr), buf, sizeof(buf));
+//         return buf;
+//     } else {
+//         return "[invalid ip address or domain name]";
+//     }
+// }
 
-Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
-    struct in_addr addr = {};
-    struct in6_addr addr6 = {};
-    if (1 == inet_pton(AF_INET, host, &addr)) {
-        return IpAddress(addr);
-    }
-    if (allowIpv6 && 1 == inet_pton(AF_INET6, host, &addr6)) {
-        return IpAddress(addr6);
-    }
+auto AddressResolver::resolve_all() -> Expected<ResolveResult> {
     // gethostbyname is deprecated, let's use getaddrinfo instead:
-    struct addrinfo hints = {};
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
+    if (m_host.empty()) [[unlikely]] {
+        return std::errc::invalid_argument;
+    }
     struct addrinfo *result;
-    int err = getaddrinfo(host, nullptr, &hints, &result);
+    int err = getaddrinfo(m_host.c_str(),
+                          m_service.empty() ? nullptr : m_service.c_str(),
+                          &m_hints, &result);
     if (err) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << host << ": " << gai_strerror(err) << '\n';
+        std::cerr << m_host << ": " << gai_strerror(err) << '\n';
 #endif
         return std::error_code(err, getAddrInfoCategory());
     }
     Finally fin = [&] {
         freeaddrinfo(result);
     };
+    ResolveResult res;
     for (struct addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
-        if (rp->ai_family == AF_INET) {
-            std::memcpy(&addr, &reinterpret_cast<struct sockaddr_in *>(rp->ai_addr)->sin_addr,
-                        sizeof(in_addr));
-            return IpAddress(addr);
-        } else if (allowIpv6 && rp->ai_family == AF_INET6) {
-            std::memcpy(&addr6,
-                        &reinterpret_cast<struct sockaddr_in6 *>(rp->ai_addr)->sin6_addr,
-                        sizeof(in6_addr));
-            return IpAddress(addr6);
-        }
+        res.addrs.emplace_back(rp->ai_addr, rp->ai_addrlen, rp->ai_family,
+                         rp->ai_socktype, rp->ai_protocol).trySetPort(m_port);
     }
-    [[unlikely]] {
+    if (res.addrs.empty()) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << host << ": no matching host address with ipv4 or ipv6\n";
+        std::cerr << m_host << ": no matching host address\n";
 #endif
         return std::errc::bad_address;
     }
+    res.service = std::move(m_service);
+    return res;
 }
 
-String IpAddress::toString() const {
-    if (mAddr.index() == 1) {
-        char buf[INET6_ADDRSTRLEN + 1] = {};
-        inet_ntop(AF_INET6, &std::get<1>(mAddr), buf, sizeof(buf));
-        return buf;
-    } else if (mAddr.index() == 0) {
-        char buf[INET_ADDRSTRLEN + 1] = {};
-        inet_ntop(AF_INET, &std::get<0>(mAddr), buf, sizeof(buf));
-        return buf;
-    } else {
-        return "[invalid ip address or domain name]";
+Expected<SocketAddress> AddressResolver::resolve_one() {
+    auto res = resolve_all();
+    if (res.has_error()) [[unlikely]] {
+        return res.error();
     }
+    return res->addrs.front();
 }
 
-Expected<SocketAddress> SocketAddress::parse(std::string_view host,
-                                             int defaultPort) {
-    auto pos = host.rfind(':');
-    std::string hostPart(host);
-    std::optional<int> port;
-    if (pos != std::string_view::npos) {
-        hostPart = host.substr(0, pos);
-        port = from_string<int>(host.substr(pos + 1));
-        if (port < 0 || port > 65535) [[unlikely]] {
-            port = std::nullopt;
-        }
+Expected<SocketAddress> AddressResolver::resolve_one(std::string &service) {
+    auto res = resolve_all();
+    if (res.has_error()) [[unlikely]] {
+        return res.error();
     }
-    if (!port) {
-        if (defaultPort == -1) [[unlikely]] {
-            return std::errc::bad_address;
-        }
-        port = defaultPort;
-    }
-    auto ip = IpAddress::parse(hostPart.c_str());
-    if (ip.has_error()) [[unlikely]] {
-        return ip.error();
-    }
-    return SocketAddress(*ip, *port);
+    service = std::move(res->service);
+    return res->addrs.front();
 }
 
-SocketAddress::SocketAddress(IpAddress ip, int port) {
-    std::visit([&](auto const &addr) { initFromHostPort(addr, port); },
-               ip.mAddr);
+SocketAddress::SocketAddress(struct sockaddr const *addr, socklen_t addrLen,
+                             sa_family_t family, int sockType, int protocol)
+    : mSockType(sockType), mProtocol(protocol) {
+    std::memcpy(&mAddr, addr, addrLen);
+    mAddr.ss_family = family;
+    mAddrLen = addrLen;
 }
 
-sa_family_t SocketAddress::family() const noexcept {
-    return mAddr.sa_family;
-}
-
-IpAddress SocketAddress::host() const {
+std::string SocketAddress::host() const {
     if (family() == AF_INET) {
-        return IpAddress(mAddrIpv4.sin_addr);
+        auto &sin = reinterpret_cast<struct sockaddr_in const &>(mAddr).sin_addr;
+        char buf[INET_ADDRSTRLEN] = {};
+        inet_ntop(family(), &sin, buf, sizeof(buf));
+        return buf;
     } else if (family() == AF_INET6) {
-        return IpAddress(mAddrIpv6.sin6_addr);
+        auto &sin6 = reinterpret_cast<struct sockaddr_in6 const &>(mAddr).sin6_addr;
+        char buf[INET6_ADDRSTRLEN] = {};
+        inet_ntop(AF_INET6, &sin6, buf, sizeof(buf));
+        return buf;
     } else [[unlikely]] {
         throw std::runtime_error("address family not ipv4 or ipv6");
     }
@@ -138,39 +164,49 @@ IpAddress SocketAddress::host() const {
 
 int SocketAddress::port() const {
     if (family() == AF_INET) {
-        return ntohs(mAddrIpv4.sin_port);
+        auto port = reinterpret_cast<struct sockaddr_in const &>(mAddr).sin_port;
+        return ntohs(port);
     } else if (family() == AF_INET6) {
-        return ntohs(mAddrIpv6.sin6_port);
+        auto port = reinterpret_cast<struct sockaddr_in6 const &>(mAddr).sin6_port;
+        return ntohs(port);
     } else [[unlikely]] {
         throw std::runtime_error("address family not ipv4 or ipv6");
     }
 }
 
+void SocketAddress::trySetPort(int port) {
+    if (family() == AF_INET) {
+        reinterpret_cast<struct sockaddr_in &>(mAddr).sin_port = htons(static_cast<uint16_t>(port));
+    } else if (family() == AF_INET6) {
+        reinterpret_cast<struct sockaddr_in6 &>(mAddr).sin6_port = htons(static_cast<uint16_t>(port));
+    }
+}
+
 String SocketAddress::toString() const {
-    return host().toString() + ':' + to_string(port());
+    return host() + ':' + to_string(port());
 }
 
-void SocketAddress::initFromHostPort(struct in_addr const &host, int port) {
-    struct sockaddr_in saddr = {};
-    saddr.sin_family = AF_INET;
-    std::memcpy(&saddr.sin_addr, &host, sizeof(saddr.sin_addr));
-    saddr.sin_port = htons(static_cast<uint16_t>(port));
-    std::memcpy(&mAddrIpv4, &saddr, sizeof(saddr));
-    mAddrLen = sizeof(saddr);
-}
-
-void SocketAddress::initFromHostPort(struct in6_addr const &host, int port) {
-    struct sockaddr_in6 saddr = {};
-    saddr.sin6_family = AF_INET6;
-    std::memcpy(&saddr.sin6_addr, &host, sizeof(saddr.sin6_addr));
-    saddr.sin6_port = htons(static_cast<uint16_t>(port));
-    std::memcpy(&mAddrIpv6, &saddr, sizeof(saddr));
-    mAddrLen = sizeof(saddr);
-}
+// void SocketAddress::initFromHostPort(struct in_addr const &host, int port) {
+//     struct sockaddr_in saddr = {};
+//     saddr.sin_family = AF_INET;
+//     std::memcpy(&saddr.sin_addr, &host, sizeof(saddr.sin_addr));
+//     saddr.sin_port = htons(static_cast<uint16_t>(port));
+//     std::memcpy(&mAddrIpv4, &saddr, sizeof(saddr));
+//     mAddrLen = sizeof(saddr);
+// }
+//
+// void SocketAddress::initFromHostPort(struct in6_addr const &host, int port) {
+//     struct sockaddr_in6 saddr = {};
+//     saddr.sin6_family = AF_INET6;
+//     std::memcpy(&saddr.sin6_addr, &host, sizeof(saddr.sin6_addr));
+//     saddr.sin6_port = htons(static_cast<uint16_t>(port));
+//     std::memcpy(&mAddrIpv6, &saddr, sizeof(saddr));
+//     mAddrLen = sizeof(saddr);
+// }
 
 SocketAddress get_socket_address(SocketHandle &sock) {
     SocketAddress sa;
-    sa.mAddrLen = sizeof(sa.mAddrIpv6);
+    sa.mAddrLen = sizeof(sa.mAddr);
     throwingErrorErrno(
         getsockname(sock.fileNo(), reinterpret_cast<struct sockaddr *>(&sa.mAddr), &sa.mAddrLen));
     return sa;
@@ -178,22 +214,22 @@ SocketAddress get_socket_address(SocketHandle &sock) {
 
 SocketAddress get_socket_peer_address(SocketHandle &sock) {
     SocketAddress sa;
-    sa.mAddrLen = sizeof(sa.mAddrIpv6);
+    sa.mAddrLen = sizeof(sa.mAddr);
     throwingErrorErrno(
         getpeername(sock.fileNo(), reinterpret_cast<struct sockaddr *>(&sa.mAddr), &sa.mAddrLen));
     return sa;
 }
 
-Task<Expected<SocketHandle>> createSocket(int family, int type) {
+Task<Expected<SocketHandle>> createSocket(int family, int type, int protocol) {
     int fd = co_await expectError(
-        co_await UringOp().prep_socket(family, type, 0, 0));
+        co_await UringOp().prep_socket(family, type, protocol, 0));
     SocketHandle sock(fd);
     co_return sock;
 }
 
 Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr) {
     SocketHandle sock =
-        co_await co_await createSocket(addr.family(), SOCK_STREAM);
+        co_await co_await createSocket(addr.family(), addr.socktype(), addr.protocol());
     co_await expectError(co_await UringOp().prep_connect(
         sock.fileNo(), reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen));
     co_return sock;
@@ -203,7 +239,7 @@ Task<Expected<SocketHandle>>
 socket_connect(SocketAddress const &addr,
                std::chrono::steady_clock::duration timeout) {
     SocketHandle sock =
-        co_await co_await createSocket(addr.family(), SOCK_STREAM);
+        co_await co_await createSocket(addr.family(), addr.socktype(), addr.protocol());
     auto ts = durationToKernelTimespec(timeout);
     co_await expectError(co_await UringOp::link_ops(
         UringOp().prep_connect(
@@ -215,7 +251,7 @@ socket_connect(SocketAddress const &addr,
 Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
                                             CancelToken cancel) {
     SocketHandle sock =
-        co_await co_await createSocket(addr.family(), SOCK_STREAM);
+        co_await co_await createSocket(addr.family(), SOCK_STREAM, 0);
     if (cancel.is_canceled()) [[unlikely]] {
         co_return std::errc::operation_canceled;
     }
@@ -227,7 +263,7 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
 Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
                                              int backlog) {
     SocketHandle sock =
-        co_await co_await createSocket(addr.family(), SOCK_STREAM);
+        co_await co_await createSocket(addr.family(), SOCK_STREAM, 0);
     co_await socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
     /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_CORK, 0); */
     /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_NODELAY, 1); */
@@ -237,12 +273,6 @@ Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
         serv.fileNo(), reinterpret_cast<struct sockaddr const *>(&addr.mAddr), addr.mAddrLen));
     co_await expectError(listen(serv.fileNo(), backlog));
     co_return serv;
-}
-
-Task<Expected<SocketListener>>
-listener_bind(std::pair<String, int> const &addr, int backlog) {
-    co_return co_await listener_bind(
-        co_await SocketAddress::parse(addr.first, addr.second));
 }
 
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener) {

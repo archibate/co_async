@@ -301,14 +301,14 @@ struct BorrowedStream {
         if (!mInBuffer) {
             allocinbuf(kStreamBufferSize);
         }
-#if CO_ASYNC_DEBUG
-        if (!bufempty()) [[unlikely]] {
-            throw std::logic_error("buf must be empty before fillbuf");
-        }
-#endif
-        // auto n = co_await co_await mRaw->raw_read(
-        //     std::span(mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
-        auto n = co_await co_await mRaw->raw_read(mInBuffer);
+// #if CO_ASYNC_DEBUG
+//         if (!bufempty()) [[unlikely]] {
+//             throw std::logic_error("buf must be empty before fillbuf");
+//         }
+// #endif
+        auto n = co_await co_await mRaw->raw_read(
+            std::span(mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
+        // auto n = co_await co_await mRaw->raw_read(mInBuffer);
         if (n == 0) [[unlikely]] {
             co_return std::errc::broken_pipe;
         }

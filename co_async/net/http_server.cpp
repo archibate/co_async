@@ -10,6 +10,7 @@
 #include <co_async/platform/socket.hpp>
 #include <co_async/utils/simple_map.hpp>
 #include <co_async/utils/string_utils.hpp>
+#include <co_async/utils/expected.hpp>
 
 namespace co_async {
 struct HTTPServer::Impl {
@@ -259,8 +260,20 @@ Task<Expected<>> HTTPServer::handle_http(SocketHandle handle) const {
 //     ReplaceAllocator _ = &pool;
 // #endif
     /* int h = handle.fileNo(); */
+#if CO_ASYNC_DEBUG
+    auto err = co_await doHandleConnection(
+        co_await prepareHTTP(std::move(handle)));
+    if (err.has_error()) [[unlikely]] {
+        std::cerr << err.mErrorLocation.file_name()
+            << ":" << err.mErrorLocation.line()
+            << ": " << err.mErrorLocation.function_name()
+            << ": " << err.error().message() << '\n';
+        co_return err;
+    }
+#else
     co_await co_await doHandleConnection(
         co_await prepareHTTP(std::move(handle)));
+#endif
     /* co_await UringOp().prep_shutdown(h, SHUT_RDWR); */
     co_return {};
 }

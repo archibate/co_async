@@ -16,7 +16,7 @@ struct ChatCompletionRequest {
     std::string model;
     std::optional<double> frequency_penalty{};
     std::optional<int> max_tokens{};
-    std::optional<double> persence_penalty{};
+    std::optional<double> presence_penalty{};
     std::optional<std::vector<std::string>> stop{};
     std::optional<double> temperature{};
     std::optional<double> top_p{};
@@ -24,7 +24,7 @@ struct ChatCompletionRequest {
     std::optional<int> top_logprobs{};
     std::optional<bool> stream{};
 
-    REFLECT(messages, model, frequency_penalty, max_tokens, persence_penalty, stop, temperature, top_p, logprobs, top_logprobs, stream);
+    REFLECT(messages, model, frequency_penalty, max_tokens, presence_penalty, stop, temperature, top_p, logprobs, top_logprobs, stream);
 };
 
 struct ChatCompletionResult {
@@ -101,14 +101,14 @@ inline HTTPConnectionPool pool;
 
 static Task<Expected<OwningStream>> evaluate(std::string prompt) {
     std::string authorization;
-    if (auto p = std::getenv("DEEPSEEK_API_KEY")) {
+    if (auto p = std::getenv("OPENAI_API_KEY")) {
         authorization.append("Bearer ");
         authorization.append(p);
     }
-    auto conn = co_await co_await pool.connect("https://api.deepseek.com");
+    auto conn = co_await co_await pool.connect("https://api.openai.com");
     HTTPRequest req = {
         .method = "POST",
-        .uri = URI::parse("/chat/completions"),
+        .uri = URI::parse("/v1/chat/completions"),
         .headers = {
             {"content-type", "application/json"},
             {"authorization", String{authorization}},
@@ -118,7 +118,8 @@ static Task<Expected<OwningStream>> evaluate(std::string prompt) {
         .messages = {
             {.role = "user", .content = prompt},
         },
-        .model = "deepseek-coder",
+        .model = "gpt-3.5-turbo",
+        .max_tokens = 64,
         .stream = true,
     };
     auto [res, body] = co_await co_await conn->request_streamed(req, json_encode(compReq));

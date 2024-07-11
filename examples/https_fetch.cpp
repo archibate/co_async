@@ -15,18 +15,19 @@ static Task<Expected<>> amain() {
                 .uri = URI::parse("/" + path),
             };
             debug(), "requesting", req;
-            auto [re, body] = co_await co_await conn->request(req, {});
-            debug(), "response", res, "with", body.size(), "bytes";
-            co_await co_await file_write(make_path("/tmp", path), body);
+            auto [res, body] = co_await co_await conn->request_streamed(req, {});
+            auto content = co_await body.getall();
+            co_await co_await file_write(make_path("/tmp", path), content);
             co_return {};
         }));
     }
     co_await co_await when_all(res);
     Pid pid = co_await co_await ProcessBuilder()
         .path("display")
-        .arg("koru-icon.png")
+        .arg("/tmp/koru-icon.png")
         .spawn();
     co_await co_await wait_process(pid);
+    co_await co_await co_sleep(1s);
     co_return {};
 }
 

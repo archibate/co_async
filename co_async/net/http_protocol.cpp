@@ -185,7 +185,6 @@ Task<Expected<>> HTTPProtocolVersion11::readChunked(BorrowedStream &body) {
             }
             line.clear();
             co_await co_await sock.getn(line, n);
-            /* debug(), line; */
             co_await co_await body.puts(line);
             co_await co_await body.flush();
             co_await co_await sock.dropn(2);

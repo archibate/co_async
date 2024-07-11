@@ -1,4 +1,5 @@
 #pragma once
+#if CO_ASYNC_PERF
 #include <co_async/std.hpp>
 
 namespace co_async {
@@ -148,3 +149,4 @@ public:
     }
 };
 } // namespace co_async
+#endif

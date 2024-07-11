@@ -378,6 +378,7 @@ private:
         if (pool) [[likely]] {
             (void)co_await co_timeout(pool->mFreeSlot.wait(), std::chrono::milliseconds(100));
         }
+        co_return;
     }
 
     void garbageCollect() /* MT-safe */ {

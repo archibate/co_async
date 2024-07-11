@@ -235,6 +235,12 @@ bool PlatformIOContext::waitEventsFor(
     }
     unsigned head, numGot = 0;
     io_uring_for_each_cqe(&mRing, head, cqe) {
+#if CO_ASYNC_INVALFIX
+        if (cqe->user_data == LIBURING_UDATA_TIMEOUT) [[unlikely]] {
+            ++numGot;
+            continue;
+        }
+#endif
         auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
         op->mRes = cqe->res;
         GenericIOContext::instance->enqueueJob(op->mPrevious);

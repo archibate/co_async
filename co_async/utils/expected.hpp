@@ -1,8 +1,15 @@
 #pragma once
 #include <co_async/std.hpp>
 #include <co_async/utils/non_void_helper.hpp>
-
 namespace co_async {
+
+template<class T, class U>
+concept WeaklyEqComparable = requires(T const &t, U const &u) {
+{ t == u } -> std::convertible_to<bool>;
+{ t != u } -> std::convertible_to<bool>;
+{ u == t } -> std::convertible_to<bool>;
+{ u != t } -> std::convertible_to<bool>;
+};
 
 template <class T = void>
 struct [[nodiscard("Expected<T> return values must be handled, use co_await to propagate")]] Expected {
@@ -162,15 +169,14 @@ public:
         return !mErrorCatgory;
     }
 
-    template <std::equality_comparable_with<std::error_code> U>
+    template <WeaklyEqComparable<std::error_code> U>
         requires(!std::equality_comparable_with<U, T>)
     bool operator==(U &&e) const {
-        return has_error() && std::error_code(mErrorCode, *mErrorCatgory) ==
-                                  std::forward<U>(e);
+        return has_error() && std::error_code(mErrorCode, *mErrorCatgory) == std::forward<U>(e);
     }
 
     template <std::equality_comparable_with<T> U>
-        requires(!std::equality_comparable_with<std::error_code, T>)
+        requires(!WeaklyEqComparable<std::error_code, T>)
     bool operator==(U &&v) const {
         return has_value() && mValue == std::forward<U>(v);
     }
@@ -302,6 +308,30 @@ public:
             return std::error_code(mErrorCode, *mErrorCatgory);
         }
         return std::nullopt;
+    }
+
+    static_assert(WeaklyEqComparable<std::error_condition, std::error_code>);
+
+    template <WeaklyEqComparable<std::error_code> U, class... Ts>
+        requires std::constructible_from<T, Ts...>
+    Expected ignore_error(U &&e, Ts &&...ts) && {
+        if (has_error()) {
+            if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
+                return T(std::forward<Ts>(ts)...);
+            }
+        }
+        return std::move(*this);
+    }
+
+    template <WeaklyEqComparable<std::error_code> U, class... Ts>
+        requires std::constructible_from<T, Ts...>
+    Expected ignore_error(U &&e, Ts &&...ts) const & {
+        if (has_error()) {
+            if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
+                return T(std::forward<Ts>(ts)...);
+            }
+        }
+        return *this;
     }
 
     std::variant<std::reference_wrapper<T const>, std::error_code> repr() const {

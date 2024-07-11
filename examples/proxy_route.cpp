@@ -36,14 +36,12 @@ static Task<Expected<>> amain(String serveAt, String targetHost,
                 co_return {};
             }
         }
-        debug(), host;
         auto connection = co_await co_await pool.connect(host);
         HTTPRequest request = {
             .method = io.request.method,
             .uri = io.request.uri,
             .headers = io.request.headers,
         };
-        /* debug(), request.method, request.uri; */
         request.headers.insert_or_assign(
             "host"_s, String(host.substr(host.find("://"sv) + 3)));
         for (auto header: split_string(headers, '\n')) {

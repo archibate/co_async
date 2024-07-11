@@ -15,7 +15,16 @@ struct PipeStreamBuffer {
 
 struct IPipeStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
+#if CO_ASYNC_DEBUG
+        auto e = co_await mPipe->mChunks.pop();
+        if (e.has_error()) {
+            std::cerr << "PipeStreamBuffer::pop(): " << e.error() << '\n';
+            co_return e.error();
+        }
+        auto chunk = *e;
+#else
         auto chunk = co_await co_await mPipe->mChunks.pop();
+#endif
         auto n = std::min(buffer.size(), chunk.size());
         std::memcpy(buffer.data(), chunk.data(), n);
         co_return n;

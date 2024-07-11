@@ -449,8 +449,9 @@ public:
     Task<Expected<>> wait() {
         std::uint32_t old = mFutex.load(std::memory_order_relaxed);
         do
-            co_return co_await futex_wait(&mFutex, old);
+            co_await co_await futex_wait(&mFutex, old);
         while (mFutex.load(std::memory_order_acquire) == old);
+        co_return {};
     }
 
     void notify_one() {

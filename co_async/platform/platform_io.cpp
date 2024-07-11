@@ -1,3 +1,4 @@
+#include "co_async/utils/debug.hpp"
 #include <co_async/awaiter/task.hpp>
 #include <co_async/generic/generic_io.hpp>
 #include <co_async/platform/error_handling.hpp>
@@ -47,15 +48,11 @@ PlatformIOContext::PlatformIOContext() noexcept {
 }
 
 void PlatformIOContext::setup(std::size_t entries) {
-    struct io_uring_params params = {};
-    // params.flags = IORING_SETUP_SQPOLL;
-    // params.sq_thread_cpu = 1;
-    // params.sq_thread_idle = 1000;
+    unsigned int flags = 0;
 #if CO_ASYNC_DIRECT
-    params.flags = IORING_SETUP_IOPOLL;
+    flags |= IORING_SETUP_IOPOLL;
 #endif
-    throwingError(
-        io_uring_queue_init_params(static_cast<unsigned int>(entries), &mRing, &params));
+    throwingError(io_uring_queue_init(static_cast<unsigned int>(entries), &mRing, flags));
 }
 
 void PlatformIOContext::reserveBuffers(std::size_t nbufs) {
@@ -127,6 +124,7 @@ thread_local PlatformIOContext *PlatformIOContext::instance;
 
 bool PlatformIOContext::waitEventsFor(
     std::optional<std::chrono::steady_clock::duration> timeout) {
+    // debug(), "wait", this;
     struct io_uring_cqe *cqe;
     struct __kernel_timespec ts, *tsp;
     if (timeout) {

@@ -235,7 +235,15 @@ fs_read(FileHandle &file, std::span<char> buffer,
         std::uint64_t offset = static_cast<std::uint64_t>(-1)) {
     co_return static_cast<std::size_t>(
         co_await expectError(co_await UringOp().prep_read(file.fileNo(),
-                                                            buffer, offset)));
+                                                            buffer, offset))
+        .on_error(std::errc::invalid_argument, [&] {
+            if (offset == static_cast<std::uint64_t>(-1)) {
+                return static_cast<int>(read(file.fileNo(), buffer.data(), buffer.size()));
+            } else {
+                return static_cast<int>(pread64(file.fileNo(), buffer.data(), buffer.size(), static_cast<__off64_t>(offset)));
+            }
+        })
+    );
 }
 
 inline Task<Expected<std::size_t>>
@@ -243,7 +251,15 @@ fs_write(FileHandle &file, std::span<char const> buffer,
          std::uint64_t offset = static_cast<std::uint64_t>(-1)) {
     co_return static_cast<std::size_t>(
         co_await expectError(co_await UringOp().prep_write(file.fileNo(),
-                                                             buffer, offset)));
+                                                             buffer, offset))
+        .on_error(std::errc::invalid_argument, [&] {
+            if (offset == static_cast<std::uint64_t>(-1)) {
+                return static_cast<int>(write(file.fileNo(), buffer.data(), buffer.size()));
+            } else {
+                return static_cast<int>(pwrite64(file.fileNo(), buffer.data(), buffer.size(), static_cast<__off64_t>(offset)));
+            }
+        })
+    );
 }
 
 inline Task<Expected<std::size_t>>
@@ -252,7 +268,15 @@ fs_read(FileHandle &file, std::span<char> buffer, CancelToken cancel,
     co_return static_cast<std::size_t>(
         co_await expectError(co_await UringOp()
             .prep_read(file.fileNo(), buffer, offset)
-            .cancelGuard(cancel)));
+            .cancelGuard(cancel))
+        .on_error(std::errc::invalid_argument, [&] {
+            if (offset == static_cast<std::uint64_t>(-1)) {
+                return static_cast<int>(read(file.fileNo(), buffer.data(), buffer.size()));
+            } else {
+                return static_cast<int>(pread64(file.fileNo(), buffer.data(), buffer.size(), static_cast<__off64_t>(offset)));
+            }
+        })
+    );
 }
 
 inline Task<Expected<std::size_t>>
@@ -261,7 +285,15 @@ fs_write(FileHandle &file, std::span<char const> buffer, CancelToken cancel,
     co_return static_cast<std::size_t>(
         co_await expectError(co_await UringOp()
             .prep_write(file.fileNo(), buffer, offset)
-            .cancelGuard(cancel)));
+            .cancelGuard(cancel))
+        .on_error(std::errc::invalid_argument, [&] {
+            if (offset == static_cast<std::uint64_t>(-1)) {
+                return static_cast<int>(write(file.fileNo(), buffer.data(), buffer.size()));
+            } else {
+                return static_cast<int>(pwrite64(file.fileNo(), buffer.data(), buffer.size(), static_cast<__off64_t>(offset)));
+            }
+        })
+    );
 }
 
 inline Task<Expected<>> fs_truncate(FileHandle &file, std::uint64_t size = 0) {

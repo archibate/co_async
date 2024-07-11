@@ -32,8 +32,17 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
 
 struct PlatformIOContext {
     [[gnu::cold]] static void schedSetThreadAffinity(size_t cpu);
-    [[gnu::cold]] static bool ioUringIsOpCodeSupported(int op) noexcept;
-    [[gnu::cold]] static void dumpIOUringDiagnostics();
+
+    struct IOUringProbe {
+        struct io_uring_probe *mProbe;
+        struct io_uring *mRing;
+
+        [[gnu::cold]] IOUringProbe();
+        IOUringProbe(IOUringProbe &&) = delete;
+        [[gnu::cold]] ~IOUringProbe();
+        [[gnu::cold]] bool isSupported(int op) noexcept;
+        [[gnu::cold]] void dumpDiagnostics();
+    };
 
     [[gnu::hot]] bool
     waitEventsFor(std::optional<std::chrono::steady_clock::duration> timeout);

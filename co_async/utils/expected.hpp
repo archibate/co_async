@@ -334,6 +334,26 @@ public:
         return *this;
     }
 
+    template <WeaklyEqComparable<std::error_code> U, std::invocable F>
+    Expected on_error(U &&e, F &&f) && {
+        if (has_error()) {
+            if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
+                return f();
+            }
+        }
+        return std::move(*this);
+    }
+
+    template <WeaklyEqComparable<std::error_code> U, std::invocable F>
+    Expected on_error(U &&e, F &&f) const & {
+        if (has_error()) {
+            if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
+                return f();
+            }
+        }
+        return *this;
+    }
+
     std::variant<std::reference_wrapper<T const>, std::error_code> repr() const {
         if (has_error()) {
             return std::error_code(mErrorCode, *mErrorCatgory);

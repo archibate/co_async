@@ -20,27 +20,107 @@ void PlatformIOContext::schedSetThreadAffinity(size_t cpu) {
         sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpu_set));
 }
 
-bool PlatformIOContext::ioUringIsOpCodeSupported(int op) noexcept {
-    struct io_uring_probe *probe = io_uring_get_probe();
-    if (!probe) [[unlikely]] {
-        return false;
+PlatformIOContext::IOUringProbe::IOUringProbe() {
+    mRing = nullptr;
+    // mProbe = io_uring_get_probe();
+    mProbe = nullptr;
+    if (!mProbe) {
+        mRing = new struct io_uring;
+        throwingError(io_uring_queue_init(8, mRing, 0));
     }
-    bool res = io_uring_opcode_supported(probe, op);
-    io_uring_free_probe(probe);
-    return res;
 }
 
-void PlatformIOContext::dumpIOUringDiagnostics() {
-    struct io_uring_probe *probe = io_uring_get_probe();
-    if (!probe) [[unlikely]] {
-        return;
+PlatformIOContext::IOUringProbe::~IOUringProbe() {
+    if (mProbe) {
+        io_uring_free_probe(mProbe);
     }
+    if (mRing) {
+        io_uring_queue_exit(mRing);
+        delete mRing;
+    }
+}
+
+bool PlatformIOContext::IOUringProbe::isSupported(int op) noexcept {
+    if (mProbe) {
+        return io_uring_opcode_supported(mProbe, op);
+    }
+    if (mRing) {
+        struct io_uring_sqe *sqe = io_uring_get_sqe(mRing);
+        io_uring_prep_rw(op, sqe, -1, nullptr, 0, 0);
+        struct io_uring_cqe *cqe;
+        throwingError(io_uring_submit(mRing));
+        throwingError(io_uring_wait_cqe(mRing, &cqe));
+        int res = cqe->res;
+        io_uring_cqe_seen(mRing, cqe);
+        return res != ENOSYS;
+    }
+    return false;
+}
+
+void PlatformIOContext::IOUringProbe::dumpDiagnostics() {
+    static const char *ops[IORING_OP_LAST + 1] = {
+        "IORING_OP_NOP",
+        "IORING_OP_READV",
+        "IORING_OP_WRITEV",
+        "IORING_OP_FSYNC",
+        "IORING_OP_READ_FIXED",
+        "IORING_OP_WRITE_FIXED",
+        "IORING_OP_POLL_ADD",
+        "IORING_OP_POLL_REMOVE",
+        "IORING_OP_SYNC_FILE_RANGE",
+        "IORING_OP_SENDMSG",
+        "IORING_OP_RECVMSG",
+        "IORING_OP_TIMEOUT",
+        "IORING_OP_TIMEOUT_REMOVE",
+        "IORING_OP_ACCEPT",
+        "IORING_OP_ASYNC_CANCEL",
+        "IORING_OP_LINK_TIMEOUT",
+        "IORING_OP_CONNECT",
+        "IORING_OP_FALLOCATE",
+        "IORING_OP_OPENAT",
+        "IORING_OP_CLOSE",
+        "IORING_OP_FILES_UPDATE",
+        "IORING_OP_STATX",
+        "IORING_OP_READ",
+        "IORING_OP_WRITE",
+        "IORING_OP_FADVISE",
+        "IORING_OP_MADVISE",
+        "IORING_OP_SEND",
+        "IORING_OP_RECV",
+        "IORING_OP_OPENAT2",
+        "IORING_OP_EPOLL_CTL",
+        "IORING_OP_SPLICE",
+        "IORING_OP_PROVIDE_BUFFERS",
+        "IORING_OP_REMOVE_BUFFERS",
+        "IORING_OP_TEE",
+        "IORING_OP_SHUTDOWN",
+        "IORING_OP_RENAMEAT",
+        "IORING_OP_UNLINKAT",
+        "IORING_OP_MKDIRAT",
+        "IORING_OP_SYMLINKAT",
+        "IORING_OP_LINKAT",
+        "IORING_OP_MSG_RING",
+        "IORING_OP_FSETXATTR",
+        "IORING_OP_SETXATTR",
+        "IORING_OP_FGETXATTR",
+        "IORING_OP_GETXATTR",
+        "IORING_OP_SOCKET",
+        "IORING_OP_URING_CMD",
+        "IORING_OP_SEND_ZC",
+        "IORING_OP_SENDMSG_ZC",
+        "IORING_OP_READ_MULTISHOT",
+        "IORING_OP_WAITID",
+        "IORING_OP_FUTEX_WAIT",
+        "IORING_OP_FUTEX_WAKE",
+        "IORING_OP_FUTEX_WAITV",
+        "IORING_OP_FIXED_FD_INSTALL",
+        "IORING_OP_FTRUNCATE",
+        "IORING_OP_LAST",
+    };
     for (int op = IORING_OP_NOP; op < IORING_OP_LAST; ++op) {
-        bool ok = io_uring_opcode_supported(probe, op);
-        std::cerr << "opcode " << op << (ok ? "" : " not") << " supported"
-                  << '\n';
+        bool ok = isSupported(op);
+        std::cerr << "opcode " << ops[op] << (ok ? "" : " not") << " supported" << '\n';
     }
-    io_uring_free_probe(probe);
 }
 
 PlatformIOContext::PlatformIOContext() noexcept {

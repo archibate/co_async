@@ -19,7 +19,9 @@ struct SpinBarrier {
         } else {
             while (m_sync_flip.load(std::memory_order_acquire) == old_flip)
                 ;
+#if __cpp_lib_atomic_wait
             m_sync_flip.wait(old_flip, std::memory_order_acquire);
+#endif
             return false;
         }
     }

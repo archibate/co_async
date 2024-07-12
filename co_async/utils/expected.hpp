@@ -40,6 +40,7 @@ public:
 # define CO_ASYNC_EXPECTED_LOCATION_COPY   , mErrorLocation(that.mErrorLocation)
 # define CO_ASYNC_EXPECTED_LOCATION_ASSIGN mErrorLocation = that.mErrorLocation
 # define CO_ASYNC_EXPECTED_LOCATION_ARG    , mErrorLocation
+# define CO_ASYNC_ERROR_FORWARD(e)         {(e).error(), (e).mErrorLocation}
 #else
 # define CO_ASYNC_EXPECTED_LOCATION
 # define CO_ASYNC_EXPECTED_LOCATION_INIT
@@ -47,6 +48,7 @@ public:
 # define CO_ASYNC_EXPECTED_LOCATION_COPY
 # define CO_ASYNC_EXPECTED_LOCATION_ASSIGN
 # define CO_ASYNC_EXPECTED_LOCATION_ARG
+# define CO_ASYNC_ERROR_FORWARD(e)         e.error()
 #endif
 
 public:

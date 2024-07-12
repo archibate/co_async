@@ -52,7 +52,7 @@ public:
                 res = (func(stop), Void());
             });
         if (e.has_error()) {
-            co_return e.error();
+            co_return CO_ASYNC_ERROR_FORWARD(e);
         }
         if (!res) {
             co_return std::errc::operation_canceled;

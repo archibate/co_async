@@ -326,7 +326,7 @@ public:
         if (s.find("-----BEGIN ") != s.npos) {
             SSLPemDecoder dec;
             if (auto e = dec.decode(s); !e) [[unlikely]] {
-                return e.error();
+                return CO_ASYNC_ERROR_FORWARD(e);
             }
             for (auto &[k, v]: dec.objs) {
                 res.push_back(std::move(v));
@@ -403,7 +403,7 @@ public:
             }
             return {};
         } else {
-            return e.error();
+            return CO_ASYNC_ERROR_FORWARD(e);
         }
     }
 
@@ -440,12 +440,12 @@ public:
         if (auto e = SSLPemDecoder::tryDecode(certX506)) [[likely]] {
             for (auto &s: *e) {
                 if (auto e = addBinary(s); !e) [[unlikely]] {
-                    return e.error();
+                    return CO_ASYNC_ERROR_FORWARD(e);
                 }
             }
             return {};
         } else {
-            return e.error();
+            return CO_ASYNC_ERROR_FORWARD(e);
         }
     }
 
@@ -478,7 +478,7 @@ public:
             }
             return {};
         } else {
-            return e.error();
+            return CO_ASYNC_ERROR_FORWARD(e);
         }
     }
 
@@ -543,12 +543,12 @@ protected:
                             eng->err = BR_ERR_IO;
                         }
                         if (e.has_error()) {
-                            co_return e.error();
+                            co_return CO_ASYNC_ERROR_FORWARD(e);
                         } else {
                             co_return std::errc::broken_pipe;
                         }
                     } else if (e.has_error()) [[unlikely]] {
-                        co_return e.error();
+                        co_return CO_ASYNC_ERROR_FORWARD(e);
                     } else {
                         co_return {};
                     }
@@ -581,12 +581,12 @@ protected:
                             eng->err = BR_ERR_IO;
                         }
                         if (e.has_error()) {
-                            co_return e.error();
+                            co_return CO_ASYNC_ERROR_FORWARD(e);
                         } else {
                             co_return std::errc::broken_pipe;
                         }
                     } else if (e.has_error()) [[unlikely]] {
-                        co_return e.error();
+                        co_return CO_ASYNC_ERROR_FORWARD(e);
                     } else {
                         co_return {};
                     }

@@ -37,7 +37,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
             std::cerr << "WARNING: inflate source read failed with error\n";
 # endif
             (void)inflateEnd(&strm);
-            co_return e.error();
+            co_return CO_ASYNC_ERROR_FORWARD(e);
         } else {
             strm.avail_in = *e;
         }
@@ -68,7 +68,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: inflate dest write failed with error\n";
 # endif
                 (void)inflateEnd(&strm);
-                co_return e.error();
+                co_return CO_ASYNC_ERROR_FORWARD(e);
             }
         } while (strm.avail_out == 0);
     } while (ret != Z_STREAM_END);
@@ -109,7 +109,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
             std::cerr << "WARNING: deflate source read failed with error\n";
 # endif
             (void)deflateEnd(&strm);
-            co_return e.error();
+            co_return CO_ASYNC_ERROR_FORWARD(e);
         } else {
             strm.avail_in = *e;
         }
@@ -132,7 +132,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: deflate dest write failed with error\n";
 # endif
                 (void)deflateEnd(&strm);
-                co_return e.error();
+                co_return CO_ASYNC_ERROR_FORWARD(e);
             }
         } while (strm.avail_out == 0);
         assert(strm.avail_in == 0); /* all input will be used */

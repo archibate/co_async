@@ -250,7 +250,12 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr) {
         addr.family(), addr.socktype(), addr.protocol());
     co_await expectError(co_await UringOp().prep_connect(
         sock.fileNo(), reinterpret_cast<const struct sockaddr *>(&addr.mAddr),
-        addr.mAddrLen));
+        addr.mAddrLen))
+#if CO_ASYNC_INVALFIX
+                 .or_else(std::errc::invalid_argument, [&] { return connect(sock.fileNo(),
+        reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen); })
+#endif
+        ;
     co_return sock;
 }
 
@@ -265,7 +270,12 @@ socket_connect(SocketAddress const &addr,
             sock.fileNo(),
             reinterpret_cast<const struct sockaddr *>(&addr.mAddr),
             addr.mAddrLen),
-        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)))
+#if CO_ASYNC_INVALFIX
+                 .or_else(std::errc::invalid_argument, [&] { return connect(sock.fileNo(),
+        reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen); })
+#endif
+        ;
     co_return sock;
 }
 
@@ -282,7 +292,12 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
                 sock.fileNo(),
                 reinterpret_cast<const struct sockaddr *>(&addr.mAddr),
                 addr.mAddrLen)
-            .cancelGuard(cancel));
+            .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+                 .or_else(std::errc::invalid_argument, [&] { return connect(sock.fileNo(),
+        reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen); })
+#endif
+        ;
     co_return sock;
 }
 

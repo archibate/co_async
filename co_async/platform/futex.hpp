@@ -4,6 +4,7 @@
 #include <co_async/platform/error_handling.hpp>
 #include <co_async/platform/platform_io.hpp>
 #include <linux/futex.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 
 namespace co_async {
@@ -45,13 +46,12 @@ inline void futex_notify_sync(std::atomic<T> *futex,
             getFutexFlagsFor<T>());
 #if CO_ASYNC_INVALFIX
     if (res == -EBADF || res == -ENOSYS) {
-        syscall(SYS_futex, reinterpret_cast<uint32_t *>(futex), FUTEX_WAKE_BITSET_PRIVATE,
+        res = syscall(SYS_futex, reinterpret_cast<uint32_t *>(futex), FUTEX_WAKE_BITSET_PRIVATE,
                 static_cast<uint32_t>(count == static_cast<std::size_t>(-1)
                                       ? INT_MAX : count), nullptr, nullptr, mask);
     }
-#else
-    (void)res;
 #endif
+    (void)res;
 }
 
 template <class T>
@@ -66,7 +66,7 @@ inline Expected<> futex_wait_sync(std::atomic<T> *futex,
             getFutexFlagsFor<T>());
 #if CO_ASYNC_INVALFIX
     if (res == -EBADF || res == -ENOSYS) {
-        syscall(SYS_futex, reinterpret_cast<uint32_t *>(futex), FUTEX_WAIT_BITSET_PRIVATE,
+        res = syscall(SYS_futex, reinterpret_cast<uint32_t *>(futex), FUTEX_WAIT_BITSET_PRIVATE,
                 static_cast<uint32_t>(futexValueExtend(val)), nullptr, nullptr, mask);
     }
 #endif

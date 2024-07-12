@@ -151,7 +151,11 @@ inline Task<Expected<FileHandle>> fs_open(std::filesystem::path path, OpenMode m
                                           mode_t access = 0644) {
     int oflags = static_cast<int>(mode);
     int fd = co_await expectError(co_await UringOp().prep_openat(
-        AT_FDCWD, path.c_str(), oflags, access));
+        AT_FDCWD, path.c_str(), oflags, access))
+#if CO_ASYNC_INVALFIX
+        .on_error(std::errc::bad_file_descriptor, [&] { return open(path.c_str(), oflags, access); })
+#endif
+        ;
     FileHandle file(fd);
     co_return file;
 }
@@ -162,7 +166,11 @@ inline Task<Expected<FileHandle>> fs_openat(FileHandle dir,
                                             mode_t access = 0644) {
     int oflags = static_cast<int>(mode);
     int fd = co_await expectError(co_await UringOp().prep_openat(
-        dir.fileNo(), path.c_str(), oflags, access));
+        dir.fileNo(), path.c_str(), oflags, access))
+#if CO_ASYNC_INVALFIX
+        .on_error(std::errc::bad_file_descriptor, [&] { return openat(dir.fileNo(), path.c_str(), oflags, access); })
+#endif
+        ;
     FileHandle file(fd);
     co_return file;
 }
@@ -205,18 +213,15 @@ inline Task<Expected<>> fs_rmdir(std::filesystem::path path) {
 }
 
 inline Task<Expected<FileStat>>
-fs_stat(std::filesystem::path path, unsigned int mask = STATX_BASIC_STATS | STATX_BTIME) {
+fs_stat(std::filesystem::path path, unsigned int mask = STATX_BASIC_STATS | STATX_BTIME, int flags = 0) {
     FileStat ret;
     co_await expectError(co_await UringOp().prep_statx(
-        AT_FDCWD, path.c_str(), 0, mask, ret.getNativeStatx()));
+        AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx()))
+#if CO_ASYNC_INVALFIX
+            .on_error(std::errc::bad_file_descriptor, [&] { return statx(AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx()); })
+#endif
+            ;
     co_return ret;
-}
-
-inline Task<Expected<std::uint64_t>> fs_stat_size(std::filesystem::path path) {
-    FileStat ret;
-    co_await expectError(co_await UringOp().prep_statx(
-        AT_FDCWD, path.c_str(), 0, STATX_SIZE, ret.getNativeStatx()));
-    co_return ret.size();
 }
 
 inline Task<Expected<std::size_t>>

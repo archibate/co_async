@@ -90,7 +90,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
         futex_notify_sync(ready.get());
     });
     while (ready->load(std::memory_order_acquire) == false) {
-        co_await co_await futex_wait(ready.get(), false);
+        (void)co_await futex_wait(ready.get(), false);
     }
     if (ep) [[unlikely]] {
         std::rethrow_exception(ep);
@@ -121,7 +121,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
             stop.request_stop();
         });
         while (ready->load(std::memory_order_acquire) == false) {
-            co_await co_await futex_wait(ready.get(), false);
+            (void)co_await futex_wait(ready.get(), false);
         }
     }
 

@@ -7,6 +7,7 @@
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 
 #ifndef IOURINGEXTERN
 #ifdef __cplusplus

@@ -69,7 +69,7 @@ int main() {
 sudo apt install -y g++-10 libstdc++-10-dev
 export CXX=g++-10
 rm -rf build
-cmake -B build
+cmake -B build -DCO_ASYNC_INVALFIX=ON -DCO_ASYNC_DEBUG=ON
 cmake --build build --parallel 8
 build/server  # 对应于 examples/server.cpp
 ```

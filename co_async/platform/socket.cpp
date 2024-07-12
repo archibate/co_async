@@ -373,7 +373,7 @@ Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
     co_return static_cast<std::size_t>(co_await expectError(
         co_await UringOp().prep_send(sock.fileNo(), buf, 0))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
                                        );
 }
@@ -383,7 +383,7 @@ Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
     co_return static_cast<std::size_t>(co_await expectError(
         co_await UringOp().prep_send_zc(sock.fileNo(), buf, 0, 0))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
                                        );
 }
@@ -393,7 +393,7 @@ Task<Expected<std::size_t>> socket_read(SocketHandle &sock,
     co_return static_cast<std::size_t>(co_await expectError(
         co_await UringOp().prep_recv(sock.fileNo(), buf, 0))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
         );
 }
@@ -406,7 +406,7 @@ Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                  .prep_send(sock.fileNo(), buf, 0)
                                  .cancelGuard(cancel))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
     );
 }
@@ -419,7 +419,7 @@ Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
                                  .prep_send_zc(sock.fileNo(), buf, 0, 0)
                                  .cancelGuard(cancel))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
     );
 }
@@ -431,7 +431,7 @@ Task<Expected<std::size_t>> socket_read(SocketHandle &sock, std::span<char> buf,
                                  .prep_recv(sock.fileNo(), buf, 0)
                                  .cancelGuard(cancel))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
         );
 }
@@ -445,7 +445,7 @@ socket_write(SocketHandle &sock, std::span<char const> buf,
             UringOp().prep_send(sock.fileNo(), buf, 0),
             UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
         );
 }
@@ -459,7 +459,7 @@ socket_read(SocketHandle &sock, std::span<char> buf,
             UringOp().prep_recv(sock.fileNo(), buf, 0),
             UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
         );
 }
@@ -474,7 +474,7 @@ socket_write(SocketHandle &sock, std::span<char const> buf,
             UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))
             .cancelGuard(cancel))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
     );
 }
@@ -489,7 +489,7 @@ socket_read(SocketHandle &sock, std::span<char> buf,
             UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))
             .cancelGuard(cancel))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf, 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
         );
 }

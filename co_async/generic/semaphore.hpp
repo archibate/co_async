@@ -9,7 +9,7 @@ namespace co_async {
 
 struct Semaphore {
 private:
-    std::atomic<std::uint32_t> mCounter;
+    FutexAtomic<std::uint32_t> mCounter;
     std::uint32_t const mMaxCount;
 
     static constexpr std::uint32_t kAcquireMask = 1;

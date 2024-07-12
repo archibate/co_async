@@ -18,7 +18,7 @@ private:
     GenericIOContext mGenericIO;
     PlatformIOContext mPlatformIO;
     std::jthread mThread;
-    // std::atomic<std::uint8_t> mWake{0};
+    // FutexAtomic<std::uint8_t> mWake{0};
 
     struct IOContextGuard;
 

@@ -78,7 +78,7 @@ ThreadPool::Thread *ThreadPool::submitJob(std::function<void()> func) {
 }
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
-    auto ready = std::make_shared<std::atomic<bool>>(false);
+    auto ready = std::make_shared<FutexAtomic<bool>>(false);
     std::exception_ptr ep;
     submitJob([ready, func = std::move(func), &ep]() mutable {
         try {
@@ -100,7 +100,7 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
                                     CancelToken cancel) {
-    auto ready = std::make_shared<std::atomic<bool>>(false);
+    auto ready = std::make_shared<FutexAtomic<bool>>(false);
     std::stop_source stop;
     bool stopped = false;
     std::exception_ptr ep;

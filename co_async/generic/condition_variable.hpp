@@ -447,7 +447,7 @@ namespace co_async {
 
 struct ConditionVariable {
 private:
-    std::atomic<std::uint32_t> mFutex;
+    FutexAtomic<std::uint32_t> mFutex;
 
 public:
     Task<Expected<>> wait() {

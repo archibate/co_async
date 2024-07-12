@@ -90,7 +90,7 @@ namespace co_async {
 
 struct BasicMutex {
 private:
-    std::atomic<bool> mFutex;
+    FutexAtomic<bool> mFutex;
 
 public:
     bool try_lock() {

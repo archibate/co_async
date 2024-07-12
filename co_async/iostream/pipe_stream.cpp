@@ -18,8 +18,8 @@ struct IPipeStream : Stream {
 #if CO_ASYNC_DEBUG
         auto e = co_await mPipe->mChunks.pop();
         if (e.has_error()) {
-            std::cerr << "PipeStreamBuffer::pop(): " << e.error() << '\n';
-            co_return e.error();
+            std::cerr << "PipeStreamBuffer::pop(): " << e.error().message() << '\n';
+            co_return CO_ASYNC_ERROR_FORWARD(e);
         }
         auto chunk = *e;
 #else

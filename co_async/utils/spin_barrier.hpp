@@ -41,8 +41,8 @@ struct SpinBarrier {
 
 private:
     std::uint32_t const m_top_waiting;
-    std::atomic<std::uint32_t> m_num_waiting;
-    std::atomic<bool> m_sync_flip;
+    FutexAtomic<std::uint32_t> m_num_waiting;
+    FutexAtomic<bool> m_sync_flip;
 };
 
 } // namespace co_async

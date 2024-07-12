@@ -30,7 +30,7 @@ struct HTTPServer {
         explicit IO(HTTPProtocol *http) noexcept : mHttp(http) {}
 
         HTTPRequest request;
-        Task<Expected<>> readRequestHeader();
+        Task<Expected<bool>> readRequestHeader();
         Task<Expected<String>> request_body();
         Task<Expected<>> request_body_stream(OwningStream &out);
         Task<Expected<>> response(HTTPResponse resp, std::string_view content);

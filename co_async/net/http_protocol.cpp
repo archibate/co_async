@@ -387,9 +387,7 @@ Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
     String line;
-    if (!co_await sock.getline(line, "\r\n"sv)) {
-        co_return std::errc::broken_pipe;
-    }
+    co_await co_await sock.getline(line, "\r\n"sv);
     auto pos = line.find(' ');
     if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
         co_return std::errc::protocol_error;
@@ -423,9 +421,7 @@ Task<Expected<>> HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
     String line;
-    if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
-        co_return std::errc::broken_pipe;
-    }
+    co_await co_await sock.getline(line, "\r\n"sv);
     if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv || line[8] != ' ')
         [[unlikely]] {
         co_return std::errc::protocol_error;

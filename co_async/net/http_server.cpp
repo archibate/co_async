@@ -127,10 +127,9 @@ struct HTTPServer::Impl {
     }
 };
 
-Task<Expected<>> HTTPServer::IO::readRequestHeader() {
+Task<Expected<bool>> HTTPServer::IO::readRequestHeader() {
     mHttp->initServerState();
-    co_await co_await mHttp->readRequest(request);
-    co_return {};
+    co_return co_await (co_await mHttp->readRequest(request)).transform([] { return true; }).or_else(eofError(), [] { return false; });
 }
 
 Task<Expected<String>> HTTPServer::IO::request_body() {
@@ -284,7 +283,7 @@ HTTPServer::handle_http_redirect_to_https(SocketHandle handle) const {
     auto http = co_await prepareHTTP(std::move(handle));
     while (true) {
         IO io(http.get());
-        if (!co_await io.readRequestHeader()) {
+        if (!co_await co_await io.readRequestHeader()) {
             break;
         }
         if (auto host = io.request.headers.get("host")) {
@@ -324,7 +323,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
         // #endif
 
         IO io(http.get());
-        if (!co_await io.readRequestHeader()) {
+        if (!co_await co_await io.readRequestHeader()) {
             break;
         }
 #if CO_ASYNC_DEBUG

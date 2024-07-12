@@ -16,7 +16,7 @@ static Task<Expected<>> amain() {
             };
             debug(), "requesting", req;
             auto [res, body] = co_await co_await conn->request_streamed(req, {});
-            auto content = co_await body.getall();
+            auto content = co_await co_await body.getall();
             co_await co_await file_write(make_path("/tmp", path), content);
             co_return {};
         }));

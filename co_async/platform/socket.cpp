@@ -237,7 +237,7 @@ Task<Expected<SocketHandle>> createSocket(int family, int type, int protocol) {
     int fd = co_await expectError(
                  co_await UringOp().prep_socket(family, type, protocol, 0))
 #if CO_ASYNC_INVALFIX
-                 .on_error(std::errc::invalid_argument,
+                 .or_else(std::errc::invalid_argument,
                            [&] { return socket(family, type, protocol); })
 #endif
         ;

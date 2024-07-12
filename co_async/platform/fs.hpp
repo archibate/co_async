@@ -153,7 +153,7 @@ inline Task<Expected<FileHandle>> fs_open(std::filesystem::path path, OpenMode m
     int fd = co_await expectError(co_await UringOp().prep_openat(
         AT_FDCWD, path.c_str(), oflags, access))
 #if CO_ASYNC_INVALFIX
-        .on_error(std::errc::bad_file_descriptor, [&] { return expectError(open(path.c_str(), oflags, access)); })
+        .or_else(std::errc::bad_file_descriptor, [&] { return expectError(open(path.c_str(), oflags, access)); })
 #endif
         ;
     FileHandle file(fd);
@@ -168,7 +168,7 @@ inline Task<Expected<FileHandle>> fs_openat(FileHandle dir,
     int fd = co_await expectError(co_await UringOp().prep_openat(
         dir.fileNo(), path.c_str(), oflags, access))
 #if CO_ASYNC_INVALFIX
-        .on_error(std::errc::bad_file_descriptor, [&] { return expectError(openat(dir.fileNo(), path.c_str(), oflags, access)); })
+        .or_else(std::errc::bad_file_descriptor, [&] { return expectError(openat(dir.fileNo(), path.c_str(), oflags, access)); })
 #endif
         ;
     FileHandle file(fd);
@@ -218,7 +218,7 @@ fs_stat(std::filesystem::path path, unsigned int mask = STATX_BASIC_STATS | STAT
     co_await expectError(co_await UringOp().prep_statx(
         AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx()))
 #if CO_ASYNC_INVALFIX
-            .on_error(std::errc::bad_file_descriptor, [&] { return expectError(statx(AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx())); })
+            .or_else(std::errc::bad_file_descriptor, [&] { return expectError(statx(AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx())); })
 #endif
             ;
     co_return ret;
@@ -231,7 +231,7 @@ fs_read(FileHandle &file, std::span<char> buffer,
         co_await expectError(
             co_await UringOp().prep_read(file.fileNo(), buffer, offset))
 #if CO_ASYNC_INVALFIX
-            .on_error(std::errc::invalid_argument,
+            .or_else(std::errc::invalid_argument,
                       [&] {
                           if (offset == static_cast<std::uint64_t>(-1)) {
                               return expectError(static_cast<int>(read(
@@ -253,7 +253,7 @@ fs_write(FileHandle &file, std::span<char const> buffer,
         co_await expectError(
             co_await UringOp().prep_write(file.fileNo(), buffer, offset))
 #if CO_ASYNC_INVALFIX
-            .on_error(std::errc::invalid_argument,
+            .or_else(std::errc::invalid_argument,
                       [&] {
                           if (offset == static_cast<std::uint64_t>(-1)) {
                               return expectError(static_cast<int>(write(
@@ -276,7 +276,7 @@ fs_read(FileHandle &file, std::span<char> buffer, CancelToken cancel,
                                  .prep_read(file.fileNo(), buffer, offset)
                                  .cancelGuard(cancel))
 #if CO_ASYNC_INVALFIX
-            .on_error(std::errc::invalid_argument,
+            .or_else(std::errc::invalid_argument,
                       [&] {
                           if (offset == static_cast<std::uint64_t>(-1)) {
                               return expectError(static_cast<int>(read(
@@ -299,7 +299,7 @@ fs_write(FileHandle &file, std::span<char const> buffer, CancelToken cancel,
                                  .prep_write(file.fileNo(), buffer, offset)
                                  .cancelGuard(cancel))
 #if CO_ASYNC_INVALFIX
-            .on_error(std::errc::invalid_argument,
+            .or_else(std::errc::invalid_argument,
                       [&] {
                           if (offset == static_cast<std::uint64_t>(-1)) {
                               return expectError(static_cast<int>(write(

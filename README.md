@@ -144,6 +144,7 @@ cmake -B build -DCO_ASYNC_DIRECT=ON  # 启用直接 IO 轮询（仅限数据库�
 cmake -B build -DCO_ASYNC_INVALFIX=ON  # 尝试修复低 Linux 内核版本的错误
 cmake -B build -DCO_ASYNC_NATIVE=ON  # 启用本机指令集（-march=native）
 cmake -B build -DCO_ASYNC_WARN=ON  # 启用警告（-Wall -Wextra -Werror）
+cmake -B build -DCO_ASYNC_JEMALLOC=ON  # 启用 Jemalloc 分配器
 ```
 
 ## 性能测试

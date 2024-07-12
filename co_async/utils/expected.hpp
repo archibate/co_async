@@ -39,12 +39,14 @@ public:
            mErrorLocation.function_name()
 # define CO_ASYNC_EXPECTED_LOCATION_COPY   , mErrorLocation(that.mErrorLocation)
 # define CO_ASYNC_EXPECTED_LOCATION_ASSIGN mErrorLocation = that.mErrorLocation
+# define CO_ASYNC_EXPECTED_LOCATION_ARG    , mErrorLocation
 #else
 # define CO_ASYNC_EXPECTED_LOCATION
 # define CO_ASYNC_EXPECTED_LOCATION_INIT
 # define CO_ASYNC_EXPECTED_LOCATION_MESSAGE
 # define CO_ASYNC_EXPECTED_LOCATION_COPY
 # define CO_ASYNC_EXPECTED_LOCATION_ASSIGN
+# define CO_ASYNC_EXPECTED_LOCATION_ARG
 #endif
 
 public:
@@ -350,8 +352,24 @@ public:
         return *this;
     }
 
+    template <std::invocable F>
+    Expected or_else(F &&f) && {
+        if (has_error()) {
+            return f();
+        }
+        return std::move(*this);
+    }
+
+    template <std::invocable F>
+    Expected or_else(F &&f) const & {
+        if (has_error()) {
+            return f();
+        }
+        return *this;
+    }
+
     template <WeaklyEqComparable<std::error_code> U, std::invocable F>
-    Expected on_error(U &&e, F &&f) && {
+    Expected or_else(U &&e, F &&f) && {
         if (has_error()) {
             if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
                 return f();
@@ -361,11 +379,67 @@ public:
     }
 
     template <WeaklyEqComparable<std::error_code> U, std::invocable F>
-    Expected on_error(U &&e, F &&f) const & {
+    Expected or_else(U &&e, F &&f) const & {
         if (has_error()) {
             if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
                 return f();
             }
+        }
+        return *this;
+    }
+
+    template <std::invocable<T &&> F>
+    Expected<std::invoke_result_t<F, T &&>> transform(F &&f) && {
+        if (has_value()) {
+            return f(std::move(mValue));
+        }
+        return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
+    }
+
+    template <std::invocable<T &> F>
+    Expected<std::invoke_result_t<F, T &>> transform(F &&f) & {
+        if (has_value()) {
+            return f(mValue);
+        }
+        return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
+    }
+
+    template <std::invocable<T const &> F>
+    Expected<std::invoke_result_t<F, T const &>> transform(F &&f) const & {
+        if (has_value()) {
+            return f(mValue);
+        }
+        return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
+    }
+
+    template <std::invocable F> requires std::same_as<T, Void>
+    Expected<std::invoke_result_t<F>> transform(F &&f) const {
+        if (has_value()) {
+            return f();
+        }
+        return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
+    }
+
+    template <std::invocable<T &&> F>
+    std::invoke_result_t<F, T &&> and_then(F &&f) && {
+        if (has_value()) {
+            return f(std::move(mValue));
+        }
+        return std::move(*this);
+    }
+
+    template <std::invocable<T &> F>
+    std::invoke_result_t<F, T &> and_then(F &&f) & {
+        if (has_value()) {
+            return f(mValue);
+        }
+        return *this;
+    }
+
+    template <std::invocable F>
+    Expected<std::invoke_result_t<F, T const &>> and_then(F &&f) const & {
+        if (has_value()) {
+            return f(mValue);
         }
         return *this;
     }
@@ -395,4 +469,5 @@ Expected() -> Expected<>;
 #undef CO_ASYNC_EXPECTED_LOCATION_MESSAGE
 #undef CO_ASYNC_EXPECTED_LOCATION_COPY
 #undef CO_ASYNC_EXPECTED_LOCATION_ASSIGN
+#undef CO_ASYNC_EXPECTED_LOCATION_ARG
 } // namespace co_async

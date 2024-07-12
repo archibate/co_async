@@ -197,24 +197,26 @@ struct BorrowedStream {
         co_return s;
     }
 
-    Task<> dropall() {
+    Task<Expected<>> dropall() {
         do {
             mInEnd = mInIndex = 0;
-        } while (co_await fillbuf());
+        } while (co_await (co_await fillbuf()).transform([] { return false; }).or_else(std::errc::broken_pipe, [] { return true; }));
+        co_return {};
     }
 
-    Task<> getall(String &s) {
+    Task<Expected<>> getall(String &s) {
         std::size_t start = mInIndex;
         do {
             s.append(mInBuffer.data() + start, mInEnd - start);
             start = 0;
             mInEnd = mInIndex = 0;
-        } while (co_await fillbuf());
+        } while (co_await (co_await fillbuf()).transform([] { return false; }).or_else(std::errc::broken_pipe, [] { return true; }));
+        co_return {};
     }
 
-    Task<String> getall() {
+    Task<Expected<String>> getall() {
         String s;
-        co_await getall(s);
+        co_await co_await getall(s);
         co_return s;
     }
 

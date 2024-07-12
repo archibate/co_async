@@ -11,7 +11,7 @@ using namespace std::literals;
 
 static Task<Expected<>> amain() {
     auto file = co_await co_await file_open("/home/bate/下载/5b1b42af22a09746f2a88345717599dbf698ad5c.jpg", OpenMode::Read);
-    String buffer = co_await file.getall();
+    String buffer = co_await co_await file.getall();
     int nx, ny, comp;
     std::shared_ptr<stbi_uc[]> image(
         stbi_load_from_memory(reinterpret_cast<stbi_uc const *>(buffer.data()), static_cast<int>(buffer.size()),

@@ -74,6 +74,9 @@ template <class T>
 inline void futex_notify_sync(std::atomic<T> *futex,
                               std::size_t count = static_cast<std::size_t>(-1),
                               uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+#ifndef SYS_futex_wake
+    const long SYS_futex_wake = 454;
+#endif
     syscall(SYS_futex_wake, reinterpret_cast<uint32_t *>(futex),
             static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
             getFutexFlagsFor<T>());
@@ -83,6 +86,9 @@ template <class T>
 inline void futex_wait_sync(std::atomic<T> *futex,
                             std::size_t count = static_cast<std::size_t>(-1),
                             uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+#ifndef SYS_futex_wait
+    const long SYS_futex_wait = 455;
+#endif
     syscall(SYS_futex_wait, reinterpret_cast<uint32_t *>(futex),
             static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
             getFutexFlagsFor<T>());

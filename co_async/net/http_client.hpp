@@ -63,8 +63,14 @@ private:
             };
             if (auto locked = co_await taInitializeOnce.call_once()) {
                 auto path = make_path("/etc/ssl/certs/ca-certificates.crt");
-                auto content = co_await co_await file_read(path);
-                co_await trustAnchors().add(content);
+                if (auto content = co_await file_read(path)) {
+                    (void)trustAnchors().add(*content);
+                }
+#if CO_ASYNC_DEBUG
+                else {
+                    std::cerr << "Failed to read: /etc/ssl/certs/ca-certificates.crt\n";
+                }
+#endif
                 locked.set_ready();
             }
             auto sock = co_await co_await ssl_connect(mHost.c_str(), mPort,

@@ -153,7 +153,7 @@ inline Task<Expected<FileHandle>> fs_open(std::filesystem::path path, OpenMode m
     int fd = co_await expectError(co_await UringOp().prep_openat(
         AT_FDCWD, path.c_str(), oflags, access))
 #if CO_ASYNC_INVALFIX
-        .on_error(std::errc::bad_file_descriptor, [&] { return open(path.c_str(), oflags, access); })
+        .on_error(std::errc::bad_file_descriptor, [&] { return expectError(open(path.c_str(), oflags, access)); })
 #endif
         ;
     FileHandle file(fd);
@@ -168,7 +168,7 @@ inline Task<Expected<FileHandle>> fs_openat(FileHandle dir,
     int fd = co_await expectError(co_await UringOp().prep_openat(
         dir.fileNo(), path.c_str(), oflags, access))
 #if CO_ASYNC_INVALFIX
-        .on_error(std::errc::bad_file_descriptor, [&] { return openat(dir.fileNo(), path.c_str(), oflags, access); })
+        .on_error(std::errc::bad_file_descriptor, [&] { return expectError(openat(dir.fileNo(), path.c_str(), oflags, access)); })
 #endif
         ;
     FileHandle file(fd);
@@ -218,7 +218,7 @@ fs_stat(std::filesystem::path path, unsigned int mask = STATX_BASIC_STATS | STAT
     co_await expectError(co_await UringOp().prep_statx(
         AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx()))
 #if CO_ASYNC_INVALFIX
-            .on_error(std::errc::bad_file_descriptor, [&] { return statx(AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx()); })
+            .on_error(std::errc::bad_file_descriptor, [&] { return expectError(statx(AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx())); })
 #endif
             ;
     co_return ret;
@@ -234,12 +234,12 @@ fs_read(FileHandle &file, std::span<char> buffer,
             .on_error(std::errc::invalid_argument,
                       [&] {
                           if (offset == static_cast<std::uint64_t>(-1)) {
-                              return static_cast<int>(read(
-                                  file.fileNo(), buffer.data(), buffer.size()));
+                              return expectError(static_cast<int>(read(
+                                  file.fileNo(), buffer.data(), buffer.size())));
                           } else {
-                              return static_cast<int>(pread64(
+                              return expectError(static_cast<int>(pread64(
                                   file.fileNo(), buffer.data(), buffer.size(),
-                                  static_cast<__off64_t>(offset)));
+                                  static_cast<__off64_t>(offset))));
                           }
                       })
 #endif
@@ -256,12 +256,12 @@ fs_write(FileHandle &file, std::span<char const> buffer,
             .on_error(std::errc::invalid_argument,
                       [&] {
                           if (offset == static_cast<std::uint64_t>(-1)) {
-                              return static_cast<int>(write(
-                                  file.fileNo(), buffer.data(), buffer.size()));
+                              return expectError(static_cast<int>(write(
+                                  file.fileNo(), buffer.data(), buffer.size())));
                           } else {
-                              return static_cast<int>(pwrite64(
+                              return expectError(static_cast<int>(pwrite64(
                                   file.fileNo(), buffer.data(), buffer.size(),
-                                  static_cast<__off64_t>(offset)));
+                                  static_cast<__off64_t>(offset))));
                           }
                       })
 #endif
@@ -279,12 +279,12 @@ fs_read(FileHandle &file, std::span<char> buffer, CancelToken cancel,
             .on_error(std::errc::invalid_argument,
                       [&] {
                           if (offset == static_cast<std::uint64_t>(-1)) {
-                              return static_cast<int>(read(
-                                  file.fileNo(), buffer.data(), buffer.size()));
+                              return expectError(static_cast<int>(read(
+                                  file.fileNo(), buffer.data(), buffer.size())));
                           } else {
-                              return static_cast<int>(pread64(
+                              return expectError(static_cast<int>(pread64(
                                   file.fileNo(), buffer.data(), buffer.size(),
-                                  static_cast<__off64_t>(offset)));
+                                  static_cast<__off64_t>(offset))));
                           }
                       })
 #endif
@@ -302,12 +302,12 @@ fs_write(FileHandle &file, std::span<char const> buffer, CancelToken cancel,
             .on_error(std::errc::invalid_argument,
                       [&] {
                           if (offset == static_cast<std::uint64_t>(-1)) {
-                              return static_cast<int>(write(
-                                  file.fileNo(), buffer.data(), buffer.size()));
+                              return expectError(static_cast<int>(write(
+                                  file.fileNo(), buffer.data(), buffer.size())));
                           } else {
-                              return static_cast<int>(pwrite64(
+                              return expectError(static_cast<int>(pwrite64(
                                   file.fileNo(), buffer.data(), buffer.size(),
-                                  static_cast<__off64_t>(offset)));
+                                  static_cast<__off64_t>(offset))));
                           }
                       })
 #endif

@@ -489,7 +489,7 @@ socket_read(SocketHandle &sock, std::span<char> buf,
             UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))
             .cancelGuard(cancel))
 #if CO_ASYNC_INVALFIX
-        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
+        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf.data(), buf.size(), 0)); })
 #endif
         );
 }

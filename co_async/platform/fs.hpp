@@ -45,30 +45,6 @@ protected:
     int mFileNo;
 };
 
-struct [[nodiscard]] DirFilePath {
-    DirFilePath(std::filesystem::path path) : mPath(path), mDirFd(AT_FDCWD) {}
-
-    explicit DirFilePath(std::filesystem::path path, FileHandle const &dir)
-        : mPath(path),
-          mDirFd(dir.fileNo()) {}
-
-    char const *c_str() const noexcept {
-        return mPath.c_str();
-    }
-
-    std::filesystem::path const &path() const {
-        return mPath;
-    }
-
-    int dir_file() const noexcept {
-        return mDirFd;
-    }
-
-private:
-    std::filesystem::path mPath;
-    int mDirFd;
-};
-
 struct FileStat {
     struct statx *getNativeStatx() {
         return &mStatx;
@@ -171,11 +147,22 @@ inline std::filesystem::path make_path(Ts &&...chunks) {
     return (make_path(chunks) / ...);
 }
 
-inline Task<Expected<FileHandle>> fs_open(DirFilePath path, OpenMode mode,
+inline Task<Expected<FileHandle>> fs_open(std::filesystem::path path, OpenMode mode,
                                           mode_t access = 0644) {
     int oflags = static_cast<int>(mode);
     int fd = co_await expectError(co_await UringOp().prep_openat(
-        path.dir_file(), path.c_str(), oflags, access));
+        AT_FDCWD, path.c_str(), oflags, access));
+    FileHandle file(fd);
+    co_return file;
+}
+
+inline Task<Expected<FileHandle>> fs_openat(FileHandle dir,
+                                            std::filesystem::path path,
+                                            OpenMode mode,
+                                            mode_t access = 0644) {
+    int oflags = static_cast<int>(mode);
+    int fd = co_await expectError(co_await UringOp().prep_openat(
+        dir.fileNo(), path.c_str(), oflags, access));
     FileHandle file(fd);
     co_return file;
 }
@@ -186,49 +173,49 @@ inline Task<Expected<>> fs_close(FileHandle file) {
     co_return {};
 }
 
-inline Task<Expected<>> fs_mkdir(DirFilePath path, mode_t access = 0755) {
+inline Task<Expected<>> fs_mkdir(std::filesystem::path path, mode_t access = 0755) {
     co_await expectError(
-        co_await UringOp().prep_mkdirat(path.dir_file(), path.c_str(), access));
+        co_await UringOp().prep_mkdirat(AT_FDCWD, path.c_str(), access));
     co_return {};
 }
 
-inline Task<Expected<>> fs_link(DirFilePath oldpath, DirFilePath newpath) {
+inline Task<Expected<>> fs_link(std::filesystem::path oldpath, std::filesystem::path newpath) {
     co_await expectError(
-        co_await UringOp().prep_linkat(oldpath.dir_file(), oldpath.c_str(),
-                                       newpath.dir_file(), newpath.c_str(), 0));
+        co_await UringOp().prep_linkat(AT_FDCWD, oldpath.c_str(),
+                                       AT_FDCWD, newpath.c_str(), 0));
     co_return {};
 }
 
-inline Task<Expected<>> fs_symlink(DirFilePath target, DirFilePath linkpath) {
+inline Task<Expected<>> fs_symlink(std::filesystem::path target, std::filesystem::path linkpath) {
     co_await expectError(co_await UringOp().prep_symlinkat(
-        target.c_str(), linkpath.dir_file(), linkpath.c_str()));
+        target.c_str(), AT_FDCWD, linkpath.c_str()));
     co_return {};
 }
 
-inline Task<Expected<>> fs_unlink(DirFilePath path) {
+inline Task<Expected<>> fs_unlink(std::filesystem::path path) {
     co_await expectError(
-        co_await UringOp().prep_unlinkat(path.dir_file(), path.c_str(), 0));
+        co_await UringOp().prep_unlinkat(AT_FDCWD, path.c_str(), 0));
     co_return {};
 }
 
-inline Task<Expected<>> fs_rmdir(DirFilePath path) {
+inline Task<Expected<>> fs_rmdir(std::filesystem::path path) {
     co_await expectError(co_await UringOp().prep_unlinkat(
-        path.dir_file(), path.c_str(), AT_REMOVEDIR));
+        AT_FDCWD, path.c_str(), AT_REMOVEDIR));
     co_return {};
 }
 
 inline Task<Expected<FileStat>>
-fs_stat(DirFilePath path, unsigned int mask = STATX_BASIC_STATS | STATX_BTIME) {
+fs_stat(std::filesystem::path path, unsigned int mask = STATX_BASIC_STATS | STATX_BTIME) {
     FileStat ret;
     co_await expectError(co_await UringOp().prep_statx(
-        path.dir_file(), path.c_str(), 0, mask, ret.getNativeStatx()));
+        AT_FDCWD, path.c_str(), 0, mask, ret.getNativeStatx()));
     co_return ret;
 }
 
-inline Task<Expected<std::uint64_t>> fs_stat_size(DirFilePath path) {
+inline Task<Expected<std::uint64_t>> fs_stat_size(std::filesystem::path path) {
     FileStat ret;
     co_await expectError(co_await UringOp().prep_statx(
-        path.dir_file(), path.c_str(), 0, STATX_SIZE, ret.getNativeStatx()));
+        AT_FDCWD, path.c_str(), 0, STATX_SIZE, ret.getNativeStatx()));
     co_return ret.size();
 }
 

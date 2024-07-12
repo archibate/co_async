@@ -365,7 +365,7 @@ public:
     template <std::invocable F>
     Expected or_else(F &&f) const & {
         if (has_error()) {
-            return f();
+            return f(), Void();
         }
         return *this;
     }
@@ -374,7 +374,7 @@ public:
     Expected or_else(U &&e, F &&f) && {
         if (has_error()) {
             if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
-                return f();
+                return f(), Void();
             }
         }
         return std::move(*this);
@@ -384,7 +384,7 @@ public:
     Expected or_else(U &&e, F &&f) const & {
         if (has_error()) {
             if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
-                return f();
+                return f(), Void();
             }
         }
         return *this;
@@ -393,7 +393,7 @@ public:
     template <std::invocable<T &&> F>
     Expected<std::invoke_result_t<F, T &&>> transform(F &&f) && {
         if (has_value()) {
-            return f(std::move(mValue));
+            return f(std::move(mValue)), Void();
         }
         return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
     }
@@ -401,7 +401,7 @@ public:
     template <std::invocable<T &> F>
     Expected<std::invoke_result_t<F, T &>> transform(F &&f) & {
         if (has_value()) {
-            return f(mValue);
+            return f(mValue), Void();
         }
         return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
     }
@@ -409,7 +409,7 @@ public:
     template <std::invocable<T const &> F>
     Expected<std::invoke_result_t<F, T const &>> transform(F &&f) const & {
         if (has_value()) {
-            return f(mValue);
+            return f(mValue), Void();
         }
         return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
     }
@@ -417,31 +417,31 @@ public:
     template <std::invocable F> requires std::same_as<T, Void>
     Expected<std::invoke_result_t<F>> transform(F &&f) const {
         if (has_value()) {
-            return f();
+            return f(), Void();
         }
         return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
     }
 
     template <std::invocable<T &&> F>
-    std::invoke_result_t<F, T &&> and_then(F &&f) && {
+    Avoid<std::invoke_result_t<F, T &&>> and_then(F &&f) && {
         if (has_value()) {
-            return f(std::move(mValue));
+            return f(std::move(mValue)), Void();
         }
         return std::move(*this);
     }
 
     template <std::invocable<T &> F>
-    std::invoke_result_t<F, T &> and_then(F &&f) & {
+    Avoid<std::invoke_result_t<F, T &>> and_then(F &&f) & {
         if (has_value()) {
-            return f(mValue);
+            return f(mValue), Void();
         }
         return *this;
     }
 
     template <std::invocable F>
-    Expected<std::invoke_result_t<F, T const &>> and_then(F &&f) const & {
+    Avoid<std::invoke_result_t<F, T const &>> and_then(F &&f) const & {
         if (has_value()) {
-            return f(mValue);
+            return f(mValue), Void();
         }
         return *this;
     }
@@ -460,6 +460,9 @@ template <>
 struct [[nodiscard("Expected<T> return values must be handled, use co_await to "
                    "propagate")]] Expected<void> : Expected<Void> {
     using Expected<Void>::Expected;
+
+    Expected<void>(Expected<Void> const &that) noexcept : Expected<Void>(that) {}
+    Expected<void>(Expected<Void> &&that) noexcept : Expected<Void>(std::move(that)) {}
 };
 
 template <class T>

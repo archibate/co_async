@@ -43,18 +43,34 @@ inline void futex_notify_sync(std::atomic<T> *futex,
     long res = syscall(SYS_futex_wake, reinterpret_cast<uint32_t *>(futex),
             static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
             getFutexFlagsFor<T>());
+#if CO_ASYNC_INVALFIX
+    if (res == -EBADF || res == -ENOSYS) {
+        syscall(SYS_futex, reinterpret_cast<uint32_t *>(futex), FUTEX_WAKE_BITSET_PRIVATE,
+                static_cast<uint32_t>(count == static_cast<std::size_t>(-1)
+                                      ? INT_MAX : count), nullptr, nullptr, mask);
+    }
+#else
+    (void)res;
+#endif
 }
 
 template <class T>
-inline void futex_wait_sync(std::atomic<T> *futex,
-                            std::size_t count = static_cast<std::size_t>(-1),
+inline Expected<> futex_wait_sync(std::atomic<T> *futex,
+                            std::type_identity_t<T> val,
                             uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
 #ifndef SYS_futex_wait
     const long SYS_futex_wait = 455;
 #endif
     long res = syscall(SYS_futex_wait, reinterpret_cast<uint32_t *>(futex),
-            static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
+            futexValueExtend(val), static_cast<uint64_t>(mask),
             getFutexFlagsFor<T>());
+#if CO_ASYNC_INVALFIX
+    if (res == -EBADF || res == -ENOSYS) {
+        syscall(SYS_futex, reinterpret_cast<uint32_t *>(futex), FUTEX_WAIT_BITSET_PRIVATE,
+                static_cast<uint32_t>(futexValueExtend(val)), nullptr, nullptr, mask);
+    }
+#endif
+    return expectError(res);
 }
 
 
@@ -67,7 +83,7 @@ inline Task<Expected<>> futex_wait(std::atomic<T> *futex,
             .prep_futex_wait(reinterpret_cast<uint32_t *>(futex),
                              futexValueExtend(val), static_cast<uint64_t>(mask),
                              getFutexFlagsFor<T>(), 0)
-            .cancelGuard(co_await co_cancel))
+            .cancelGuard(co_await co_cancel)).transform([] (int) {})
 #if CO_ASYNC_INVALFIX
         .or_else(std::errc::bad_file_descriptor, [&] {
             return futex_wait_sync(futex, val, mask);
@@ -88,7 +104,7 @@ futex_notify_async(std::atomic<T> *futex,
                              static_cast<uint64_t>(count),
                              static_cast<uint64_t>(mask), getFutexFlagsFor<T>(),
                              0)
-            .cancelGuard(co_await co_cancel))
+            .cancelGuard(co_await co_cancel)).transform([] {})
 #if CO_ASYNC_INVALFIX
         .or_else(std::errc::bad_file_descriptor, [&] {
             return futex_notify_sync(futex, count, mask);
@@ -114,7 +130,7 @@ inline void futex_notify(std::atomic<T> *futex,
 
 #if CO_ASYNC_INVALFIX
 template <class>
-using FutexAtomic = std::atomic<std::uint32_t>;
+using FutexAtomic = std::atomic<uint32_t>;
 #else
 template <class T>
 using FutexAtomic = std::atomic<T>;

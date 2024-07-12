@@ -342,7 +342,7 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
 #if CO_ASYNC_INVALFIX
         .or_else(std::errc::invalid_argument, [&] { return expectError(accept4(
                          listener.fileNo(), reinterpret_cast<struct sockaddr *>(&peerAddr.mAddr),
-                         &peerAddr.mAddrLen, 0))); })
+                         &peerAddr.mAddrLen, 0)); })
 #endif
         ;
     SocketHandle sock(fd);
@@ -361,7 +361,7 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
 #if CO_ASYNC_INVALFIX
         .or_else(std::errc::invalid_argument, [&] { return expectError(accept4(
                          listener.fileNo(), reinterpret_cast<struct sockaddr *>(&peerAddr.mAddr),
-                         &peerAddr.mAddrLen, 0))); })
+                         &peerAddr.mAddrLen, 0)); })
 #endif
         ;
     SocketHandle sock(fd);

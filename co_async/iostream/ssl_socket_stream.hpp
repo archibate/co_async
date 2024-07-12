@@ -15,7 +15,7 @@ StructPImpl(SSLClientTrustAnchor) {
 StructPImpl(SSLServerPrivateKey){};
 
 StructPImpl(SSLServerCertificate) {
-    void add(std::string_view content);
+    Expected<> add(std::string_view content);
 };
 
 StructPImpl(SSLServerSessionCache){};

@@ -13,7 +13,7 @@
 
 namespace co_async {
 std::error_category const &bearSSLCategory() {
-    static struct : std::error_category {
+    static struct final : std::error_category {
         char const *name() const noexcept override {
             return "BearSSL";
         }
@@ -296,7 +296,7 @@ public:
         br_pem_decoder_setdest(pemDec.get(), pemResultAppender, this);
     }
 
-    SSLPemDecoder &decode(std::string_view s) {
+    Expected<> decode(std::string_view s) {
         while (auto n = br_pem_decoder_push(pemDec.get(), s.data(), s.size())) {
             switch (br_pem_decoder_event(pemDec.get())) {
             case BR_PEM_BEGIN_OBJ:
@@ -310,22 +310,24 @@ public:
 #if CO_ASYNC_DEBUG
                 std::cerr << "PEM decoder error\n";
 #endif
-                throw std::runtime_error("PEM decoder error");
+                return std::error_code(BR_ERR_X509_INVALID_VALUE, bearSSLCategory());
             }
             s.remove_prefix(n);
         }
-        return *this;
+        return {};
     }
 
     std::vector<std::pair<std::string, std::string>> const &objects() const {
         return objs;
     }
 
-    static std::vector<std::string> tryDecode(std::string_view s) {
+    static Expected<std::vector<std::string>> tryDecode(std::string_view s) {
         std::vector<std::string> res;
         if (s.find("-----BEGIN ") != s.npos) {
             SSLPemDecoder dec;
-            dec.decode(s);
+            if (auto e = dec.decode(s); !e) [[unlikely]] {
+                return e.error();
+            }
             for (auto &[k, v]: dec.objs) {
                 res.push_back(std::move(v));
             }
@@ -394,11 +396,15 @@ public:
         return *this;
     }
 
-    SSLServerPrivateKey &set(std::string_view pkey) {
-        for (auto &s: SSLPemDecoder::tryDecode(pkey)) {
-            decodeBinary(s);
+    Expected<> set(std::string_view pkey) {
+        if (auto e = SSLPemDecoder::tryDecode(pkey)) {
+            for (auto &s: *e) {
+                decodeBinary(s);
+            }
+            return {};
+        } else {
+            return e.error();
         }
-        return *this;
     }
 
     br_ec_private_key const *getEC() const {
@@ -431,12 +437,16 @@ public:
     }
 
     Expected<> add(std::string_view certX506) {
-        for (auto &s: SSLPemDecoder::tryDecode(certX506)) {
-            if (auto e = addBinary(s); e.has_error()) {
-                return e;
+        if (auto e = SSLPemDecoder::tryDecode(certX506)) [[likely]] {
+            for (auto &s: *e) {
+                if (auto e = addBinary(s); !e) [[unlikely]] {
+                    return e.error();
+                }
             }
+            return {};
+        } else {
+            return e.error();
         }
-        return {};
     }
 
     bool empty() const {
@@ -461,9 +471,14 @@ public:
             {reinterpret_cast<unsigned char *>(cert.data()), cert.size()});
     }
 
-    void add(std::string_view certX506) {
-        for (auto &s: SSLPemDecoder::tryDecode(certX506)) {
-            addBinary(s);
+    Expected<> add(std::string_view certX506) {
+        if (auto e = SSLPemDecoder::tryDecode(certX506)) [[likely]] {
+            for (auto &s: *e) {
+                addBinary(s);
+            }
+            return {};
+        } else {
+            return e.error();
         }
     }
 
@@ -548,7 +563,8 @@ protected:
 #if CO_ASYNC_DEBUG
                 std::cerr << "SSL write not ready\n";
 #endif
-                throw std::runtime_error("SSL write not ready");
+                co_return std::errc::broken_pipe;
+                // throw std::runtime_error("SSL write not ready");
             }
             if (state & BR_SSL_RECVREC) {
                 unsigned char *buf;
@@ -659,7 +675,7 @@ public:
                                        BR_KEYTYPE_EC, ec);
         } else [[unlikely]] {
             throw std::runtime_error(
-                "invalid private key type, must be RSA or EC");
+                "invalid private key type, must be either RSA or EC");
         }
         setEngine(&ctx->eng);
         if (cache) {
@@ -733,7 +749,7 @@ DefinePImpl(SSLClientTrustAnchor);
 Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add,
                               (std::string_view content), content);
 DefinePImpl(SSLServerCertificate);
-void ForwardPImplMethod(SSLServerCertificate, add, (std::string_view content),
+Expected<> ForwardPImplMethod(SSLServerCertificate, add, (std::string_view content),
                         content);
 DefinePImpl(SSLServerSessionCache);
 } // namespace co_async

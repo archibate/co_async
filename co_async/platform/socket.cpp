@@ -17,7 +17,7 @@
 
 namespace co_async {
 std::error_category const &getAddrInfoCategory() {
-    static struct : std::error_category {
+    static struct final : std::error_category {
         char const *name() const noexcept override {
             return "getaddrinfo";
         }

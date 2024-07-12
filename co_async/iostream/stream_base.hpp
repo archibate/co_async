@@ -8,6 +8,18 @@
 namespace co_async {
 inline constexpr std::size_t kStreamBufferSize = 8192;
 
+inline std::error_code eofError() {
+    static struct final : public std::error_category {
+        const char *name() const noexcept override {
+            return "eof";
+        }
+        std::string message(int) const override {
+            return "End of file";
+        }
+    } category;
+    return std::error_code(1, category);
+}
+
 struct Stream {
     virtual void raw_timeout(std::chrono::steady_clock::duration timeout) {}
 
@@ -200,7 +212,7 @@ struct BorrowedStream {
     Task<Expected<>> dropall() {
         do {
             mInEnd = mInIndex = 0;
-        } while (co_await (co_await fillbuf()).transform([] { return false; }).or_else(std::errc::broken_pipe, [] { return true; }));
+        } while (co_await (co_await fillbuf()).transform([] { return true; }).or_else(eofError(), [] { return false; }));
         co_return {};
     }
 
@@ -210,7 +222,7 @@ struct BorrowedStream {
             s.append(mInBuffer.data() + start, mInEnd - start);
             start = 0;
             mInEnd = mInIndex = 0;
-        } while (co_await (co_await fillbuf()).transform([] { return false; }).or_else(std::errc::broken_pipe, [] { return true; }));
+        } while (co_await (co_await fillbuf()).transform([] { return true; }).or_else(eofError(), [] { return false; }));
         co_return {};
     }
 
@@ -315,7 +327,7 @@ struct BorrowedStream {
             mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
         // auto n = co_await co_await mRaw->raw_read(mInBuffer);
         if (n == 0) [[unlikely]] {
-            co_return std::errc::broken_pipe;
+            co_return eofError();
         }
         mInEnd = mInIndex + n;
         co_return {};
@@ -428,7 +440,7 @@ struct BorrowedStream {
                 co_return len.error();
             }
             if (*len == 0) [[unlikely]] {
-                co_return std::errc::broken_pipe;
+                co_return eofError();
             }
             mOutIndex = 0;
             co_await co_await mRaw->raw_flush();

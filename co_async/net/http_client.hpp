@@ -63,14 +63,8 @@ private:
             };
             if (auto locked = co_await taInitializeOnce.call_once()) {
                 auto path = make_path("/etc/ssl/certs/ca-certificates.crt");
-                if (auto content = co_await file_read(path)) {
-                    (void)trustAnchors().add(*content);
-                }
-#if CO_ASYNC_DEBUG
-                else {
-                    std::cerr << "Failed to read: /etc/ssl/certs/ca-certificates.crt\n";
-                }
-#endif
+                auto content = co_await co_await file_read(path);
+                co_await trustAnchors().add(content);
                 locked.set_ready();
             }
             auto sock = co_await co_await ssl_connect(mHost.c_str(), mPort,
@@ -134,6 +128,11 @@ private:
 
     Task<Expected<>> tryWriteRequestAndBody(HTTPRequest const &request,
                                             std::string_view body) {
+        mHttp = co_await co_await mHttpFactory->createConnection();
+        co_await co_await mHttp->writeRequest(request);
+        co_await co_await mHttp->writeBody(body);
+        co_return {};
+#if 0
         std::error_code ec;
         for (std::size_t n = 0; n < 3; ++n) {
             if (!mHttp) {
@@ -154,6 +153,7 @@ private:
             mHttp = nullptr;
         }
         co_return ec;
+#endif
     }
 
     /* Task<Expected<>> */

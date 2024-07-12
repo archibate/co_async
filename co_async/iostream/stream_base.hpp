@@ -437,7 +437,11 @@ struct BorrowedStream {
                 len = co_await mRaw->raw_write(buf);
             }
             if (len.has_error()) [[unlikely]] {
+#if CO_ASYNC_DEBUG
+                co_return {len.error(), len.mErrorLocation};
+#else
                 co_return len.error();
+#endif
             }
             if (*len == 0) [[unlikely]] {
                 co_return eofError();

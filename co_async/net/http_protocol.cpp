@@ -65,7 +65,7 @@ HTTPProtocolVersion11::dumpHeaders(HTTPHeaders const &headers) {
         co_await co_await sock.puts(v);
         co_await co_await sock.puts("\r\n"sv);
     }
-    co_await co_await sock.puts("connection: keep-alive\r\n"sv);
+    // co_await co_await sock.puts("connection: keep-alive\r\n"sv);
     co_return {};
 }
 

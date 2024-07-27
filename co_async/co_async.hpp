@@ -68,3 +68,4 @@
 #include <co_async/utils/spin_mutex.hpp>
 #include <co_async/utils/string_utils.hpp>
 #include <co_async/utils/uninitialized.hpp>
+#include <co_async/net/websocket.hpp>

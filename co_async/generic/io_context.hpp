@@ -8,7 +8,7 @@
 namespace co_async {
 struct IOContextOptions {
     std::chrono::steady_clock::duration maxSleep =
-        std::chrono::milliseconds(10);
+        std::chrono::milliseconds(200);
     std::optional<std::size_t> threadAffinity = std::nullopt;
     std::size_t queueEntries = 512;
 };

@@ -206,6 +206,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         target_include_directories(co_async PUBLIC 3rd/liburing/include)
     endif()
 endif()
+target_include_directories(co_async PUBLIC 3rd/hashlib/include)
 
 if (CO_ASYNC_FIND_BEARSSL)
     find_package(BearSSL QUIET)

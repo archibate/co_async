@@ -45,7 +45,7 @@ struct SocketStream : Stream {
 
 private:
     SocketHandle mFile;
-    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(10);
+    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(30);
 };
 
 inline Task<Expected<OwningStream>>

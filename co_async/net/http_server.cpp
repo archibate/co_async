@@ -84,7 +84,7 @@ struct HTTPServer::Impl {
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
     };
-    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(10);
+    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(30);
 #if CO_ASYNC_DEBUG
     bool mLogRequests = false;
 #endif
@@ -316,12 +316,6 @@ Task<Expected<>> HTTPServer::handle_https(SocketHandle handle,
 Task<Expected<>>
 HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
     while (true) {
-        // #if CO_ASYNC_ALLOC
-        //         BytesBuffer buf(8192 * 4);
-        //         std::pmr::monotonic_buffer_resource mono{buf.data(),
-        //         buf.size(), currentAllocator}; ReplaceAllocator _ = &mono;
-        // #endif
-
         IO io(http.get());
         if (!co_await co_await io.readRequestHeader()) {
             break;

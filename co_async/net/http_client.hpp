@@ -335,7 +335,7 @@ public:
 
     explicit HTTPConnectionPool(
         std::size_t connPerHost = 8,
-        std::chrono::steady_clock::duration timeout = std::chrono::seconds(5),
+        std::chrono::steady_clock::duration timeout = std::chrono::seconds(20),
         std::chrono::steady_clock::duration keepAlive = std::chrono::minutes(3),
         bool followProxy = true)
         : mTimeout(timeout),

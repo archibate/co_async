@@ -6,7 +6,7 @@ using namespace std::literals;
 
 static Task<Expected<>> amain() {
     auto file = co_await co_await file_open("../examples/read_file.cpp", OpenMode::Read);
-    String buffer = co_await file.getall();
+    String buffer = co_await co_await file.getall();
     co_await co_await stdio().putline(buffer);
     co_return {};
 }

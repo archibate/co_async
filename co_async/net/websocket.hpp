@@ -1,6 +1,10 @@
 #pragma once
 #include <co_async/std.hpp>
+#include <co_async/generic/timeout.hpp>
+#include <co_async/generic/when_any.hpp>
+#include <co_async/utils/byteorder.hpp>
 #include <co_async/utils/expected.hpp>
+#include <co_async/utils/reflect.hpp>
 #include <co_async/net/http_server.hpp>
 #include <co_async/net/http_server_utils.hpp>
 #include <hashlib/hashlib.hpp>
@@ -28,16 +32,15 @@ inline std::string websocketSecretHash(std::string userKey) {
     return base64::encode_into<std::string>(buf, buf + SHA1::HashBytes);
 }
 
-inline Task<Expected<>> http_upgrade_to_websocket(HTTPServer::IO &io) {
-    auto upgrade = io.request.headers.get("upgrade").value_or("");
-    if (upgrade != "websocket") {
-        co_return std::errc::wrong_protocol_type;
+inline Task<Expected<bool>> httpUpgradeToWebSocket(HTTPServer::IO &io) {
+    if (io.request.headers.get("upgrade") != "websocket") {
+        co_return false;
     }
     // 是 ws:// 请求
     auto wsKey = io.request.headers.get("sec-websocket-key");
     if (!wsKey) {
         co_await co_await HTTPServerUtils::make_error_response(io, 400);
-        co_return {};
+        co_return true;
     }
     auto wsNewKey = websocketSecretHash(*wsKey);
     HTTPResponse res{
@@ -50,7 +53,221 @@ inline Task<Expected<>> http_upgrade_to_websocket(HTTPServer::IO &io) {
         },
     };
     co_await co_await io.response(res, "");
+    co_return true;
+}
+
+struct WebSocketPacket {
+    enum Opcode : uint8_t {
+        kOpcodeText = 1,
+        kOpcodeBinary = 2,
+        kOpcodeClose = 8,
+        kOpcodePing = 9,
+        kOpcodePong = 10,
+    } opcode;
+    std::string content;
+
+    REFLECT(opcode, content);
+};
+
+inline Task<Expected<WebSocketPacket>> wsRecvPacket(BorrowedStream &ws) {
+    WebSocketPacket packet;
+    auto head = co_await co_await ws.getn(2);
+    bool fin;
+    do {
+        uint8_t head0 = static_cast<uint8_t>(head[0]);
+        uint8_t head1 = static_cast<uint8_t>(head[1]);
+        fin = (head0 & 0x80) != 0;
+        packet.opcode = static_cast<WebSocketPacket::Opcode>(head0 & 0x0F);
+        bool masked = (head1 & 0x80) != 0;
+        uint8_t payloadLen8 = head1 & 0x7F;
+        size_t payloadLen;
+        if (packet.opcode >= 8 && packet.opcode <= 10 && payloadLen8 >= 0x7E) [[unlikely]] {
+            co_return std::errc::protocol_error;
+        }
+        if (payloadLen8 == 0x7E) {
+            auto payloadLen16 = byteswap_if_little(co_await co_await ws.getstruct<uint16_t>());
+            payloadLen = static_cast<size_t>(payloadLen16);
+        } else if (payloadLen8 == 0x7F) {
+            auto payloadLen64 = byteswap_if_little(co_await co_await ws.getstruct<uint64_t>());
+            if constexpr (sizeof(uint64_t) > sizeof(size_t)) {
+                if (payloadLen64 > std::numeric_limits<size_t>::max()) {
+                    co_return std::errc::not_enough_memory;
+                }
+            }
+            payloadLen = static_cast<size_t>(payloadLen64);
+        } else {
+            payloadLen = static_cast<size_t>(payloadLen8);
+        }
+        std::string mask;
+        if (masked) {
+            mask = co_await co_await ws.getn(4);
+        }
+        auto data = co_await co_await ws.getn(payloadLen);
+        if (masked) {
+            for (size_t i = 0; i != data.size(); ++i) {
+                data[i] ^= mask[i % 4];
+            }
+        }
+        packet.content += data;
+    } while (!fin);
+    co_return std::move(packet);
+}
+
+inline Task<Expected<>> wsSendPacket(BorrowedStream &ws, WebSocketPacket packet, uint32_t mask = 0) {
+    const bool fin = true;
+    bool masked = mask != 0;
+    uint8_t payloadLen8 = 0;
+    if (packet.content.size() < 0x7E) {
+        payloadLen8 = static_cast<uint8_t>(packet.content.size());
+    } else if (packet.content.size() <= 0xFFFF) {
+        payloadLen8 = 0x7E;
+    } else {
+        payloadLen8 = 0x7F;
+    }
+    uint8_t head0 = (fin ? 1 : 0) << 7 | static_cast<uint8_t>(packet.opcode);
+    uint8_t head1 = (masked ? 1 : 0) << 7 | payloadLen8;
+    char head[2];
+    head[0] = static_cast<uint8_t>(head0);
+    head[1] = static_cast<uint8_t>(head1);
+    co_await co_await ws.write(head);
+    if (packet.content.size() > 0x7E) {
+        if (packet.content.size() <= 0xFFFF) {
+            auto payloadLen16 = static_cast<uint16_t>(packet.content.size());
+            co_await co_await ws.putstruct(byteswap_if_little(payloadLen16));
+        } else {
+            auto payloadLen64 = static_cast<uint64_t>(packet.content.size());
+            co_await co_await ws.putstruct(byteswap_if_little(payloadLen64));
+        }
+    }
+    if (masked) {
+        char mask_buf[4];
+        mask_buf[0] = mask >> 24;
+        mask_buf[1] = (mask >> 16) & 0xFF;
+        mask_buf[2] = (mask >> 8) & 0xFF;
+        mask_buf[3] = mask & 0xFF;
+        co_await co_await ws.write(mask_buf);
+        for (size_t i = 0; i != packet.content.size(); ++i) {
+            packet.content[i] ^= mask_buf[i % 4];
+        }
+    }
+    co_await co_await ws.write(packet.content);
+    co_await co_await ws.flush();
     co_return {};
+}
+
+struct WebSocket {
+    BorrowedStream &sock;
+    std::function<Task<Expected<>>(std::string const &)> mOnMessage;
+    std::function<Task<Expected<>>()> mOnClose;
+    std::function<Task<Expected<>>(std::chrono::steady_clock::duration)> mOnPong;
+    bool mHalfClosed = false;
+    bool mWaitingPong = true;
+    std::chrono::steady_clock::time_point mLastPingTime{};
+
+    WebSocket(WebSocket &&) = default;
+
+    explicit WebSocket(BorrowedStream &sock) : sock(sock) {
+    }
+
+    void on_message(std::function<Task<Expected<>>(std::string const &)> onMessage) {
+        mOnMessage = std::move(onMessage);
+    }
+
+    void on_close(std::function<Task<Expected<>>()> onClose) {
+        mOnClose = std::move(onClose);
+    }
+
+    void on_pong(std::function<Task<Expected<>>(std::chrono::steady_clock::duration)> onPong) {
+        mOnPong = std::move(onPong);
+    }
+
+    Task<Expected<>> send(std::string text) {
+        if (mHalfClosed) [[unlikely]] {
+            co_return std::errc::broken_pipe;
+        }
+        co_return co_await wsSendPacket(sock, WebSocketPacket{
+            .opcode = WebSocketPacket::kOpcodeText,
+            .content = text,
+        });
+    }
+
+    Task<Expected<>> close(uint16_t code = 1000) {
+        std::string content;
+        code = byteswap_if_little(code);
+        content.resize(sizeof(code));
+        std::memcpy(content.data(), &code, sizeof(code));
+        mHalfClosed = true;
+        co_return co_await wsSendPacket(sock, WebSocketPacket{
+            .opcode = WebSocketPacket::kOpcodeClose,
+            .content = content,
+        });
+    }
+
+    Task<Expected<>> sendPing() {
+        mLastPingTime = std::chrono::steady_clock::now();
+        // debug(), "主动ping";
+        co_return co_await wsSendPacket(sock, WebSocketPacket{
+            .opcode = WebSocketPacket::kOpcodePing,
+            .content = {},
+        });
+    }
+
+    Task<Expected<>> start(std::chrono::steady_clock::duration pingPongTimeout = std::chrono::seconds(5)) {
+        while (true) {
+            auto maybePacket = co_await co_timeout(wsRecvPacket(sock), pingPongTimeout);
+            if (maybePacket == std::errc::stream_timeout) {
+                if (mWaitingPong) {
+                    break;
+                }
+                co_await co_await sendPing();
+                mWaitingPong = true;
+                continue;
+            }
+            mWaitingPong = false;
+            if (maybePacket == eofError()) {
+                break;
+            }
+            auto packet = co_await std::move(maybePacket);
+            if (packet.opcode == packet.kOpcodeText || packet.opcode == packet.kOpcodeBinary) {
+                if (mOnMessage) {
+                    co_await co_await mOnMessage(packet.content);
+                }
+            } else if (packet.opcode == packet.kOpcodePing) {
+                // debug(), "收到ping";
+                packet.opcode = packet.kOpcodePong;
+                co_await co_await wsSendPacket(sock, packet);
+            } else if (packet.opcode == packet.kOpcodePong) {
+                auto now = std::chrono::steady_clock::now();
+                if (mOnPong && mLastPingTime.time_since_epoch().count() != 0) {
+                    auto dt = now - mLastPingTime;
+                    co_await co_await mOnPong(dt);
+                    // debug(), "网络延迟:", dt;
+                }
+                // debug(), "收到pong";
+            } else if (packet.opcode == packet.kOpcodeClose) {
+                // debug(), "收到关闭请求";
+                if (mOnClose) {
+                    co_await co_await mOnClose();
+                }
+                if (!mHalfClosed) {
+                    co_await co_await wsSendPacket(sock, packet);
+                    mHalfClosed = true;
+                } else {
+                    break;
+                }
+            }
+        }
+        co_await sock.close();
+        co_return {};
+    }
+};
+
+inline Task<Expected<WebSocket>> tryWebSocket(HTTPServer::IO &io) {
+    if (co_await co_await httpUpgradeToWebSocket(io)) {
+        auto ws = WebSocket(io.extractSocket());
+        co_return std::move(ws);
+    }
+    co_return std::errc::protocol_error;
 }
 
 }

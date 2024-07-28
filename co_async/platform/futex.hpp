@@ -70,7 +70,7 @@ inline Expected<> futex_wait_sync(std::atomic<T> *futex,
                 static_cast<uint32_t>(futexValueExtend(val)), nullptr, nullptr, mask);
     }
 #endif
-    return expectError(res);
+    return expectError(static_cast<int>(res));
 }
 
 

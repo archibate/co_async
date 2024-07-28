@@ -36,6 +36,10 @@ struct HTTPServer {
         Task<Expected<>> response(HTTPResponse resp, std::string_view content);
         Task<Expected<>> response(HTTPResponse resp, OwningStream &body);
 
+        BorrowedStream &extractSocket() const noexcept {
+            return mHttp->sock;
+        }
+
     private:
         HTTPProtocol *mHttp;
         bool mBodyRead = false;

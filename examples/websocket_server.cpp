@@ -1,4 +1,3 @@
-#include "co_async/utils/debug.hpp"
 #include <co_async/co_async.hpp>
 #include <co_async/std.hpp>
 
@@ -91,13 +90,32 @@ static auto index_html = R"html(
     </body>
 </html>)html"sv;
 
-static Task<Expected<>> amain() {
-    co_await co_await stdio().putline("listening at: http://127.0.0.1:8080"sv);
-    auto listener = co_await co_await listener_bind(co_await AddressResolver().host("http://127.0.0.1:8080").resolve_one());
+static Task<Expected<>> amain(std::string addr) {
+    co_await co_await stdio().putline("正在监听: "s + addr);
+    auto listener = co_await co_await listener_bind(co_await AddressResolver()
+                                                    .host(addr).resolve_one());
     HTTPServer server;
     server.route("GET", "/", [](HTTPServer::IO &io) -> Task<Expected<>> {
-        auto upgrade = io.request.headers.get("upgrade").value_or("");
-        if (co_await http_upgrade_to_websocket(io)) {
+        if (auto ws = co_await tryWebSocket(io)) {
+            // 是升级的 ws:// 请求
+            co_await co_await stdio().putline("连接成功"sv);
+            ws->on_message([&] (std::string const &message) -> Task<Expected<>> {
+                co_await co_await stdio().putline("收到消息: "s + message);
+                co_await co_await ws->send("收到啦！"s + message);
+                co_return {};
+            });
+            ws->on_close([&] () -> Task<Expected<>> {
+                co_await co_await stdio().putline("正在关闭连接"sv);
+                co_return {};
+            });
+            ws->on_pong([&] (std::chrono::steady_clock::duration dt) -> Task<Expected<>> {
+                ;
+                co_await co_await stdio().putline("网络延迟: "s + to_string(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(dt).count()) + "ms"s);
+                co_return {};
+            });
+            co_await co_await ws->start();
+            co_return {};
         } else {
             // 是普通 http:// 请求
             co_await co_await HTTPServerUtils::make_ok_response(io, index_html);
@@ -112,7 +130,11 @@ static Task<Expected<>> amain() {
     }
 }
 
-int main() {
-    IOContext().join(amain()).value();
+int main(int argc, char **argv) {
+    std::string addr = "http://127.0.0.1:8080";
+    if (argc > 1) {
+        addr = argv[1];
+    }
+    IOContext().join(amain(addr)).value();
     return 0;
 }

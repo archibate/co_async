@@ -273,7 +273,6 @@ Task<Expected<>> HTTPServer::handle_http(SocketHandle handle) const {
     co_await co_await doHandleConnection(
         co_await prepareHTTP(std::move(handle)));
 #endif
-    /* co_await UringOp().prep_shutdown(h, SHUT_RDWR); */
     co_return {};
 }
 
@@ -349,8 +348,9 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
                                            .count()) +
                              "ms\n";
             for (auto [k, v]: io.mResponseSavedForDebug.headers) {
-                if (k == "cookie" || k == "set-cookie") {
-                    v = "***";
+                if (k == "cookie" || k == "set-cookie" ||
+                    k == "authorization") {
+                    v = "*****";
                 }
                 std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
                                  '\n';

@@ -17,9 +17,6 @@ GenericIOContext::~GenericIOContext() = default;
 std::optional<std::chrono::steady_clock::duration>
 GenericIOContext::runDuration() {
     while (true) {
-        while (auto coroutine = mQueue.pop()) {
-            coroutine->resume();
-        }
         if (!mTimers.empty()) {
             auto &promise = mTimers.front();
             std::chrono::steady_clock::time_point now =
@@ -27,9 +24,7 @@ GenericIOContext::runDuration() {
             if (promise.mExpires <= now) {
                 promise.mCancelled = false;
                 promise.erase_from_parent();
-                auto coroutine =
-                    std::coroutine_handle<TimerNode>::from_promise(promise);
-                enqueueJob(coroutine);
+                std::coroutine_handle<TimerNode>::from_promise(promise).resume();
                 continue;
             } else {
                 return promise.mExpires - now;

@@ -101,10 +101,9 @@ struct alignas(hardware_destructive_interference_size)
         return p;
     }
 
-    bool push(T &&value) {
+    void push(T &&value) {
         std::lock_guard lck(mMutex);
         mQueue.push_back(std::move(value));
-        return true;
     }
 
 private:

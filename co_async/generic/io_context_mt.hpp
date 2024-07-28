@@ -12,9 +12,8 @@ private:
     std::size_t mNumWorkers = 0;
 
 public:
-    explicit IOContextMT(std::in_place_t);
-    explicit IOContextMT(IOContextOptions options = {},
-                         std::size_t numWorkers = 0);
+    IOContextMT();
+    IOContextMT(IOContext &&) = delete;
     ~IOContextMT();
 
     static std::size_t get_worker_id(IOContext const &context) noexcept {
@@ -33,18 +32,17 @@ public:
         return instance->mNumWorkers;
     }
 
-    static void start(IOContextOptions options = {},
-                      std::size_t numWorkers = 0);
+    static void run(std::size_t numWorkers = 0);
 
-    static void spawn(std::coroutine_handle<> coroutine,
-                      std::size_t index = 0) {
-        instance->mWorkers[index].spawn(coroutine);
-    }
-
-    template <class T, class P>
-    static T join(Task<T, P> task, std::size_t index = 0) {
-        return instance->mWorkers[index].join(std::move(task));
-    }
+    // static void spawn(std::coroutine_handle<> coroutine,
+    //                   std::size_t index = 0) {
+    //     instance->mWorkers[index].spawn(coroutine);
+    // }
+    //
+    // template <class T, class P>
+    // static T join(Task<T, P> task, std::size_t index = 0) {
+    //     return instance->mWorkers[index].join(std::move(task));
+    // }
 
     static IOContextMT *instance;
 };

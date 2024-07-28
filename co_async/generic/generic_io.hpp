@@ -56,11 +56,9 @@ struct GenericIOContext {
     [[gnu::hot]] std::optional<std::chrono::steady_clock::duration>
     runDuration();
 
-    [[gnu::hot]] void enqueueJob(std::coroutine_handle<> coroutine) {
-        while (!mQueue.push(std::move(coroutine))) {
-            [[unlikely]];
-        }
-    }
+    // [[gnu::hot]] void enqueueJob(std::coroutine_handle<> coroutine) {
+    //     mQueue.push(std::move(coroutine));
+    // }
 
     [[gnu::hot]] void enqueueTimerNode(TimerNode &promise) {
         mTimers.insert(promise);
@@ -73,7 +71,6 @@ struct GenericIOContext {
     static inline thread_local GenericIOContext *instance;
 
 private:
-    ConcurrentRingQueue<std::coroutine_handle<>, 1024 - 1> mQueue;
     RbTree<TimerNode> mTimers;
 };
 
@@ -94,12 +91,12 @@ template <Awaitable A>
 inline void co_spawn(A awaitable) {
     auto wrapped = coSpawnStarter(std::move(awaitable));
     auto coroutine = wrapped.get();
-    GenericIOContext::instance->enqueueJob(coroutine);
+    coroutine.resume();
     wrapped.release();
 }
 
 inline void co_spawn(std::coroutine_handle<> coroutine) {
-    GenericIOContext::instance->enqueueJob(coroutine);
+    coroutine.resume();
 }
 
 inline auto co_resume() {
@@ -117,4 +114,5 @@ inline auto co_resume() {
 
     return ResumeAwaiter();
 }
+
 } // namespace co_async

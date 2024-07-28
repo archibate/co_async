@@ -16,9 +16,7 @@ co_sleep(std::chrono::steady_clock::time_point expires) {
     auto task = coSleep(expires);
     CancelCallback _(co_await co_cancel, [p = &task.promise()] {
         p->doCancel();
-        GenericIOContext::instance->enqueueJob(
-            std::coroutine_handle<GenericIOContext::TimerNode>::from_promise(
-                *p));
+        std::coroutine_handle<GenericIOContext::TimerNode>::from_promise(*p).resume();
     });
     co_return co_await task;
 }

@@ -215,7 +215,7 @@ thread_local PlatformIOContext *PlatformIOContext::instance;
 
 bool PlatformIOContext::waitEventsFor(
     std::optional<std::chrono::steady_clock::duration> timeout) {
-    // debug(), "wait", this;
+    // debug(), "wait", this, mNumSqesPending;
     struct io_uring_cqe *cqe;
     struct __kernel_timespec ts, *tsp;
     if (timeout) {
@@ -233,6 +233,7 @@ bool PlatformIOContext::waitEventsFor(
         throw std::system_error(-res, std::system_category());
     }
     unsigned head, numGot = 0;
+    std::vector<std::coroutine_handle<>> tasks;
     io_uring_for_each_cqe(&mRing, head, cqe) {
 #if CO_ASYNC_INVALFIX
         if (cqe->user_data == LIBURING_UDATA_TIMEOUT) [[unlikely]] {
@@ -242,10 +243,14 @@ bool PlatformIOContext::waitEventsFor(
 #endif
         auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
         op->mRes = cqe->res;
-        GenericIOContext::instance->enqueueJob(op->mPrevious);
+        tasks.push_back(op->mPrevious);
         ++numGot;
     }
     io_uring_cq_advance(&mRing, numGot);
+    mNumSqesPending -= static_cast<std::size_t>(numGot);
+    for (auto const &task: tasks) {
+        task.resume();
+    }
     return true;
 }
 } // namespace co_async

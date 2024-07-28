@@ -8,64 +8,40 @@
 
 namespace co_async {
 
-struct IOContext::IOContextGuard {
-    explicit IOContextGuard(IOContext *that) {
-        if (IOContext::instance || GenericIOContext::instance ||
-            PlatformIOContext::instance) [[unlikely]] {
-            throw std::logic_error(
-                "each thread may contain only one IOContextGuard");
-        }
-        IOContext::instance = that;
-        GenericIOContext::instance = &that->mGenericIO;
-        PlatformIOContext::instance = &that->mPlatformIO;
+IOContext::IOContext(IOContextOptions options) {
+    if (instance) {
+        throw std::logic_error("each thread may create only one IOContext");
     }
-
-    ~IOContextGuard() {
-        IOContext::instance = nullptr;
-        GenericIOContext::instance = nullptr;
-        PlatformIOContext::instance = nullptr;
+    instance = this;
+    GenericIOContext::instance = &mGenericIO;
+    PlatformIOContext::instance = &mPlatformIO;
+    if (options.threadAffinity) {
+        PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
     }
-
-    IOContextGuard(IOContextGuard &&) = delete;
-};
-
-void IOContext::startHere(std::stop_token stop, IOContextOptions options,
-                          std::span<IOContext> peerContexts) {
-    IOContextGuard guard(this);
-
-    // genericIO->enqueueJob(watchDogTask().release());
-
-    while (!stop.stop_requested()) [[likely]] {
-        auto duration = mGenericIO.runDuration();
-        if (!duration || *duration > options.maxSleep) {
-            duration = options.maxSleep;
-        }
-#if !CO_ASYNC_STEAL
-        mPlatformIO.waitEventsFor(duration);
-#else
-        bool hasEvent = mPlatformIO.waitEventsFor(duration);
-        if (!hasEvent && !peerContexts.empty()) {
-            for (IOContext *p = peerContexts.data();
-                 p != peerContexts.data() + peerContexts.size(); ++p) {
-                if (p->mGenericIO.runComputeOnly()) {
-                    break;
-                }
-            }
-        }
-#endif
-    }
+    mPlatformIO.setup(options.queueEntries);
+    mMaxSleep = options.maxSleep;
 }
 
-void IOContext::start(IOContextOptions options,
-                      std::span<IOContext> peerContexts) {
-    mThread = std::jthread([this, options = std::move(options),
-                            peerContexts](std::stop_token stop) {
-        mPlatformIO.setup(options.queueEntries);
-        if (options.threadAffinity) {
-            PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
+IOContext::~IOContext() {
+    IOContext::instance = nullptr;
+    GenericIOContext::instance = nullptr;
+    PlatformIOContext::instance = nullptr;
+}
+
+void IOContext::run() {
+    while (true) {
+        auto duration = mGenericIO.runDuration();
+        if (!duration && !mPlatformIO.hasPendingEvents()) [[unlikely]] {
+// #if CO_ASYNC_DEBUG
+//             std::cerr << "no more tasks, exiting\n";
+// #endif
+            break;
         }
-        this->startHere(stop, options, peerContexts);
-    });
+        if (!duration || *duration > mMaxSleep) {
+            duration = mMaxSleep;
+        }
+        mPlatformIO.waitEventsFor(duration);
+    }
 }
 
 thread_local IOContext *IOContext::instance;

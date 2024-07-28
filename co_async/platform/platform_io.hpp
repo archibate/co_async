@@ -47,8 +47,20 @@ struct PlatformIOContext {
     [[gnu::hot]] bool
     waitEventsFor(std::optional<std::chrono::steady_clock::duration> timeout);
 
-    [[gnu::hot]] struct io_uring *getRing() {
-        return &mRing;
+    [[gnu::hot]] struct io_uring_sqe *getSqe() {
+        struct io_uring_sqe *sqe = io_uring_get_sqe(&mRing);
+        while (!sqe) [[unlikely]] {
+            int res = io_uring_submit(&mRing);
+            if (res < 0) [[unlikely]] {
+                if (res == -EINTR) {
+                    continue;
+                }
+                throw std::system_error(-res, std::system_category());
+            }
+            sqe = io_uring_get_sqe(&mRing);
+        }
+        ++mNumSqesPending;
+        return sqe;
     }
 
     PlatformIOContext &operator=(PlatformIOContext &&) = delete;
@@ -62,8 +74,13 @@ struct PlatformIOContext {
     void reserveFiles(std::size_t nfiles);
     std::size_t addFiles(std::span<int const> files);
 
+    std::size_t hasPendingEvents() const noexcept {
+        return mNumSqesPending != 0;
+    }
+
 private:
     struct io_uring mRing;
+    std::size_t mNumSqesPending = 0;
     std::unique_ptr<struct iovec[]> mBuffers;
     unsigned int mNumBufs = 0;
     unsigned int mCapBufs = 0;
@@ -74,12 +91,7 @@ private:
 
 struct [[nodiscard]] UringOp {
     UringOp() {
-        struct io_uring *ring = PlatformIOContext::instance->getRing();
-        mSqe = io_uring_get_sqe(ring);
-        while (!mSqe) [[unlikely]] {
-            io_uring_submit(ring);
-            mSqe = io_uring_get_sqe(ring);
-        }
+        mSqe = PlatformIOContext::instance->getSqe();
         io_uring_sqe_set_data(mSqe, this);
     }
 

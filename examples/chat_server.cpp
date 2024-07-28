@@ -237,6 +237,6 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         addr = argv[1];
     }
-    IOContext().join(amain(addr)).value();
+    co_main(amain(addr));
     return 0;
 }

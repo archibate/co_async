@@ -306,6 +306,7 @@ Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
     SocketHandle sock =
         co_await co_await createSocket(addr.family(), SOCK_STREAM, 0);
     co_await socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
+    co_await socketSetOption(sock, SOL_SOCKET, SO_REUSEPORT, 1);
     /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_CORK, 0); */
     /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_NODELAY, 1); */
     /* co_await socketSetOption(sock, SOL_SOCKET, SO_KEEPALIVE, 1); */

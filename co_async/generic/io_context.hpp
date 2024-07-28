@@ -17,113 +17,113 @@ struct alignas(hardware_destructive_interference_size) IOContext {
 private:
     GenericIOContext mGenericIO;
     PlatformIOContext mPlatformIO;
-    std::jthread mThread;
-    // FutexAtomic<std::uint8_t> mWake{0};
-
-    struct IOContextGuard;
-
-    // void wakeUp();
-    // Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>> watchDogTask();
+    std::chrono::steady_clock::duration mMaxSleep;
 
 public:
-    [[gnu::cold]] explicit IOContext(std::in_place_t) {}
-
-    [[gnu::cold]] explicit IOContext(IOContextOptions options = {}) {
-        start(options);
-    }
-
+    explicit IOContext(IOContextOptions options = {});
     IOContext(IOContext &&) = delete;
+    ~IOContext();
 
-    [[gnu::hot]] void startHere(std::stop_token stop, IOContextOptions options,
-                                std::span<IOContext> peerContexts);
+    void run();
 
-    [[gnu::cold]] void start(IOContextOptions options = {},
-                             std::span<IOContext> peerContexts = {});
-
-    [[gnu::hot]] void spawn(std::coroutine_handle<> coroutine) {
-        mGenericIO.enqueueJob(coroutine);
-    }
-
-    template <class T, class P>
-    void spawn(Task<T, P> task) {
-        auto wrapped = coSpawnStarter(std::move(task));
-        mGenericIO.enqueueJob(wrapped.get());
-        wrapped.release();
-    }
-
-    template <class T, class P>
-    T join(Task<T, P> task) {
-        return contextJoin(*this, std::move(task));
-    }
+    // [[gnu::hot]] void spawn(std::coroutine_handle<> coroutine) {
+    //     coroutine.resume();
+    // }
+    //
+    // template <class T, class P>
+    // void spawn(Task<T, P> task) {
+    //     auto wrapped = coSpawnStarter(std::move(task));
+    //     wrapped.get().resume();
+    //     wrapped.release();
+    // }
+    //
+    // template <class T, class P>
+    // T join(Task<T, P> task) {
+    //     return contextJoin(*this, std::move(task));
+    // }
 
     static thread_local IOContext *instance;
 };
 
-template <class T, class P>
-inline Task<> contextJoinHelper(Task<T, P> task, std::condition_variable &cv,
-                                Uninitialized<T> &result
-#if CO_ASYNC_EXCEPT
-                                ,
-                                std::exception_ptr exception
-#endif
-) {
-#if CO_ASYNC_EXCEPT
-    try {
-#endif
-        result.emplace((co_await task, Void()));
-#if CO_ASYNC_EXCEPT
-    } catch (...) {
-# if CO_ASYNC_DEBUG
-        std::cerr << "WARNING: exception occurred in IOContext::join\n";
-# endif
-        exception = std::current_exception();
+inline Task<> catchExcept(Task<Expected<>> task) {
+    auto ret = co_await task;
+    if (ret.has_error()) {
+        std::cerr << ret.error().message() << '\n';
     }
-#endif
-    cv.notify_one();
+    co_return;
 }
 
-template <class T, class P>
-T contextJoin(IOContext &context, Task<T, P> task) {
-    std::condition_variable cv;
-    std::mutex mtx;
-    Uninitialized<T> result;
-#if CO_ASYNC_EXCEPT
-    std::exception_ptr exception;
-#endif
-    context.spawn(contextJoinHelper(std::move(task), cv, result
-#if CO_ASYNC_EXCEPT
-                                    ,
-                                    exception
-#endif
-                                    ));
-    std::unique_lock lck(mtx);
-    cv.wait(lck);
-    lck.unlock();
-#if CO_ASYNC_EXCEPT
-    if (exception) [[unlikely]] {
-        std::rethrow_exception(exception);
-    }
-#endif
-    if constexpr (!std::is_void_v<T>) {
-        return result.move();
-    }
+inline void co_main(Task<Expected<>> main) {
+    IOContext ctx;
+    co_spawn(catchExcept(std::move(main)));
+    ctx.run();
 }
 
-inline auto co_resume_on(IOContext &context) {
-    struct ResumeOnAwaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) const {
-            mContext.spawn(coroutine);
-        }
-
-        void await_resume() const noexcept {}
-
-        IOContext &mContext;
-    };
-
-    return ResumeOnAwaiter(context);
-}
+// template <class T, class P>
+// inline Task<> contextJoinHelper(Task<T, P> task, std::condition_variable &cv,
+//                                 Uninitialized<T> &result
+// #if CO_ASYNC_EXCEPT
+//                                 ,
+//                                 std::exception_ptr exception
+// #endif
+// ) {
+// #if CO_ASYNC_EXCEPT
+//     try {
+// #endif
+//         result.emplace((co_await task, Void()));
+// #if CO_ASYNC_EXCEPT
+//     } catch (...) {
+// # if CO_ASYNC_DEBUG
+//         std::cerr << "WARNING: exception occurred in IOContext::join\n";
+// # endif
+//         exception = std::current_exception();
+//     }
+// #endif
+//     cv.notify_one();
+// }
+//
+// template <class T, class P>
+// T contextJoin(IOContext &context, Task<T, P> task) {
+//     std::condition_variable cv;
+//     std::mutex mtx;
+//     Uninitialized<T> result;
+// #if CO_ASYNC_EXCEPT
+//     std::exception_ptr exception;
+// #endif
+//     context.spawn(contextJoinHelper(std::move(task), cv, result
+// #if CO_ASYNC_EXCEPT
+//                                     ,
+//                                     exception
+// #endif
+//                                     ));
+//     std::unique_lock lck(mtx);
+//     cv.wait(lck);
+//     lck.unlock();
+// #if CO_ASYNC_EXCEPT
+//     if (exception) [[unlikely]] {
+//         std::rethrow_exception(exception);
+//     }
+// #endif
+//     if constexpr (!std::is_void_v<T>) {
+//         return result.move();
+//     }
+// }
+//
+// inline auto co_resume_on(IOContext &context) {
+//     struct ResumeOnAwaiter {
+//         bool await_ready() const noexcept {
+//             return false;
+//         }
+//
+//         void await_suspend(std::coroutine_handle<> coroutine) const {
+//             mContext.spawn(coroutine);
+//         }
+//
+//         void await_resume() const noexcept {}
+//
+//         IOContext &mContext;
+//     };
+//
+//     return ResumeOnAwaiter(context);
+// }
 } // namespace co_async

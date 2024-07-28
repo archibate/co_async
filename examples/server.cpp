@@ -14,13 +14,12 @@ static Task<Expected<>> amain() {
     });
 
     while (true) {
-        if (auto income = co_await listener_accept(listener)) {
-            co_spawn(server.handle_http(std::move(*income)));
-        }
+        auto income = co_await co_await listener_accept(listener);
+        co_spawn(server.handle_http(std::move(income)));
     }
 }
 
 int main() {
-    IOContext().join(amain()).value();
+    co_main(amain());
     return 0;
 }

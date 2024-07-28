@@ -61,13 +61,21 @@ static auto index_html = R"html(<!DOCTYPE html>
             <div class="input-bar">
                 <input class="input-user" type="text" id="user" placeholder="你的昵称"/>
                 <button class="login-button" id="login">登录</button>
-                <input hidden class="input-content" type="text" id="content" placeholder="输入你的消息..." autocomplete="off"/>
+                <label class="message-user" hidden id="user-label" for="content"></label>&nbsp;<input hidden class="input-content" type="text" id="content" placeholder="输入你的消息..." autocomplete="off"/>
                 <button hidden class="send-button" id="send">发送</button>
             </div>
         </div>
         <script src="https://unpkg.com/jquery@3.7.1/dist/jquery.min.js"></script>
         <script>
         var current_user = $("#user").val().trim();
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
         $(document).ready(function() {
             var ws = new WebSocket("ws://127.0.0.1:8080/");
             $("#login").click(function() {
@@ -79,8 +87,10 @@ static auto index_html = R"html(<!DOCTYPE html>
                 ws.send(JSON.stringify({type: 'LoginParams', object: {user}}));
                 $("#send").show();
                 $("#content").show();
+                $("#user-label").show();
                 $("#login").hide();
                 $("#user").hide();
+                $("#user-label").text(`${escapeHtml(user)}:`);
             });
             $("#send").click(function() {
                 var content = $("#content").val().trim();
@@ -96,14 +106,6 @@ static auto index_html = R"html(<!DOCTYPE html>
                     $("#send").click();
                 }
             });
-            function escapeHtml(unsafe) {
-                return unsafe
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            }
             ws.onerror = function (evt) {
                 console.log('发生错误:', evt);
                 $("#messages").append('<div class="message"><p class="message-user">系统提示:</p><p class="message-content">连接发生了错误<p></div>');

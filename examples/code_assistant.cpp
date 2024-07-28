@@ -137,7 +137,7 @@ static Task<Expected<OwningStream>> evaluate(std::string prompt) {
                 co_await co_await w.putchunk(delta);
             }
         }
-        co_await body.dropall();
+        co_await co_await body.dropall();
         co_return {};
     }));
     co_return std::move(r);

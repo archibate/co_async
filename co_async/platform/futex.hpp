@@ -9,6 +9,8 @@
 
 namespace co_async {
 
+inline constexpr std::size_t kFutexNotifyAll = static_cast<std::size_t>(std::numeric_limits<int>::max());
+
 template <class T>
 inline constexpr uint32_t getFutexFlagsFor() {
     switch (sizeof(T)) {
@@ -35,9 +37,9 @@ inline constexpr uint64_t futexValueExtend(T value) {
 }
 
 template <class T>
-inline void futex_notify_sync(std::atomic<T> *futex,
-                              std::size_t count = static_cast<std::size_t>(-1),
-                              uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+inline Expected<> futex_notify_sync(std::atomic<T> *futex,
+                                    std::size_t count = kFutexNotifyAll,
+                                    uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
 #ifndef SYS_futex_wake
     const long SYS_futex_wake = 454;
 #endif
@@ -47,11 +49,10 @@ inline void futex_notify_sync(std::atomic<T> *futex,
 #if CO_ASYNC_INVALFIX
     if (res == -EBADF || res == -ENOSYS) {
         res = syscall(SYS_futex, reinterpret_cast<uint32_t *>(futex), FUTEX_WAKE_BITSET_PRIVATE,
-                static_cast<uint32_t>(count == static_cast<std::size_t>(-1)
-                                      ? INT_MAX : count), nullptr, nullptr, mask);
+                static_cast<uint32_t>(count), nullptr, nullptr, mask);
     }
 #endif
-    (void)res;
+    return expectError(static_cast<int>(res));
 }
 
 template <class T>
@@ -96,7 +97,7 @@ inline Task<Expected<>> futex_wait(std::atomic<T> *futex,
 template <class T>
 inline Task<Expected<>>
 futex_notify_async(std::atomic<T> *futex,
-                   std::size_t count = static_cast<std::size_t>(-1),
+                   std::size_t count = kFutexNotifyAll,
                    uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
     co_return expectError(
         co_await UringOp()
@@ -104,7 +105,7 @@ futex_notify_async(std::atomic<T> *futex,
                              static_cast<uint64_t>(count),
                              static_cast<uint64_t>(mask), getFutexFlagsFor<T>(),
                              0)
-            .cancelGuard(co_await co_cancel)).transform([] {})
+            .cancelGuard(co_await co_cancel)).transform([] (int) {})
 #if CO_ASYNC_INVALFIX
         .or_else(std::errc::bad_file_descriptor, [&] {
             return futex_notify_sync(futex, count, mask);
@@ -115,7 +116,7 @@ futex_notify_async(std::atomic<T> *futex,
 
 template <class T>
 inline void futex_notify(std::atomic<T> *futex,
-                         std::size_t count = static_cast<std::size_t>(-1),
+                         std::size_t count = kFutexNotifyAll,
                          uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
 #if CO_ASYNC_INVALFIX
     return futex_notify_sync(futex, count, mask);

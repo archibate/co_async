@@ -4,8 +4,7 @@
 using namespace co_async;
 using namespace std::literals;
 
-static auto index_html = R"html(
-        <!DOCTYPE html>
+static auto index_html = R"html(<!DOCTYPE html>
 <html>
 <head>
 	<title>WebSocket 客户端</title>
@@ -96,7 +95,7 @@ static Task<Expected<>> amain(std::string addr) {
                                                     .host(addr).resolve_one());
     HTTPServer server;
     server.route("GET", "/", [](HTTPServer::IO &io) -> Task<Expected<>> {
-        if (auto ws = co_await tryWebSocket(io)) {
+        if (auto ws = co_await websocket_server(io)) {
             // 是升级的 ws:// 请求
             co_await co_await stdio().putline("连接成功"sv);
             ws->on_message([&] (std::string const &message) -> Task<Expected<>> {
@@ -109,7 +108,6 @@ static Task<Expected<>> amain(std::string addr) {
                 co_return {};
             });
             ws->on_pong([&] (std::chrono::steady_clock::duration dt) -> Task<Expected<>> {
-                ;
                 co_await co_await stdio().putline("网络延迟: "s + to_string(
                     std::chrono::duration_cast<std::chrono::milliseconds>(dt).count()) + "ms"s);
                 co_return {};

@@ -5,6 +5,8 @@
 #include <co_async/utils/byteorder.hpp>
 #include <co_async/utils/expected.hpp>
 #include <co_async/utils/reflect.hpp>
+#include <co_async/utils/random.hpp>
+#include <co_async/net/http_client.hpp>
 #include <co_async/net/http_server.hpp>
 #include <co_async/net/http_server_utils.hpp>
 #include <hashlib/hashlib.hpp>
@@ -22,12 +24,22 @@ namespace co_async {
 // 我们这一期视频主要来实现 C++ 的服务器端，要求能够与浏览器中的 JS 建立 WebSocket 连接
 // 如果时间来得及，我们希望利用这个 WebSocket 服务器实现实时语音通话
 
+inline std::string websocketGenerateNonce() {
+    uint32_t seed = getSeedByTime();
+    uint8_t buf[16];
+    for (size_t i = 0; i != 16; ++i) {
+        seed = wangsHash(seed);
+        buf[i] = static_cast<uint8_t>(seed & 0xFF);
+    }
+    return base64::encode_into<std::string>(buf, buf + 16);
+}
+
 inline std::string websocketSecretHash(std::string userKey) {
     // websocket 官方要求的神秘仪式
     SHA1 sha1;
     std::string inKey = userKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     sha1.add(inKey.data(), inKey.size());
-    unsigned char buf[SHA1::HashBytes];
+    uint8_t buf[SHA1::HashBytes];
     sha1.getHash(buf);
     return base64::encode_into<std::string>(buf, buf + SHA1::HashBytes);
 }
@@ -169,6 +181,10 @@ struct WebSocket {
     explicit WebSocket(BorrowedStream &sock) : sock(sock) {
     }
 
+    bool is_closing() const noexcept {
+        return mHalfClosed;
+    }
+
     void on_message(std::function<Task<Expected<>>(std::string const &)> onMessage) {
         mOnMessage = std::move(onMessage);
     }
@@ -262,12 +278,32 @@ struct WebSocket {
     }
 };
 
-inline Task<Expected<WebSocket>> tryWebSocket(HTTPServer::IO &io) {
+inline Task<Expected<WebSocket>> websocket_server(HTTPServer::IO &io) {
     if (co_await co_await httpUpgradeToWebSocket(io)) {
-        auto ws = WebSocket(io.extractSocket());
-        co_return std::move(ws);
+        co_return WebSocket(io.extractSocket());
     }
     co_return std::errc::protocol_error;
+}
+
+inline Task<Expected<WebSocket>> websocket_client(HTTPConnection &conn, URI uri) {
+    std::string nonceKey;
+    using namespace std::string_literals;
+    nonceKey = websocketGenerateNonce();
+    HTTPRequest request = {
+        .method = "GET"s,
+        .uri = uri,
+        .headers = {
+            {"sec-websocket-key"s, nonceKey},
+            {"connection"s, "Upgrade"s},
+            {"upgrade"s, "websocket"s},
+            {"sec-websocket-version"s, "13"s},
+        },
+    };
+    auto [response, _] = co_await co_await conn.request(request);
+    if (response.headers.get("sec-websocket-accept") != websocketSecretHash(nonceKey)) {
+        co_return std::errc::protocol_error;
+    }
+    co_return WebSocket(conn.extractSocket());
 }
 
 }

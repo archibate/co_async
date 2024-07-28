@@ -447,7 +447,7 @@ namespace co_async {
 
 struct ConditionVariable {
 private:
-    FutexAtomic<std::uint32_t> mFutex;
+    FutexAtomic<std::uint32_t> mFutex{};
 
 public:
     Task<Expected<>> wait() {
@@ -460,12 +460,12 @@ public:
 
     void notify_one() {
         mFutex.fetch_add(1, std::memory_order_release);
-        futex_notify(&mFutex, static_cast<std::size_t>(-1));
+        futex_notify(&mFutex, 1);
     }
 
     void notify_all() {
         mFutex.fetch_add(1, std::memory_order_release);
-        futex_notify(&mFutex, static_cast<std::size_t>(-1));
+        futex_notify(&mFutex, kFutexNotifyAll);
     }
 
     using Mask = std::uint32_t;
@@ -485,7 +485,7 @@ public:
 
     void notify_all(Mask mask) {
         mFutex.fetch_add(1, std::memory_order_release);
-        futex_notify(&mFutex, static_cast<std::size_t>(-1), mask);
+        futex_notify(&mFutex, kFutexNotifyAll, mask);
     }
 };
 

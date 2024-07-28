@@ -128,7 +128,8 @@ private:
 
     Task<Expected<>> tryWriteRequestAndBody(HTTPRequest const &request,
                                             std::string_view body) {
-        mHttp = co_await co_await mHttpFactory->createConnection();
+        if (!mHttp)
+            mHttp = co_await co_await mHttpFactory->createConnection();
         co_await co_await mHttp->writeRequest(request);
         co_await co_await mHttp->writeBody(body);
         co_return {};
@@ -200,6 +201,10 @@ private:
     }
 
 public:
+    BorrowedStream &extractSocket() const noexcept {
+        return mHttp->sock;
+    }
+
     Expected<> doConnect(std::string_view host,
                          std::chrono::steady_clock::duration timeout,
                          bool followProxy) {

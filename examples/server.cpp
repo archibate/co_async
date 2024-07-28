@@ -13,6 +13,14 @@ static Task<Expected<>> amain() {
         co_return {};
     });
 
+    // Queue<Task<Expected<>>> tasks(512);
+    // co_spawn(co_catch(co_bind([&] () -> Task<Expected<>> {
+    //     while (true) {
+    //         auto task = co_await co_await tasks.pop();
+    //         co_spawn(std::move(task));
+    //     }
+    // })));
+
     while (true) {
         auto income = co_await co_await listener_accept(listener);
         co_spawn(server.handle_http(std::move(income)));

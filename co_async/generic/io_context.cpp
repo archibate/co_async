@@ -29,19 +29,20 @@ IOContext::~IOContext() {
 }
 
 void IOContext::run() {
-    while (true) {
-        auto duration = mGenericIO.runDuration();
-        if (!duration && !mPlatformIO.hasPendingEvents()) [[unlikely]] {
-// #if CO_ASYNC_DEBUG
-//             std::cerr << "no more tasks, exiting\n";
-// #endif
-            break;
-        }
-        if (!duration || *duration > mMaxSleep) {
-            duration = mMaxSleep;
-        }
-        mPlatformIO.waitEventsFor(duration);
+    while (runOnce())
+        ;
+}
+
+bool IOContext::runOnce() {
+    auto duration = mGenericIO.runDuration();
+    if (!duration && !mPlatformIO.hasPendingEvents()) [[unlikely]] {
+        return false;
     }
+    if (!duration || *duration > mMaxSleep) {
+        duration = mMaxSleep;
+    }
+    mPlatformIO.waitEventsFor(duration);
+    return true;
 }
 
 thread_local IOContext *IOContext::instance;

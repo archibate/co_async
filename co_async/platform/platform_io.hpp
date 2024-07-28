@@ -49,7 +49,7 @@ struct PlatformIOContext {
 
     [[gnu::hot]] struct io_uring_sqe *getSqe() {
         struct io_uring_sqe *sqe = io_uring_get_sqe(&mRing);
-        while (!sqe) [[unlikely]] {
+        while (!sqe) {
             int res = io_uring_submit(&mRing);
             if (res < 0) [[unlikely]] {
                 if (res == -EINTR) {

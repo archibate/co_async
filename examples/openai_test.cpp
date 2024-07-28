@@ -126,7 +126,7 @@ static Task<Expected<>> amain() {
                 co_await co_await stdio().flush();
             }
         }
-        co_await body.dropall();
+        co_await co_await body.dropall();
         co_await co_await stdio().putchar('\n');
         co_await co_await stdio().flush();
     }

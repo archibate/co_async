@@ -24,7 +24,8 @@ public:
     IOContext(IOContext &&) = delete;
     ~IOContext();
 
-    void run();
+    [[gnu::hot]] void run();
+    [[gnu::hot]] bool runOnce();
 
     // [[gnu::hot]] void spawn(std::coroutine_handle<> coroutine) {
     //     coroutine.resume();
@@ -45,17 +46,17 @@ public:
     static thread_local IOContext *instance;
 };
 
-inline Task<> catchExcept(Task<Expected<>> task) {
+inline Task<> co_catch(Task<Expected<>> task) {
     auto ret = co_await task;
     if (ret.has_error()) {
-        std::cerr << ret.error().message() << '\n';
+        std::cerr << ret.error().category().name() << " error: " << ret.error().message() << " (" << ret.error().value() << ")\n";
     }
     co_return;
 }
 
 inline void co_main(Task<Expected<>> main) {
     IOContext ctx;
-    co_spawn(catchExcept(std::move(main)));
+    co_spawn(co_catch(std::move(main)));
     ctx.run();
 }
 

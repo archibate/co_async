@@ -19,6 +19,6 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
-    IOContext().join(amain(decomp)).value();
+    co_main(amain(decomp));
     return 0;
 }

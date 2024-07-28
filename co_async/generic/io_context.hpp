@@ -59,6 +59,12 @@ inline void co_main(Task<Expected<>> main) {
     ctx.run();
 }
 
+inline void co_main(Task<> main) {
+    IOContext ctx;
+    co_spawn(std::move(main));
+    ctx.run();
+}
+
 // template <class T, class P>
 // inline Task<> contextJoinHelper(Task<T, P> task, std::condition_variable &cv,
 //                                 Uninitialized<T> &result

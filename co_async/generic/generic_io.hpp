@@ -90,9 +90,8 @@ coSpawnStarter(A awaitable) {
 template <Awaitable A>
 inline void co_spawn(A awaitable) {
     auto wrapped = coSpawnStarter(std::move(awaitable));
-    auto coroutine = wrapped.get();
+    auto coroutine = wrapped.release();
     coroutine.resume();
-    wrapped.release();
 }
 
 inline void co_spawn(std::coroutine_handle<> coroutine) {

@@ -27,6 +27,6 @@ static Task<Expected<>> amain() {
 
 int main() {
     std::setlocale(LC_ALL, "");
-    IOContext().join(amain()).value();
+    co_main(amain());
     return 0;
 }

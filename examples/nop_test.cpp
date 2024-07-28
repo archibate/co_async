@@ -10,6 +10,6 @@ static Task<> amain() {
 }
 
 int main() {
-    IOContext().join(amain());
+    co_main(amain());
     return 0;
 }

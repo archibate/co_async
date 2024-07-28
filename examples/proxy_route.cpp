@@ -78,10 +78,6 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         targetHost = argv[3];
     }
-    if (auto e = IOContext().join(amain(serveAt, targetHost, headers));
-        e.has_error()) {
-        std::cerr << argv[0] << ": " << e.error().message() << '\n';
-        return e.error().value();
-    }
+    co_main(amain(serveAt, targetHost, headers));
     return 0;
 }

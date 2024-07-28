@@ -27,6 +27,6 @@ using namespace std;
 }
 
 int main() {
-    IOContext().join(amain());
+    co_main(amain());
     return 0;
 }

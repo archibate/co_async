@@ -13,6 +13,12 @@
 
 namespace co_async {
 
+#if CO_ASYNC_DEBUG
+inline struct CoroDb {
+    std::unordered_set<void *> mCoros;
+} coroDb;
+#endif
+
 #if CO_ASYNC_ALLOC
 struct TaskAwaiterAllocState {
     std::pmr::memory_resource *mLastAllocator;

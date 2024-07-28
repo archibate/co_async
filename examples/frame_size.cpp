@@ -42,8 +42,6 @@ static Task<> test() {
 }
 
 int main() {
-    auto t = test();
-    debug(), t.get().address();
-    IOContext().join(std::move(t));
+    co_main(test());
     return 0;
 }

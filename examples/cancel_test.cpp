@@ -20,5 +20,5 @@ static Task<> amain() {
 
 int main() {
     std::setlocale(LC_ALL, "");
-    IOContext().join(amain());
+    co_main(amain());
 }

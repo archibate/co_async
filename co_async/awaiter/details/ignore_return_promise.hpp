@@ -54,7 +54,7 @@ struct IgnoreReturnPromise {
 
     IgnoreReturnPromise &operator=(IgnoreReturnPromise &&) = delete;
 
-    [[maybe_unused]] TaskAwaiter<void> *mAwaiter;
+    [[maybe_unused]] TaskAwaiter<void> *mAwaiter{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;

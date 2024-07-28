@@ -42,6 +42,6 @@ static Task<Expected<>> amain() {
 }
 
 int main() {
-    IOContext().join(amain()).value();
+    co_main(amain());
     return 0;
 }

@@ -249,6 +249,14 @@ bool PlatformIOContext::waitEventsFor(
     io_uring_cq_advance(&mRing, numGot);
     mNumSqesPending -= static_cast<std::size_t>(numGot);
     for (auto const &task: tasks) {
+#if CO_ASYNC_DEBUG
+        if (!task) [[likely]] {
+            std::cerr << "null coroutine pushed into task queue\n";
+        }
+        if (task.done()) [[likely]] {
+            std::cerr << "done coroutine pushed into task queue\n";
+        }
+#endif
         task.resume();
     }
     return true;

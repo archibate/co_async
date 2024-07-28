@@ -325,6 +325,7 @@ enum class JsonError : int {
     InvalidUTF16String,
     DictKeyNotString,
     InvalidNumberFormat,
+    InvalidVariantType,
     NotImplemented,
 };
 
@@ -348,6 +349,8 @@ inline std::error_category const &jsonCategory() {
             case JsonError::DictKeyNotString:   return "dict key must be string"s;
             case JsonError::InvalidNumberFormat:
                 return "invalid number format"s;
+            case JsonError::InvalidVariantType:
+                return "invalid variant type"s;
             case JsonError::NotImplemented: return "not implemented"s;
             default:                        return "unknown error"s;
             }
@@ -893,19 +896,62 @@ struct JsonTraitArithmeticLike {
 struct JsonTraitVariantLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
-        std::visit([&](auto const &arg) { encoder->putValue(arg); }, value);
+        std::visit([&](auto const &arg) {
+            using Arg = std::decay_t<decltype(arg)>;
+            encoder->put('{');
+            encoder->putLiterialString("type");
+            encoder->put(':');
+            encoder->putLiterialString(Arg::name);
+            encoder->put(',');
+            encoder->putLiterialString("object");
+            encoder->put(':');
+            encoder->putValue(arg);
+            encoder->put('}');
+        }, value);
+    }
+
+    template <class T, std::size_t ...Is>
+    static bool getValueImpl(JsonValue::String const &name,
+                             JsonValue::Union &object, T &value,
+                             std::error_code &ec, std::index_sequence<Is...>) {
+        int ret = 0;
+        (void)((name == std::variant_alternative_t<Is, T>::name ?
+            (ret = (JsonTrait<std::variant_alternative_t<Is, T>>
+             ::getValue(object, value.template emplace<Is>(), ec) ? 2 : 1), true) :
+            false) || ...);
+        switch (ret) {
+            case 2: return true;
+            case 1: return false;
+            default:
+                ec = make_error_code(JsonError::InvalidVariantType);
+                return false;
+        }
     }
 
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
-        ec = make_error_code(JsonError::NotImplemented);
-        return false;
-        throw "TODO!! IMPLEMENT THIS!!";
-        /* std::visit([&](auto const &arg) { */
-        /*     using Arg = std::decay_t<decltype(arg)>; */
-        /*     encoder->getValue(data, arg, ec); */
-        /* }, data.inner); */
+        if (auto p = std::get_if<JsonValue::Dict>(&data)) {
+            if (auto type = p->find("type"); type == p->end()) {
+                ec = make_error_code(JsonError::InvalidVariantType);
+                return false;
+            } else if (auto object = p->find("object"); object == p->end()) {
+                ec = make_error_code(JsonError::InvalidVariantType);
+                return false;
+            } else if (auto p = std::get_if<JsonValue::String>(&type->second->inner)) {
+                if (!getValueImpl(*p, object->second->inner, value, ec,
+                                  std::make_index_sequence<std::variant_size_v<T>>())) {
+                    return false;
+                }
+                return true;
+            } else {
+                ec = make_error_code(JsonError::InvalidVariantType);
+                return false;
+            }
+        } else {
+            ReflectorJsonDecode::typeMismatch("object", data, ec);
+            return false;
+        }
     }
 };
 

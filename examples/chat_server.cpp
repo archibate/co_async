@@ -1,4 +1,3 @@
-#include "co_async/utils/debug.hpp"
 #include <co_async/co_async.hpp>
 #include <co_async/std.hpp>
 
@@ -24,12 +23,9 @@ static auto index_html = R"html(<!DOCTYPE html>
             margin-top: 10px;
         }
         .input-user {
-            width: 10%;
-        }
-        .input-content {
             flex: 1;
         }
-        .input-button {
+        .input-content {
             flex: 1;
         }
         .message-user {
@@ -60,12 +56,13 @@ static auto index_html = R"html(<!DOCTYPE html>
     <body>
         <div id="container">
             <h1>小彭老师在线聊天室 2.0</h1>
-            <p class="brief">小彭老师自主研发的一款基于 WebSocket 的现代 C++ 全栈聊天服务器 | <a href="https://github.com/archibate/co_http">GitHub 仓库</a></p>
+            <p class="brief">小彭老师自主研发的一款基于 WebSocket 的现代 C++ 全栈聊天服务器 | <a href="https://github.com/archibate/co_async">GitHub 仓库</a></p>
             <div class="message-list" id="messages"></div>
             <div class="input-bar">
                 <input class="input-user" type="text" id="user" placeholder="你的昵称"/>
-                <input class="input-content" type="text" id="content" placeholder="输入你的消息..." autocomplete="off"/>
-                <button class="send-button" id="send">发送</button>
+                <button class="login-button" id="login">登录</button>
+                <input hidden class="input-content" type="text" id="content" placeholder="输入你的消息..." autocomplete="off"/>
+                <button hidden class="send-button" id="send">发送</button>
             </div>
         </div>
         <script src="https://unpkg.com/jquery@3.7.1/dist/jquery.min.js"></script>
@@ -73,19 +70,26 @@ static auto index_html = R"html(<!DOCTYPE html>
         var current_user = $("#user").val().trim();
         $(document).ready(function() {
             var ws = new WebSocket("ws://127.0.0.1:8080/");
-            $("#send").click(function() {
+            $("#login").click(function() {
                 var user = $("#user").val().trim();
-                var content = $("#content").val().trim();
                 if (user == '') {
-                    alert("请输入昵称哦");
+                    alert("昵称不能为空");
                     return;
                 }
+                ws.send(JSON.stringify({type: 'LoginParams', object: {user}}));
+                $("#send").show();
+                $("#content").show();
+                $("#login").hide();
+                $("#user").hide();
+            });
+            $("#send").click(function() {
+                var content = $("#content").val().trim();
                 if (content == '') {
                     alert("消息不能为空");
                     return;
                 }
                 $("#content").val('');
-                ws.send(JSON.stringify({user, content}));
+                ws.send(JSON.stringify({type: 'SendParams', object: {content}}));
             });
             $("#content").keypress(function(event) {
                 if (event.keyCode === 13) {
@@ -102,10 +106,12 @@ static auto index_html = R"html(<!DOCTYPE html>
             }
             ws.onerror = function (evt) {
                 console.log('发生错误:', evt);
+                $("#messages").append('<div class="message"><p class="message-user">系统提示:</p><p class="message-content">连接发生了错误<p></div>');
             };
             ws.onmessage = function (evt) {
                 console.log('收到消息:', evt.data);
-                var message = JSON.parse(evt.data);
+                var recvParams = JSON.parse(evt.data);
+                var message = recvParams.message;
                 var extra_class = '';
                 var user = $("#user").val().trim();
                 if (message.user == user)
@@ -114,6 +120,7 @@ static auto index_html = R"html(<!DOCTYPE html>
             }
             ws.onclose = function (evt) {
                 console.log('关闭了:', evt);
+                $("#messages").append('<div class="message"><p class="message-user">系统提示:</p><p class="message-content">连接已关闭，请刷新重新登录<p></div>');
             };
         });
         </script>
@@ -125,6 +132,27 @@ struct Message {
     std::string content;
 
     REFLECT(user, content);
+};
+
+struct SendParams {
+    std::string content;
+
+    REFLECT(content);
+    static constexpr const char *name = "SendParams";
+};
+
+struct RecvParams {
+    Message message;
+
+    REFLECT(message);
+    static constexpr const char *name = "RecvParams";
+};
+
+struct LoginParams {
+    std::string user;
+
+    REFLECT(user);
+    static constexpr const char *name = "LoginParams";
 };
 
 struct Room {
@@ -143,7 +171,10 @@ static Task<Expected<>> roomPoller(WebSocket &ws) {
         for (size_t i = lastSize; i < room.mMessages.size(); ++i) {
             if (ws.is_closing())
                 break;
-            co_await co_await ws.send(json_encode(room.mMessages[i]));
+            RecvParams recvParams = {
+                .message = room.mMessages[i],
+            };
+            co_await co_await ws.send(json_encode(std::move(recvParams)));
         }
         lastSize = room.mMessages.size();
     }
@@ -156,15 +187,24 @@ static Task<Expected<>> amain(std::string addr) {
                                                     .host(addr).resolve_one());
     HTTPServer server;
     server.route("GET", "/", [](HTTPServer::IO &io) -> Task<Expected<>> {
-        if (auto maybeWs = co_await websocket_server(io)) {
-            auto ws = std::make_shared<WebSocket>(std::move(*maybeWs));
+        if (auto ws = co_await websocket_server(io)) {
             // 是升级的 ws:// 请求
             co_await co_await stdio().putline("连接成功"sv);
+            std::string loginUser;
             ws->on_message([&] (std::string const &data) -> Task<Expected<>> {
                 co_await co_await stdio().putline("收到消息: "s + data);
-                auto message = co_await json_decode<Message>(data);
-                room.mMessages.push_back(std::move(message));
-                room.mMessageUpdated.notify_all();
+                std::visit(overloaded{
+                    [&] (SendParams &&sendParams) {
+                    room.mMessages.push_back(Message{
+                        .user = loginUser,
+                        .content = std::move(sendParams.content),
+                    });
+                    room.mMessageUpdated.notify_all();
+                    },
+                    [&] (LoginParams &&loginParams) {
+                        loginUser = loginParams.user;
+                    },
+                }, co_await json_decode<std::variant<LoginParams, SendParams>>(data));
                 co_return {};
             });
             ws->on_close([&] () -> Task<Expected<>> {
@@ -176,11 +216,7 @@ static Task<Expected<>> amain(std::string addr) {
                     std::chrono::duration_cast<std::chrono::milliseconds>(dt).count()) + "ms"s);
                 co_return {};
             });
-            co_await (co_await when_any_common(co_bind([ws] () -> Task<Expected<>> {
-                co_return co_await ws->start();
-            }), co_bind([ws] () -> Task<Expected<>> {
-                co_return co_await roomPoller(*ws);
-            }))).value;
+            co_await (co_await when_any_common(ws->start(), roomPoller(*ws))).value;
             co_return {};
         } else {
             // 是普通 http:// 请求

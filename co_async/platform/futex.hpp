@@ -119,7 +119,7 @@ inline void futex_notify(std::atomic<T> *futex,
                          std::size_t count = kFutexNotifyAll,
                          uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
 #if CO_ASYNC_INVALFIX
-    return futex_notify_sync(futex, count, mask);
+    futex_notify_sync(futex, count, mask);
 #else
     UringOp()
         .prep_futex_wake(reinterpret_cast<uint32_t *>(futex),

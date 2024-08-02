@@ -2,6 +2,33 @@
 
 基于 C++20 协程的高并发异步 I/O 库（小彭老师教学用）
 
+## 特性
+
+- 100% 协程
+- HTTP &amp; HTTPS 协议实现
+- [服务端](examples/server.cpp)和[客户端](examples/https_fetch.cpp)均有支持
+- 也支持[原始套接字](examples/echo_server.cpp)
+- 百万级并发
+- 纳秒级定时器
+- 支持 [WebSocket](examples/chat_server.cpp)
+- 也支持流式返回（SSE）
+- 支持[I/O 超时](examples/io_timeout.cpp)
+- 支持[任务取消](examples/cancel_test.cpp)
+- [创建进程并读写管道](examples/pipe_read.cpp)
+- 支持[用户态管道](examples/pipe_test.cpp)
+- [线程池执行阻塞任务](examples/blocking_test.cpp)
+- [条件变量](examples/condvar_test.cpp)
+- [异步队列](examples/queue_test.cpp)
+- 支持[inotify](examples/inotify.cpp)
+- 支持[futex](examples/futex_test.cpp)
+- 支持[多线程](examples/server_mt.cpp)
+- 可实现 [HTTP 转发](examples/proxy_server.cpp)
+- 自动识别 `http(s)_proxy` 代理
+- [文件服务器](examples/file_server.cpp)
+- [异步读写文件](examples/read_file.cpp)
+- [Expected](examples/expected.cpp) 语义
+- 更多新特性还在赶来中...
+
 ## 教学视频
 
 - [第一集：C++20 协程概念初上手](https://www.bilibili.com/video/BV1Yz421Z7rZ)
@@ -61,25 +88,41 @@ int main() {
 - GCC >= 10
 - Clang >= 16
 
-小彭老师推荐使用 Arch Linux 系统作为开发平台。
+小彭老师推荐使用 Arch Linux 系统作为开发平台：
 
-如果是 Ubuntu 20.04 的话需要手动升级一下 gcc 版本：
+```bash
+cmake -B build
+cmake --build build --parallel 8
+build/server  # 对应于 examples/server.cpp
+```
+
+如果是 Ubuntu 20.04 的话需要手动升级一下 gcc 版本（默认的 g++-9 不支持协程）：
 
 ```bash
 sudo apt install -y g++-10 libstdc++-10-dev
 export CXX=g++-10
 rm -rf build
-cmake -B build -DCO_ASYNC_INVALFIX=ON -DCO_ASYNC_DEBUG=ON
+cmake -B build -DCO_ASYNC_DEBUG=ON
 cmake --build build --parallel 8
 build/server  # 对应于 examples/server.cpp
 ```
+
+> 此处开启的 `-DCO_ASYNC_DEBUG=ON` 选项可以检测潜在的漏洞。
+
+如果你的 Linux 内核版本是 5.x，可能还需要开启这个选项：
+
+```bash
+cmake -B build -DCO_ASYNC_DEBUG=ON -DCO_ASYNC_INVALFIX=ON
+```
+
+> Linux 6.x 内核则无需开启，你可以通过 `uname -r` 查询内核版本。
 
 ### Docker 环境构建
 
 如果你的 Ubuntu 标准库版本太老，无法编译，可以试试看小彭老师提供的 [Docker 环境](Dockerfile)：
 
 ```bash
-docker build -t my_archlinux_image .  # 构建 Docker 镜像
+docker build -t my_archlinux_image .             # 构建 Docker 镜像
 docker run -it -p 8080:8080 my_archlinux_image   # 运行并进入 Docker 镜像，映射端口 8080 到本机
 ```
 
@@ -93,7 +136,7 @@ build/server  # 对应于 examples/server.cpp
 
 > Docker 继承宿主机的 Linux 内核版本，因此 Docker 无法解决 Linux 内核版本过低的问题。
 
-> 同样地，不建议使用 WSL，因为 WSL 的 Linux 内核版本是固定的，无法升级。
+> 同样地，不建议使用 WSL，因为 WSL 的 Linux 内核版本是固定的，无法升级，而且非常老，常常是 4.x。
 
 ### Windows
 

@@ -1,147 +1,87 @@
 #pragma once
 
-#include <cassert>     // IWYU pragma: export
-#include <cctype>      // IWYU pragma: export
-#include <cerrno>      // IWYU pragma: export
-#include <cfloat>      // IWYU pragma: export
-#include <ciso646>     // IWYU pragma: export
-#include <climits>     // IWYU pragma: export
-#include <clocale>     // IWYU pragma: export
-#include <cmath>       // IWYU pragma: export
-#include <csetjmp>     // IWYU pragma: export
-#include <csignal>     // IWYU pragma: export
-#include <cstdarg>     // IWYU pragma: export
-#include <cstddef>     // IWYU pragma: export
-#include <cstdio>      // IWYU pragma: export
-#include <cstdlib>     // IWYU pragma: export
-#include <cstring>     // IWYU pragma: export
-#include <ctime>       // IWYU pragma: export
-#include <cwchar>      // IWYU pragma: export
-#include <cwctype>     // IWYU pragma: export
-#if __cplusplus >= 201103L
-# include <ccomplex>   // IWYU pragma: export
-# include <cfenv>      // IWYU pragma: export
-# include <cinttypes>  // IWYU pragma: export
-# if __has_include(<cstdalign>)
-#  include <cstdalign> // IWYU pragma: export
-# endif
-# include <cstdbool>   // IWYU pragma: export
-# include <cstdint>    // IWYU pragma: export
-# include <ctgmath>    // IWYU pragma: export
-# include <cuchar>     // IWYU pragma: export
-#endif
-// C++
-#include <algorithm>           // IWYU pragma: export
-#include <bitset>              // IWYU pragma: export
-#include <complex>             // IWYU pragma: export
-#include <deque>               // IWYU pragma: export
-#include <exception>           // IWYU pragma: export
-#include <fstream>             // IWYU pragma: export
-#include <functional>          // IWYU pragma: export
-#include <iomanip>             // IWYU pragma: export
-#include <ios>                 // IWYU pragma: export
-#include <iosfwd>              // IWYU pragma: export
-#include <iostream>            // IWYU pragma: export
-#include <istream>             // IWYU pragma: export
-#include <iterator>            // IWYU pragma: export
-#include <limits>              // IWYU pragma: export
-#include <list>                // IWYU pragma: export
-#include <locale>              // IWYU pragma: export
-#include <map>                 // IWYU pragma: export
-#include <memory>              // IWYU pragma: export
-#include <new>                 // IWYU pragma: export
-#include <numeric>             // IWYU pragma: export
-#include <ostream>             // IWYU pragma: export
-#include <queue>               // IWYU pragma: export
-#include <set>                 // IWYU pragma: export
-#include <sstream>             // IWYU pragma: export
-#include <stack>               // IWYU pragma: export
-#include <stdexcept>           // IWYU pragma: export
-#include <streambuf>           // IWYU pragma: export
-#include <string>              // IWYU pragma: export
-#include <typeinfo>            // IWYU pragma: export
-#include <utility>             // IWYU pragma: export
-#include <valarray>            // IWYU pragma: export
-#include <vector>              // IWYU pragma: export
-#if __cplusplus >= 201103L
-# include <array>              // IWYU pragma: export
-# include <atomic>             // IWYU pragma: export
-# include <chrono>             // IWYU pragma: export
-# include <codecvt>            // IWYU pragma: export
-# include <condition_variable> // IWYU pragma: export
-# include <forward_list>       // IWYU pragma: export
-# include <future>             // IWYU pragma: export
-# include <initializer_list>   // IWYU pragma: export
-# include <mutex>              // IWYU pragma: export
-# include <random>             // IWYU pragma: export
-# include <ratio>              // IWYU pragma: export
-# include <regex>              // IWYU pragma: export
-# include <scoped_allocator>   // IWYU pragma: export
-# include <system_error>       // IWYU pragma: export
-# include <thread>             // IWYU pragma: export
-# include <tuple>              // IWYU pragma: export
-# include <type_traits>        // IWYU pragma: export
-# include <typeindex>          // IWYU pragma: export
-# include <unordered_map>      // IWYU pragma: export
-# include <unordered_set>      // IWYU pragma: export
-#endif
-#if __cplusplus >= 201402L
-# include <shared_mutex> // IWYU pragma: export
-#endif
-#if __cplusplus >= 201703L
-# include <any>      // IWYU pragma: export
-# include <charconv> // IWYU pragma: export
-// # include <execution>       // IWYU pragma: export
-# include <filesystem>      // IWYU pragma: export
-# include <memory_resource> // IWYU pragma: export
-# include <optional>        // IWYU pragma: export
-# include <string_view>     // IWYU pragma: export
-# include <variant>         // IWYU pragma: export
-#endif
-#if __cplusplus >= 202002L
-# if __has_include(<barrier>)
-#  include <barrier> // IWYU pragma: export
-# endif
-# include <bit>      // IWYU pragma: export
-# include <compare>  // IWYU pragma: export
-# include <concepts> // IWYU pragma: export
-# if __cpp_impl_coroutine
-#  if __has_include(<coroutine>)
-#   include <coroutine> // IWYU pragma: export
-#  endif
-# endif
-# if __has_include(<latch>)
-#  include <latch>      // IWYU pragma: export
-# endif
-# include <numbers>     // IWYU pragma: export
-# include <ranges>      // IWYU pragma: export
-# include <span>        // IWYU pragma: export
-# if __has_include(<stop_token>)
-#  include <stop_token> // IWYU pragma: export
-# endif
-# if __has_include(<semaphore>)
-#  include <semaphore> // IWYU pragma: export
-# endif
-# if __has_include(<source_location>)
-#  include <source_location> // IWYU pragma: export
-# endif
-# if __has_include(<syncstream>)
-#  include <syncstream> // IWYU pragma: export
-# endif
-# include <version>     // IWYU pragma: export
-#endif
-#if __cplusplus > 202002L
-# if __has_include(<expected>)
-#  include <expected> // IWYU pragma: export
-# endif
-# if __has_include(<spanstream>)
-#  include <spanstream> // IWYU pragma: export
-# endif
-# if __has_include(<stacktrace>)
-#  include <stacktrace> // IWYU pragma: export
-# endif
-# if __has_include(<stdatomic.h>)
-#  include <stdatomic.h> // IWYU pragma: export
+#include <algorithm>                     // IWYU pragma: export
+#include <any>                           // IWYU pragma: export
+#include <array>                         // IWYU pragma: export
+#include <atomic>                        // IWYU pragma: export
+#include <bit>                           // IWYU pragma: export
+#include <bitset>                        // IWYU pragma: export
+#include <cassert>                       // IWYU pragma: export
+#include <cctype>                        // IWYU pragma: export
+#include <cerrno>                        // IWYU pragma: export
+#include <cfloat>                        // IWYU pragma: export
+#include <charconv>                      // IWYU pragma: export
+#include <chrono>                        // IWYU pragma: export
+#include <cinttypes>                     // IWYU pragma: export
+#include <climits>                       // IWYU pragma: export
+#include <clocale>                       // IWYU pragma: export
+#include <cmath>                         // IWYU pragma: export
+#include <codecvt>                       // IWYU pragma: export
+#include <compare>                       // IWYU pragma: export
+#include <concepts>                      // IWYU pragma: export
+#include <condition_variable>            // IWYU pragma: export
+#include <coroutine>                     // IWYU pragma: export
+#include <csignal>                       // IWYU pragma: export
+#include <cstddef>                       // IWYU pragma: export
+#include <cstdint>                       // IWYU pragma: export
+#include <cstdio>                        // IWYU pragma: export
+#include <cstdlib>                       // IWYU pragma: export
+#include <cstring>                       // IWYU pragma: export
+#include <ctime>                         // IWYU pragma: export
+#include <cuchar>                        // IWYU pragma: export
+#include <cwchar>                        // IWYU pragma: export
+#include <cwctype>                       // IWYU pragma: export
+#include <deque>                         // IWYU pragma: export
+#include <exception>                     // IWYU pragma: export
+#include <filesystem>                    // IWYU pragma: export
+#include <forward_list>                  // IWYU pragma: export
+#include <fstream>                       // IWYU pragma: export
+#include <functional>                    // IWYU pragma: export
+#include <initializer_list>              // IWYU pragma: export
+#include <iomanip>                       // IWYU pragma: export
+#include <ios>                           // IWYU pragma: export
+#include <iostream>                      // IWYU pragma: export
+#include <istream>                       // IWYU pragma: export
+#include <iterator>                      // IWYU pragma: export
+#include <limits>                        // IWYU pragma: export
+#include <list>                          // IWYU pragma: export
+#include <locale>                        // IWYU pragma: export
+#include <map>                           // IWYU pragma: export
+#include <memory>                        // IWYU pragma: export
+#include <memory_resource>               // IWYU pragma: export
+#include <mutex>                         // IWYU pragma: export
+#include <new>                           // IWYU pragma: export
+#include <numeric>                       // IWYU pragma: export
+#include <optional>                      // IWYU pragma: export
+#include <ostream>                       // IWYU pragma: export
+#include <random>                        // IWYU pragma: export
+#include <set>                           // IWYU pragma: export
+#include <span>                          // IWYU pragma: export
+#include <sstream>                       // IWYU pragma: export
+#include <stdexcept>                     // IWYU pragma: export
+#include <stop_token>                    // IWYU pragma: export
+#include <string>                        // IWYU pragma: export
+#include <string_view>                   // IWYU pragma: export
+#include <system_error>                  // IWYU pragma: export
+#include <thread>                        // IWYU pragma: export
+#include <tuple>                         // IWYU pragma: export
+#include <type_traits>                   // IWYU pragma: export
+#include <typeindex>                     // IWYU pragma: export
+#include <typeinfo>                      // IWYU pragma: export
+#include <unordered_map>                 // IWYU pragma: export
+#include <unordered_set>                 // IWYU pragma: export
+#include <utility>                       // IWYU pragma: export
+#include <variant>                       // IWYU pragma: export
+#include <vector>                        // IWYU pragma: export
+#include <version>                       // IWYU pragma: export
+#if __has_include(<source_location>)
+# include <source_location>              // IWYU pragma: export
+#elif __has_include(<experimental/source_location>)
+# include <experimental/source_location> // IWYU pragma: export
+# if __cpp_lib_experimental_source_location
+namespace std {
+using experimental::source_location;
+} // namespace std
 # endif
 #endif
 
@@ -440,8 +380,7 @@ private:
 
 public:
     template <class... Args>
-    ValueOrReturnAwaiter(std::in_place_t, Args &&...args)
-        : mPrevious() {
+    ValueOrReturnAwaiter(std::in_place_t, Args &&...args) : mPrevious() {
         mValue.emplace(std::forward<Args>(args)...);
     }
 
@@ -475,7 +414,7 @@ using String = std::pmr::string;
 using String = std::string;
 #endif
 
-inline String operator""_s(const char *str, size_t len) {
+inline String operator""_s(char const *str, size_t len) {
     return String(str, len);
 }
 
@@ -604,6 +543,7 @@ struct GeneratorResult {
         return std::move(std::get<1>(mValue));
     }
 };
+
 template <class T>
 struct GeneratorResult<T, void> : GeneratorResult<T, Void> {
     using GeneratorResult<T, Void>::GeneratorResult;
@@ -611,6 +551,7 @@ struct GeneratorResult<T, void> : GeneratorResult<T, Void> {
 } // namespace co_async
 
 
+#if CO_ASYNC_PERF
 
 
 namespace co_async {
@@ -760,6 +701,11 @@ public:
     }
 };
 } // namespace co_async
+#else
+namespace co_async {
+struct Perf {};
+} // namespace co_async
+#endif
 
 
 
@@ -767,8 +713,17 @@ public:
 
 namespace co_async {
 
+template <class T, class U>
+concept WeaklyEqComparable = requires(T const &t, U const &u) {
+    { t == u } -> std::convertible_to<bool>;
+    { t != u } -> std::convertible_to<bool>;
+    { u == t } -> std::convertible_to<bool>;
+    { u != t } -> std::convertible_to<bool>;
+};
+
 template <class T = void>
-struct [[nodiscard("Expected<T> return values must be handled, use co_await to propagate")]] Expected {
+struct [[nodiscard("Expected<T> return values must be handled, use co_await to "
+                   "propagate")]] Expected {
 protected:
     static_assert(!std::is_reference_v<T>);
     std::error_category const *mErrorCatgory;
@@ -784,17 +739,25 @@ protected:
 #if CO_ASYNC_DEBUG
 public:
     std::source_location mErrorLocation;
-#define CO_ASYNC_EXPECTED_LOCATION , std::source_location const &errLoc = std::source_location::current()
-#define CO_ASYNC_EXPECTED_LOCATION_INIT , mErrorLocation(errLoc)
-#define CO_ASYNC_EXPECTED_LOCATION_MESSAGE , std::string(mErrorLocation.file_name()) + ":" + std::to_string(mErrorLocation.line()) + ": " + mErrorLocation.function_name()
-#define CO_ASYNC_EXPECTED_LOCATION_COPY , mErrorLocation(that.mErrorLocation)
-#define CO_ASYNC_EXPECTED_LOCATION_ASSIGN mErrorLocation = that.mErrorLocation
+# define CO_ASYNC_EXPECTED_LOCATION \
+     , std::source_location const &errLoc = std::source_location::current()
+# define CO_ASYNC_EXPECTED_LOCATION_INIT , mErrorLocation(errLoc)
+# define CO_ASYNC_EXPECTED_LOCATION_MESSAGE \
+     , std::string(mErrorLocation.file_name()) + ":" + \
+           std::to_string(mErrorLocation.line()) + ": " + \
+           mErrorLocation.function_name()
+# define CO_ASYNC_EXPECTED_LOCATION_COPY   , mErrorLocation(that.mErrorLocation)
+# define CO_ASYNC_EXPECTED_LOCATION_ASSIGN mErrorLocation = that.mErrorLocation
+# define CO_ASYNC_EXPECTED_LOCATION_ARG    , mErrorLocation
+# define CO_ASYNC_ERROR_FORWARD(e)         {(e).error(), (e).mErrorLocation}
 #else
-#define CO_ASYNC_EXPECTED_LOCATION
-#define CO_ASYNC_EXPECTED_LOCATION_INIT
-#define CO_ASYNC_EXPECTED_LOCATION_MESSAGE
-#define CO_ASYNC_EXPECTED_LOCATION_COPY
-#define CO_ASYNC_EXPECTED_LOCATION_ASSIGN
+# define CO_ASYNC_EXPECTED_LOCATION
+# define CO_ASYNC_EXPECTED_LOCATION_INIT
+# define CO_ASYNC_EXPECTED_LOCATION_MESSAGE
+# define CO_ASYNC_EXPECTED_LOCATION_COPY
+# define CO_ASYNC_EXPECTED_LOCATION_ASSIGN
+# define CO_ASYNC_EXPECTED_LOCATION_ARG
+# define CO_ASYNC_ERROR_FORWARD(e)         e.error()
 #endif
 
 public:
@@ -803,22 +766,27 @@ public:
                  !std::convertible_to<U, std::errc> &&
                  !std::convertible_to<U, std::in_place_t>)
     Expected(U &&value) noexcept(std::is_nothrow_constructible_v<T, U>)
-        : mErrorCatgory(nullptr), mValue(std::forward<U>(value)) {}
+        : mErrorCatgory(nullptr),
+          mValue(std::forward<U>(value)) {}
 
     template <class... Args>
         requires std::constructible_from<T, Args...>
     Expected(std::in_place_t, Args &&...args) noexcept(
         std::is_nothrow_constructible_v<T, Args...>)
-        : mErrorCatgory(nullptr), mValue(std::forward<Args>(args)...) {}
+        : mErrorCatgory(nullptr),
+          mValue(std::forward<Args>(args)...) {}
 
     Expected() noexcept(std::is_nothrow_default_constructible_v<T>)
-        : mErrorCatgory(nullptr), mValue() {}
+        : mErrorCatgory(nullptr),
+          mValue() {}
 
     Expected(T &&value) noexcept(std::is_nothrow_move_constructible_v<T>)
-        : mErrorCatgory(nullptr), mValue(std::move(value)) {}
+        : mErrorCatgory(nullptr),
+          mValue(std::move(value)) {}
 
     Expected(T const &value) noexcept(std::is_nothrow_copy_constructible_v<T>)
-        : mErrorCatgory(nullptr), mValue(value) {}
+        : mErrorCatgory(nullptr),
+          mValue(value) {}
 
     Expected(std::error_code const &ec CO_ASYNC_EXPECTED_LOCATION) noexcept
         : mErrorCatgory(&ec.category()),
@@ -925,7 +893,7 @@ public:
         return !mErrorCatgory;
     }
 
-    template <std::equality_comparable_with<std::error_code> U>
+    template <WeaklyEqComparable<std::error_code> U>
         requires(!std::equality_comparable_with<U, T>)
     bool operator==(U &&e) const {
         return has_error() && std::error_code(mErrorCode, *mErrorCatgory) ==
@@ -933,7 +901,7 @@ public:
     }
 
     template <std::equality_comparable_with<T> U>
-        requires(!std::equality_comparable_with<std::error_code, T>)
+        requires(!WeaklyEqComparable<std::error_code, T>)
     bool operator==(U &&v) const {
         return has_value() && mValue == std::forward<U>(v);
     }
@@ -946,28 +914,32 @@ public:
         if (has_value()) [[likely]] {
             return std::move(mValue);
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory)
+                                    CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     T &value() & {
         if (has_value()) [[likely]] {
             return mValue;
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory)
+                                    CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     T const &value() const & {
         if (has_value()) [[likely]] {
             return mValue;
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory)
+                                    CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     T const &&value() const && {
         if (has_value()) [[likely]] {
             return std::move(mValue);
         }
-        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory) CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
+        throw std::system_error(std::error_code(mErrorCode, *mErrorCatgory)
+                                    CO_ASYNC_EXPECTED_LOCATION_MESSAGE);
     }
 
     template <class... Ts>
@@ -1067,7 +1039,124 @@ public:
         return std::nullopt;
     }
 
-    std::variant<std::reference_wrapper<T const>, std::error_code> repr() const {
+    static_assert(WeaklyEqComparable<std::error_condition, std::error_code>);
+
+    template <WeaklyEqComparable<std::error_code> U, class... Ts>
+        requires std::constructible_from<T, Ts...>
+    Expected ignore_error(U &&e, Ts &&...ts) && {
+        if (has_error()) {
+            if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
+                return T(std::forward<Ts>(ts)...);
+            }
+        }
+        return std::move(*this);
+    }
+
+    template <WeaklyEqComparable<std::error_code> U, class... Ts>
+        requires std::constructible_from<T, Ts...>
+    Expected ignore_error(U &&e, Ts &&...ts) const & {
+        if (has_error()) {
+            if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
+                return T(std::forward<Ts>(ts)...);
+            }
+        }
+        return *this;
+    }
+
+    template <std::invocable F>
+    Expected or_else(F &&f) && {
+        if (has_error()) {
+            return f();
+        }
+        return std::move(*this);
+    }
+
+    template <std::invocable F>
+    Expected or_else(F &&f) const & {
+        if (has_error()) {
+            return f(), Void();
+        }
+        return *this;
+    }
+
+    template <WeaklyEqComparable<std::error_code> U, std::invocable F>
+    Expected or_else(U &&e, F &&f) && {
+        if (has_error()) {
+            if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
+                return f(), Void();
+            }
+        }
+        return std::move(*this);
+    }
+
+    template <WeaklyEqComparable<std::error_code> U, std::invocable F>
+    Expected or_else(U &&e, F &&f) const & {
+        if (has_error()) {
+            if (std::error_code(mErrorCode, *mErrorCatgory) == e) [[likely]] {
+                return f(), Void();
+            }
+        }
+        return *this;
+    }
+
+    template <std::invocable<T &&> F>
+    Expected<std::invoke_result_t<F, T &&>> transform(F &&f) && {
+        if (has_value()) {
+            return f(std::move(mValue)), Void();
+        }
+        return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
+    }
+
+    template <std::invocable<T &> F>
+    Expected<std::invoke_result_t<F, T &>> transform(F &&f) & {
+        if (has_value()) {
+            return f(mValue), Void();
+        }
+        return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
+    }
+
+    template <std::invocable<T const &> F>
+    Expected<std::invoke_result_t<F, T const &>> transform(F &&f) const & {
+        if (has_value()) {
+            return f(mValue), Void();
+        }
+        return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
+    }
+
+    template <std::invocable F> requires std::same_as<T, Void>
+    Expected<std::invoke_result_t<F>> transform(F &&f) const {
+        if (has_value()) {
+            return f(), Void();
+        }
+        return {error() CO_ASYNC_EXPECTED_LOCATION_ARG};
+    }
+
+    template <std::invocable<T &&> F>
+    Avoid<std::invoke_result_t<F, T &&>> and_then(F &&f) && {
+        if (has_value()) {
+            return f(std::move(mValue)), Void();
+        }
+        return std::move(*this);
+    }
+
+    template <std::invocable<T &> F>
+    Avoid<std::invoke_result_t<F, T &>> and_then(F &&f) & {
+        if (has_value()) {
+            return f(mValue), Void();
+        }
+        return *this;
+    }
+
+    template <std::invocable F>
+    Avoid<std::invoke_result_t<F, T const &>> and_then(F &&f) const & {
+        if (has_value()) {
+            return f(mValue), Void();
+        }
+        return *this;
+    }
+
+    std::variant<std::reference_wrapper<T const>, std::error_code>
+    repr() const {
         if (has_error()) {
             return std::error_code(mErrorCode, *mErrorCatgory);
         } else {
@@ -1077,8 +1166,12 @@ public:
 };
 
 template <>
-struct [[nodiscard("Expected<T> return values must be handled, use co_await to propagate")]] Expected<void> : Expected<Void> {
+struct [[nodiscard("Expected<T> return values must be handled, use co_await to "
+                   "propagate")]] Expected<void> : Expected<Void> {
     using Expected<Void>::Expected;
+
+    Expected<void>(Expected<Void> const &that) noexcept : Expected<Void>(that) {}
+    Expected<void>(Expected<Void> &&that) noexcept : Expected<Void>(std::move(that)) {}
 };
 
 template <class T>
@@ -1090,6 +1183,7 @@ Expected() -> Expected<>;
 #undef CO_ASYNC_EXPECTED_LOCATION_MESSAGE
 #undef CO_ASYNC_EXPECTED_LOCATION_COPY
 #undef CO_ASYNC_EXPECTED_LOCATION_ASSIGN
+#undef CO_ASYNC_EXPECTED_LOCATION_ARG
 } // namespace co_async
 
 
@@ -1106,6 +1200,12 @@ Expected() -> Expected<>;
 
 
 namespace co_async {
+
+#if CO_ASYNC_DEBUG
+inline struct CoroDb {
+    std::unordered_set<void *> mCoros;
+} coroDb;
+#endif
 
 #if CO_ASYNC_ALLOC
 struct TaskAwaiterAllocState {
@@ -1307,6 +1407,13 @@ struct TaskAwaiter<GeneratorResult<T, E>> {
         return TaskYieldAwaiter();
     }
 
+#if CO_ASYNC_DEBUG
+    template <class U, class Loc>
+    void returnValue(U &&result, Loc &&loc) {
+        mResult.emplace(std::in_place_index<1>, std::forward<U>(result),
+                        std::forward<Loc>(loc));
+    }
+#endif
     template <class U>
     void returnValue(U &&result) {
         mResult.emplace(std::in_place_index<1>, std::forward<U>(result));
@@ -2126,7 +2233,7 @@ struct IgnoreReturnPromise {
 
     IgnoreReturnPromise &operator=(IgnoreReturnPromise &&) = delete;
 
-    [[maybe_unused]] TaskAwaiter<void> *mAwaiter;
+    [[maybe_unused]] TaskAwaiter<void> *mAwaiter{};
 
 #if CO_ASYNC_PERF
     Perf mPerf;
@@ -2479,7 +2586,8 @@ struct IntrusiveList : private ListHead {
 
         iterator() noexcept : node(nullptr) {}
 
-        explicit iterator(Value &value) noexcept : node(&static_cast<ListNode &>(value)) {}
+        explicit iterator(Value &value) noexcept
+            : node(&static_cast<ListNode &>(value)) {}
 
         Value &operator*() const noexcept {
             return *static_cast<Value *>(node);
@@ -2511,11 +2619,11 @@ struct IntrusiveList : private ListHead {
             return copy;
         }
 
-        bool operator==(const iterator &other) const noexcept {
+        bool operator==(iterator const &other) const noexcept {
             return node == other.node;
         }
 
-        bool operator!=(const iterator &other) const noexcept {
+        bool operator!=(iterator const &other) const noexcept {
             return node != other.node;
         }
     };
@@ -2586,7 +2694,8 @@ struct IntrusiveList : private ListHead {
 //     ConcurrentIntrusiveList() noexcept {
 //         static_assert(
 //             std::is_base_of_v<NodeType, Value>,
-//             "Value type must be derived from ConcurrentIntrusiveList<Value>::NodeType");
+//             "Value type must be derived from
+//             ConcurrentIntrusiveList<Value>::NodeType");
 //     }
 //
 //     void push_front(Value &value) noexcept {
@@ -2738,7 +2847,8 @@ public:
     CancelSourceBase &operator=(CancelSourceBase &&) = default;
 };
 
-struct [[nodiscard("did you forget to capture or co_await the cancel token?")]] CancelToken {
+struct [[nodiscard(
+    "did you forget to capture or co_await the cancel token?")]] CancelToken {
 private:
     CancelSourceImpl *mImpl;
 
@@ -2778,7 +2888,7 @@ public:
     }
 
     static CancelToken from_address(void *impl) noexcept {
-        return CancelToken((CancelSourceImpl *)impl);
+        return CancelToken(static_cast<CancelSourceImpl *>(impl));
     }
 
     auto repr() const {
@@ -2829,7 +2939,7 @@ public:
 struct CancelSource : private CancelSourceImpl::CancellerBase,
                       public CancelSourceBase {
 private:
-    virtual Task<> doCancel() {
+    Task<> doCancel() override {
         return cancel();
     }
 
@@ -2861,7 +2971,7 @@ struct [[nodiscard]] CancelCallback : private CancelSourceImpl::CancellerBase {
     }
 
 private:
-    virtual Task<> doCancel() {
+    Task<> doCancel() override {
         std::invoke(std::move(mCallback));
         co_return;
     }
@@ -2881,7 +2991,7 @@ struct [[nodiscard]] CancelCallback<Callback>
     }
 
 private:
-    virtual Task<> doCancel() {
+    Task<> doCancel() override {
         co_await std::invoke(std::move(mCallback));
     }
 
@@ -2894,7 +3004,8 @@ CancelCallback(CancelToken, Callback) -> CancelCallback<Callback>;
 struct GetThisCancel {
     template <class T>
     ValueAwaiter<CancelToken> operator()(TaskPromise<T> &promise) const {
-        return ValueAwaiter<CancelToken>(CancelToken::from_address(promise.mLocals.mCancelToken));
+        return ValueAwaiter<CancelToken>(
+            CancelToken::from_address(promise.mLocals.mCancelToken));
     }
 
     template <class T>
@@ -2906,7 +3017,9 @@ struct GetThisCancel {
     struct DoCancelThis {
         template <class T>
         Task<> operator()(TaskPromise<T> &promise) const {
-            co_return co_await CancelToken::from_address(promise.mLocals.mCancelToken).cancel();
+            co_return co_await CancelToken::from_address(
+                promise.mLocals.mCancelToken)
+                .cancel();
         }
     };
 
@@ -2953,7 +3066,7 @@ struct SpinMutex {
     std::atomic_flag flag{false};
 };
 
-}
+} // namespace co_async
 
 
 
@@ -3284,9 +3397,9 @@ public:
 //                 std::is_base_of_v<NodeType, Value>,
 //                 "Value type must be derived from RbTree<Value>::NodeType");
 //             if (this->rbTree) {
-//                 auto lock = static_cast<ConcurrentRbTree *>(this->rbTree)->lock();
-//                 lock->erase(static_cast<Value &>(*this));
-//                 this->rbTree = nullptr;
+//                 auto lock = static_cast<ConcurrentRbTree
+//                 *>(this->rbTree)->lock(); lock->erase(static_cast<Value
+//                 &>(*this)); this->rbTree = nullptr;
 //             }
 //         }
 //     };
@@ -3355,7 +3468,8 @@ struct RingQueue {
     }
 
     [[nodiscard]] std::size_t size() const noexcept {
-        return static_cast<std::size_t>(mWrite - mRead + max_size()) % max_size();
+        return static_cast<std::size_t>(mWrite - mRead + max_size()) %
+               max_size();
     }
 
     [[nodiscard]] bool empty() const noexcept {
@@ -3458,12 +3572,13 @@ struct alignas(hardware_destructive_interference_size) ConcurrentRingQueue {
     static constexpr Stamp kSize = 1 << Shift;
 
     [[nodiscard]] std::optional<T> pop() {
-        auto s = mStamp.load(std::memory_order_acquire);
+        auto s = mStamp.load(std::memory_order_relaxed);
         if (!canRead(s)) {
             return std::nullopt;
         }
         while (!mStamp.compare_exchange_weak(s, advectRead(s),
-                                             std::memory_order_acq_rel, std::memory_order_acquire)) {
+                                             std::memory_order_acq_rel,
+                                             std::memory_order_relaxed)) {
             if (!canRead(s)) {
                 return std::nullopt;
             }
@@ -3472,12 +3587,13 @@ struct alignas(hardware_destructive_interference_size) ConcurrentRingQueue {
     }
 
     [[nodiscard]] bool push(T &&value) {
-        auto s = mStamp.load(std::memory_order_acquire);
+        auto s = mStamp.load(std::memory_order_relaxed);
         if (!canWrite(s)) [[unlikely]] {
             return false;
         }
         while (!mStamp.compare_exchange_weak(s, advectWrite(s),
-                                             std::memory_order_acq_rel, std::memory_order_acquire)) {
+                                             std::memory_order_acq_rel,
+                                             std::memory_order_relaxed)) {
             if (!canWrite(s)) [[unlikely]] {
                 return false;
             }
@@ -3503,20 +3619,23 @@ private:
     }
 
     inline bool canWrite(Stamp s) const {
-        return (offsetRead(s) & (Stamp)(kSize - 1)) !=
-               ((offsetWrite(s) + (Stamp)(kSize - Capacity)) &
-                (Stamp)(kSize - 1));
+        return (offsetRead(s) & static_cast<Stamp>(kSize - 1)) !=
+               ((offsetWrite(s) + static_cast<Stamp>(kSize - Capacity)) &
+                static_cast<Stamp>(kSize - 1));
     }
 
     inline Stamp advectRead(Stamp s) const {
-        return (Stamp)((((Stamp)(s >> Shift) + (Stamp)1) & (Stamp)(kSize - 1))
-                       << Shift) |
-               (s & (Stamp)(kSize - 1));
+        return static_cast<Stamp>(
+                   ((static_cast<Stamp>(s >> Shift) + static_cast<Stamp>(1)) &
+                    static_cast<Stamp>(kSize - 1))
+                   << Shift) |
+               (s & static_cast<Stamp>(kSize - 1));
     }
 
     inline Stamp advectWrite(Stamp s) const {
-        return (((s & (Stamp)(kSize - 1)) + (Stamp)1) & (Stamp)(kSize - 1)) |
-               (Stamp)(s & ((Stamp)(kSize - 1) << Shift));
+        return (((s & static_cast<Stamp>(kSize - 1)) + static_cast<Stamp>(1)) &
+                static_cast<Stamp>(kSize - 1)) |
+               static_cast<Stamp>(s & (static_cast<Stamp>(kSize - 1) << Shift));
     }
 
     std::unique_ptr<T[]> const mHead = std::make_unique<T[]>(kSize);
@@ -3536,10 +3655,9 @@ struct alignas(hardware_destructive_interference_size)
         return p;
     }
 
-    bool push(T &&value) {
+    void push(T &&value) {
         std::lock_guard lck(mMutex);
         mQueue.push_back(std::move(value));
-        return true;
     }
 
 private:
@@ -3557,9 +3675,7 @@ private:
 
 
 
-#if CO_ASYNC_STEAL
 
-#endif
 
 
 
@@ -3599,103 +3715,30 @@ struct GenericIOContext {
                 if (!mPromise->mCancelled) {
                     return {};
                 } else {
-                    return 
-                        std::errc::operation_canceled;
+                    return std::errc::operation_canceled;
                 }
             }
         };
-
-        /* struct Canceller { */
-        /*     using OpType = Task<Expected<>, GenericIOContext::TimerNode>; */
-        /*  */
-        /*     static Task<> doCancel(OpType *op) { */
-        /*         auto &promise = op->get().promise(); */
-        /*         promise.mCancelled = true; */
-        /*         promise.erase_from_parent(); */
-        /*         GenericIOContext::instance->enqueueJob(op->get()); */
-        /*         co_return; */
-        /*     } */
-        /*  */
-        /*     static Expected<> earlyCancelValue(OpType *op) { */
-        /*         return std::errc::operation_canceled; */
-        /*     } */
-        /* }; */
     };
 
-    bool runComputeOnly() {
-        std::unique_lock lock(mMutex);
-        if (auto coroutine = mQueue.pop()) {
-            lock.unlock();
-            coroutine->resume();
-            return true;
-        }
-        lock.unlock();
-        return false;
-    }
+    [[gnu::hot]] std::optional<std::chrono::steady_clock::duration>
+    runDuration();
 
-    std::optional<std::chrono::steady_clock::duration> runDuration() {
-        while (true) {
-            std::unique_lock lock(mMutex);
-            while (auto coroutine = mQueue.pop()) {
-                lock.unlock();
-                coroutine->resume();
-                lock.lock();
-            }
-            lock.unlock();
-            if (!mTimers.empty()) {
-                auto &promise = mTimers.front();
-                std::chrono::steady_clock::time_point now =
-                    std::chrono::steady_clock::now();
-                /* now += std::chrono::nanoseconds(1000); */
-                if (promise.mExpires <= now) {
-                    promise.mCancelled = false;
-                    promise.erase_from_parent();
-                    auto coroutine =
-                        std::coroutine_handle<TimerNode>::from_promise(promise);
-                    enqueueJob(coroutine);
-                    continue;
-                } else {
-                    return promise.mExpires - now;
-                }
-            } else {
-                return std::nullopt;
-            }
-        }
-    }
+    // [[gnu::hot]] void enqueueJob(std::coroutine_handle<> coroutine) {
+    //     mQueue.push(std::move(coroutine));
+    // }
 
-    void enqueueJob(std::coroutine_handle<> coroutine) {
-        std::unique_lock lock(mMutex);
-        mQueue.push(std::move(coroutine));
-    }
-
-    void enqueueTimerNode(TimerNode &promise) {
+    [[gnu::hot]] void enqueueTimerNode(TimerNode &promise) {
         mTimers.insert(promise);
     }
 
-    void startMain(std::stop_token stop) {
-        while (!stop.stop_requested()) [[likely]] {
-            auto duration = runDuration();
-            if (duration) {
-                std::this_thread::sleep_for(*duration);
-            } else {
-                break;
-            }
-        }
-    }
-
-    GenericIOContext() = default;
+    GenericIOContext();
+    ~GenericIOContext();
 
     GenericIOContext(GenericIOContext &&) = delete;
     static inline thread_local GenericIOContext *instance;
 
 private:
-#if CO_ASYNC_STEAL
-    ConcurrentRingQueue<std::coroutine_handle<>, 1024 - 1> mQueue;
-#else
-    /* RingQueue<std::coroutine_handle<>> mQueue{1024}; */
-    InfinityQueue<std::coroutine_handle<>> mQueue;
-    SpinMutex mMutex;
-#endif
     RbTree<TimerNode> mTimers;
 };
 
@@ -3715,13 +3758,12 @@ coSpawnStarter(A awaitable) {
 template <Awaitable A>
 inline void co_spawn(A awaitable) {
     auto wrapped = coSpawnStarter(std::move(awaitable));
-    auto coroutine = wrapped.get();
-    GenericIOContext::instance->enqueueJob(coroutine);
-    wrapped.release();
+    auto coroutine = wrapped.release();
+    coroutine.resume();
 }
 
 inline void co_spawn(std::coroutine_handle<> coroutine) {
-    GenericIOContext::instance->enqueueJob(coroutine);
+    coroutine.resume();
 }
 
 inline auto co_resume() {
@@ -3739,6 +3781,7 @@ inline auto co_resume() {
 
     return ResumeAwaiter();
 }
+
 } // namespace co_async
 
 
@@ -3747,7 +3790,9 @@ inline auto co_resume() {
 
 namespace co_async {
 #if CO_ASYNC_DEBUG
-inline Expected<int> expectError(int res, std::source_location loc = std::source_location::current()) {
+inline Expected<int>
+expectError(int res,
+            std::source_location loc = std::source_location::current()) {
     if (res < 0) [[unlikely]] {
         return Expected<int>(std::errc(-res), loc);
     }
@@ -3809,42 +3854,68 @@ timePointToKernelTimespec(std::chrono::time_point<Clk, Dur> tp) {
     return durationToKernelTimespec(tp.time_since_epoch());
 }
 
-struct PlatformIOContextOptions {
-    std::chrono::steady_clock::duration maxSleep = std::chrono::milliseconds(10);
-    std::optional<std::size_t> threadAffinity = std::nullopt;
-};
-
 struct PlatformIOContext {
-    static void schedSetThreadAffinity(size_t cpu);
-    bool
-    waitEventsFor(std::size_t numBatch,
-                  std::optional<std::chrono::steady_clock::duration> timeout);
+    [[gnu::cold]] static void schedSetThreadAffinity(size_t cpu);
 
-    std::size_t pendingEventCount() const {
-        return io_uring_cq_ready(&mRing);
-    }
+    struct IOUringProbe {
+        struct io_uring_probe *mProbe;
+        struct io_uring *mRing;
 
-    struct io_uring *getRing() {
-        return &mRing;
+        [[gnu::cold]] IOUringProbe();
+        IOUringProbe(IOUringProbe &&) = delete;
+        [[gnu::cold]] ~IOUringProbe();
+        [[gnu::cold]] bool isSupported(int op) noexcept;
+        [[gnu::cold]] void dumpDiagnostics();
+    };
+
+    [[gnu::hot]] bool
+    waitEventsFor(std::optional<std::chrono::steady_clock::duration> timeout);
+
+    [[gnu::hot]] struct io_uring_sqe *getSqe() {
+        struct io_uring_sqe *sqe = io_uring_get_sqe(&mRing);
+        while (!sqe) {
+            int res = io_uring_submit(&mRing);
+            if (res < 0) [[unlikely]] {
+                if (res == -EINTR) {
+                    continue;
+                }
+                throw std::system_error(-res, std::system_category());
+            }
+            sqe = io_uring_get_sqe(&mRing);
+        }
+        ++mNumSqesPending;
+        return sqe;
     }
 
     PlatformIOContext &operator=(PlatformIOContext &&) = delete;
-    explicit PlatformIOContext(std::size_t entries = 2048);
-    ~PlatformIOContext();
+    [[gnu::cold]] PlatformIOContext() noexcept;
+    [[gnu::cold]] void setup(std::size_t entries);
+    [[gnu::cold]] ~PlatformIOContext();
     static thread_local PlatformIOContext *instance;
+
+    void reserveBuffers(std::size_t nbufs);
+    std::size_t addBuffers(std::span<std::span<char> const> bufs);
+    void reserveFiles(std::size_t nfiles);
+    std::size_t addFiles(std::span<int const> files);
+
+    std::size_t hasPendingEvents() const noexcept {
+        return mNumSqesPending != 0;
+    }
 
 private:
     struct io_uring mRing;
+    std::size_t mNumSqesPending = 0;
+    std::unique_ptr<struct iovec[]> mBuffers;
+    unsigned int mNumBufs = 0;
+    unsigned int mCapBufs = 0;
+    std::unique_ptr<int[]> mFiles;
+    unsigned int mNumFiles = 0;
+    unsigned int mCapFiles = 0;
 };
 
 struct [[nodiscard]] UringOp {
     UringOp() {
-        struct io_uring *ring = PlatformIOContext::instance->getRing();
-        mSqe = io_uring_get_sqe(ring);
-        while (!mSqe) [[unlikely]] {
-            io_uring_submit(ring);
-            mSqe = io_uring_get_sqe(ring);
-        }
+        mSqe = PlatformIOContext::instance->getSqe();
         io_uring_sqe_set_data(mSqe, this);
     }
 
@@ -3925,9 +3996,24 @@ public:
         return std::move(*this);
     }
 
+    UringOp &&prep_socket_direct(int domain, int type, int protocol,
+                                 unsigned int flags,
+                                 unsigned int file_index) && {
+        io_uring_prep_socket_direct(mSqe, domain, type, protocol, flags,
+                                    file_index);
+        return std::move(*this);
+    }
+
     UringOp &&prep_accept(int fd, struct sockaddr *addr, socklen_t *addrlen,
                           int flags) && {
         io_uring_prep_accept(mSqe, fd, addr, addrlen, flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_accept_direct(int fd, struct sockaddr *addr,
+                                 socklen_t *addrlen, int flags,
+                                 unsigned int file_index) && {
+        io_uring_prep_accept_direct(mSqe, fd, addr, addrlen, flags, file_index);
         return std::move(*this);
     }
 
@@ -3973,43 +4059,47 @@ public:
     }
 
     UringOp &&prep_read(int fd, std::span<char> buf, std::uint64_t offset) && {
-        io_uring_prep_read(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                           offset);
+        io_uring_prep_read(mSqe, fd, buf.data(),
+                           static_cast<unsigned int>(buf.size()), offset);
         return std::move(*this);
     }
 
     UringOp &&prep_write(int fd, std::span<char const> buf,
                          std::uint64_t offset) && {
-        io_uring_prep_write(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                            offset);
+        io_uring_prep_write(mSqe, fd, buf.data(),
+                            static_cast<unsigned int>(buf.size()), offset);
         return std::move(*this);
     }
 
     UringOp &&prep_read_fixed(int fd, std::span<char> buf, std::uint64_t offset,
                               int buf_index) && {
-        io_uring_prep_read_fixed(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                                 offset, buf_index);
+        io_uring_prep_read_fixed(mSqe, fd, buf.data(),
+                                 static_cast<unsigned int>(buf.size()), offset,
+                                 buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_write_fixed(int fd, std::span<char const> buf,
                                std::uint64_t offset, int buf_index) && {
         io_uring_prep_write_fixed(mSqe, fd, buf.data(),
-                                  (unsigned int)buf.size(), offset, buf_index);
+                                  static_cast<unsigned int>(buf.size()), offset,
+                                  buf_index);
         return std::move(*this);
     }
 
     UringOp &&prep_readv(int fd, std::span<struct iovec const> buf,
                          std::uint64_t offset, int flags) && {
-        io_uring_prep_readv2(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                             offset, flags);
+        io_uring_prep_readv2(mSqe, fd, buf.data(),
+                             static_cast<unsigned int>(buf.size()), offset,
+                             flags);
         return std::move(*this);
     }
 
     UringOp &&prep_writev(int fd, std::span<struct iovec const> buf,
                           std::uint64_t offset, int flags) && {
-        io_uring_prep_writev2(mSqe, fd, buf.data(), (unsigned int)buf.size(),
-                              offset, flags);
+        io_uring_prep_writev2(mSqe, fd, buf.data(),
+                              static_cast<unsigned int>(buf.size()), offset,
+                              flags);
         return std::move(*this);
     }
 
@@ -4020,6 +4110,21 @@ public:
 
     UringOp &&prep_send(int fd, std::span<char const> buf, int flags) && {
         io_uring_prep_send(mSqe, fd, buf.data(), buf.size(), flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_send_zc(int fd, std::span<char const> buf, int flags,
+                           unsigned int zc_flags) && {
+        io_uring_prep_send_zc(mSqe, fd, buf.data(), buf.size(), flags,
+                              zc_flags);
+        return std::move(*this);
+    }
+
+    UringOp &&prep_send_zc_fixed(int fd, std::span<char const> buf, int flags,
+                                 unsigned int zc_flags,
+                                 unsigned int buf_index) && {
+        io_uring_prep_send_zc_fixed(mSqe, fd, buf.data(), buf.size(), flags,
+                                    zc_flags, buf_index);
         return std::move(*this);
     }
 
@@ -4098,7 +4203,7 @@ public:
                           std::int64_t off_out, std::size_t nbytes,
                           unsigned int flags) && {
         io_uring_prep_splice(mSqe, fd_in, off_in, fd_out, off_out,
-                             (unsigned int)nbytes, flags);
+                             static_cast<unsigned int>(nbytes), flags);
         return std::move(*this);
     }
 
@@ -4108,8 +4213,10 @@ public:
         return std::move(*this);
     }
 
-    UringOp &&prep_futex_waitv(std::span<struct futex_waitv> futex, unsigned int flags) && {
-        io_uring_prep_futex_waitv(mSqe, futex.data(), (uint32_t)futex.size(), flags);
+    UringOp &&prep_futex_waitv(std::span<struct futex_waitv> futex,
+                               unsigned int flags) && {
+        io_uring_prep_futex_waitv(mSqe, futex.data(),
+                                  static_cast<uint32_t>(futex.size()), flags);
         return std::move(*this);
     }
 
@@ -4119,16 +4226,16 @@ public:
         return std::move(*this);
     }
 
-    struct Canceller {
-        using OpType = UringOp;
-
-        static Task<> doCancel(OpType *op) {
-            co_await UringOp().prep_cancel(op, IORING_ASYNC_CANCEL_ALL);
-        }
-    };
+    // struct Canceller {
+    //     using OpType = UringOp;
+    //
+    //     static Task<> doCancel(OpType *op) {
+    //         co_await UringOp().prep_cancel(op, IORING_ASYNC_CANCEL_ALL);
+    //     }
+    // };
 
     Task<int> cancelGuard(CancelToken cancel) && {
-        CancelCallback _(cancel, [this] () -> Task<> {
+        CancelCallback _(cancel, [this]() -> Task<> {
             co_await UringOp().prep_cancel(this, IORING_ASYNC_CANCEL_ALL);
         });
         co_return co_await std::move(*this);
@@ -4149,119 +4256,133 @@ public:
 
 
 namespace co_async {
+struct IOContextOptions {
+    std::chrono::steady_clock::duration maxSleep =
+        std::chrono::milliseconds(200);
+    std::optional<std::size_t> threadAffinity = std::nullopt;
+    std::size_t queueEntries = 512;
+};
+
 struct alignas(hardware_destructive_interference_size) IOContext {
 private:
     GenericIOContext mGenericIO;
     PlatformIOContext mPlatformIO;
-    std::jthread mThread;
-
-    struct IOContextGuard;
+    std::chrono::steady_clock::duration mMaxSleep;
 
 public:
-    explicit IOContext(std::in_place_t) {}
-
-    explicit IOContext(PlatformIOContextOptions options = {}) {
-        start(options);
-    }
-
+    explicit IOContext(IOContextOptions options = {});
     IOContext(IOContext &&) = delete;
+    ~IOContext();
 
-    void startHere(std::stop_token stop, PlatformIOContextOptions options,
-                   std::span<IOContext> peerContexts);
+    [[gnu::hot]] void run();
+    [[gnu::hot]] bool runOnce();
 
-    void start(PlatformIOContextOptions options = {},
-               std::span<IOContext> peerContexts = {});
-
-    void spawn(std::coroutine_handle<> coroutine) {
-        mGenericIO.enqueueJob(coroutine);
-    }
-
-    template <class T, class P>
-    void spawn(Task<T, P> task) {
-        auto wrapped = coSpawnStarter(std::move(task));
-        auto coroutine = wrapped.get();
-        mGenericIO.enqueueJob(coroutine);
-        wrapped.release();
-    }
-
-    template <class T, class P>
-    T join(Task<T, P> task) {
-        return contextJoin(*this, std::move(task));
-    }
+    // [[gnu::hot]] void spawn(std::coroutine_handle<> coroutine) {
+    //     coroutine.resume();
+    // }
+    //
+    // template <class T, class P>
+    // void spawn(Task<T, P> task) {
+    //     auto wrapped = coSpawnStarter(std::move(task));
+    //     wrapped.get().resume();
+    //     wrapped.release();
+    // }
+    //
+    // template <class T, class P>
+    // T join(Task<T, P> task) {
+    //     return contextJoin(*this, std::move(task));
+    // }
 
     static thread_local IOContext *instance;
-#if CO_ASYNC_ALLOC
-    static thread_local std::pmr::memory_resource *currentAllocator;
-#endif
 };
 
-template <class T, class P>
-inline Task<> contextJoinHelper(Task<T, P> task, std::condition_variable &cv,
-                                Uninitialized<T> &result
-#if CO_ASYNC_EXCEPT
-                                ,
-                                std::exception_ptr exception
-#endif
-) {
-#if CO_ASYNC_EXCEPT
-    try {
-#endif
-        result.emplace((co_await task, Void()));
-#if CO_ASYNC_EXCEPT
-    } catch (...) {
-# if CO_ASYNC_DEBUG
-        std::cerr << "WARNING: exception occurred in IOContext::join\n";
-# endif
-        exception = std::current_exception();
+inline Task<> co_catch(Task<Expected<>> task) {
+    auto ret = co_await task;
+    if (ret.has_error()) {
+        std::cerr << ret.error().category().name() << " error: " << ret.error().message() << " (" << ret.error().value() << ")\n";
     }
-#endif
-    cv.notify_one();
+    co_return;
 }
 
-template <class T, class P>
-T contextJoin(IOContext &context, Task<T, P> task) {
-    std::condition_variable cv;
-    std::mutex mtx;
-    Uninitialized<T> result;
-#if CO_ASYNC_EXCEPT
-    std::exception_ptr exception;
-#endif
-    context.spawn(contextJoinHelper(std::move(task), cv, result
-#if CO_ASYNC_EXCEPT
-                                    ,
-                                    exception
-#endif
-                                    ));
-    std::unique_lock lck(mtx);
-    cv.wait(lck);
-    lck.unlock();
-#if CO_ASYNC_EXCEPT
-    if (exception) [[unlikely]] {
-        std::rethrow_exception(exception);
-    }
-#endif
-    if constexpr (!std::is_void_v<T>) {
-        return result.move();
-    }
+inline void co_main(Task<Expected<>> main) {
+    IOContext ctx;
+    co_spawn(co_catch(std::move(main)));
+    ctx.run();
 }
 
-inline auto co_resume_on(IOContext &context) {
-    struct ResumeOnAwaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) const {
-            mContext.spawn(coroutine);
-        }
-
-        void await_resume() const noexcept {}
-
-        IOContext &mContext;
-    };
-
-    return ResumeOnAwaiter(context);
+inline void co_main(Task<> main) {
+    IOContext ctx;
+    co_spawn(std::move(main));
+    ctx.run();
 }
+
+// template <class T, class P>
+// inline Task<> contextJoinHelper(Task<T, P> task, std::condition_variable &cv,
+//                                 Uninitialized<T> &result
+// #if CO_ASYNC_EXCEPT
+//                                 ,
+//                                 std::exception_ptr exception
+// #endif
+// ) {
+// #if CO_ASYNC_EXCEPT
+//     try {
+// #endif
+//         result.emplace((co_await task, Void()));
+// #if CO_ASYNC_EXCEPT
+//     } catch (...) {
+// # if CO_ASYNC_DEBUG
+//         std::cerr << "WARNING: exception occurred in IOContext::join\n";
+// # endif
+//         exception = std::current_exception();
+//     }
+// #endif
+//     cv.notify_one();
+// }
+//
+// template <class T, class P>
+// T contextJoin(IOContext &context, Task<T, P> task) {
+//     std::condition_variable cv;
+//     std::mutex mtx;
+//     Uninitialized<T> result;
+// #if CO_ASYNC_EXCEPT
+//     std::exception_ptr exception;
+// #endif
+//     context.spawn(contextJoinHelper(std::move(task), cv, result
+// #if CO_ASYNC_EXCEPT
+//                                     ,
+//                                     exception
+// #endif
+//                                     ));
+//     std::unique_lock lck(mtx);
+//     cv.wait(lck);
+//     lck.unlock();
+// #if CO_ASYNC_EXCEPT
+//     if (exception) [[unlikely]] {
+//         std::rethrow_exception(exception);
+//     }
+// #endif
+//     if constexpr (!std::is_void_v<T>) {
+//         return result.move();
+//     }
+// }
+//
+// inline auto co_resume_on(IOContext &context) {
+//     struct ResumeOnAwaiter {
+//         bool await_ready() const noexcept {
+//             return false;
+//         }
+//
+//         void await_suspend(std::coroutine_handle<> coroutine) const {
+//             mContext.spawn(coroutine);
+//         }
+//
+//         void await_resume() const noexcept {}
+//
+//         IOContext &mContext;
+//     };
+//
+//     return ResumeOnAwaiter(context);
+// }
 } // namespace co_async
 
 
@@ -4282,7 +4403,7 @@ co_sleep(std::chrono::steady_clock::time_point expires) {
     auto task = coSleep(expires);
     CancelCallback _(co_await co_cancel, [p = &task.promise()] {
         p->doCancel();
-        GenericIOContext::instance->enqueueJob(std::coroutine_handle<GenericIOContext::TimerNode>::from_promise(*p));
+        std::coroutine_handle<GenericIOContext::TimerNode>::from_promise(*p).resume();
     });
     co_return co_await task;
 }
@@ -4292,8 +4413,7 @@ coSleep(std::chrono::steady_clock::duration timeout) {
     return coSleep(std::chrono::steady_clock::now() + timeout);
 }
 
-inline Task<Expected<>>
-co_sleep(std::chrono::steady_clock::duration timeout) {
+inline Task<Expected<>> co_sleep(std::chrono::steady_clock::duration timeout) {
     return co_sleep(std::chrono::steady_clock::now() + timeout);
 }
 
@@ -4322,9 +4442,8 @@ inline Task<> co_forever() {
     };
 
     ForeverAwaiter awaiter;
-    CancelCallback _(co_await co_cancel, [&awaiter] {
-        co_spawn(awaiter.mPrevious);
-    });
+    CancelCallback _(co_await co_cancel,
+                     [&awaiter] { co_spawn(awaiter.mPrevious); });
     co_return co_await awaiter;
 }
 } // namespace co_async
@@ -4352,7 +4471,7 @@ when_any(std::vector<T, Alloc> const &tasks) {
     CancelSource cancel(co_await co_cancel);
     std::vector<Task<>, Alloc> newTasks(tasks.size(), tasks.get_allocator());
     std::optional<typename AwaitableTraits<T>::RetType> result;
-    std::size_t index = (std::size_t)-1;
+    std::size_t index = static_cast<std::size_t>(-1);
     std::size_t i = 0;
     for (auto &&task: tasks) {
         newTasks.push_back(co_cancel.bind(
@@ -4404,7 +4523,7 @@ Task<WhenAnyResult<Common>> when_any_common(Ts &&...tasks) {
         [&]<std::size_t... Is>(
             std::index_sequence<Is...>) -> Task<WhenAnyResult<Common>> {
             CancelSource cancel(co_await co_cancel);
-            std::size_t index = (std::size_t)-1;
+            std::size_t index = static_cast<std::size_t>(-1);
             std::optional<Common> result;
             co_await when_all(co_cancel.bind(
                 cancel, co_bind([&index, &result,
@@ -4417,17 +4536,17 @@ Task<WhenAnyResult<Common>> when_any_common(Ts &&...tasks) {
                     index = Is;
                     result.emplace(std::move(res));
                 }))...);
-            co_return WhenAnyResult{std::move(result.value()), index};
+            co_return WhenAnyResult<Common>{std::move(result.value()), index};
         },
         std::make_index_sequence<sizeof...(Ts)>());
 }
 
-template <Awaitable A, class Timeout,
-          bool IsExp = std::convertible_to<
-                           std::errc, typename AwaitableTraits<A>::RetType> &&
-                       !std::is_void_v<typename AwaitableTraits<A>::RetType>>
-Task<std::conditional_t<IsExp, typename AwaitableTraits<A>::RetType,
-                        Expected<typename AwaitableTraits<A>::RetType>>>
+template <Awaitable A, class Timeout>
+Task<std::conditional_t<
+    std::convertible_to<std::errc, typename AwaitableTraits<A>::RetType> &&
+        !std::is_void_v<typename AwaitableTraits<A>::RetType>,
+    typename AwaitableTraits<A>::RetType,
+    Expected<typename AwaitableTraits<A>::RetType>>>
 co_timeout(A &&a, Timeout timeout) {
     auto res = co_await when_any(std::forward<A>(a), co_sleep(timeout));
     if (auto ret = std::get_if<0>(&res)) {
@@ -4449,117 +4568,138 @@ co_timeout(A &&a, Timeout timeout) {
 
 
 #include <linux/futex.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 
 namespace co_async {
+
+inline constexpr std::size_t kFutexNotifyAll = static_cast<std::size_t>(std::numeric_limits<int>::max());
+
 template <class T>
 inline constexpr uint32_t getFutexFlagsFor() {
     switch (sizeof(T)) {
+#ifdef FUTEX2_PRIVATE
     case sizeof(uint8_t):  return FUTEX2_SIZE_U8 | FUTEX2_PRIVATE;
     case sizeof(uint16_t): return FUTEX2_SIZE_U16 | FUTEX2_PRIVATE;
     case sizeof(uint32_t): return FUTEX2_SIZE_U32 | FUTEX2_PRIVATE;
     case sizeof(uint64_t): return FUTEX2_SIZE_U64 | FUTEX2_PRIVATE;
+#else
+    case sizeof(uint8_t):  return 0 | FUTEX_PRIVATE_FLAG;
+    case sizeof(uint16_t): return 1 | FUTEX_PRIVATE_FLAG;
+    case sizeof(uint32_t): return 2 | FUTEX_PRIVATE_FLAG;
+    case sizeof(uint64_t): return 3 | FUTEX_PRIVATE_FLAG;
+#endif
     }
 }
 
 template <class T>
 inline constexpr uint64_t futexValueExtend(T value) {
+    static_assert(std::is_trivial_v<T> && sizeof(T) <= sizeof(uint64_t));
     uint64_t ret = 0;
     std::memcpy(&ret, &value, sizeof(T));
     return ret;
 }
 
 template <class T>
+inline Expected<> futex_notify_sync(std::atomic<T> *futex,
+                                    std::size_t count = kFutexNotifyAll,
+                                    uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+#ifndef SYS_futex_wake
+    const long SYS_futex_wake = 454;
+#endif
+    long res = syscall(SYS_futex_wake, reinterpret_cast<uint32_t *>(futex),
+            static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
+            getFutexFlagsFor<T>());
+#if CO_ASYNC_INVALFIX
+    if (res == -EBADF || res == -ENOSYS) {
+        res = syscall(SYS_futex, reinterpret_cast<uint32_t *>(futex), FUTEX_WAKE_BITSET_PRIVATE,
+                static_cast<uint32_t>(count), nullptr, nullptr, mask);
+    }
+#endif
+    return expectError(static_cast<int>(res));
+}
+
+template <class T>
+inline Expected<> futex_wait_sync(std::atomic<T> *futex,
+                            std::type_identity_t<T> val,
+                            uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+#ifndef SYS_futex_wait
+    const long SYS_futex_wait = 455;
+#endif
+    long res = syscall(SYS_futex_wait, reinterpret_cast<uint32_t *>(futex),
+            futexValueExtend(val), static_cast<uint64_t>(mask),
+            getFutexFlagsFor<T>());
+#if CO_ASYNC_INVALFIX
+    if (res == -EBADF || res == -ENOSYS) {
+        res = syscall(SYS_futex, reinterpret_cast<uint32_t *>(futex), FUTEX_WAIT_BITSET_PRIVATE,
+                static_cast<uint32_t>(futexValueExtend(val)), nullptr, nullptr, mask);
+    }
+#endif
+    return expectError(static_cast<int>(res));
+}
+
+
+template <class T>
 inline Task<Expected<>> futex_wait(std::atomic<T> *futex,
                                    std::type_identity_t<T> val,
                                    uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
-    co_return expectError(co_await UringOp().prep_futex_wait(
-        reinterpret_cast<uint32_t *>(futex),
-        futexValueExtend(val),
-        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0).cancelGuard(co_await co_cancel));
+    co_return expectError(
+        co_await UringOp()
+            .prep_futex_wait(reinterpret_cast<uint32_t *>(futex),
+                             futexValueExtend(val), static_cast<uint64_t>(mask),
+                             getFutexFlagsFor<T>(), 0)
+            .cancelGuard(co_await co_cancel)).transform([] (int) {})
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::bad_file_descriptor, [&] {
+            return futex_wait_sync(futex, val, mask);
+        })
+#endif
+        .ignore_error(std::errc::resource_unavailable_try_again)
+    ;
 }
 
 template <class T>
 inline Task<Expected<>>
-futex_wake(std::atomic<T> *futex,
-           std::size_t count = static_cast<std::size_t>(-1),
-           uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
-    co_return expectError(co_await UringOp().prep_futex_wake(
-        reinterpret_cast<uint32_t *>(futex), static_cast<uint64_t>(count),
-        static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0).cancelGuard(co_await co_cancel));
+futex_notify_async(std::atomic<T> *futex,
+                   std::size_t count = kFutexNotifyAll,
+                   uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+    co_return expectError(
+        co_await UringOp()
+            .prep_futex_wake(reinterpret_cast<uint32_t *>(futex),
+                             static_cast<uint64_t>(count),
+                             static_cast<uint64_t>(mask), getFutexFlagsFor<T>(),
+                             0)
+            .cancelGuard(co_await co_cancel)).transform([] (int) {})
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::bad_file_descriptor, [&] {
+            return futex_notify_sync(futex, count, mask);
+        })
+#endif
+    ;
 }
 
 template <class T>
 inline void futex_notify(std::atomic<T> *futex,
-                         std::size_t count = static_cast<std::size_t>(-1),
+                         std::size_t count = kFutexNotifyAll,
                          uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
+#if CO_ASYNC_INVALFIX
+    futex_notify_sync(futex, count, mask);
+#else
     UringOp()
         .prep_futex_wake(reinterpret_cast<uint32_t *>(futex),
                          static_cast<uint64_t>(count),
                          static_cast<uint64_t>(mask), getFutexFlagsFor<T>(), 0)
         .startDetach();
+#endif
 }
 
+#if CO_ASYNC_INVALFIX
+template <class>
+using FutexAtomic = std::atomic<uint32_t>;
+#else
 template <class T>
-inline void futex_notify_sync(std::atomic<T> *futex,
-                              std::size_t count = static_cast<std::size_t>(-1),
-                              uint32_t mask = FUTEX_BITSET_MATCH_ANY) {
-    syscall(SYS_futex_wake, reinterpret_cast<uint32_t *>(futex),
-            static_cast<uint64_t>(count), static_cast<uint64_t>(mask),
-            getFutexFlagsFor<T>());
-}
-
-// struct Futex {
-// private:
-//     std::atomic<std::uint32_t> mValue;
-//
-// public:
-//     std::atomic<std::uint32_t> &raw_atomic() {
-//         return mValue;
-//     }
-//
-//     std::atomic<std::uint32_t> const &raw_atomic() const {
-//         return mValue;
-//     }
-//
-//     std::uint32_t load() const {
-//         return mValue.load(std::memory_order_relaxed);
-//     }
-//
-//     std::uint32_t fetch_add(std::uint32_t n) {
-//         std::uint32_t old = mValue.fetch_add(n, std::memory_order_release);
-//         return old;
-//     }
-//
-//     std::uint32_t fetch_sub(std::uint32_t n) {
-//         std::uint32_t old = mValue.fetch_sub(n, std::memory_order_release);
-//         return old;
-//     }
-//
-//     std::uint32_t fetch_xor(std::uint32_t n) {
-//         std::uint32_t old = mValue.fetch_xor(n, std::memory_order_release);
-//         return old;
-//     }
-//
-//     Task<Expected<>> wait(std::uint32_t old) {
-//         do
-//             co_await co_await futex_wait(&mValue, old);
-//         while (mValue.load(std::memory_order_acquire) == old);
-//         co_return {};
-//     }
-//
-//     Task<Expected<>> wait() {
-//         return wait(load());
-//     }
-//
-//     void notify_one() {
-//         futex_wake_detach(&mValue, 1);
-//     }
-//
-//     void notify_all() {
-//         futex_wake_detach(&mValue, static_cast<std::uint32_t>(-1));
-//     }
-// };
+using FutexAtomic = std::atomic<T>;
+#endif
 
 } // namespace co_async
 
@@ -4594,7 +4734,8 @@ namespace co_async {
 //             return false;
 //         }
 //
-//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine) const {
+//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine)
+//         const {
 //             mThat->pushWaiting(coroutine.promise());
 //         }
 //
@@ -4696,7 +4837,8 @@ namespace co_async {
 //
 //     std::coroutine_handle<> notifyPopCoroutine() {
 //         if (auto promise = popWaiting()) {
-//             return std::coroutine_handle<PromiseNode>::from_promise(*promise);
+//             return
+//             std::coroutine_handle<PromiseNode>::from_promise(*promise);
 //         }
 //         return nullptr;
 //     }
@@ -4898,7 +5040,8 @@ namespace co_async {
 //             return false;
 //         }
 //
-//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine) const {
+//         void await_suspend(std::coroutine_handle<PromiseNode> coroutine)
+//         const {
 //             mThat->pushWaiting(coroutine.promise());
 //         }
 //
@@ -5000,7 +5143,8 @@ namespace co_async {
 //
 //     std::coroutine_handle<> notifyPopCoroutine() {
 //         if (auto promise = popWaiting()) {
-//             return std::coroutine_handle<PromiseNode>::from_promise(*promise);
+//             return
+//             std::coroutine_handle<PromiseNode>::from_promise(*promise);
 //         }
 //         return nullptr;
 //     }
@@ -5008,33 +5152,34 @@ namespace co_async {
 
 struct ConditionVariable {
 private:
-    std::atomic<std::uint32_t> mFutex;
+    FutexAtomic<std::uint32_t> mFutex{};
 
 public:
     Task<Expected<>> wait() {
         std::uint32_t old = mFutex.load(std::memory_order_relaxed);
-        do
-            co_return co_await futex_wait(&mFutex, old);
-        while (mFutex.load(std::memory_order_acquire) == old);
+        do {
+            co_await co_await futex_wait(&mFutex, old);
+        } while (mFutex.load(std::memory_order_acquire) == old);
+        co_return {};
     }
 
     void notify_one() {
         mFutex.fetch_add(1, std::memory_order_release);
-        futex_notify(&mFutex, static_cast<std::size_t>(-1));
+        futex_notify(&mFutex, 1);
     }
 
     void notify_all() {
         mFutex.fetch_add(1, std::memory_order_release);
-        futex_notify(&mFutex, static_cast<std::size_t>(-1));
+        futex_notify(&mFutex, kFutexNotifyAll);
     }
 
     using Mask = std::uint32_t;
 
     Task<Expected<>> wait(Mask mask) {
         std::uint32_t old = mFutex.load(std::memory_order_relaxed);
-        do
+        do {
             co_await co_await futex_wait(&mFutex, old, mask);
-        while (mFutex.load(std::memory_order_acquire) == old);
+        } while (mFutex.load(std::memory_order_acquire) == old);
         co_return {};
     }
 
@@ -5045,7 +5190,7 @@ public:
 
     void notify_all(Mask mask) {
         mFutex.fetch_add(1, std::memory_order_release);
-        futex_notify(&mFutex, static_cast<std::size_t>(-1), mask);
+        futex_notify(&mFutex, kFutexNotifyAll, mask);
     }
 };
 
@@ -5062,7 +5207,7 @@ namespace co_async {
 
 struct Semaphore {
 private:
-    std::atomic<std::uint32_t> mCounter;
+    FutexAtomic<std::uint32_t> mCounter;
     std::uint32_t const mMaxCount;
 
     static constexpr std::uint32_t kAcquireMask = 1;
@@ -5088,7 +5233,9 @@ public:
                 co_await co_await futex_wait(&mCounter, count, kAcquireMask);
                 count = mCounter.load(std::memory_order_relaxed);
             }
-        } while (mCounter.compare_exchange_weak(count, count - 1, std::memory_order_acq_rel, std::memory_order_relaxed));
+        } while (mCounter.compare_exchange_weak(count, count - 1,
+                                                std::memory_order_acq_rel,
+                                                std::memory_order_relaxed));
         futex_notify(&mCounter, 1, kReleaseMask);
         co_return {};
     }
@@ -5100,7 +5247,9 @@ public:
                 co_await co_await futex_wait(&mCounter, count, kReleaseMask);
                 count = mCounter.load(std::memory_order_relaxed);
             }
-        } while (mCounter.compare_exchange_weak(count, count + 1, std::memory_order_acq_rel, std::memory_order_relaxed));
+        } while (mCounter.compare_exchange_weak(count, count + 1,
+                                                std::memory_order_acq_rel,
+                                                std::memory_order_relaxed));
         futex_notify(&mCounter, 1, kAcquireMask);
         co_return {};
     }
@@ -5121,7 +5270,8 @@ namespace co_async {
 //     bool try_lock() {
 //         bool expect = false;
 //         return mLocked.compare_exchange_strong(
-//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//             expect, true, std::memory_order_acquire,
+//             std::memory_order_relaxed);
 //     }
 //
 //     Task<> lock() {
@@ -5143,7 +5293,8 @@ namespace co_async {
 //     bool try_lock() {
 //         bool expect = false;
 //         return mLocked.compare_exchange_strong(
-//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//             expect, true, std::memory_order_acquire,
+//             std::memory_order_relaxed);
 //     }
 //
 //     Task<> lock() {
@@ -5165,7 +5316,8 @@ namespace co_async {
 //     bool try_lock() {
 //         bool expect = false;
 //         return mLocked.compare_exchange_strong(
-//             expect, true, std::memory_order_acquire, std::memory_order_relaxed);
+//             expect, true, std::memory_order_acquire,
+//             std::memory_order_relaxed);
 //     }
 //
 //     Task<> lock() {
@@ -5196,7 +5348,7 @@ namespace co_async {
 
 struct BasicMutex {
 private:
-    std::atomic<bool> mFutex;
+    FutexAtomic<bool> mFutex;
 
 public:
     bool try_lock() {
@@ -5207,8 +5359,9 @@ public:
     Task<Expected<>> lock() {
         while (true) {
             bool old = mFutex.exchange(true, std::memory_order_acquire);
-            if (old == false)
+            if (old == false) {
                 co_return {};
+            }
             co_await co_await futex_wait(&mFutex, old);
         }
     }
@@ -5274,9 +5427,11 @@ public:
     MutexImpl(MutexImpl const &) = delete;
     MutexImpl() = default;
 
-    template <class ...Args> requires (!std::is_void_v<T> && std::constructible_from<T, Args...>)
-    explicit MutexImpl(Args &&...args) : mMutex(), mValue(std::forward<Args>(args)...) {
-    }
+    template <class... Args>
+        requires(!std::is_void_v<T> && std::constructible_from<T, Args...>)
+    explicit MutexImpl(Args &&...args)
+        : mMutex(),
+          mValue(std::forward<Args>(args)...) {}
 
     Locked try_lock() {
         if (auto e = mMutex.try_lock()) {
@@ -5286,8 +5441,8 @@ public:
         }
     }
 
-    Task<Locked> lock() {
-        co_await mMutex.lock();
+    Task<Expected<Locked>> lock() {
+        co_await co_await mMutex.lock();
         co_return Locked(this);
     }
 
@@ -5298,7 +5453,8 @@ public:
     //     co_return Locked(this);
     // }
     //
-    // Task<Locked> try_lock_until(std::chrono::steady_clock::time_point expires) {
+    // Task<Locked> try_lock_until(std::chrono::steady_clock::time_point
+    // expires) {
     //     if (!co_await mMutex.try_lock_for(expires)) {
     //         co_return Locked();
     //     }
@@ -5340,8 +5496,7 @@ private:
 public:
     struct Locked {
     private:
-        explicit Locked(Mutex<>::Locked locked,
-                        CallOnce *impl) noexcept
+        explicit Locked(Mutex<>::Locked locked, CallOnce *impl) noexcept
             : mLocked(std::move(locked)),
               mImpl(impl) {}
 
@@ -5351,7 +5506,7 @@ public:
         Locked() noexcept : mLocked(), mImpl(nullptr) {}
 
         explicit operator bool() const noexcept {
-            return (bool)mLocked;
+            return static_cast<bool>(mLocked);
         }
 
         void set_ready() const {
@@ -5367,11 +5522,15 @@ public:
         if (mCalled.load(std::memory_order_relaxed)) {
             co_return Locked();
         }
-        Locked locked(co_await mMutex.lock(), this);
-        if (mCalled.load(std::memory_order_relaxed)) {
-            co_return Locked();
+        while (true) {
+            if (auto mtxLock = co_await mMutex.lock()) {
+                Locked locked(std::move(*mtxLock), this);
+                if (mCalled.load(std::memory_order_relaxed)) {
+                    co_return Locked();
+                }
+                co_return std::move(locked);
+            }
         }
-        co_return std::move(locked);
     }
 };
 } // namespace co_async
@@ -5430,7 +5589,7 @@ public:
                 res = (func(stop), Void());
             });
         if (e.has_error()) {
-            co_return e.error();
+            co_return CO_ASYNC_ERROR_FORWARD(e);
         }
         if (!res) {
             co_return std::errc::operation_canceled;
@@ -5499,6 +5658,7 @@ public:
             co_await co_await mReady.wait(kNonFullMask);
         }
         mReady.notify_one(kNonEmptyMask);
+        co_return {};
     }
 
     Task<Expected<T>> pop() {
@@ -5601,9 +5761,8 @@ private:
     std::size_t mNumWorkers = 0;
 
 public:
-    explicit IOContextMT(std::in_place_t);
-    explicit IOContextMT(PlatformIOContextOptions options = {},
-                         std::size_t numWorkers = 0);
+    IOContextMT();
+    IOContextMT(IOContext &&) = delete;
     ~IOContextMT();
 
     static std::size_t get_worker_id(IOContext const &context) noexcept {
@@ -5622,18 +5781,17 @@ public:
         return instance->mNumWorkers;
     }
 
-    static void start(PlatformIOContextOptions options = {},
-                      std::size_t numWorkers = 0);
+    static void run(std::size_t numWorkers = 0);
 
-    static void spawn(std::coroutine_handle<> coroutine,
-                      std::size_t index = 0) {
-        instance->mWorkers[index].spawn(coroutine);
-    }
-
-    template <class T, class P>
-    static T join(Task<T, P> task, std::size_t index = 0) {
-        return instance->mWorkers[index].join(std::move(task));
-    }
+    // static void spawn(std::coroutine_handle<> coroutine,
+    //                   std::size_t index = 0) {
+    //     instance->mWorkers[index].spawn(coroutine);
+    // }
+    //
+    // template <class T, class P>
+    // static T join(Task<T, P> task, std::size_t index = 0) {
+    //     return instance->mWorkers[index].join(std::move(task));
+    // }
 
     static IOContextMT *instance;
 };
@@ -5647,27 +5805,31 @@ namespace co_async {
 
 struct SpinBarrier {
     explicit SpinBarrier(std::size_t n) noexcept
-        : m_top_waiting((std::uint32_t)n - 1),
+        : m_top_waiting(static_cast<std::uint32_t>(n) - 1),
           m_num_waiting(0),
           m_sync_flip(0) {}
 
     bool arrive_and_wait() noexcept {
         bool old_flip = m_sync_flip.load(std::memory_order_relaxed);
-        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) == m_top_waiting) {
+        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) ==
+            m_top_waiting) {
             m_num_waiting.store(0, std::memory_order_relaxed);
             m_sync_flip.store(!old_flip, std::memory_order_release);
             return true;
         } else {
             while (m_sync_flip.load(std::memory_order_acquire) == old_flip)
                 ;
+#if __cpp_lib_atomic_wait
             m_sync_flip.wait(old_flip, std::memory_order_acquire);
+#endif
             return false;
         }
     }
 
     bool arrive_and_drop() noexcept {
         bool old_flip = m_sync_flip.load(std::memory_order_relaxed);
-        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) == m_top_waiting) {
+        if (m_num_waiting.fetch_add(1, std::memory_order_relaxed) ==
+            m_top_waiting) {
             m_num_waiting.store(0, std::memory_order_relaxed);
             m_sync_flip.store(!old_flip, std::memory_order_release);
             return true;
@@ -5678,9 +5840,23 @@ struct SpinBarrier {
 
 private:
     std::uint32_t const m_top_waiting;
-    std::atomic<std::uint32_t> m_num_waiting;
-    std::atomic<bool> m_sync_flip;
+    FutexAtomic<std::uint32_t> m_num_waiting;
+    FutexAtomic<bool> m_sync_flip;
 };
+
+} // namespace co_async
+
+
+
+namespace co_async {
+
+template <class ...Fs>
+struct overloaded : Fs... {
+    using Fs::operator()...;
+};
+
+template <class ...Fs>
+overloaded(Fs...) -> overloaded<Fs...>;
 
 }
 
@@ -6239,6 +6415,45 @@ DEBUG_NAMESPACE_BEGIN
 
 struct DEBUG_NODISCARD debug {
 private:
+# ifndef DEBUG_MAGIC_ENUM
+#  if (__GNUC__ || __clang__ || _MSC_VER) && __cpp_fold_expressions
+#   if __clang__
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
+#   endif
+
+    template <class E, E CrItMaGiC>
+    static DEBUG_STRING_VIEW debug_enum_value_name() {
+        DEBUG_STRING_VIEW name = __PRETTY_FUNCTION__;
+        auto critpos = name.find("CrItMaGiC = ") + 12;
+        auto endpos = name.find_first_of(";]");
+        auto slice = name.substr(critpos, endpos - critpos);
+        return slice;
+    }
+
+    template <class E, class I, I... Is>
+    static DEBUG_STRING_VIEW
+    debug_enum_name_impl(E value, std::integer_sequence<I, Is...>) {
+        DEBUG_STRING_VIEW ret = "???";
+        ((value == Is
+              ? (ret = debug_enum_value_name<E, static_cast<E>(Is)>(), true)
+              : false) ||
+         ...);
+        return ret;
+    }
+
+    template <class E>
+    static DEBUG_STRING_VIEW debug_enum_name(E value) {
+        using I = typename std::underlying_type<E>::type;
+        return debug_enum_name_impl(value,
+                                    std::make_integer_sequence<I, 128>{});
+    }
+#   if __clang__
+#    pragma clang diagnostic pop
+#   endif
+#   define DEBUG_MAGIC_ENUM debug_enum_name
+#  endif
+# endif
 # ifndef DEBUG_SOURCE_LOCATION
     struct debug_source_location {
         char const *fn;
@@ -6273,8 +6488,9 @@ private:
 #  define DEBUG_SOURCE_LOCATION debug::debug_source_location
 # endif
     template <class T>
-    static auto debug_deref_avoid(T const &t)
-        -> std::enable_if_t<!std::is_void_v<decltype(*t)>, decltype(*t)> {
+    static auto debug_deref_avoid(T const &t) ->
+        typename std::enable_if<!std::is_void<decltype(*t)>::value,
+                                decltype(*t)>::type {
         return *t;
     }
 
@@ -6285,8 +6501,9 @@ private:
     };
 
     template <class T>
-    static auto debug_deref_avoid(T const &t)
-        -> std::enable_if_t<std::is_void_v<decltype(*t)>, debug_special_void> {
+    static auto debug_deref_avoid(T const &t) ->
+        typename std::enable_if<std::is_void<decltype(*t)>::value,
+                                debug_special_void>::type {
         return debug_special_void();
     }
 
@@ -6308,7 +6525,8 @@ private:
                 ) {
                     auto f = oss.flags();
                     oss << "\\x" << std::hex << std::setfill('0')
-                        << std::setw(2) << static_cast<int>(c)
+                        << std::setw(2)
+                        << static_cast<int>(static_cast<unsigned char>(c))
 # if DEBUG_HEXADECIMAL_UPPERCASE
                         << std::uppercase
 # endif
@@ -6339,7 +6557,7 @@ private:
     static std::string debug_demangle(char const *name) {
 #  ifdef DEBUG_HAS_CXXABI_H
         int status;
-        char *p = abi::__cxa_demangle(name, 0, 0, &status);
+        char *p = abi::__cxa_demangle(name, nullptr, nullptr, &status);
         std::string s = p ? p : name;
         std::free(p);
 #  else
@@ -6430,8 +6648,8 @@ private:
             }
 #  else
         } else if constexpr (std::is_integral<T>::value) {
-            oss << static_cast<std::uint64_t>(
-                static_cast<typename std::make_unsigned<T>::type>(t));
+            oss << t; // static_cast<std::uint64_t>(static_cast<typename
+                      // std::make_unsigned<T>::type>(t));
 #  endif
         } else if constexpr (std::is_floating_point<T>::value) {
             auto f = oss.flags();
@@ -6505,7 +6723,7 @@ private:
             debug_format(oss, t.get());
         } else if constexpr (requires(std::ostream &oss, T const &t) {
                                  oss << t;
-                             }) {
+                             } && !std::is_enum<T>::value) {
             oss << t;
         } else if constexpr (std::is_pointer<T>::value ||
                              std::is_same<T, std::nullptr_t>::value) {
@@ -6580,9 +6798,9 @@ private:
 #  endif
         } else if constexpr (requires(T const &t) {
                                  (void)(*t);
-                                 (void)(bool)t;
+                                 (void)static_cast<bool>(t);
                              }) {
-            if ((bool)t) {
+            if (static_cast<bool>(t)) {
                 debug_format(oss, debug_deref_avoid(t));
             } else {
                 oss << DEBUG_NULLOPT_STRING;
@@ -6615,8 +6833,13 @@ private:
       struct debug_cond_##n<T, \
                             typename debug_void<decltype(__VA_ARGS__)>::type> \
           : std::true_type {};
-    DEBUG_COND(is_ostream_ok, std::declval<std::ostream &>()
-                                  << std::declval<T const &>());
+    DEBUG_COND(is_ostream_ok2, std::declval<std::ostream &>()
+                                   << std::declval<T const &>());
+
+    struct debug_cond_is_ostream_ok
+        : std::bool_constant<debug_cond_is_ostream_ok2<T>::value &&
+                             !std::is_enum<T>::value> {};
+
     DEBUG_COND(is_range, begin(std::declval<T const &>()) !=
                              end(std::declval<T const &>()));
     DEBUG_COND(is_tuple, std::tuple_size<T>::value);
@@ -6641,11 +6864,17 @@ private:
         void operator()(T const &) const {}
     };
 
+#  if __cpp_lib_variant
     DEBUG_COND(is_variant, std::variant_size<T>::value);
+#  else
+    template <class>
+    struct debug_cond_is_variant : std::false_type {};
+#  endif
     DEBUG_COND(is_smart_pointer, static_cast<void const volatile *>(
                                      std::declval<T const &>().get()));
-    DEBUG_COND(is_optional, (((void)*std::declval<T const &>(), (void)0),
-                             ((void)(bool)std::declval<T const &>(), (void)0)));
+    DEBUG_COND(is_optional,
+               (((void)*std::declval<T const &>(), (void)0),
+                ((void)static_cast<bool>(std::declval<T const &>()), (void)0)));
     DEBUG_COND(
         reference_wrapper,
         (typename std::enable_if<
@@ -6805,8 +7034,8 @@ private:
                !debug_cond_integral_unsigned<T>::value &&
                debug_cond_integral<T>::value>::type> {
         void operator()(std::ostream &oss, T const &t) const {
-            oss << static_cast<std::uint64_t>(
-                static_cast<typename std::make_unsigned<T>::type>(t));
+            oss << t; // static_cast<std::uint64_t>(static_cast<typename
+                      // std::make_unsigned<T>::type>(t));
         }
     };
 
@@ -7022,322 +7251,350 @@ private:
 
         template <class... Args>
         void operator()(Args &&...args) const {
-            int unused[] = {(call<Args>(std::forward<Args>(args)), 0)...};
-            (void)unused;
-        }
-    };
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    debug_cond_is_tuple<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
+                    oss << DEBUG_TUPLE_BRACE[0];
+                    bool add_comma = false;
+                    debug_apply(debug_apply_lambda{oss, add_comma}, t);
+                    oss << DEBUG_TUPLE_BRACE[1];
+                }
+            };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            debug_cond_is_tuple<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
-            oss << DEBUG_TUPLE_BRACE[0];
-            bool add_comma = false;
-            debug_apply(debug_apply_lambda{oss, add_comma}, t);
-            oss << DEBUG_TUPLE_BRACE[1];
-        }
-    };
-
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            !debug_cond_is_tuple<T>::value &&
-            debug_cond_enum<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
+            template <class T>
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    !debug_cond_is_tuple<T>::value &&
+                    debug_cond_enum<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
 #  ifdef DEBUG_MAGIC_ENUM
-            oss << DEBUG_MAGIC_ENUM(t);
+                    oss << DEBUG_MAGIC_ENUM(t);
 #  else
-            oss << debug_demangle(typeid(T).name()) << DEBUG_ENUM_BRACE[0];
-            oss << static_cast<typename std::underlying_type<T>::type>(t);
-            oss << DEBUG_ENUM_BRACE[1];
+                    oss << debug_demangle(typeid(T).name())
+                        << DEBUG_ENUM_BRACE[0];
+                    oss << static_cast<typename std::underlying_type<T>::type>(
+                        t);
+                    oss << DEBUG_ENUM_BRACE[1];
 #  endif
-        }
-    };
+                }
+            };
 
-    template <class V>
-    struct debug_format_trait<std::type_info, V> {
-        void operator()(std::ostream &oss, std::type_info const &t) const {
-            oss << debug_demangle(t.name());
-        }
-    };
+            template <class V>
+            struct debug_format_trait<std::type_info, V> {
+                void operator()(std::ostream &oss,
+                                std::type_info const &t) const {
+                    oss << debug_demangle(t.name());
+                }
+            };
 
-    template <class V>
-    struct debug_format_trait<std::errc, V> {
-        void operator()(std::ostream &oss, std::errc const &t) const {
-            oss << DEBUG_ERROR_CODE_BRACE[0];
-            if (t != std::errc()) {
-                oss << std::generic_category().name() << DEBUG_ERROR_CODE_INFIX
+            template <class V>
+            struct debug_format_trait<std::errc, V> {
+                void operator()(std::ostream &oss, std::errc const &t) const {
+                    oss << DEBUG_ERROR_CODE_BRACE[0];
+                    if (t != std::errc()) {
+                        oss << std::generic_category().name()
+                            << DEBUG_ERROR_CODE_INFIX
 #  if DEBUG_ERROR_CODE_SHOW_NUMBER
-                    << ' ' << static_cast<int>(t)
+                            << ' ' << static_cast<int>(t)
 #  endif
-                    << DEBUG_ERROR_CODE_POSTFIX;
-                oss << std::generic_category().message(static_cast<int>(t));
-            } else {
-                oss << DEBUG_ERROR_CODE_NO_ERROR;
-            }
-            oss << DEBUG_ERROR_CODE_BRACE[1];
-        }
-    };
+                            << DEBUG_ERROR_CODE_POSTFIX;
+                        oss << std::generic_category().message(
+                            static_cast<int>(t));
+                    } else {
+                        oss << DEBUG_ERROR_CODE_NO_ERROR;
+                    }
+                    oss << DEBUG_ERROR_CODE_BRACE[1];
+                }
+            };
 
-    template <class V>
-    struct debug_format_trait<std::error_code, V> {
-        void operator()(std::ostream &oss, std::error_code const &t) const {
-            oss << DEBUG_ERROR_CODE_BRACE[0];
-            if (t) {
-                oss << t.category().name() << DEBUG_ERROR_CODE_INFIX
+            template <class V>
+            struct debug_format_trait<std::error_code, V> {
+                void operator()(std::ostream &oss,
+                                std::error_code const &t) const {
+                    oss << DEBUG_ERROR_CODE_BRACE[0];
+                    if (t) {
+                        oss << t.category().name() << DEBUG_ERROR_CODE_INFIX
 #  if DEBUG_ERROR_CODE_SHOW_NUMBER
-                    << ' ' << t.value()
+                            << ' ' << t.value()
 #  endif
-                    << DEBUG_ERROR_CODE_POSTFIX << t.message();
-            } else {
-                oss << DEBUG_ERROR_CODE_NO_ERROR;
-            }
-            oss << DEBUG_ERROR_CODE_BRACE[1];
-        }
-    };
+                            << DEBUG_ERROR_CODE_POSTFIX << t.message();
+                    } else {
+                        oss << DEBUG_ERROR_CODE_NO_ERROR;
+                    }
+                    oss << DEBUG_ERROR_CODE_BRACE[1];
+                }
+            };
 
-    template <class V>
-    struct debug_format_trait<std::error_condition, V> {
-        void operator()(std::ostream &oss,
-                        std::error_condition const &t) const {
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
-            if (t) {
-                oss << t.category().name() << " error " << t.value() << ": "
-                    << t.message();
-            } else {
-                oss << "no error";
-            }
-            oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
-        }
-    };
+            template <class V>
+            struct debug_format_trait<std::error_condition, V> {
+                void operator()(std::ostream &oss,
+                                std::error_condition const &t) const {
+                    oss << DEBUG_UNKNOWN_TYPE_BRACE[0];
+                    if (t) {
+                        oss << t.category().name() << " error " << t.value()
+                            << ": " << t.message();
+                    } else {
+                        oss << "no error";
+                    }
+                    oss << DEBUG_UNKNOWN_TYPE_BRACE[1];
+                }
+            };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
-            debug_cond_is_member_repr<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
-            debug_format(oss, raw_repr_if_string(t.DEBUG_REPR_NAME()));
-        }
-    };
+            template <class T>
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    !debug_cond_is_tuple<T>::value &&
+                    !debug_cond_enum<T>::value &&
+                    debug_cond_is_member_repr<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
+                    debug_format(oss, raw_repr_if_string(t.DEBUG_REPR_NAME()));
+                }
+            };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
-            !debug_cond_is_member_repr<T>::value &&
-            debug_cond_is_member_repr_stream<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
-            t.DEBUG_REPR_NAME(oss);
-        }
-    };
+            template <class T>
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    !debug_cond_is_tuple<T>::value &&
+                    !debug_cond_enum<T>::value &&
+                    !debug_cond_is_member_repr<T>::value &&
+                    debug_cond_is_member_repr_stream<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
+                    t.DEBUG_REPR_NAME(oss);
+                }
+            };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
-            !debug_cond_is_member_repr<T>::value &&
-            !debug_cond_is_member_repr_stream<T>::value &&
-            debug_cond_is_adl_repr<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
-            debug_format(oss, raw_repr_if_string(DEBUG_REPR_NAME(t)));
-        }
-    };
+            template <class T>
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    !debug_cond_is_tuple<T>::value &&
+                    !debug_cond_enum<T>::value &&
+                    !debug_cond_is_member_repr<T>::value &&
+                    !debug_cond_is_member_repr_stream<T>::value &&
+                    debug_cond_is_adl_repr<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
+                    debug_format(oss, raw_repr_if_string(DEBUG_REPR_NAME(t)));
+                }
+            };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
-            !debug_cond_is_member_repr<T>::value &&
-            !debug_cond_is_member_repr_stream<T>::value &&
-            !debug_cond_is_adl_repr<T>::value &&
-            debug_cond_is_adl_repr_stream<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
-            DEBUG_REPR_NAME(oss, t);
-        }
-    };
+            template <class T>
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    !debug_cond_is_tuple<T>::value &&
+                    !debug_cond_enum<T>::value &&
+                    !debug_cond_is_member_repr<T>::value &&
+                    !debug_cond_is_member_repr_stream<T>::value &&
+                    !debug_cond_is_adl_repr<T>::value &&
+                    debug_cond_is_adl_repr_stream<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
+                    DEBUG_REPR_NAME(oss, t);
+                }
+            };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
-            !debug_cond_is_member_repr<T>::value &&
-            !debug_cond_is_member_repr_stream<T>::value &&
-            !debug_cond_is_adl_repr<T>::value &&
-            !debug_cond_is_adl_repr_stream<T>::value &&
-            debug_cond_is_member_repr_debug<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
-            t.DEBUG_FORMATTER_REPR_NAME(debug_formatter{oss});
-        }
-    };
+            template <class T>
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    !debug_cond_is_tuple<T>::value &&
+                    !debug_cond_enum<T>::value &&
+                    !debug_cond_is_member_repr<T>::value &&
+                    !debug_cond_is_member_repr_stream<T>::value &&
+                    !debug_cond_is_adl_repr<T>::value &&
+                    !debug_cond_is_adl_repr_stream<T>::value &&
+                    debug_cond_is_member_repr_debug<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
+                    t.DEBUG_FORMATTER_REPR_NAME(debug_formatter{oss});
+                }
+            };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
-            !debug_cond_is_member_repr<T>::value &&
-            !debug_cond_is_member_repr_stream<T>::value &&
-            !debug_cond_is_adl_repr<T>::value &&
-            !debug_cond_is_adl_repr_stream<T>::value &&
-            !debug_cond_is_member_repr_debug<T>::value &&
-            debug_cond_is_adl_repr_debug<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
-            DEBUG_FORMATTER_REPR_NAME(debug_formatter{oss}, t);
-        }
-    };
+            template <class T>
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    !debug_cond_is_tuple<T>::value &&
+                    !debug_cond_enum<T>::value &&
+                    !debug_cond_is_member_repr<T>::value &&
+                    !debug_cond_is_member_repr_stream<T>::value &&
+                    !debug_cond_is_adl_repr<T>::value &&
+                    !debug_cond_is_adl_repr_stream<T>::value &&
+                    !debug_cond_is_member_repr_debug<T>::value &&
+                    debug_cond_is_adl_repr_debug<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
+                    DEBUG_FORMATTER_REPR_NAME(debug_formatter{oss}, t);
+                }
+            };
 
-    struct debug_visit_lambda {
-        std::ostream &oss;
+            struct debug_visit_lambda {
+                std::ostream &oss;
 
-        template <class T>
-        void operator()(T const &t) const {
-            debug_format(oss, t);
-        }
-    };
+                template <class T>
+                void operator()(T const &t) const {
+                    debug_format(oss, t);
+                }
+            };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
-            !debug_cond_is_member_repr<T>::value &&
-            !debug_cond_is_member_repr_stream<T>::value &&
-            !debug_cond_is_adl_repr<T>::value &&
-            !debug_cond_is_adl_repr_stream<T>::value &&
-            debug_cond_is_variant<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
-            visit(debug_visit_lambda{oss}, t);
-        }
-    };
+            template <class T>
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    !debug_cond_is_tuple<T>::value &&
+                    !debug_cond_enum<T>::value &&
+                    !debug_cond_is_member_repr<T>::value &&
+                    !debug_cond_is_member_repr_stream<T>::value &&
+                    !debug_cond_is_adl_repr<T>::value &&
+                    !debug_cond_is_adl_repr_stream<T>::value &&
+                    debug_cond_is_variant<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
+                    visit(debug_visit_lambda{oss}, t);
+                }
+            };
 
-    template <class T>
-    struct debug_format_trait<
-        T,
-        typename std::enable_if<
-            !debug_cond_string<T>::value && !debug_cond_bool<T>::value &&
-            !debug_cond_char<T>::value && !debug_cond_unicode_char<T>::value &&
-            !debug_cond_integral_unsigned<T>::value &&
-            !debug_cond_integral<T>::value &&
-            !debug_cond_floating_point<T>::value &&
-            !debug_cond_is_smart_pointer<T>::value &&
-            !debug_cond_error_code<T>::value &&
-            !debug_cond_reference_wrapper<T>::value &&
-            !debug_cond_is_ostream_ok<T>::value &&
-            !debug_cond_pointer<T>::value && !debug_cond_is_range<T>::value &&
-            !debug_cond_is_tuple<T>::value && !debug_cond_enum<T>::value &&
-            !debug_cond_is_member_repr<T>::value &&
-            !debug_cond_is_member_repr_stream<T>::value &&
-            !debug_cond_is_adl_repr<T>::value &&
-            !debug_cond_is_adl_repr_stream<T>::value &&
-            !debug_cond_is_variant<T>::value &&
-            debug_cond_is_optional<T>::value>::type> {
-        void operator()(std::ostream &oss, T const &t) const {
-            if ((bool)t) {
-                debug_format(oss, debug_deref_avoid(t));
-            } else {
-                oss << DEBUG_NULLOPT_STRING;
-            }
-        }
-    };
+            template <class T>
+            struct debug_format_trait<
+                T,
+                typename std::enable_if<
+                    !debug_cond_string<T>::value &&
+                    !debug_cond_bool<T>::value && !debug_cond_char<T>::value &&
+                    !debug_cond_unicode_char<T>::value &&
+                    !debug_cond_integral_unsigned<T>::value &&
+                    !debug_cond_integral<T>::value &&
+                    !debug_cond_floating_point<T>::value &&
+                    !debug_cond_is_smart_pointer<T>::value &&
+                    !debug_cond_error_code<T>::value &&
+                    !debug_cond_reference_wrapper<T>::value &&
+                    !debug_cond_is_ostream_ok<T>::value &&
+                    !debug_cond_pointer<T>::value &&
+                    !debug_cond_is_range<T>::value &&
+                    !debug_cond_is_tuple<T>::value &&
+                    !debug_cond_enum<T>::value &&
+                    !debug_cond_is_member_repr<T>::value &&
+                    !debug_cond_is_member_repr_stream<T>::value &&
+                    !debug_cond_is_adl_repr<T>::value &&
+                    !debug_cond_is_adl_repr_stream<T>::value &&
+                    !debug_cond_is_variant<T>::value &&
+                    debug_cond_is_optional<T>::value>::type> {
+                void operator()(std::ostream &oss, T const &t) const {
+                    if (static_cast<bool>(t)) {
+                        debug_format(oss, debug_deref_avoid(t));
+                    } else {
+                        oss << DEBUG_NULLOPT_STRING;
+                    }
+                }
+            };
 # endif
     std::ostringstream oss;
 
@@ -7382,22 +7639,23 @@ private:
         oss << ' ';
 # elif DEBUG_SHOW_TIMESTAMP == 2
 #  if __cpp_inline_variables
-        auto dur = std::chrono::steady_clock::now() - tp0;
+                auto dur = std::chrono::steady_clock::now() - tp0;
 #  else
-        static std::chrono::steady_clock::time_point const tp0 =
-            std::chrono::steady_clock::now();
-        auto dur = std::chrono::steady_clock::now() - tp0;
+                static std::chrono::steady_clock::time_point const tp0 =
+                    std::chrono::steady_clock::now();
+                auto dur = std::chrono::steady_clock::now() - tp0;
 #  endif
-        auto elapsed =
-            std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
-        auto flags = oss.flags();
-        oss << std::setw(3) << std::setfill(' ');
-        oss << (elapsed / 1000) % 1000;
-        oss << '.';
-        oss << std::setw(3) << std::setfill('0');
-        oss << elapsed % 1000;
-        oss.flags(flags);
-        oss << ' ';
+                auto elapsed =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(dur)
+                        .count();
+                auto flags = oss.flags();
+                oss << std::setw(3) << std::setfill(' ');
+                oss << (elapsed / 1000) % 1000;
+                oss << '.';
+                oss << std::setw(3) << std::setfill('0');
+                oss << elapsed % 1000;
+                oss.flags(flags);
+                oss << ' ';
 # endif
 # if DEBUG_SHOW_THREAD_ID
         oss << '[' << std::this_thread::get_id() << ']' << ' ';
@@ -7602,7 +7860,7 @@ public:
     debug &fail(bool fail = true) {
         if (fail) {
             DEBUG_UNLIKELY {
-                on_error("(failed)");
+                on_error("failed:");
             }
         } else {
             state = supress;
@@ -7639,23 +7897,23 @@ public:
 # if DEBUG_PANIC_METHOD == 0
                 throw std::runtime_error(oss.str());
 # elif DEBUG_PANIC_METHOD == 1
-                oss << '\n';
-                DEBUG_OUTPUT(oss.str());
+                        oss << '\n';
+                        DEBUG_OUTPUT(oss.str());
 #  if defined(DEBUG_PANIC_CUSTOM_TRAP)
-                DEBUG_PANIC_CUSTOM_TRAP;
-                return;
+                        DEBUG_PANIC_CUSTOM_TRAP;
+                        return;
 #  elif defined(_MSC_VER)
-                __debugbreak();
-                return;
+                        __debugbreak();
+                        return;
 #  elif defined(__GNUC__) && defined(__has_builtin)
 #   if __has_builtin(__builtin_trap)
-                __builtin_trap();
-                return;
+                        __builtin_trap();
+                        return;
 #   else
-                std::terminate();
+                        std::terminate();
 #   endif
 #  else
-                std::terminate();
+                        std::terminate();
 #  endif
 # elif DEBUG_PANIC_METHOD == 2
                 oss << '\n';
@@ -7705,15 +7963,15 @@ public:
 #  endif
 # elif DEBUG_STEPPING == 2
 #  if defined(DEBUG_PANIC_CUSTOM_TRAP)
-        DEBUG_PANIC_CUSTOM_TRAP;
-        return;
+                DEBUG_PANIC_CUSTOM_TRAP;
+                return;
 #  elif defined(_MSC_VER)
-        __debugbreak();
+                __debugbreak();
 #  elif defined(__GNUC__) && defined(__has_builtin)
 #   if __has_builtin(__builtin_trap)
-        __builtin_trap();
+                __builtin_trap();
 #   else
-        std::terminate();
+                std::terminate();
 #   endif
 #  endif
 # endif
@@ -7755,18 +8013,18 @@ public:
         return {value};
     }
 
-    template <class T, std::enable_if_t<
+    template <class T, typename std::enable_if<
                            std::is_convertible<T, std::string>::value ||
                                std::is_convertible<T, DEBUG_STRING_VIEW>::value,
-                           int> = 0>
+                           int>::type = 0>
     static raw_repr_t<T> raw_repr_if_string(T const &value) {
         return {value};
     }
 
-    template <class T, std::enable_if_t<
+    template <class T, typename std::enable_if<
                            !(std::is_convertible<T, std::string>::value ||
                              std::is_convertible<T, DEBUG_STRING_VIEW>::value),
-                           int> = 0>
+                           int>::type = 0>
     static T const &raw_repr_if_string(T const &value) {
         return value;
     }
@@ -8060,9 +8318,15 @@ DEBUG_NAMESPACE_END
 #endif
 #ifdef DEBUG_CLASS_NAME
 # undef debug
-#elif DEBUG_LEVEL
-# ifdef DEBUG_SOURCE_LOCATION_FAKER
-#  define debug() debug(true, DEBUG_SOURCE_LOCATION_FAKER)
+# if DEBUG_LEVEL
+#  ifdef DEBUG_SOURCE_LOCATION_FAKER
+#   define debug() debug(true, DEBUG_SOURCE_LOCATION_FAKER)
+#  endif
+#  undef debug
+# elif DEBUG_LEVEL
+#  ifdef DEBUG_SOURCE_LOCATION_FAKER
+#   define debug() debug(true, DEBUG_SOURCE_LOCATION_FAKER)
+#  endif
 # endif
 #endif
 
@@ -8393,16 +8657,17 @@ enum class JsonError : int {
     InvalidUTF16String,
     DictKeyNotString,
     InvalidNumberFormat,
+    InvalidVariantType,
     NotImplemented,
 };
 
 inline std::error_category const &jsonCategory() {
-    static struct : std::error_category {
-        virtual char const *name() const noexcept {
+    static struct final : std::error_category {
+        char const *name() const noexcept override {
             return "json";
         }
 
-        virtual std::string message(int e) const {
+        std::string message(int e) const override {
             using namespace std::string_literals;
             switch (static_cast<JsonError>(e)) {
             case JsonError::Success:         return "success"s;
@@ -8416,6 +8681,8 @@ inline std::error_category const &jsonCategory() {
             case JsonError::DictKeyNotString:   return "dict key must be string"s;
             case JsonError::InvalidNumberFormat:
                 return "invalid number format"s;
+            case JsonError::InvalidVariantType:
+                return "invalid variant type"s;
             case JsonError::NotImplemented: return "not implemented"s;
             default:                        return "unknown error"s;
             }
@@ -8446,6 +8713,9 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
         unsigned int lasthex = 0;
         unsigned int hex = 0;
         std::size_t i;
+        auto unsignedExtent = [](unsigned int x) {
+            return static_cast<char>(static_cast<unsigned char>(x));
+        };
         for (i = 0;; ++i) {
             if (i == json.size()) {
                 ec = make_error_code(JsonError::NonTerminatedString);
@@ -8488,11 +8758,11 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
             } else {
                 hex <<= 4;
                 if ('0' <= c && c <= '9') {
-                    hex |= (unsigned int)(c - '0');
+                    hex |= static_cast<unsigned int>(c - '0');
                 } else if ('a' <= c && c <= 'f') {
-                    hex |= (unsigned int)(c - 'a' + 10);
+                    hex |= static_cast<unsigned int>(c - 'a' + 10);
                 } else if ('A' <= c && c <= 'F') {
-                    hex |= (unsigned int)(c - 'A' + 10);
+                    hex |= static_cast<unsigned int>(c - 'A' + 10);
                 }
                 if (phase == 5) {
                     if (0xD800 <= hex && hex < 0xDC00) {
@@ -8517,27 +8787,22 @@ inline JsonValue::Ptr jsonParse(std::string_view &json, std::error_code &ec) {
                         }
                     }
                     if (hex <= 0x7F) {
-                        str.push_back((char)(unsigned char)(hex));
+                        str.push_back(unsignedExtent(hex));
                     } else if (hex <= 0x7FF) {
-                        str.push_back((char)(unsigned char)(0xC0 | (hex >> 6)));
-                        str.push_back(
-                            (char)(unsigned char)(0x80 | (hex & 0x3F)));
+                        str.push_back(unsignedExtent(0xC0 | (hex >> 6)));
+                        str.push_back(unsignedExtent(0x80 | (hex & 0x3F)));
                     } else if (hex <= 0xFFFF) {
+                        str.push_back(unsignedExtent(0xE0 | (hex >> 12)));
                         str.push_back(
-                            (char)(unsigned char)(0xE0 | (hex >> 12)));
-                        str.push_back(
-                            (char)(unsigned char)(0x80 | ((hex >> 6) & 0x3F)));
-                        str.push_back(
-                            (char)(unsigned char)(0x80 | (hex & 0x3F)));
+                            unsignedExtent(0x80 | ((hex >> 6) & 0x3F)));
+                        str.push_back(unsignedExtent(0x80 | (hex & 0x3F)));
                     } else if (hex <= 0x10FFFF) {
+                        str.push_back(unsignedExtent(0xF0 | (hex >> 18)));
                         str.push_back(
-                            (char)(unsigned char)(0xF0 | (hex >> 18)));
+                            unsignedExtent(0x80 | ((hex >> 12) & 0x3F)));
                         str.push_back(
-                            (char)(unsigned char)(0x80 | ((hex >> 12) & 0x3F)));
-                        str.push_back(
-                            (char)(unsigned char)(0x80 | ((hex >> 6) & 0x3F)));
-                        str.push_back(
-                            (char)(unsigned char)(0x80 | (hex & 0x3F)));
+                            unsignedExtent(0x80 | ((hex >> 6) & 0x3F)));
+                        str.push_back(unsignedExtent(0x80 | (hex & 0x3F)));
                     } else {
                         ec = make_error_code(JsonError::InvalidUTF16String);
                         return nullptr;
@@ -8963,19 +9228,62 @@ struct JsonTraitArithmeticLike {
 struct JsonTraitVariantLike {
     template <class T>
     static void putValue(JsonEncoder *encoder, T const &value) {
-        std::visit([&](auto const &arg) { encoder->putValue(arg); }, value);
+        std::visit([&](auto const &arg) {
+            using Arg = std::decay_t<decltype(arg)>;
+            encoder->put('{');
+            encoder->putLiterialString("type");
+            encoder->put(':');
+            encoder->putLiterialString(Arg::name);
+            encoder->put(',');
+            encoder->putLiterialString("object");
+            encoder->put(':');
+            encoder->putValue(arg);
+            encoder->put('}');
+        }, value);
+    }
+
+    template <class T, std::size_t ...Is>
+    static bool getValueImpl(JsonValue::String const &name,
+                             JsonValue::Union &object, T &value,
+                             std::error_code &ec, std::index_sequence<Is...>) {
+        int ret = 0;
+        (void)((name == std::variant_alternative_t<Is, T>::name ?
+            (ret = (JsonTrait<std::variant_alternative_t<Is, T>>
+             ::getValue(object, value.template emplace<Is>(), ec) ? 2 : 1), true) :
+            false) || ...);
+        switch (ret) {
+            case 2: return true;
+            case 1: return false;
+            default:
+                ec = make_error_code(JsonError::InvalidVariantType);
+                return false;
+        }
     }
 
     template <class T>
     static bool getValue(JsonValue::Union &data, T &value,
                          std::error_code &ec) {
-        ec = make_error_code(JsonError::NotImplemented);
-        return false;
-        throw "TODO!! IMPLEMENT THIS!!";
-        /* std::visit([&](auto const &arg) { */
-        /*     using Arg = std::decay_t<decltype(arg)>; */
-        /*     encoder->getValue(data, arg, ec); */
-        /* }, data.inner); */
+        if (auto p = std::get_if<JsonValue::Dict>(&data)) {
+            if (auto type = p->find("type"); type == p->end()) {
+                ec = make_error_code(JsonError::InvalidVariantType);
+                return false;
+            } else if (auto object = p->find("object"); object == p->end()) {
+                ec = make_error_code(JsonError::InvalidVariantType);
+                return false;
+            } else if (auto p = std::get_if<JsonValue::String>(&type->second->inner)) {
+                if (!getValueImpl(*p, object->second->inner, value, ec,
+                                  std::make_index_sequence<std::variant_size_v<T>>())) {
+                    return false;
+                }
+                return true;
+            } else {
+                ec = make_error_code(JsonError::InvalidVariantType);
+                return false;
+            }
+        } else {
+            ReflectorJsonDecode::typeMismatch("object", data, ec);
+            return false;
+        }
     }
 };
 
@@ -9167,7 +9475,83 @@ inline Expected<T> json_decode(std::string_view json) {
     }
     return std::move(value);
 }
+
 } // namespace co_async
+
+
+
+
+namespace co_async {
+
+template <class T>
+constexpr T bruteForceByteSwap(T value) {
+    if constexpr (sizeof(T) > 1) {
+        char* ptr = reinterpret_cast<char*>(&value);
+        for (size_t i = 0; i < sizeof(T) / 2; ++i) {
+            std::swap(ptr[i], ptr[sizeof(T) - 1 - i]);
+        }
+    }
+    return value;
+}
+
+template <class T>
+    requires (std::is_trivial_v<T> && !std::is_integral_v<T>)
+constexpr T byteswap(T value) {
+    return bruteForceByteSwap(value);
+}
+
+template <class T>
+    requires std::is_integral_v<T>
+constexpr T byteswap(T value) {
+#if __cpp_lib_byteswap
+    return std::byteswap(value);
+#elif defined(__GNUC__) && defined(__has_builtin)
+#if __has_builtin(__builtin_bswap)
+    return __builtin_bswap(value);
+#else
+    return bruteForceByteSwap(value);
+#endif
+#else
+    return brute_force_byteswap(value);
+#endif
+}
+
+#if __cpp_lib_endian // C++20 支持的 <bit> 头文件中可以方便地判断本地硬件的大小端
+inline constexpr bool is_little_endian = std::endian::native == std::endian::little;
+#else
+#if _MSC_VER
+#include <endian.h>
+#if defined(__BYTE_ORDER) && __BYTE_ORDER != 0 && __BYTE_ORDER == __BIG_ENDIAN
+inline constexpr bool is_little_endian = false;
+#else
+inline constexpr bool is_little_endian = true;
+#endif
+#else
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ != 0
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+inline constexpr bool is_little_endian = false;
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+inline constexpr bool is_little_endian = true;
+#else
+inline constexpr bool is_little_endian = true;
+#endif
+#else
+inline constexpr bool is_little_endian = true;
+#endif
+#endif
+#endif
+
+template <class T>
+    requires std::is_trivial_v<T>
+constexpr T byteswap_if_little(T value) {
+    if constexpr (is_little_endian) {
+        return byteswap(value);
+    } else {
+        return value;
+    }
+}
+
+}
 
 
 
@@ -9590,6 +9974,58 @@ inline SplitString<char> split_string(std::string_view s, char delimiter) {
 
 
 
+namespace co_async {
+
+inline uint32_t getSeedByTime() {
+    return static_cast<uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count());
+}
+
+inline uint32_t getSecureSeed() {
+    return std::random_device{}();
+}
+
+inline uint32_t wangsHash(uint32_t x) noexcept {
+    x = (x ^ 61) ^ (x >> 16);
+    x *= 9;
+    x = x ^ (x >> 4);
+    x *= 0x27d4eb2d;
+    x = x ^ (x >> 15);
+    return x;
+}
+
+struct WangsHash {
+    using result_type = uint32_t;
+
+    result_type mSeed;
+
+    WangsHash(result_type seed) noexcept : mSeed(seed) {
+    }
+
+    void seed(result_type seed) noexcept {
+        mSeed = seed;
+    }
+
+    result_type operator()() noexcept {
+        mSeed = wangsHash(mSeed);
+        return mSeed;
+        std::mt19937 mt;
+        mt.discard(1);
+    }
+
+    static result_type max() noexcept {
+        return std::numeric_limits<result_type>::max();
+    }
+
+    static result_type min() noexcept {
+        return std::numeric_limits<result_type>::min();
+    }
+};
+
+}
+
+
+
+
 
 
 #include <dirent.h>
@@ -9632,30 +10068,6 @@ struct [[nodiscard]] FileHandle {
 
 protected:
     int mFileNo;
-};
-
-struct [[nodiscard]] DirFilePath {
-    DirFilePath(std::filesystem::path path) : mPath(path), mDirFd(AT_FDCWD) {}
-
-    explicit DirFilePath(std::filesystem::path path, FileHandle const &dir)
-        : mPath(path),
-          mDirFd(dir.fileNo()) {}
-
-    char const *c_str() const noexcept {
-        return mPath.c_str();
-    }
-
-    std::filesystem::path const &path() const {
-        return mPath;
-    }
-
-    int dir_file() const noexcept {
-        return mDirFd;
-    }
-
-private:
-    std::filesystem::path mPath;
-    int mDirFd;
 };
 
 struct FileStat {
@@ -9733,16 +10145,25 @@ private:
             std::chrono::nanoseconds(time.tv_nsec));
     }
 };
+
+#if CO_ASYNC_DIRECT
+static constexpr size_t kOpenModeDefaultFlags =
+    O_LARGEFILE | O_CLOEXEC | O_DIRECT;
+#else
+static constexpr size_t kOpenModeDefaultFlags = O_LARGEFILE | O_CLOEXEC;
+#endif
+
 enum class OpenMode : int {
-    Read = O_RDONLY | O_LARGEFILE | O_CLOEXEC,
-    Write = O_WRONLY | O_TRUNC | O_CREAT | O_LARGEFILE | O_CLOEXEC,
-    ReadWrite = O_RDWR | O_CREAT | O_LARGEFILE | O_CLOEXEC,
-    Append = O_WRONLY | O_APPEND | O_CREAT | O_LARGEFILE | O_CLOEXEC,
-    Directory = O_RDONLY | O_DIRECTORY | O_LARGEFILE | O_CLOEXEC,
+    Read = O_RDONLY | kOpenModeDefaultFlags,
+    Write = O_WRONLY | O_TRUNC | O_CREAT | kOpenModeDefaultFlags,
+    ReadWrite = O_RDWR | O_CREAT | kOpenModeDefaultFlags,
+    Append = O_WRONLY | O_APPEND | O_CREAT | kOpenModeDefaultFlags,
+    Directory = O_RDONLY | O_DIRECTORY | kOpenModeDefaultFlags,
 };
 
 inline std::filesystem::path make_path(std::string_view path) {
-    return std::filesystem::path((char8_t const *)std::string(path).c_str());
+    return std::filesystem::path(
+        reinterpret_cast<char8_t const *>(std::string(path).c_str()));
 }
 
 template <std::convertible_to<std::string_view>... Ts>
@@ -9751,11 +10172,30 @@ inline std::filesystem::path make_path(Ts &&...chunks) {
     return (make_path(chunks) / ...);
 }
 
-inline Task<Expected<FileHandle>> fs_open(DirFilePath path, OpenMode mode,
+inline Task<Expected<FileHandle>> fs_open(std::filesystem::path path, OpenMode mode,
                                           mode_t access = 0644) {
-    int oflags = (int)mode;
+    int oflags = static_cast<int>(mode);
     int fd = co_await expectError(co_await UringOp().prep_openat(
-        path.dir_file(), path.c_str(), oflags, access));
+        AT_FDCWD, path.c_str(), oflags, access))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::bad_file_descriptor, [&] { return expectError(open(path.c_str(), oflags, access)); })
+#endif
+        ;
+    FileHandle file(fd);
+    co_return file;
+}
+
+inline Task<Expected<FileHandle>> fs_openat(FileHandle dir,
+                                            std::filesystem::path path,
+                                            OpenMode mode,
+                                            mode_t access = 0644) {
+    int oflags = static_cast<int>(mode);
+    int fd = co_await expectError(co_await UringOp().prep_openat(
+        dir.fileNo(), path.c_str(), oflags, access))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::bad_file_descriptor, [&] { return expectError(openat(dir.fileNo(), path.c_str(), oflags, access)); })
+#endif
+        ;
     FileHandle file(fd);
     co_return file;
 }
@@ -9766,99 +10206,161 @@ inline Task<Expected<>> fs_close(FileHandle file) {
     co_return {};
 }
 
-inline Task<Expected<>> fs_mkdir(DirFilePath path, mode_t access = 0755) {
-    co_await expectError(co_await UringOp().prep_mkdirat(path.dir_file(), path.c_str(), access));
-    co_return {};
-}
-
-inline Task<Expected<>> fs_link(DirFilePath oldpath, DirFilePath newpath) {
+inline Task<Expected<>> fs_mkdir(std::filesystem::path path, mode_t access = 0755) {
     co_await expectError(
-        co_await UringOp().prep_linkat(oldpath.dir_file(), oldpath.c_str(),
-                                       newpath.dir_file(), newpath.c_str(), 0));
+        co_await UringOp().prep_mkdirat(AT_FDCWD, path.c_str(), access));
     co_return {};
 }
 
-inline Task<Expected<>> fs_symlink(DirFilePath target, DirFilePath linkpath) {
+inline Task<Expected<>> fs_link(std::filesystem::path oldpath, std::filesystem::path newpath) {
+    co_await expectError(
+        co_await UringOp().prep_linkat(AT_FDCWD, oldpath.c_str(),
+                                       AT_FDCWD, newpath.c_str(), 0));
+    co_return {};
+}
+
+inline Task<Expected<>> fs_symlink(std::filesystem::path target, std::filesystem::path linkpath) {
     co_await expectError(co_await UringOp().prep_symlinkat(
-        target.c_str(), linkpath.dir_file(), linkpath.c_str()));
+        target.c_str(), AT_FDCWD, linkpath.c_str()));
     co_return {};
 }
 
-inline Task<Expected<>> fs_unlink(DirFilePath path) {
+inline Task<Expected<>> fs_unlink(std::filesystem::path path) {
     co_await expectError(
-        co_await UringOp().prep_unlinkat(path.dir_file(), path.c_str(), 0));
+        co_await UringOp().prep_unlinkat(AT_FDCWD, path.c_str(), 0));
     co_return {};
 }
 
-inline Task<Expected<>> fs_rmdir(DirFilePath path) {
+inline Task<Expected<>> fs_rmdir(std::filesystem::path path) {
     co_await expectError(co_await UringOp().prep_unlinkat(
-        path.dir_file(), path.c_str(), AT_REMOVEDIR));
+        AT_FDCWD, path.c_str(), AT_REMOVEDIR));
     co_return {};
 }
 
 inline Task<Expected<FileStat>>
-fs_stat(DirFilePath path, unsigned int mask = STATX_BASIC_STATS | STATX_BTIME) {
+fs_stat(std::filesystem::path path, unsigned int mask = STATX_BASIC_STATS | STATX_BTIME, int flags = 0) {
     FileStat ret;
     co_await expectError(co_await UringOp().prep_statx(
-        path.dir_file(), path.c_str(), 0, mask, ret.getNativeStatx()));
+        AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx()))
+#if CO_ASYNC_INVALFIX
+            .or_else(std::errc::bad_file_descriptor, [&] { return expectError(statx(AT_FDCWD, path.c_str(), flags, mask, ret.getNativeStatx())); })
+#endif
+            ;
     co_return ret;
-}
-
-inline Task<Expected<std::uint64_t>> fs_stat_size(DirFilePath path) {
-    FileStat ret;
-    co_await expectError(co_await UringOp().prep_statx(
-        path.dir_file(), path.c_str(), 0, STATX_SIZE, ret.getNativeStatx()));
-    co_return ret.size();
 }
 
 inline Task<Expected<std::size_t>>
 fs_read(FileHandle &file, std::span<char> buffer,
-        std::uint64_t offset = (std::uint64_t)-1) {
-    co_return (std::size_t) co_await expectError(
-        co_await UringOp().prep_read(file.fileNo(), buffer, offset));
+        std::uint64_t offset = static_cast<std::uint64_t>(-1)) {
+    co_return static_cast<std::size_t>(
+        co_await expectError(
+            co_await UringOp().prep_read(file.fileNo(), buffer, offset))
+#if CO_ASYNC_INVALFIX
+            .or_else(std::errc::invalid_argument,
+                      [&] {
+                          if (offset == static_cast<std::uint64_t>(-1)) {
+                              return expectError(static_cast<int>(read(
+                                  file.fileNo(), buffer.data(), buffer.size())));
+                          } else {
+                              return expectError(static_cast<int>(pread64(
+                                  file.fileNo(), buffer.data(), buffer.size(),
+                                  static_cast<__off64_t>(offset))));
+                          }
+                      })
+#endif
+    );
 }
 
 inline Task<Expected<std::size_t>>
 fs_write(FileHandle &file, std::span<char const> buffer,
-         std::uint64_t offset = (std::uint64_t)-1) {
-    co_return (std::size_t) co_await expectError(
-        co_await UringOp().prep_write(file.fileNo(), buffer, offset));
+         std::uint64_t offset = static_cast<std::uint64_t>(-1)) {
+    co_return static_cast<std::size_t>(
+        co_await expectError(
+            co_await UringOp().prep_write(file.fileNo(), buffer, offset))
+#if CO_ASYNC_INVALFIX
+            .or_else(std::errc::invalid_argument,
+                      [&] {
+                          if (offset == static_cast<std::uint64_t>(-1)) {
+                              return expectError(static_cast<int>(write(
+                                  file.fileNo(), buffer.data(), buffer.size())));
+                          } else {
+                              return expectError(static_cast<int>(pwrite64(
+                                  file.fileNo(), buffer.data(), buffer.size(),
+                                  static_cast<__off64_t>(offset))));
+                          }
+                      })
+#endif
+    );
 }
 
 inline Task<Expected<std::size_t>>
 fs_read(FileHandle &file, std::span<char> buffer, CancelToken cancel,
-        std::uint64_t offset = (std::uint64_t)-1) {
-    co_return (std::size_t) co_await expectError(
-        co_await UringOp().prep_read(file.fileNo(), buffer, offset).cancelGuard(cancel));
+        std::uint64_t offset = static_cast<std::uint64_t>(-1)) {
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp()
+                                 .prep_read(file.fileNo(), buffer, offset)
+                                 .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+            .or_else(std::errc::invalid_argument,
+                      [&] {
+                          if (offset == static_cast<std::uint64_t>(-1)) {
+                              return expectError(static_cast<int>(read(
+                                  file.fileNo(), buffer.data(), buffer.size())));
+                          } else {
+                              return expectError(static_cast<int>(pread64(
+                                  file.fileNo(), buffer.data(), buffer.size(),
+                                  static_cast<__off64_t>(offset))));
+                          }
+                      })
+#endif
+    );
 }
 
 inline Task<Expected<std::size_t>>
 fs_write(FileHandle &file, std::span<char const> buffer, CancelToken cancel,
-         std::uint64_t offset = (std::uint64_t)-1) {
-    co_return (std::size_t) co_await expectError(
-        co_await UringOp().prep_write(file.fileNo(), buffer, offset).cancelGuard(cancel));
+         std::uint64_t offset = static_cast<std::uint64_t>(-1)) {
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp()
+                                 .prep_write(file.fileNo(), buffer, offset)
+                                 .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+            .or_else(std::errc::invalid_argument,
+                      [&] {
+                          if (offset == static_cast<std::uint64_t>(-1)) {
+                              return expectError(static_cast<int>(write(
+                                  file.fileNo(), buffer.data(), buffer.size())));
+                          } else {
+                              return expectError(static_cast<int>(pwrite64(
+                                  file.fileNo(), buffer.data(), buffer.size(),
+                                  static_cast<__off64_t>(offset))));
+                          }
+                      })
+#endif
+    );
 }
 
 inline Task<Expected<>> fs_truncate(FileHandle &file, std::uint64_t size = 0) {
-    co_await expectError(
-        co_await UringOp().prep_ftruncate(file.fileNo(), (loff_t)size));
+    co_await expectError(co_await UringOp().prep_ftruncate(
+        file.fileNo(), static_cast<loff_t>(size)));
     co_return {};
 }
 
 inline Task<Expected<std::size_t>>
 fs_splice(FileHandle &fileIn, FileHandle &fileOut, std::size_t size,
           std::int64_t offsetIn = -1, std::int64_t offsetOut = -1) {
-    co_return (std::size_t) co_await expectError(co_await UringOp().prep_splice(
-        fileIn.fileNo(), offsetIn, fileOut.fileNo(), offsetOut, size, 0));
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp().prep_splice(
+            fileIn.fileNo(), offsetIn, fileOut.fileNo(), offsetOut, size, 0)));
 }
 
 inline Task<Expected<std::size_t>> fs_getdents(FileHandle &dirFile,
                                                std::span<char> buffer) {
-    int res = (int)getdents64(dirFile.fileNo(), buffer.data(), buffer.size());
+    int res = static_cast<int>(
+        getdents64(dirFile.fileNo(), buffer.data(), buffer.size()));
     if (res < 0) [[unlikely]] {
         res = -errno;
     }
-    co_return (std::size_t) co_await expectError(res);
+    co_return static_cast<std::size_t>(co_await expectError(res));
 }
 
 inline Task<int> fs_nop() {
@@ -9921,25 +10423,115 @@ public:
     char &operator[](std::size_t index) const noexcept {
         return mData[index];
     }
+
+    operator std::span<char>() const noexcept {
+        return {data(), size()};
+    }
 };
 #else
+// struct BytesBuffer {
+// private:
+//     std::unique_ptr<char[]> mData;
+//     std::size_t mSize = 0;
+//
+// public:
+//     BytesBuffer() noexcept = default;
+//
+//     explicit BytesBuffer(std::size_t size) :
+//     mData(std::make_unique<char[]>(size)), mSize(size) {}
+//
+//     void allocate(std::size_t size) {
+//         mData = std::make_unique<char[]>(size);
+//         mSize = size;
+//     }
+//
+//     char *data() const noexcept {
+//         return mData.get();
+//     }
+//
+//     std::size_t size() const noexcept {
+//         return mSize;
+//     }
+//
+//     explicit operator bool() const noexcept {
+//         return static_cast<bool>(mData);
+//     }
+//
+//     char &operator[](std::size_t index) const noexcept {
+//         return mData[index];
+//     }
+//
+//     operator std::span<char>() const noexcept {
+//         return {data(), size()};
+//     }
+// };
 struct BytesBuffer {
 private:
-    std::unique_ptr<char[]> mData;
-    std::size_t mSize = 0;
+    char *mData;
+    std::size_t mSize;
+
+# if __unix__
+    void *pageAlignedAlloc(size_t n) {
+        return valloc(n);
+    }
+
+    void pageAlignedFree(void *p, size_t) {
+        free(p);
+    }
+# elif _WIN32
+    __ void *pageAlignedAlloc(size_t n) {
+        return _aligned_malloc(n, 4096);
+    }
+
+    void pageAlignedFree(void *p, size_t) {
+        _aligned_free(p);
+    }
+# else
+    void *pageAlignedAlloc(size_t n) {
+        return malloc(n);
+    }
+
+    void pageAlignedFree(void *p, size_t) {
+        free(p);
+    }
+# endif
 
 public:
-    BytesBuffer() noexcept = default;
+    BytesBuffer() noexcept : mData(nullptr), mSize(0) {}
 
-    explicit BytesBuffer(std::size_t size) : mData(std::make_unique<char[]>(size)), mSize(size) {}
+    explicit BytesBuffer(std::size_t size)
+        : mData(static_cast<char *>(pageAlignedAlloc(size))),
+          mSize(size) {}
+
+    BytesBuffer(BytesBuffer &&that) noexcept
+        : mData(that.mData),
+          mSize(that.mSize) {
+        that.mData = nullptr;
+        that.mSize = 0;
+    }
+
+    BytesBuffer &operator=(BytesBuffer &&that) noexcept {
+        if (this != &that) {
+            pageAlignedFree(mData, mSize);
+            mData = that.mData;
+            mSize = that.mSize;
+            that.mData = nullptr;
+            that.mSize = 0;
+        }
+        return *this;
+    }
+
+    ~BytesBuffer() noexcept {
+        pageAlignedFree(mData, mSize);
+    }
 
     void allocate(std::size_t size) {
-        mData = std::make_unique<char[]>(size);
+        mData = static_cast<char *>(pageAlignedAlloc(size));
         mSize = size;
     }
 
     char *data() const noexcept {
-        return mData.get();
+        return mData;
     }
 
     std::size_t size() const noexcept {
@@ -9947,11 +10539,15 @@ public:
     }
 
     explicit operator bool() const noexcept {
-        return (bool)mData;
+        return static_cast<bool>(mData);
     }
 
     char &operator[](std::size_t index) const noexcept {
         return mData[index];
+    }
+
+    operator std::span<char>() const noexcept {
+        return {data(), size()};
     }
 };
 #endif
@@ -9965,6 +10561,18 @@ public:
 
 namespace co_async {
 inline constexpr std::size_t kStreamBufferSize = 8192;
+
+inline std::error_code eofError() {
+    static struct final : public std::error_category {
+        const char *name() const noexcept override {
+            return "eof";
+        }
+        std::string message(int) const override {
+            return "End of file";
+        }
+    } category;
+    return std::error_code(1, category);
+}
 
 struct Stream {
     virtual void raw_timeout(std::chrono::steady_clock::duration timeout) {}
@@ -10106,7 +10714,8 @@ struct BorrowedStream {
                 mInIndex = end;
                 co_return {};
             }
-            p = std::copy(mInBuffer.data() + start, mInBuffer.data() + mInEnd, p);
+            p = std::copy(mInBuffer.data() + start, mInBuffer.data() + mInEnd,
+                          p);
             mInEnd = mInIndex = 0;
             co_await co_await fillbuf();
             start = 0;
@@ -10154,31 +10763,34 @@ struct BorrowedStream {
         co_return s;
     }
 
-    Task<> dropall() {
+    Task<Expected<>> dropall() {
         do {
             mInEnd = mInIndex = 0;
-        } while (co_await fillbuf());
+        } while (co_await (co_await fillbuf()).transform([] { return true; }).or_else(eofError(), [] { return false; }));
+        co_return {};
     }
 
-    Task<> getall(String &s) {
+    Task<Expected<>> getall(String &s) {
         std::size_t start = mInIndex;
         do {
             s.append(mInBuffer.data() + start, mInEnd - start);
             start = 0;
             mInEnd = mInIndex = 0;
-        } while (co_await fillbuf());
+        } while (co_await (co_await fillbuf()).transform([] { return true; }).or_else(eofError(), [] { return false; }));
+        co_return {};
     }
 
-    Task<String> getall() {
+    Task<Expected<String>> getall() {
         String s;
-        co_await getall(s);
+        co_await co_await getall(s);
         co_return s;
     }
 
     template <class T>
         requires std::is_trivial_v<T>
     Task<Expected<>> getstruct(T &ret) {
-        return getspan(std::span<char>((char *)&ret, sizeof(T)));
+        return getspan(
+            std::span<char>(reinterpret_cast<char *>(&ret), sizeof(T)));
     }
 
     template <class T>
@@ -10259,10 +10871,17 @@ struct BorrowedStream {
         if (!mInBuffer) {
             allocinbuf(kStreamBufferSize);
         }
-        auto n = co_await co_await mRaw->raw_read(
-            std::span(mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
+        // #if CO_ASYNC_DEBUG
+        //         if (!bufempty()) [[unlikely]] {
+        //             throw std::logic_error("buf must be empty before
+        //             fillbuf");
+        //         }
+        // #endif
+        auto n = co_await co_await mRaw->raw_read(std::span(
+            mInBuffer.data() + mInIndex, mInBuffer.size() - mInIndex));
+        // auto n = co_await co_await mRaw->raw_read(mInBuffer);
         if (n == 0) [[unlikely]] {
-            co_return std::errc::broken_pipe;
+            co_return eofError();
         }
         mInEnd = mInIndex + n;
         co_return {};
@@ -10337,8 +10956,8 @@ struct BorrowedStream {
 
     template <class T>
     Task<Expected<>> putstruct(T const &s) {
-        return putspan(
-            std::span<char const>((char const *)std::addressof(s), sizeof(T)));
+        return putspan(std::span<char const>(
+            reinterpret_cast<char const *>(std::addressof(s)), sizeof(T)));
     }
 
     Task<Expected<>> putchunk(std::string_view s) {
@@ -10372,10 +10991,14 @@ struct BorrowedStream {
                 len = co_await mRaw->raw_write(buf);
             }
             if (len.has_error()) [[unlikely]] {
+#if CO_ASYNC_DEBUG
+                co_return {len.error(), len.mErrorLocation};
+#else
                 co_return len.error();
+#endif
             }
             if (*len == 0) [[unlikely]] {
-                co_return std::errc::broken_pipe;
+                co_return eofError();
             }
             mOutIndex = 0;
             co_await co_await mRaw->raw_flush();
@@ -10416,11 +11039,11 @@ struct BorrowedStream {
     }
 
     Task<Expected<std::size_t>> read(void *buffer, std::size_t len) {
-        return read(std::span<char>((char *)buffer, len));
+        return read(std::span<char>(static_cast<char *>(buffer), len));
     }
 
     std::size_t tryread(void *buffer, std::size_t len) {
-        return tryread(std::span<char>((char *)buffer, len));
+        return tryread(std::span<char>(static_cast<char *>(buffer), len));
     }
 
     Task<Expected<std::size_t>> write(std::span<char const> buffer) {
@@ -10433,15 +11056,18 @@ struct BorrowedStream {
     }
 
     Task<Expected<std::size_t>> write(void const *buffer, std::size_t len) {
-        return write(std::span<char const>((char const *)buffer, len));
+        return write(
+            std::span<char const>(static_cast<char const *>(buffer), len));
     }
 
     Task<Expected<>> putspan(void const *buffer, std::size_t len) {
-        return putspan(std::span<char const>((char const *)buffer, len));
+        return putspan(
+            std::span<char const>(static_cast<char const *>(buffer), len));
     }
 
     std::size_t trywrite(void const *buffer, std::size_t len) {
-        return trywrite(std::span<char const>((char const *)buffer, len));
+        return trywrite(
+            std::span<char const>(static_cast<char const *>(buffer), len));
     }
 
     void timeout(std::chrono::steady_clock::duration timeout) {
@@ -10630,12 +11256,12 @@ inline Task<Expected<>> kill_process(Pid pid, int sig = SIGKILL) {
 inline Task<Expected<WaitProcessResult>> wait_process(Pid pid,
                                                       int options = WEXITED) {
     siginfo_t info{};
-    co_await expectError(
-        co_await UringOp().prep_waitid(P_PID, (id_t)pid, &info, options, 0));
+    co_await expectError(co_await UringOp().prep_waitid(
+        P_PID, static_cast<id_t>(pid), &info, options, 0));
     co_return WaitProcessResult{
         .pid = info.si_pid,
         .status = info.si_status,
-        .exitType = (WaitProcessResult::ExitType)info.si_code,
+        .exitType = static_cast<WaitProcessResult::ExitType>(info.si_code),
     };
 }
 
@@ -10645,7 +11271,7 @@ wait_process(Pid pid, std::chrono::steady_clock::duration timeout,
     siginfo_t info{};
     auto ts = durationToKernelTimespec(timeout);
     auto ret = expectError(co_await UringOp::link_ops(
-        UringOp().prep_waitid(P_PID, (id_t)pid, &info, options, 0),
+        UringOp().prep_waitid(P_PID, static_cast<id_t>(pid), &info, options, 0),
         UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
     if (ret == std::make_error_code(std::errc::operation_canceled)) {
         co_return std::errc::stream_timeout;
@@ -10654,7 +11280,7 @@ wait_process(Pid pid, std::chrono::steady_clock::duration timeout,
     co_return WaitProcessResult{
         .pid = info.si_pid,
         .status = info.si_status,
-        .exitType = (WaitProcessResult::ExitType)info.si_code,
+        .exitType = static_cast<WaitProcessResult::ExitType>(info.si_code),
     };
 }
 
@@ -10878,7 +11504,7 @@ struct FileWatch {
         }
         co_return WaitFileResult{
             .path = std::move(path),
-            .event = (FileEvent)mEventBuffer->mask,
+            .event = static_cast<FileEvent>(mEventBuffer->mask),
         };
     }
 
@@ -10891,86 +11517,86 @@ private:
 };
 } // namespace co_async
 
-
-
-
-
-
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
-namespace co_async {
-struct SignalingContextMT {
-    static void startMain(std::stop_token stop) {
-        while (!stop.stop_requested()) [[likely]] {
-            sigset_t s;
-            sigemptyset(&s);
-            std::unique_lock lock(instance->mMutex);
-            for (auto [signo, waiters]: instance->mWaitingSignals) {
-                sigaddset(&s, signo);
-            }
-            lock.unlock();
-            int signo;
-            throwingError(-sigwait(&s, &signo));
-            lock.lock();
-            std::deque<std::coroutine_handle<>> waiters;
-            waiters.swap(instance->mWaitingSignals.at(signo));
-            lock.unlock();
-            for (auto coroutine: waiters) {
-                IOContextMT::spawn(coroutine);
-            }
-        }
-    }
-
-    struct SignalAwaiter {
-        bool await_ready() const noexcept {
-            return false;
-        }
-
-        void await_suspend(std::coroutine_handle<> coroutine) const {
-            std::lock_guard lock(instance->mMutex);
-            instance->mWaitingSignals[mSigno].push_back(coroutine);
-        }
-
-        void await_resume() const noexcept {}
-
-        int mSigno;
-    };
-
-    static SignalAwaiter waitSignal(int signo) {
-        return SignalAwaiter(signo);
-    }
-
-    static void start() {
-        instance->mWorker =
-            std::jthread([](std::stop_token stop) { startMain(stop); });
-    }
-
-    static inline SignalingContextMT *instance;
-
-    SignalingContextMT() {
-        if (instance) {
-            throw std::logic_error(
-                "each process may contain only one SignalingContextMT");
-        }
-        instance = this;
-        start();
-    }
-
-    SignalingContextMT(SignalingContextMT &&) = delete;
-
-    ~SignalingContextMT() {
-        instance = nullptr;
-    }
-
-private:
-    std::map<int, std::deque<std::coroutine_handle<>>> mWaitingSignals;
-    std::mutex mMutex;
-    std::jthread mWorker;
-};
-} // namespace co_async
+// 
+// 
+// 
+// 
+// 
+// #include <signal.h>
+// #include <sys/types.h>
+// #include <sys/wait.h>
+// #include <unistd.h>
+//
+// namespace co_async {
+// struct SignalingContextMT {
+//     static void startMain(std::stop_token stop) {
+//         while (!stop.stop_requested()) [[likely]] {
+//             sigset_t s;
+//             sigemptyset(&s);
+//             std::unique_lock lock(instance->mMutex);
+//             for (auto [signo, waiters]: instance->mWaitingSignals) {
+//                 sigaddset(&s, signo);
+//             }
+//             lock.unlock();
+//             int signo;
+//             throwingError(-sigwait(&s, &signo));
+//             lock.lock();
+//             std::deque<std::coroutine_handle<>> waiters;
+//             waiters.swap(instance->mWaitingSignals.at(signo));
+//             lock.unlock();
+//             for (auto coroutine: waiters) {
+//                 IOContextMT::spawn(coroutine);
+//             }
+//         }
+//     }
+//
+//     struct SignalAwaiter {
+//         bool await_ready() const noexcept {
+//             return false;
+//         }
+//
+//         void await_suspend(std::coroutine_handle<> coroutine) const {
+//             std::lock_guard lock(instance->mMutex);
+//             instance->mWaitingSignals[mSigno].push_back(coroutine);
+//         }
+//
+//         void await_resume() const noexcept {}
+//
+//         int mSigno;
+//     };
+//
+//     static SignalAwaiter waitSignal(int signo) {
+//         return SignalAwaiter(signo);
+//     }
+//
+//     static void start() {
+//         instance->mWorker =
+//             std::jthread([](std::stop_token stop) { startMain(stop); });
+//     }
+//
+//     static inline SignalingContextMT *instance;
+//
+//     SignalingContextMT() {
+//         if (instance) {
+//             throw std::logic_error(
+//                 "each process may contain only one SignalingContextMT");
+//         }
+//         instance = this;
+//         start();
+//     }
+//
+//     SignalingContextMT(SignalingContextMT &&) = delete;
+//
+//     ~SignalingContextMT() {
+//         instance = nullptr;
+//     }
+//
+// private:
+//     std::map<int, std::deque<std::coroutine_handle<>>> mWaitingSignals;
+//     std::mutex mMutex;
+//     std::jthread mWorker;
+// };
+// } // namespace co_async
 
 
 
@@ -10993,43 +11619,51 @@ private:
 namespace co_async {
 std::error_category const &getAddrInfoCategory();
 
-struct IpAddress {
-    explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
-
-    explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6) {}
-
-    static Expected<IpAddress> parse(std::string_view host,
-                                     bool allowIpv6 = true);
-    static Expected<IpAddress> parse(char const *host, bool allowIpv6 = true);
-    String toString() const;
-
-    auto repr() const {
-        return toString();
-    }
-
-    std::variant<struct in_addr, struct in6_addr> mAddr;
-};
+// struct IpAddress {
+//     explicit IpAddress(struct in_addr const &addr) noexcept : mAddr(addr) {}
+//
+//     explicit IpAddress(struct in6_addr const &addr6) noexcept : mAddr(addr6)
+//     {}
+//
+//     static Expected<IpAddress> fromString(char const *host);
+//
+//     String toString() const;
+//
+//     auto repr() const {
+//         return toString();
+//     }
+//
+//     std::variant<struct in_addr, struct in6_addr> mAddr;
+// };
 
 struct SocketAddress {
     SocketAddress() = default;
 
-    static Expected<SocketAddress> parse(std::string_view host,
-                                         int defaultPort = -1);
-    explicit SocketAddress(IpAddress ip, int port);
+    explicit SocketAddress(struct sockaddr const *addr, socklen_t addrLen,
+                           sa_family_t family, int sockType, int protocol);
 
-    union {
-        struct sockaddr_in mAddrIpv4;
-        struct sockaddr_in6 mAddrIpv6;
-        struct sockaddr mAddr;
-    };
-
+    struct sockaddr_storage mAddr;
     socklen_t mAddrLen;
+    int mSockType;
+    int mProtocol;
 
-    sa_family_t family() const noexcept;
+    sa_family_t family() const noexcept {
+        return mAddr.ss_family;
+    }
 
-    IpAddress host() const;
+    int socktype() const noexcept {
+        return mSockType;
+    }
+
+    int protocol() const noexcept {
+        return mProtocol;
+    }
+
+    std::string host() const;
 
     int port() const;
+
+    void trySetPort(int port);
 
     String toString() const;
 
@@ -11040,6 +11674,62 @@ struct SocketAddress {
 private:
     void initFromHostPort(struct in_addr const &host, int port);
     void initFromHostPort(struct in6_addr const &host, int port);
+};
+
+struct AddressResolver {
+private:
+    std::string m_host;
+    int m_port = -1;
+    std::string m_service;
+    struct addrinfo m_hints = {};
+
+public:
+    AddressResolver &host(std::string_view host) {
+        if (auto i = host.find("://"); i != host.npos) {
+            if (auto service = host.substr(0, i); !service.empty()) {
+                m_service = service;
+            }
+            host.remove_prefix(i + 3);
+        }
+        if (auto i = host.rfind(':'); i != host.npos) {
+            if (auto portOpt = from_string<int>(host.substr(i + 1)))
+                [[likely]] {
+                m_port = *portOpt;
+                host.remove_suffix(host.size() - i);
+            }
+        }
+        m_host = host;
+        return *this;
+    }
+
+    AddressResolver &port(int port) {
+        m_port = port;
+        return *this;
+    }
+
+    AddressResolver &service(std::string_view service) {
+        m_service = service;
+        return *this;
+    }
+
+    AddressResolver &family(int family) {
+        m_hints.ai_family = family;
+        return *this;
+    }
+
+    AddressResolver &socktype(int socktype) {
+        m_hints.ai_socktype = socktype;
+        return *this;
+    }
+
+    struct ResolveResult {
+        std::vector<SocketAddress> addrs;
+        std::string service;
+    };
+
+    Expected<ResolveResult> resolve_all();
+    Expected<SocketAddress> resolve_one();
+    Expected<SocketAddress> resolve_one(std::string &service);
 };
 
 struct [[nodiscard]] SocketHandle : FileHandle {
@@ -11071,7 +11761,7 @@ Expected<> socketSetOption(SocketHandle &sock, int level, int opt,
         setsockopt(sock.fileNo(), level, opt, &optVal, sizeof(optVal)));
 }
 
-Task<Expected<SocketHandle>> createSocket(int family, int type);
+Task<Expected<SocketHandle>> createSocket(int family, int type, int protocol);
 Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr);
 Task<Expected<SocketHandle>>
 socket_connect(SocketAddress const &addr,
@@ -11081,8 +11771,6 @@ Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
                                             CancelToken cancel);
 Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
                                              int backlog = SOMAXCONN);
-Task<Expected<SocketListener>>
-listener_bind(std::pair<String, int> const &addr, int backlog = SOMAXCONN);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener);
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              CancelToken cancel);
@@ -11093,10 +11781,15 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              CancelToken cancel);
 Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                          std::span<char const> buf);
+Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
+                                            std::span<char const> buf);
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock,
                                         std::span<char> buf);
 Task<Expected<std::size_t>>
 socket_write(SocketHandle &sock, std::span<char const> buf, CancelToken cancel);
+Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
+                                            std::span<char const> buf,
+                                            CancelToken cancel);
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock, std::span<char> buf,
                                         CancelToken cancel);
 Task<Expected<std::size_t>>
@@ -11142,7 +11835,7 @@ StructPImpl(SSLClientTrustAnchor) {
 StructPImpl(SSLServerPrivateKey){};
 
 StructPImpl(SSLServerCertificate) {
-    void add(std::string_view content);
+    Expected<> add(std::string_view content);
 };
 
 StructPImpl(SSLServerSessionCache){};
@@ -11351,7 +12044,8 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
 namespace co_async {
 struct SocketStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        auto ret = co_await socket_read(mFile, buffer, mTimeout, co_await co_cancel);
+        auto ret =
+            co_await socket_read(mFile, buffer, mTimeout, co_await co_cancel);
         if (ret == std::make_error_code(std::errc::operation_canceled))
             [[unlikely]] {
             co_return std::errc::stream_timeout;
@@ -11361,7 +12055,8 @@ struct SocketStream : Stream {
 
     Task<Expected<std::size_t>>
     raw_write(std::span<char const> buffer) override {
-        auto ret = co_await socket_write(mFile, buffer, mTimeout, co_await co_cancel);
+        auto ret =
+            co_await socket_write(mFile, buffer, mTimeout, co_await co_cancel);
         if (ret == std::make_error_code(std::errc::operation_canceled))
             [[unlikely]] {
             co_return std::errc::stream_timeout;
@@ -11385,7 +12080,7 @@ struct SocketStream : Stream {
 
 private:
     SocketHandle mFile;
-    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(10);
+    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(30);
 };
 
 inline Task<Expected<OwningStream>>
@@ -11398,12 +12093,9 @@ tcp_connect(char const *host, int port, std::string_view proxy,
     co_return sock;
 }
 
-inline Task<Expected<OwningStream>>
-tcp_accept(SocketListener &listener,
-           std::chrono::steady_clock::duration timeout) {
+inline Task<Expected<OwningStream>> tcp_accept(SocketListener &listener) {
     auto handle = co_await co_await listener_accept(listener);
     OwningStream sock = make_stream<SocketStream>(std::move(handle));
-    sock.timeout(timeout);
     co_return sock;
 }
 } // namespace co_async
@@ -11603,11 +12295,15 @@ struct HTTPServer {
         explicit IO(HTTPProtocol *http) noexcept : mHttp(http) {}
 
         HTTPRequest request;
-        Task<Expected<>> readRequestHeader();
+        Task<Expected<bool>> readRequestHeader();
         Task<Expected<String>> request_body();
         Task<Expected<>> request_body_stream(OwningStream &out);
         Task<Expected<>> response(HTTPResponse resp, std::string_view content);
         Task<Expected<>> response(HTTPResponse resp, OwningStream &body);
+
+        BorrowedStream &extractSocket() const noexcept {
+            return mHttp->sock;
+        }
 
     private:
         HTTPProtocol *mHttp;
@@ -11620,7 +12316,8 @@ struct HTTPServer {
     };
 
     using HTTPHandler = std::function<Task<Expected<>>(IO &)>;
-    using HTTPPrefixHandler = std::function<Task<Expected<>>(IO &, std::string_view)>;
+    using HTTPPrefixHandler =
+        std::function<Task<Expected<>>(IO &, std::string_view)>;
     /* using HTTPHandler = Task<Expected<>>(*)(IO &); */
     /* using HTTPPrefixHandler = Task<Expected<>>(*)(IO &, std::string_view); */
     HTTPServer();
@@ -11808,6 +12505,12 @@ private:
 
     Task<Expected<>> tryWriteRequestAndBody(HTTPRequest const &request,
                                             std::string_view body) {
+        if (!mHttp)
+            mHttp = co_await co_await mHttpFactory->createConnection();
+        co_await co_await mHttp->writeRequest(request);
+        co_await co_await mHttp->writeBody(body);
+        co_return {};
+#if 0
         std::error_code ec;
         for (std::size_t n = 0; n < 3; ++n) {
             if (!mHttp) {
@@ -11828,6 +12531,7 @@ private:
             mHttp = nullptr;
         }
         co_return ec;
+#endif
     }
 
     /* Task<Expected<>> */
@@ -11874,6 +12578,10 @@ private:
     }
 
 public:
+    BorrowedStream &extractSocket() const noexcept {
+        return mHttp->sock;
+    }
+
     Expected<> doConnect(std::string_view host,
                          std::chrono::steady_clock::duration timeout,
                          bool followProxy) {
@@ -12009,7 +12717,7 @@ public:
 
     explicit HTTPConnectionPool(
         std::size_t connPerHost = 8,
-        std::chrono::steady_clock::duration timeout = std::chrono::seconds(5),
+        std::chrono::steady_clock::duration timeout = std::chrono::seconds(20),
         std::chrono::steady_clock::duration keepAlive = std::chrono::minutes(3),
         bool followProxy = true)
         : mTimeout(timeout),
@@ -12056,8 +12764,10 @@ private:
         auto *pool = mPools.at(host);
         lock.unlock();
         if (pool) [[likely]] {
-            (void)co_await co_timeout(pool->mFreeSlot.wait(), std::chrono::milliseconds(100));
+            (void)co_await co_timeout(pool->mFreeSlot.wait(),
+                                      std::chrono::milliseconds(100));
         }
+        co_return;
     }
 
     void garbageCollect() /* MT-safe */ {
@@ -12095,6 +12805,320 @@ public:
     }
 };
 } // namespace co_async
+
+
+
+
+
+
+
+
+
+
+
+
+#include <hashlib/hashlib.hpp>
+
+namespace co_async {
+
+// 小彭老师带你用 C++ 实现 WebSocket 协议
+// WebSocket 是为了解决 HTTP 协议的一些缺陷而提出的
+// 过去，HTTP 只能客户端单向地往服务端发出请求，服务端被动地返回响应
+// 要获取服务端的动态数据，只能通过轮询或长轮询的形式（参见上一期视频）
+// 在聊天室这种少量人员的场景中，轮询还扛得住，但在实时音视频，直播领域，HTTP 轮询的延迟就太高了
+// 而 WebSocket 是一种双向通信协议，建立连接后，服务端和客户端都能主动向对方发送或接收数据
+// WebSocket 面向二进制字节流，类似于 TCP，比基于文本传输数据的 HTTP 协议更高效
+// 主流浏览器都提供 WebSocket 的 API，可以实现浏览器和服务器的双向实时通信
+// 我们这一期视频主要来实现 C++ 的服务器端，要求能够与浏览器中的 JS 建立 WebSocket 连接
+// 如果时间来得及，我们希望利用这个 WebSocket 服务器实现实时语音通话
+
+inline std::string websocketGenerateNonce() {
+    uint32_t seed = getSeedByTime();
+    uint8_t buf[16];
+    for (size_t i = 0; i != 16; ++i) {
+        seed = wangsHash(seed);
+        buf[i] = static_cast<uint8_t>(seed & 0xFF);
+    }
+    return base64::encode_into<std::string>(buf, buf + 16);
+}
+
+inline std::string websocketSecretHash(std::string userKey) {
+    // websocket 官方要求的神秘仪式
+    SHA1 sha1;
+    std::string inKey = userKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+    sha1.add(inKey.data(), inKey.size());
+    uint8_t buf[SHA1::HashBytes];
+    sha1.getHash(buf);
+    return base64::encode_into<std::string>(buf, buf + SHA1::HashBytes);
+}
+
+inline Task<Expected<bool>> httpUpgradeToWebSocket(HTTPServer::IO &io) {
+    if (io.request.headers.get("upgrade") != "websocket") {
+        co_return false;
+    }
+    // 是 ws:// 请求
+    auto wsKey = io.request.headers.get("sec-websocket-key");
+    if (!wsKey) {
+        co_await co_await HTTPServerUtils::make_error_response(io, 400);
+        co_return true;
+    }
+    auto wsNewKey = websocketSecretHash(*wsKey);
+    HTTPResponse res{
+        .status = 101,
+        .headers =
+        {
+            {"connection", "Upgrade"},
+            {"upgrade", "websocket"},
+            {"sec-websocket-accept", wsNewKey},
+        },
+    };
+    co_await co_await io.response(res, "");
+    co_return true;
+}
+
+struct WebSocketPacket {
+    enum Opcode : uint8_t {
+        kOpcodeText = 1,
+        kOpcodeBinary = 2,
+        kOpcodeClose = 8,
+        kOpcodePing = 9,
+        kOpcodePong = 10,
+    } opcode;
+    std::string content;
+
+    REFLECT(opcode, content);
+};
+
+inline Task<Expected<WebSocketPacket>> wsRecvPacket(BorrowedStream &ws) {
+    WebSocketPacket packet;
+    auto head = co_await co_await ws.getn(2);
+    bool fin;
+    do {
+        uint8_t head0 = static_cast<uint8_t>(head[0]);
+        uint8_t head1 = static_cast<uint8_t>(head[1]);
+        fin = (head0 & 0x80) != 0;
+        packet.opcode = static_cast<WebSocketPacket::Opcode>(head0 & 0x0F);
+        bool masked = (head1 & 0x80) != 0;
+        uint8_t payloadLen8 = head1 & 0x7F;
+        size_t payloadLen;
+        if (packet.opcode >= 8 && packet.opcode <= 10 && payloadLen8 >= 0x7E) [[unlikely]] {
+            co_return std::errc::protocol_error;
+        }
+        if (payloadLen8 == 0x7E) {
+            auto payloadLen16 = byteswap_if_little(co_await co_await ws.getstruct<uint16_t>());
+            payloadLen = static_cast<size_t>(payloadLen16);
+        } else if (payloadLen8 == 0x7F) {
+            auto payloadLen64 = byteswap_if_little(co_await co_await ws.getstruct<uint64_t>());
+            if constexpr (sizeof(uint64_t) > sizeof(size_t)) {
+                if (payloadLen64 > std::numeric_limits<size_t>::max()) {
+                    co_return std::errc::not_enough_memory;
+                }
+            }
+            payloadLen = static_cast<size_t>(payloadLen64);
+        } else {
+            payloadLen = static_cast<size_t>(payloadLen8);
+        }
+        std::string mask;
+        if (masked) {
+            mask = co_await co_await ws.getn(4);
+        }
+        auto data = co_await co_await ws.getn(payloadLen);
+        if (masked) {
+            for (size_t i = 0; i != data.size(); ++i) {
+                data[i] ^= mask[i % 4];
+            }
+        }
+        packet.content += data;
+    } while (!fin);
+    co_return std::move(packet);
+}
+
+inline Task<Expected<>> wsSendPacket(BorrowedStream &ws, WebSocketPacket packet, uint32_t mask = 0) {
+    const bool fin = true;
+    bool masked = mask != 0;
+    uint8_t payloadLen8 = 0;
+    if (packet.content.size() < 0x7E) {
+        payloadLen8 = static_cast<uint8_t>(packet.content.size());
+    } else if (packet.content.size() <= 0xFFFF) {
+        payloadLen8 = 0x7E;
+    } else {
+        payloadLen8 = 0x7F;
+    }
+    uint8_t head0 = (fin ? 1 : 0) << 7 | static_cast<uint8_t>(packet.opcode);
+    uint8_t head1 = (masked ? 1 : 0) << 7 | payloadLen8;
+    char head[2];
+    head[0] = static_cast<uint8_t>(head0);
+    head[1] = static_cast<uint8_t>(head1);
+    co_await co_await ws.write(head);
+    if (packet.content.size() > 0x7E) {
+        if (packet.content.size() <= 0xFFFF) {
+            auto payloadLen16 = static_cast<uint16_t>(packet.content.size());
+            co_await co_await ws.putstruct(byteswap_if_little(payloadLen16));
+        } else {
+            auto payloadLen64 = static_cast<uint64_t>(packet.content.size());
+            co_await co_await ws.putstruct(byteswap_if_little(payloadLen64));
+        }
+    }
+    if (masked) {
+        char mask_buf[4];
+        mask_buf[0] = mask >> 24;
+        mask_buf[1] = (mask >> 16) & 0xFF;
+        mask_buf[2] = (mask >> 8) & 0xFF;
+        mask_buf[3] = mask & 0xFF;
+        co_await co_await ws.write(mask_buf);
+        for (size_t i = 0; i != packet.content.size(); ++i) {
+            packet.content[i] ^= mask_buf[i % 4];
+        }
+    }
+    co_await co_await ws.write(packet.content);
+    co_await co_await ws.flush();
+    co_return {};
+}
+
+struct WebSocket {
+    BorrowedStream &sock;
+    std::function<Task<Expected<>>(std::string const &)> mOnMessage;
+    std::function<Task<Expected<>>()> mOnClose;
+    std::function<Task<Expected<>>(std::chrono::steady_clock::duration)> mOnPong;
+    bool mHalfClosed = false;
+    bool mWaitingPong = true;
+    std::chrono::steady_clock::time_point mLastPingTime{};
+
+    WebSocket(WebSocket &&) = default;
+
+    explicit WebSocket(BorrowedStream &sock) : sock(sock) {
+    }
+
+    bool is_closing() const noexcept {
+        return mHalfClosed;
+    }
+
+    void on_message(std::function<Task<Expected<>>(std::string const &)> onMessage) {
+        mOnMessage = std::move(onMessage);
+    }
+
+    void on_close(std::function<Task<Expected<>>()> onClose) {
+        mOnClose = std::move(onClose);
+    }
+
+    void on_pong(std::function<Task<Expected<>>(std::chrono::steady_clock::duration)> onPong) {
+        mOnPong = std::move(onPong);
+    }
+
+    Task<Expected<>> send(std::string text) {
+        if (mHalfClosed) [[unlikely]] {
+            co_return std::errc::broken_pipe;
+        }
+        co_return co_await wsSendPacket(sock, WebSocketPacket{
+            .opcode = WebSocketPacket::kOpcodeText,
+            .content = text,
+        });
+    }
+
+    Task<Expected<>> close(uint16_t code = 1000) {
+        std::string content;
+        code = byteswap_if_little(code);
+        content.resize(sizeof(code));
+        std::memcpy(content.data(), &code, sizeof(code));
+        mHalfClosed = true;
+        co_return co_await wsSendPacket(sock, WebSocketPacket{
+            .opcode = WebSocketPacket::kOpcodeClose,
+            .content = content,
+        });
+    }
+
+    Task<Expected<>> sendPing() {
+        mLastPingTime = std::chrono::steady_clock::now();
+        // debug(), "主动ping";
+        co_return co_await wsSendPacket(sock, WebSocketPacket{
+            .opcode = WebSocketPacket::kOpcodePing,
+            .content = {},
+        });
+    }
+
+    Task<Expected<>> start(std::chrono::steady_clock::duration pingPongTimeout = std::chrono::seconds(5)) {
+        while (true) {
+            auto maybePacket = co_await co_timeout(wsRecvPacket(sock), pingPongTimeout);
+            if (maybePacket == std::errc::stream_timeout) {
+                if (mWaitingPong) {
+                    break;
+                }
+                co_await co_await sendPing();
+                mWaitingPong = true;
+                continue;
+            }
+            mWaitingPong = false;
+            if (maybePacket == eofError()) {
+                break;
+            }
+            auto packet = co_await std::move(maybePacket);
+            if (packet.opcode == packet.kOpcodeText || packet.opcode == packet.kOpcodeBinary) {
+                if (mOnMessage) {
+                    co_await co_await mOnMessage(packet.content);
+                }
+            } else if (packet.opcode == packet.kOpcodePing) {
+                // debug(), "收到ping";
+                packet.opcode = packet.kOpcodePong;
+                co_await co_await wsSendPacket(sock, packet);
+            } else if (packet.opcode == packet.kOpcodePong) {
+                auto now = std::chrono::steady_clock::now();
+                if (mOnPong && mLastPingTime.time_since_epoch().count() != 0) {
+                    auto dt = now - mLastPingTime;
+                    co_await co_await mOnPong(dt);
+                    // debug(), "网络延迟:", dt;
+                }
+                // debug(), "收到pong";
+            } else if (packet.opcode == packet.kOpcodeClose) {
+                // debug(), "收到关闭请求";
+                if (mOnClose) {
+                    co_await co_await mOnClose();
+                }
+                if (!mHalfClosed) {
+                    co_await co_await wsSendPacket(sock, packet);
+                    mHalfClosed = true;
+                } else {
+                    break;
+                }
+            }
+        }
+        co_await sock.close();
+        co_return {};
+    }
+};
+
+inline Task<Expected<WebSocket>> websocket_server(HTTPServer::IO &io) {
+    if (co_await co_await httpUpgradeToWebSocket(io)) {
+        co_return WebSocket(io.extractSocket());
+    }
+    co_return std::errc::protocol_error;
+}
+
+inline Task<Expected<WebSocket>> websocket_client(HTTPConnection &conn, URI uri) {
+    std::string nonceKey;
+    using namespace std::string_literals;
+    nonceKey = websocketGenerateNonce();
+    HTTPRequest request = {
+        .method = "GET"s,
+        .uri = uri,
+        .headers = {
+            {"sec-websocket-key"s, nonceKey},
+            {"connection"s, "Upgrade"s},
+            {"upgrade"s, "websocket"s},
+            {"sec-websocket-version"s, "13"s},
+        },
+    };
+    auto [response, _] = co_await co_await conn.request(request);
+    if (response.headers.get("sec-websocket-accept") != websocketSecretHash(nonceKey)) {
+        co_return std::errc::protocol_error;
+    }
+    co_return WebSocket(conn.extractSocket());
+}
+
+}
+
+
+
+
 
 
 
@@ -12281,20 +13305,20 @@ ThreadPool::Thread *ThreadPool::submitJob(std::function<void()> func) {
 }
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
-    auto ready = std::make_shared<std::atomic<bool>>(false);
+    auto ready = std::make_shared<FutexAtomic<bool>>(false);
     std::exception_ptr ep;
-    submitJob(
-        [ready, func = std::move(func), &ep]() mutable {
-            try {
-                func();
-            } catch (...) {
-                ep = std::current_exception();
-            }
-            ready->store(true, std::memory_order_release);
-            futex_notify_sync(ready.get());
-        });
-    while (ready->load(std::memory_order_acquire) == false)
-        co_await co_await futex_wait(ready.get(), false);
+    submitJob([ready, func = std::move(func), &ep]() mutable {
+        try {
+            func();
+        } catch (...) {
+            ep = std::current_exception();
+        }
+        ready->store(true, std::memory_order_release);
+        (void)futex_notify_sync(ready.get());
+    });
+    while (ready->load(std::memory_order_acquire) == false) {
+        (void)co_await futex_wait(ready.get(), false);
+    }
     if (ep) [[unlikely]] {
         std::rethrow_exception(ep);
     }
@@ -12303,19 +13327,19 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void()> func) {
 
 Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
                                     CancelToken cancel) {
-    auto ready = std::make_shared<std::atomic<bool>>(false);
+    auto ready = std::make_shared<FutexAtomic<bool>>(false);
     std::stop_source stop;
     bool stopped = false;
     std::exception_ptr ep;
-    submitJob([ready, func = std::move(func),
-               stop = stop.get_token(), &ep]() mutable {
+    submitJob([ready, func = std::move(func), stop = stop.get_token(),
+               &ep]() mutable {
         try {
             func(stop);
         } catch (...) {
             ep = std::current_exception();
         }
         ready->store(true, std::memory_order_release);
-        futex_notify_sync(ready.get());
+        (void)futex_notify_sync(ready.get());
     });
 
     {
@@ -12323,8 +13347,9 @@ Task<Expected<>> ThreadPool::rawRun(std::function<void(std::stop_token)> func,
             stopped = true;
             stop.request_stop();
         });
-        while (ready->load(std::memory_order_acquire) == false)
-            co_await co_await futex_wait(ready.get(), false);
+        while (ready->load(std::memory_order_acquire) == false) {
+            (void)co_await futex_wait(ready.get(), false);
+        }
     }
 
     if (ep) [[unlikely]] {
@@ -12358,69 +13383,63 @@ ThreadPool::~ThreadPool() = default;
 
 
 
+
 namespace co_async {
 
-struct IOContext::IOContextGuard {
-    explicit IOContextGuard(IOContext *that) {
-        if (IOContext::instance || GenericIOContext::instance ||
-            PlatformIOContext::instance) [[unlikely]] {
-            throw std::logic_error(
-                "each thread may contain only one IOContextGuard");
-        }
-        IOContext::instance = that;
-        GenericIOContext::instance = &that->mGenericIO;
-        PlatformIOContext::instance = &that->mPlatformIO;
+IOContext::IOContext(IOContextOptions options) {
+    if (instance) {
+        throw std::logic_error("each thread may create only one IOContext");
     }
-
-    ~IOContextGuard() {
-        IOContext::instance = nullptr;
-        GenericIOContext::instance = nullptr;
-        PlatformIOContext::instance = nullptr;
-    }
-
-    IOContextGuard(IOContextGuard &&) = delete;
-};
-
-void IOContext::startHere(std::stop_token stop,
-                          PlatformIOContextOptions options,
-                          std::span<IOContext> peerContexts) {
-    IOContextGuard guard(this);
+    instance = this;
+    GenericIOContext::instance = &mGenericIO;
+    PlatformIOContext::instance = &mPlatformIO;
     if (options.threadAffinity) {
         PlatformIOContext::schedSetThreadAffinity(*options.threadAffinity);
     }
-    auto maxSleep = options.maxSleep;
-    auto *genericIO = GenericIOContext::instance;
-    auto *platformIO = PlatformIOContext::instance;
-    while (!stop.stop_requested()) [[likely]] {
-        auto duration = genericIO->runDuration();
-        if (!duration || *duration > maxSleep) {
-            duration = maxSleep;
-        }
-#if !CO_ASYNC_STEAL
-        platformIO->waitEventsFor(1, duration);
-#else
-        bool hasEvent = platformIO->waitEventsFor(1, duration);
-        if (!hasEvent && !peerContexts.empty()) {
-            for (IOContext *p = peerContexts.data();
-                 p != peerContexts.data() + peerContexts.size(); ++p) {
-                if (p->mGenericIO.runComputeOnly()) {
-                    break;
-                }
-            }
-        }
-#endif
-    }
+    mPlatformIO.setup(options.queueEntries);
+    mMaxSleep = options.maxSleep;
 }
 
-void IOContext::start(PlatformIOContextOptions options,
-                      std::span<IOContext> peerContexts) {
-    mThread = std::jthread([this, options = std::move(options),
-                            peerContexts](std::stop_token stop) {
-        this->startHere(stop, options, peerContexts);
-    });
+IOContext::~IOContext() {
+    IOContext::instance = nullptr;
+    GenericIOContext::instance = nullptr;
+    PlatformIOContext::instance = nullptr;
+}
+
+void IOContext::run() {
+    while (runOnce())
+        ;
+}
+
+bool IOContext::runOnce() {
+    auto duration = mGenericIO.runDuration();
+    if (!duration && !mPlatformIO.hasPendingEvents()) [[unlikely]] {
+        return false;
+    }
+    if (!duration || *duration > mMaxSleep) {
+        duration = mMaxSleep;
+    }
+    mPlatformIO.waitEventsFor(duration);
+    return true;
 }
 
 thread_local IOContext *IOContext::instance;
+
+// void IOContext::wakeUp() {
+//     if (mWake.fetch_add(1, std::memory_order_relaxed) == 0)
+//         futex_notify_sync(&mWake, 1);
+// }
+//
+// Task<void, IgnoreReturnPromise<AutoDestroyFinalAwaiter>>
+// IOContext::watchDogTask() {
+//     // helps wake up main loop when IOContext::spawn called
+//     while (true) {
+//         while (mWake.load(std::memory_order_relaxed) == 0)
+//             (void)co_await futex_wait(&mWake, 0);
+//         mWake.store(0, std::memory_order_relaxed);
+//     }
+// }
+
 } // namespace co_async
 
 
@@ -12431,7 +13450,7 @@ thread_local IOContext *IOContext::instance;
 
 
 namespace co_async {
-IOContextMT::IOContextMT(std::in_place_t) {
+IOContextMT::IOContextMT() {
     if (IOContextMT::instance) [[unlikely]] {
         throw std::logic_error("each process may contain only one IOContextMT");
     }
@@ -12442,38 +13461,76 @@ IOContextMT::~IOContextMT() {
     IOContextMT::instance = nullptr;
 }
 
-IOContextMT::IOContextMT(PlatformIOContextOptions options,
-                         std::size_t numWorkers)
-    : IOContextMT(std::in_place) {
-    start(options, numWorkers);
-}
-
-void IOContextMT::start(PlatformIOContextOptions options,
-                        std::size_t numWorkers) {
-    bool setAffinity;
-    if (numWorkers == 0) {
-        setAffinity = true;
-        numWorkers = std::thread::hardware_concurrency();
-        if (!numWorkers) [[unlikely]] {
-            throw std::logic_error(
-                "failed to detect number of hardware threads");
-        }
-    } else {
-        setAffinity = false;
-    }
+void IOContextMT::run(std::size_t numWorkers) {
+    // if (numWorkers == 0) {
+    //     setAffinity = true;
+    //     numWorkers = std::thread::hardware_concurrency();
+    //     if (!numWorkers) [[unlikely]] {
+    //         throw std::logic_error(
+    //             "failed to detect number of hardware threads");
+    //     }
+    // } else {
+    //     setAffinity = false;
+    // }
     instance->mWorkers = std::make_unique<IOContext[]>(numWorkers);
     instance->mNumWorkers = numWorkers;
-    std::span<IOContext> peerSpan(instance->mWorkers.get(),
-                                  instance->mNumWorkers);
     for (std::size_t i = 0; i < instance->mNumWorkers; ++i) {
-        if (setAffinity) {
-            options.threadAffinity = i;
-        }
-        instance->mWorkers[i].start(options, peerSpan);
+        instance->mWorkers[i].run();
     }
 }
 
 IOContextMT *IOContextMT::instance;
+} // namespace co_async
+
+
+
+
+namespace co_async {
+
+// bool GenericIOContext::runComputeOnly() {
+//     if (auto coroutine = mQueue.pop()) {
+//         coroutine->resume();
+//         return true;
+//     }
+//     return false;
+// }
+//
+GenericIOContext::GenericIOContext() = default;
+GenericIOContext::~GenericIOContext() = default;
+
+std::optional<std::chrono::steady_clock::duration>
+GenericIOContext::runDuration() {
+    while (true) {
+        if (!mTimers.empty()) {
+            auto &promise = mTimers.front();
+            std::chrono::steady_clock::time_point now =
+                std::chrono::steady_clock::now();
+            if (promise.mExpires <= now) {
+                promise.mCancelled = false;
+                promise.erase_from_parent();
+                std::coroutine_handle<TimerNode>::from_promise(promise).resume();
+                continue;
+            } else {
+                return promise.mExpires - now;
+            }
+        } else {
+            return std::nullopt;
+        }
+    }
+}
+
+//
+// void GenericIOContext::startMain(std::stop_token stop) {
+//     while (!stop.stop_requested()) [[likely]] {
+//         auto duration = runDuration();
+//         if (duration) {
+//             std::this_thread::sleep_for(*duration);
+//         } else {
+//             break;
+//         }
+//     }
+// }
+//
 } // namespace co_async
 
 
@@ -12497,19 +13554,203 @@ void PlatformIOContext::schedSetThreadAffinity(size_t cpu) {
         sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpu_set));
 }
 
-PlatformIOContext::PlatformIOContext(std::size_t entries) {
-    throwingError(io_uring_queue_init((unsigned int)entries, &mRing, 0));
+PlatformIOContext::IOUringProbe::IOUringProbe() {
+    mRing = nullptr;
+    // mProbe = io_uring_get_probe();
+    mProbe = nullptr;
+    if (!mProbe) {
+        mRing = new struct io_uring;
+        throwingError(io_uring_queue_init(8, mRing, 0));
+    }
+}
+
+PlatformIOContext::IOUringProbe::~IOUringProbe() {
+    if (mProbe) {
+        io_uring_free_probe(mProbe);
+    }
+    if (mRing) {
+        io_uring_queue_exit(mRing);
+        delete mRing;
+    }
+}
+
+bool PlatformIOContext::IOUringProbe::isSupported(int op) noexcept {
+    if (mProbe) {
+        return io_uring_opcode_supported(mProbe, op);
+    }
+    if (mRing) {
+        struct io_uring_sqe *sqe = io_uring_get_sqe(mRing);
+        io_uring_prep_rw(op, sqe, -1, nullptr, 0, 0);
+        struct io_uring_cqe *cqe;
+        throwingError(io_uring_submit(mRing));
+        throwingError(io_uring_wait_cqe(mRing, &cqe));
+        int res = cqe->res;
+        io_uring_cqe_seen(mRing, cqe);
+        return res != ENOSYS;
+    }
+    return false;
+}
+
+void PlatformIOContext::IOUringProbe::dumpDiagnostics() {
+    static char const *ops[IORING_OP_LAST + 1] = {
+        "IORING_OP_NOP",
+        "IORING_OP_READV",
+        "IORING_OP_WRITEV",
+        "IORING_OP_FSYNC",
+        "IORING_OP_READ_FIXED",
+        "IORING_OP_WRITE_FIXED",
+        "IORING_OP_POLL_ADD",
+        "IORING_OP_POLL_REMOVE",
+        "IORING_OP_SYNC_FILE_RANGE",
+        "IORING_OP_SENDMSG",
+        "IORING_OP_RECVMSG",
+        "IORING_OP_TIMEOUT",
+        "IORING_OP_TIMEOUT_REMOVE",
+        "IORING_OP_ACCEPT",
+        "IORING_OP_ASYNC_CANCEL",
+        "IORING_OP_LINK_TIMEOUT",
+        "IORING_OP_CONNECT",
+        "IORING_OP_FALLOCATE",
+        "IORING_OP_OPENAT",
+        "IORING_OP_CLOSE",
+        "IORING_OP_FILES_UPDATE",
+        "IORING_OP_STATX",
+        "IORING_OP_READ",
+        "IORING_OP_WRITE",
+        "IORING_OP_FADVISE",
+        "IORING_OP_MADVISE",
+        "IORING_OP_SEND",
+        "IORING_OP_RECV",
+        "IORING_OP_OPENAT2",
+        "IORING_OP_EPOLL_CTL",
+        "IORING_OP_SPLICE",
+        "IORING_OP_PROVIDE_BUFFERS",
+        "IORING_OP_REMOVE_BUFFERS",
+        "IORING_OP_TEE",
+        "IORING_OP_SHUTDOWN",
+        "IORING_OP_RENAMEAT",
+        "IORING_OP_UNLINKAT",
+        "IORING_OP_MKDIRAT",
+        "IORING_OP_SYMLINKAT",
+        "IORING_OP_LINKAT",
+        "IORING_OP_MSG_RING",
+        "IORING_OP_FSETXATTR",
+        "IORING_OP_SETXATTR",
+        "IORING_OP_FGETXATTR",
+        "IORING_OP_GETXATTR",
+        "IORING_OP_SOCKET",
+        "IORING_OP_URING_CMD",
+        "IORING_OP_SEND_ZC",
+        "IORING_OP_SENDMSG_ZC",
+        "IORING_OP_READ_MULTISHOT",
+        "IORING_OP_WAITID",
+        "IORING_OP_FUTEX_WAIT",
+        "IORING_OP_FUTEX_WAKE",
+        "IORING_OP_FUTEX_WAITV",
+        "IORING_OP_FIXED_FD_INSTALL",
+        "IORING_OP_FTRUNCATE",
+        "IORING_OP_LAST",
+    };
+    for (int op = IORING_OP_NOP; op < IORING_OP_LAST; ++op) {
+        bool ok = isSupported(op);
+        std::cerr << "opcode " << ops[op] << (ok ? "" : " not") << " supported"
+                  << '\n';
+    }
+}
+
+PlatformIOContext::PlatformIOContext() noexcept {
+    mRing.ring_fd = -1;
+}
+
+void PlatformIOContext::setup(std::size_t entries) {
+    unsigned int flags = 0;
+#if CO_ASYNC_DIRECT
+    flags |= IORING_SETUP_IOPOLL;
+#endif
+    throwingError(
+        io_uring_queue_init(static_cast<unsigned int>(entries), &mRing, flags));
+}
+
+void PlatformIOContext::reserveBuffers(std::size_t nbufs) {
+    auto oldBuf = std::move(mBuffers);
+    mBuffers = std::make_unique<struct iovec[]>(nbufs);
+    if (mCapBufs) {
+        throwingError(io_uring_unregister_buffers(&mRing));
+    }
+    mCapBufs = static_cast<unsigned int>(nbufs);
+    std::memcpy(mBuffers.get(), oldBuf.get(), sizeof(struct iovec) * mNumBufs);
+    throwingError(io_uring_register_buffers_sparse(
+        &mRing, static_cast<unsigned int>(nbufs)));
+    std::vector<__u64> tags(mNumBufs, 0);
+    throwingError(io_uring_register_buffers_update_tag(
+        &mRing, 0, mBuffers.get(), tags.data(),
+        static_cast<unsigned int>(mNumBufs)));
+}
+
+std::size_t
+PlatformIOContext::addBuffers(std::span<std::span<char> const> bufs) {
+    if (mNumBufs >= mCapBufs) {
+        reserveBuffers(mCapBufs * 2 + 1);
+    }
+    auto outP = mBuffers.get() + mNumBufs;
+    for (auto const &buf: bufs) {
+        struct iovec iov;
+        iov.iov_base = buf.data();
+        iov.iov_len = buf.size();
+        *outP++ = iov;
+    }
+    std::vector<__u64> tags(bufs.size(), 0);
+    throwingError(io_uring_register_buffers_update_tag(
+        &mRing, mNumBufs, mBuffers.get() + mNumBufs, tags.data(),
+        static_cast<unsigned int>(bufs.size())));
+    size_t ret = mNumBufs;
+    mNumBufs += static_cast<unsigned int>(bufs.size());
+    return ret;
+}
+
+void PlatformIOContext::reserveFiles(std::size_t nfiles) {
+    auto oldBuf = std::move(mBuffers);
+    mBuffers = std::make_unique<struct iovec[]>(nfiles);
+    if (mCapFiles) {
+        throwingError(io_uring_unregister_files(&mRing));
+    }
+    mCapFiles = static_cast<unsigned int>(nfiles);
+    std::memcpy(mBuffers.get(), oldBuf.get(), sizeof(struct iovec) * mNumBufs);
+    throwingError(io_uring_register_files_sparse(
+        &mRing, static_cast<unsigned int>(nfiles)));
+    std::vector<__u64> tags(mNumFiles, 0);
+    throwingError(io_uring_register_files_update_tag(&mRing, 0, mFiles.get(),
+                                                     tags.data(), mNumFiles));
+}
+
+std::size_t PlatformIOContext::addFiles(std::span<int const> files) {
+    if (mNumFiles >= mCapFiles) {
+        reserveBuffers(mCapFiles * 2 + 1);
+    }
+    auto outP = mFiles.get() + mNumFiles;
+    for (auto const &file: files) {
+        *outP++ = file;
+    }
+    std::vector<__u64> tags(files.size(), 0);
+    throwingError(io_uring_register_files_update_tag(
+        &mRing, mNumFiles, mFiles.get() + mNumFiles, tags.data(),
+        static_cast<unsigned int>(files.size())));
+    size_t ret = mNumFiles;
+    mNumFiles += static_cast<unsigned int>(files.size());
+    return ret;
 }
 
 PlatformIOContext::~PlatformIOContext() {
-    io_uring_queue_exit(&mRing);
+    if (mRing.ring_fd != -1) {
+        io_uring_queue_exit(&mRing);
+    }
 }
 
 thread_local PlatformIOContext *PlatformIOContext::instance;
 
 bool PlatformIOContext::waitEventsFor(
-    std::size_t numBatch,
     std::optional<std::chrono::steady_clock::duration> timeout) {
+    // debug(), "wait", this, mNumSqesPending;
     struct io_uring_cqe *cqe;
     struct __kernel_timespec ts, *tsp;
     if (timeout) {
@@ -12517,23 +13758,42 @@ bool PlatformIOContext::waitEventsFor(
     } else {
         tsp = nullptr;
     }
-    int res = io_uring_submit_and_wait_timeout(
-        &mRing, &cqe, (unsigned int)numBatch, tsp, nullptr);
-    if (res == -EINTR) [[unlikely]] {
-        return false;
-    }
+    int res = io_uring_submit_and_wait_timeout(&mRing, &cqe, 1, tsp, nullptr);
     if (res == -ETIME) {
         return false;
+    } else if (res < 0) [[unlikely]] {
+        if (res == -EINTR) {
+            return false;
+        }
+        throw std::system_error(-res, std::system_category());
     }
-    throwingError(res);
     unsigned head, numGot = 0;
+    std::vector<std::coroutine_handle<>> tasks;
     io_uring_for_each_cqe(&mRing, head, cqe) {
+#if CO_ASYNC_INVALFIX
+        if (cqe->user_data == LIBURING_UDATA_TIMEOUT) [[unlikely]] {
+            ++numGot;
+            continue;
+        }
+#endif
         auto *op = reinterpret_cast<UringOp *>(cqe->user_data);
         op->mRes = cqe->res;
-        GenericIOContext::instance->enqueueJob(op->mPrevious);
+        tasks.push_back(op->mPrevious);
         ++numGot;
     }
     io_uring_cq_advance(&mRing, numGot);
+    mNumSqesPending -= static_cast<std::size_t>(numGot);
+    for (auto const &task: tasks) {
+#if CO_ASYNC_DEBUG
+        if (!task) [[likely]] {
+            std::cerr << "null coroutine pushed into task queue\n";
+        }
+        if (task.done()) [[likely]] {
+            std::cerr << "done coroutine pushed into task queue\n";
+        }
+#endif
+        task.resume();
+    }
     return true;
 }
 } // namespace co_async
@@ -12557,12 +13817,12 @@ bool PlatformIOContext::waitEventsFor(
 
 namespace co_async {
 std::error_category const &getAddrInfoCategory() {
-    static struct : std::error_category {
-        virtual char const *name() const noexcept {
+    static struct final : std::error_category {
+        char const *name() const noexcept override {
             return "getaddrinfo";
         }
 
-        virtual std::string message(int e) const {
+        std::string message(int e) const override {
             return gai_strerror(e);
         }
     } instance;
@@ -12570,107 +13830,140 @@ std::error_category const &getAddrInfoCategory() {
     return instance;
 }
 
-Expected<IpAddress> IpAddress::parse(std::string_view host, bool allowIpv6) {
-    return parse(std::string(host).c_str(), allowIpv6);
-}
+// Expected<IpAddress> IpAddress::fromString(char const *host) {
+//     struct in_addr addr = {};
+//     struct in6_addr addr6 = {};
+//     if (1 == inet_pton(AF_INET, host, &addr)) {
+//         return IpAddress(addr);
+//     }
+//     if (1 == inet_pton(AF_INET6, host, &addr6)) {
+//         return IpAddress(addr6);
+//     }
+//     // gethostbyname is deprecated, let's use getaddrinfo instead:
+//     struct addrinfo hints = {};
+//     hints.ai_family = AF_UNSPEC;
+//     hints.ai_socktype = SOCK_STREAM;
+//     struct addrinfo *result;
+//     int err = getaddrinfo(host, nullptr, &hints, &result);
+//     if (err) [[unlikely]] {
+// #if CO_ASYNC_DEBUG
+//         std::cerr << host << ": " << gai_strerror(err) << '\n';
+// #endif
+//         return std::error_code(err, getAddrInfoCategory());
+//     }
+//     Finally fin = [&] {
+//         freeaddrinfo(result);
+//     };
+//     for (struct addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
+//         if (rp->ai_family == AF_INET) {
+//             std::memcpy(&addr, &reinterpret_cast<struct sockaddr_in
+//             *>(rp->ai_addr)->sin_addr,
+//                         sizeof(in_addr));
+//             return IpAddress(addr);
+//         } else if (rp->ai_family == AF_INET6) {
+//             std::memcpy(&addr6,
+//                         &reinterpret_cast<struct sockaddr_in6
+//                         *>(rp->ai_addr)->sin6_addr, sizeof(in6_addr));
+//             return IpAddress(addr6);
+//         }
+//     }
+//     [[unlikely]] {
+// #if CO_ASYNC_DEBUG
+//         std::cerr << host << ": no matching host address with ipv4 or
+//         ipv6\n";
+// #endif
+//         return std::errc::bad_address;
+//     }
+// }
+//
+// String IpAddress::toString() const {
+//     if (mAddr.index() == 1) {
+//         char buf[INET6_ADDRSTRLEN + 1] = {};
+//         inet_ntop(AF_INET6, &std::get<1>(mAddr), buf, sizeof(buf));
+//         return buf;
+//     } else if (mAddr.index() == 0) {
+//         char buf[INET_ADDRSTRLEN + 1] = {};
+//         inet_ntop(AF_INET, &std::get<0>(mAddr), buf, sizeof(buf));
+//         return buf;
+//     } else {
+//         return "[invalid ip address or domain name]";
+//     }
+// }
 
-Expected<IpAddress> IpAddress::parse(char const *host, bool allowIpv6) {
-    struct in_addr addr = {};
-    struct in6_addr addr6 = {};
-    if (1 == inet_pton(AF_INET, host, &addr)) {
-        return IpAddress(addr);
-    }
-    if (allowIpv6 && 1 == inet_pton(AF_INET6, host, &addr6)) {
-        return IpAddress(addr6);
-    }
+auto AddressResolver::resolve_all() -> Expected<ResolveResult> {
     // gethostbyname is deprecated, let's use getaddrinfo instead:
-    struct addrinfo hints = {};
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
+    if (m_host.empty()) [[unlikely]] {
+        return std::errc::invalid_argument;
+    }
     struct addrinfo *result;
-    int err = getaddrinfo(host, NULL, &hints, &result);
+    int err = getaddrinfo(m_host.c_str(),
+                          m_service.empty() ? nullptr : m_service.c_str(),
+                          &m_hints, &result);
     if (err) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << host << ": " << gai_strerror(err) << '\n';
+        std::cerr << m_host << ": " << gai_strerror(err) << '\n';
 #endif
         return std::error_code(err, getAddrInfoCategory());
     }
     Finally fin = [&] {
         freeaddrinfo(result);
     };
-    for (struct addrinfo *rp = result; rp != NULL; rp = rp->ai_next) {
-        if (rp->ai_family == AF_INET) {
-            std::memcpy(&addr, &((struct sockaddr_in *)rp->ai_addr)->sin_addr,
-                        sizeof(in_addr));
-            return IpAddress(addr);
-        } else if (allowIpv6 && rp->ai_family == AF_INET6) {
-            std::memcpy(&addr6,
-                        &((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr,
-                        sizeof(in6_addr));
-            return IpAddress(addr6);
-        }
+    ResolveResult res;
+    for (struct addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
+        res.addrs
+            .emplace_back(rp->ai_addr, rp->ai_addrlen, rp->ai_family,
+                          rp->ai_socktype, rp->ai_protocol)
+            .trySetPort(m_port);
     }
-    [[unlikely]] {
+    if (res.addrs.empty()) [[unlikely]] {
 #if CO_ASYNC_DEBUG
-        std::cerr << host << ": no matching host address with ipv4 or ipv6\n";
+        std::cerr << m_host << ": no matching host address\n";
 #endif
         return std::errc::bad_address;
     }
+    res.service = std::move(m_service);
+    return res;
 }
 
-String IpAddress::toString() const {
-    if (mAddr.index() == 1) {
-        char buf[INET6_ADDRSTRLEN + 1] = {};
-        inet_ntop(AF_INET6, &std::get<1>(mAddr), buf, sizeof(buf));
-        return buf;
-    } else if (mAddr.index() == 0) {
-        char buf[INET_ADDRSTRLEN + 1] = {};
-        inet_ntop(AF_INET, &std::get<0>(mAddr), buf, sizeof(buf));
-        return buf;
-    } else {
-        return "[invalid ip address or domain name]";
+Expected<SocketAddress> AddressResolver::resolve_one() {
+    auto res = resolve_all();
+    if (res.has_error()) [[unlikely]] {
+        return res.error();
     }
+    return res->addrs.front();
 }
 
-Expected<SocketAddress> SocketAddress::parse(std::string_view host,
-                                             int defaultPort) {
-    auto pos = host.rfind(':');
-    std::string hostPart(host);
-    std::optional<int> port;
-    if (pos != std::string_view::npos) {
-        hostPart = host.substr(0, pos);
-        port = from_string<int>(host.substr(pos + 1));
-        if (port < 0 || port > 65535) [[unlikely]] {
-            port = std::nullopt;
-        }
+Expected<SocketAddress> AddressResolver::resolve_one(std::string &service) {
+    auto res = resolve_all();
+    if (res.has_error()) [[unlikely]] {
+        return res.error();
     }
-    if (!port) {
-        if (defaultPort == -1) [[unlikely]] {
-            return std::errc::bad_address;
-        }
-        port = defaultPort;
-    }
-    auto ip = IpAddress::parse(hostPart.c_str());
-    if (ip.has_error()) [[unlikely]] {
-        return ip.error();
-    }
-    return SocketAddress(*ip, *port);
+    service = std::move(res->service);
+    return res->addrs.front();
 }
 
-SocketAddress::SocketAddress(IpAddress ip, int port) {
-    std::visit([&](auto const &addr) { initFromHostPort(addr, port); },
-               ip.mAddr);
+SocketAddress::SocketAddress(struct sockaddr const *addr, socklen_t addrLen,
+                             sa_family_t family, int sockType, int protocol)
+    : mSockType(sockType),
+      mProtocol(protocol) {
+    std::memcpy(&mAddr, addr, addrLen);
+    mAddr.ss_family = family;
+    mAddrLen = addrLen;
 }
 
-sa_family_t SocketAddress::family() const noexcept {
-    return mAddr.sa_family;
-}
-
-IpAddress SocketAddress::host() const {
+std::string SocketAddress::host() const {
     if (family() == AF_INET) {
-        return IpAddress(mAddrIpv4.sin_addr);
+        auto &sin =
+            reinterpret_cast<struct sockaddr_in const &>(mAddr).sin_addr;
+        char buf[INET_ADDRSTRLEN] = {};
+        inet_ntop(family(), &sin, buf, sizeof(buf));
+        return buf;
     } else if (family() == AF_INET6) {
-        return IpAddress(mAddrIpv6.sin6_addr);
+        auto &sin6 =
+            reinterpret_cast<struct sockaddr_in6 const &>(mAddr).sin6_addr;
+        char buf[INET6_ADDRSTRLEN] = {};
+        inet_ntop(AF_INET6, &sin6, buf, sizeof(buf));
+        return buf;
     } else [[unlikely]] {
         throw std::runtime_error("address family not ipv4 or ipv6");
     }
@@ -12678,111 +13971,151 @@ IpAddress SocketAddress::host() const {
 
 int SocketAddress::port() const {
     if (family() == AF_INET) {
-        return ntohs(mAddrIpv4.sin_port);
+        auto port =
+            reinterpret_cast<struct sockaddr_in const &>(mAddr).sin_port;
+        return ntohs(port);
     } else if (family() == AF_INET6) {
-        return ntohs(mAddrIpv6.sin6_port);
+        auto port =
+            reinterpret_cast<struct sockaddr_in6 const &>(mAddr).sin6_port;
+        return ntohs(port);
     } else [[unlikely]] {
         throw std::runtime_error("address family not ipv4 or ipv6");
     }
 }
 
+void SocketAddress::trySetPort(int port) {
+    if (family() == AF_INET) {
+        reinterpret_cast<struct sockaddr_in &>(mAddr).sin_port =
+            htons(static_cast<uint16_t>(port));
+    } else if (family() == AF_INET6) {
+        reinterpret_cast<struct sockaddr_in6 &>(mAddr).sin6_port =
+            htons(static_cast<uint16_t>(port));
+    }
+}
+
 String SocketAddress::toString() const {
-    return host().toString() + ':' + to_string(port());
+    return host() + ':' + to_string(port());
 }
 
-void SocketAddress::initFromHostPort(struct in_addr const &host, int port) {
-    struct sockaddr_in saddr = {};
-    saddr.sin_family = AF_INET;
-    std::memcpy(&saddr.sin_addr, &host, sizeof(saddr.sin_addr));
-    saddr.sin_port = htons((uint16_t)port);
-    std::memcpy(&mAddrIpv4, &saddr, sizeof(saddr));
-    mAddrLen = sizeof(saddr);
-}
-
-void SocketAddress::initFromHostPort(struct in6_addr const &host, int port) {
-    struct sockaddr_in6 saddr = {};
-    saddr.sin6_family = AF_INET6;
-    std::memcpy(&saddr.sin6_addr, &host, sizeof(saddr.sin6_addr));
-    saddr.sin6_port = htons((uint16_t)port);
-    std::memcpy(&mAddrIpv6, &saddr, sizeof(saddr));
-    mAddrLen = sizeof(saddr);
-}
+// void SocketAddress::initFromHostPort(struct in_addr const &host, int port) {
+//     struct sockaddr_in saddr = {};
+//     saddr.sin_family = AF_INET;
+//     std::memcpy(&saddr.sin_addr, &host, sizeof(saddr.sin_addr));
+//     saddr.sin_port = htons(static_cast<uint16_t>(port));
+//     std::memcpy(&mAddrIpv4, &saddr, sizeof(saddr));
+//     mAddrLen = sizeof(saddr);
+// }
+//
+// void SocketAddress::initFromHostPort(struct in6_addr const &host, int port) {
+//     struct sockaddr_in6 saddr = {};
+//     saddr.sin6_family = AF_INET6;
+//     std::memcpy(&saddr.sin6_addr, &host, sizeof(saddr.sin6_addr));
+//     saddr.sin6_port = htons(static_cast<uint16_t>(port));
+//     std::memcpy(&mAddrIpv6, &saddr, sizeof(saddr));
+//     mAddrLen = sizeof(saddr);
+// }
 
 SocketAddress get_socket_address(SocketHandle &sock) {
     SocketAddress sa;
-    sa.mAddrLen = sizeof(sa.mAddrIpv6);
-    throwingErrorErrno(
-        getsockname(sock.fileNo(), (sockaddr *)&sa.mAddr, &sa.mAddrLen));
+    sa.mAddrLen = sizeof(sa.mAddr);
+    throwingErrorErrno(getsockname(
+        sock.fileNo(), reinterpret_cast<struct sockaddr *>(&sa.mAddr),
+        &sa.mAddrLen));
     return sa;
 }
 
 SocketAddress get_socket_peer_address(SocketHandle &sock) {
     SocketAddress sa;
-    sa.mAddrLen = sizeof(sa.mAddrIpv6);
-    throwingErrorErrno(
-        getpeername(sock.fileNo(), (sockaddr *)&sa.mAddr, &sa.mAddrLen));
+    sa.mAddrLen = sizeof(sa.mAddr);
+    throwingErrorErrno(getpeername(
+        sock.fileNo(), reinterpret_cast<struct sockaddr *>(&sa.mAddr),
+        &sa.mAddrLen));
     return sa;
 }
 
-Task<Expected<SocketHandle>> createSocket(int family, int type) {
+Task<Expected<SocketHandle>> createSocket(int family, int type, int protocol) {
     int fd = co_await expectError(
-        co_await UringOp().prep_socket(family, type, 0, 0));
+                 co_await UringOp().prep_socket(family, type, protocol, 0))
+#if CO_ASYNC_INVALFIX
+                 .or_else(std::errc::invalid_argument,
+                           [&] { return socket(family, type, protocol); })
+#endif
+        ;
     SocketHandle sock(fd);
     co_return sock;
 }
 
 Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr) {
-    SocketHandle sock =
-        co_await co_await createSocket(addr.family(), SOCK_STREAM);
+    SocketHandle sock = co_await co_await createSocket(
+        addr.family(), addr.socktype(), addr.protocol());
     co_await expectError(co_await UringOp().prep_connect(
-        sock.fileNo(), (const struct sockaddr *)&addr.mAddr, addr.mAddrLen));
+        sock.fileNo(), reinterpret_cast<const struct sockaddr *>(&addr.mAddr),
+        addr.mAddrLen))
+#if CO_ASYNC_INVALFIX
+                 .or_else(std::errc::invalid_argument, [&] { return connect(sock.fileNo(),
+        reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen); })
+#endif
+        ;
     co_return sock;
 }
 
 Task<Expected<SocketHandle>>
 socket_connect(SocketAddress const &addr,
                std::chrono::steady_clock::duration timeout) {
-    SocketHandle sock =
-        co_await co_await createSocket(addr.family(), SOCK_STREAM);
+    SocketHandle sock = co_await co_await createSocket(
+        addr.family(), addr.socktype(), addr.protocol());
     auto ts = durationToKernelTimespec(timeout);
     co_await expectError(co_await UringOp::link_ops(
         UringOp().prep_connect(
-            sock.fileNo(), (const struct sockaddr *)&addr.mAddr, addr.mAddrLen),
-        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+            sock.fileNo(),
+            reinterpret_cast<const struct sockaddr *>(&addr.mAddr),
+            addr.mAddrLen),
+        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)))
+#if CO_ASYNC_INVALFIX
+                 .or_else(std::errc::invalid_argument, [&] { return connect(sock.fileNo(),
+        reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen); })
+#endif
+        ;
     co_return sock;
 }
 
 Task<Expected<SocketHandle>> socket_connect(SocketAddress const &addr,
                                             CancelToken cancel) {
     SocketHandle sock =
-        co_await co_await createSocket(addr.family(), SOCK_STREAM);
+        co_await co_await createSocket(addr.family(), SOCK_STREAM, 0);
     if (cancel.is_canceled()) [[unlikely]] {
         co_return std::errc::operation_canceled;
     }
-    co_await expectError(co_await UringOp().prep_connect(
-        sock.fileNo(), (const struct sockaddr *)&addr.mAddr, addr.mAddrLen).cancelGuard(cancel));
+    co_await expectError(
+        co_await UringOp()
+            .prep_connect(
+                sock.fileNo(),
+                reinterpret_cast<const struct sockaddr *>(&addr.mAddr),
+                addr.mAddrLen)
+            .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+                 .or_else(std::errc::invalid_argument, [&] { return connect(sock.fileNo(),
+        reinterpret_cast<const struct sockaddr *>(&addr.mAddr), addr.mAddrLen); })
+#endif
+        ;
     co_return sock;
 }
 
 Task<Expected<SocketListener>> listener_bind(SocketAddress const &addr,
                                              int backlog) {
     SocketHandle sock =
-        co_await co_await createSocket(addr.family(), SOCK_STREAM);
+        co_await co_await createSocket(addr.family(), SOCK_STREAM, 0);
     co_await socketSetOption(sock, SOL_SOCKET, SO_REUSEADDR, 1);
+    co_await socketSetOption(sock, SOL_SOCKET, SO_REUSEPORT, 1);
     /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_CORK, 0); */
     /* co_await socketSetOption(sock, IPPROTO_TCP, TCP_NODELAY, 1); */
     /* co_await socketSetOption(sock, SOL_SOCKET, SO_KEEPALIVE, 1); */
     SocketListener serv(sock.releaseFile());
     co_await expectError(bind(
-        serv.fileNo(), (struct sockaddr const *)&addr.mAddr, addr.mAddrLen));
+        serv.fileNo(), reinterpret_cast<struct sockaddr const *>(&addr.mAddr),
+        addr.mAddrLen));
     co_await expectError(listen(serv.fileNo(), backlog));
     co_return serv;
-}
-
-Task<Expected<SocketListener>>
-listener_bind(std::pair<String, int> const &addr, int backlog) {
-    co_return co_await listener_bind(
-        co_await SocketAddress::parse(addr.first, addr.second));
 }
 
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener) {
@@ -12794,7 +14127,10 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener) {
 
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              CancelToken cancel) {
-    int fd = co_await expectError(co_await UringOp().prep_accept(listener.fileNo(), nullptr, nullptr, 0).cancelGuard(cancel));
+    int fd = co_await expectError(
+        co_await UringOp()
+            .prep_accept(listener.fileNo(), nullptr, nullptr, 0)
+            .cancelGuard(cancel));
     SocketHandle sock(fd);
     co_return sock;
 }
@@ -12802,8 +14138,14 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              SocketAddress &peerAddr) {
     int fd = co_await expectError(co_await UringOp().prep_accept(
-        listener.fileNo(), (struct sockaddr *)&peerAddr.mAddr,
-        &peerAddr.mAddrLen, 0));
+        listener.fileNo(), reinterpret_cast<struct sockaddr *>(&peerAddr.mAddr),
+        &peerAddr.mAddrLen, 0))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(accept4(
+                         listener.fileNo(), reinterpret_cast<struct sockaddr *>(&peerAddr.mAddr),
+                         &peerAddr.mAddrLen, 0)); })
+#endif
+        ;
     SocketHandle sock(fd);
     co_return sock;
 }
@@ -12811,74 +14153,146 @@ Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
 Task<Expected<SocketHandle>> listener_accept(SocketListener &listener,
                                              SocketAddress &peerAddr,
                                              CancelToken cancel) {
-    int fd = co_await expectError(co_await UringOp().prep_accept(
-        listener.fileNo(), (struct sockaddr *)&peerAddr.mAddr,
-        &peerAddr.mAddrLen, 0).cancelGuard(cancel));
+    int fd = co_await expectError(
+        co_await UringOp()
+            .prep_accept(listener.fileNo(),
+                         reinterpret_cast<struct sockaddr *>(&peerAddr.mAddr),
+                         &peerAddr.mAddrLen, 0)
+            .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(accept4(
+                         listener.fileNo(), reinterpret_cast<struct sockaddr *>(&peerAddr.mAddr),
+                         &peerAddr.mAddrLen, 0)); })
+#endif
+        ;
     SocketHandle sock(fd);
     co_return sock;
 }
 
 Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                          std::span<char const> buf) {
-    co_return (std::size_t) co_await expectError(
-        co_await UringOp().prep_send(sock.fileNo(), buf, 0));
+    co_return static_cast<std::size_t>(co_await expectError(
+        co_await UringOp().prep_send(sock.fileNo(), buf, 0))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+                                       );
+}
+
+Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
+                                            std::span<char const> buf) {
+    co_return static_cast<std::size_t>(co_await expectError(
+        co_await UringOp().prep_send_zc(sock.fileNo(), buf, 0, 0))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+                                       );
 }
 
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock,
                                         std::span<char> buf) {
-    co_return (std::size_t) co_await expectError(
-        co_await UringOp().prep_recv(sock.fileNo(), buf, 0));
+    co_return static_cast<std::size_t>(co_await expectError(
+        co_await UringOp().prep_recv(sock.fileNo(), buf, 0))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+        );
 }
 
 Task<Expected<std::size_t>> socket_write(SocketHandle &sock,
                                          std::span<char const> buf,
                                          CancelToken cancel) {
-    co_return (std::size_t) co_await expectError(
-        co_await UringOp().prep_send(sock.fileNo(), buf, 0).cancelGuard(cancel));
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp()
+                                 .prep_send(sock.fileNo(), buf, 0)
+                                 .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+    );
+}
+
+Task<Expected<std::size_t>> socket_write_zc(SocketHandle &sock,
+                                            std::span<char const> buf,
+                                            CancelToken cancel) {
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp()
+                                 .prep_send_zc(sock.fileNo(), buf, 0, 0)
+                                 .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+    );
 }
 
 Task<Expected<std::size_t>> socket_read(SocketHandle &sock, std::span<char> buf,
                                         CancelToken cancel) {
-    co_return (std::size_t) co_await expectError(
-        co_await UringOp().prep_recv(sock.fileNo(), buf, 0).cancelGuard(cancel));
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp()
+                                 .prep_recv(sock.fileNo(), buf, 0)
+                                 .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+        );
 }
 
 Task<Expected<std::size_t>>
 socket_write(SocketHandle &sock, std::span<char const> buf,
              std::chrono::steady_clock::duration timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return (std::size_t) co_await expectError(co_await UringOp::link_ops(
-        UringOp().prep_send(sock.fileNo(), buf, 0),
-        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp::link_ops(
+            UringOp().prep_send(sock.fileNo(), buf, 0),
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+        );
 }
 
 Task<Expected<std::size_t>>
 socket_read(SocketHandle &sock, std::span<char> buf,
             std::chrono::steady_clock::duration timeout) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return (std::size_t) co_await expectError(co_await UringOp::link_ops(
-        UringOp().prep_recv(sock.fileNo(), buf, 0),
-        UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)));
+    co_return static_cast<std::size_t>(
+        co_await expectError(co_await UringOp::link_ops(
+            UringOp().prep_recv(sock.fileNo(), buf, 0),
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+        );
 }
 
 Task<Expected<std::size_t>>
 socket_write(SocketHandle &sock, std::span<char const> buf,
              std::chrono::steady_clock::duration timeout, CancelToken cancel) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return (std::size_t) co_await expectError(
+    co_return static_cast<std::size_t>(co_await expectError(
         co_await UringOp::link_ops(
             UringOp().prep_send(sock.fileNo(), buf, 0),
-            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)).cancelGuard(cancel));
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))
+            .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(send(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+    );
 }
 
 Task<Expected<std::size_t>>
 socket_read(SocketHandle &sock, std::span<char> buf,
             std::chrono::steady_clock::duration timeout, CancelToken cancel) {
     auto ts = durationToKernelTimespec(timeout);
-    co_return (std::size_t) co_await expectError(
+    co_return static_cast<std::size_t>(co_await expectError(
         co_await UringOp::link_ops(
             UringOp().prep_recv(sock.fileNo(), buf, 0),
-            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME)).cancelGuard(cancel));
+            UringOp().prep_link_timeout(&ts, IORING_TIMEOUT_BOOTTIME))
+            .cancelGuard(cancel))
+#if CO_ASYNC_INVALFIX
+        .or_else(std::errc::invalid_argument, [&] { return expectError(recv(sock.fileNo(), buf.data(), buf.size(), 0)); })
+#endif
+        );
 }
 
 Task<Expected<>> socket_shutdown(SocketHandle &sock, int how) {
@@ -12901,12 +14315,12 @@ Task<Expected<>> socket_shutdown(SocketHandle &sock, int how) {
 
 namespace co_async {
 std::error_category const &bearSSLCategory() {
-    static struct : std::error_category {
-        virtual char const *name() const noexcept {
+    static struct final : std::error_category {
+        char const *name() const noexcept override {
             return "BearSSL";
         }
 
-        virtual std::string message(int e) const {
+        std::string message(int e) const override {
             static std::pair<int, char const *> errors[] = {
                 {
                     BR_ERR_OK,
@@ -13144,7 +14558,7 @@ std::error_category const &bearSSLCategory() {
                     BR_ERR_X509_NOT_TRUSTED,
                     "BR_ERR_X509_NOT_TRUSTED",
                 },
-                {0, 0},
+                {0, nullptr},
             };
             std::size_t u;
             for (u = 0; errors[u].second; u++) {
@@ -13184,7 +14598,7 @@ public:
         br_pem_decoder_setdest(pemDec.get(), pemResultAppender, this);
     }
 
-    SSLPemDecoder &decode(std::string_view s) {
+    Expected<> decode(std::string_view s) {
         while (auto n = br_pem_decoder_push(pemDec.get(), s.data(), s.size())) {
             switch (br_pem_decoder_event(pemDec.get())) {
             case BR_PEM_BEGIN_OBJ:
@@ -13198,22 +14612,24 @@ public:
 #if CO_ASYNC_DEBUG
                 std::cerr << "PEM decoder error\n";
 #endif
-                throw std::runtime_error("PEM decoder error");
+                return std::error_code(BR_ERR_X509_INVALID_VALUE, bearSSLCategory());
             }
             s.remove_prefix(n);
         }
-        return *this;
+        return {};
     }
 
     std::vector<std::pair<std::string, std::string>> const &objects() const {
         return objs;
     }
 
-    static std::vector<std::string> tryDecode(std::string_view s) {
+    static Expected<std::vector<std::string>> tryDecode(std::string_view s) {
         std::vector<std::string> res;
         if (s.find("-----BEGIN ") != s.npos) {
             SSLPemDecoder dec;
-            dec.decode(s);
+            if (auto e = dec.decode(s); !e) [[unlikely]] {
+                return CO_ASYNC_ERROR_FORWARD(e);
+            }
             for (auto &[k, v]: dec.objs) {
                 res.push_back(std::move(v));
             }
@@ -13282,11 +14698,15 @@ public:
         return *this;
     }
 
-    SSLServerPrivateKey &set(std::string_view pkey) {
-        for (auto &s: SSLPemDecoder::tryDecode(pkey)) {
-            decodeBinary(s);
+    Expected<> set(std::string_view pkey) {
+        if (auto e = SSLPemDecoder::tryDecode(pkey)) {
+            for (auto &s: *e) {
+                decodeBinary(s);
+            }
+            return {};
+        } else {
+            return CO_ASYNC_ERROR_FORWARD(e);
         }
-        return *this;
     }
 
     br_ec_private_key const *getEC() const {
@@ -13310,7 +14730,8 @@ public:
             return dn.error();
         }
         trustAnchors.push_back({
-            {(unsigned char *)dn->data(), dn->size()},
+            {reinterpret_cast<unsigned char *>(const_cast<char *>(dn->data())),
+             dn->size()},
             BR_X509_TA_CA,
             *x506.getPubKey(),
         });
@@ -13318,12 +14739,16 @@ public:
     }
 
     Expected<> add(std::string_view certX506) {
-        for (auto &s: SSLPemDecoder::tryDecode(certX506)) {
-            if (auto e = addBinary(s); e.has_error()) {
-                return e;
+        if (auto e = SSLPemDecoder::tryDecode(certX506)) [[likely]] {
+            for (auto &s: *e) {
+                if (auto e = addBinary(s); !e) [[unlikely]] {
+                    return CO_ASYNC_ERROR_FORWARD(e);
+                }
             }
+            return {};
+        } else {
+            return CO_ASYNC_ERROR_FORWARD(e);
         }
-        return {};
     }
 
     bool empty() const {
@@ -13344,12 +14769,18 @@ public:
 
     void addBinary(std::string certX506) {
         auto &cert = strStores.emplace_back(std::move(certX506));
-        certificates.push_back({(unsigned char *)cert.data(), cert.size()});
+        certificates.push_back(
+            {reinterpret_cast<unsigned char *>(cert.data()), cert.size()});
     }
 
-    void add(std::string_view certX506) {
-        for (auto &s: SSLPemDecoder::tryDecode(certX506)) {
-            addBinary(s);
+    Expected<> add(std::string_view certX506) {
+        if (auto e = SSLPemDecoder::tryDecode(certX506)) [[likely]] {
+            for (auto &s: *e) {
+                addBinary(s);
+            }
+            return {};
+        } else {
+            return CO_ASYNC_ERROR_FORWARD(e);
         }
     }
 
@@ -13403,7 +14834,8 @@ protected:
                 unsigned char *buf;
                 std::size_t len, wlen;
                 buf = br_ssl_engine_sendrec_buf(eng, &len);
-                if (auto e = co_await raw.raw_write({(char const *)buf, len});
+                if (auto e = co_await raw.raw_write(
+                        {reinterpret_cast<char const *>(buf), len});
                     e && *e != 0) {
                     wlen = *e;
                 } else {
@@ -13413,12 +14845,12 @@ protected:
                             eng->err = BR_ERR_IO;
                         }
                         if (e.has_error()) {
-                            co_return e.error();
+                            co_return CO_ASYNC_ERROR_FORWARD(e);
                         } else {
                             co_return std::errc::broken_pipe;
                         }
                     } else if (e.has_error()) [[unlikely]] {
-                        co_return e.error();
+                        co_return CO_ASYNC_ERROR_FORWARD(e);
                     } else {
                         co_return {};
                     }
@@ -13433,13 +14865,15 @@ protected:
 #if CO_ASYNC_DEBUG
                 std::cerr << "SSL write not ready\n";
 #endif
-                throw std::runtime_error("SSL write not ready");
+                co_return std::errc::broken_pipe;
+                // throw std::runtime_error("SSL write not ready");
             }
             if (state & BR_SSL_RECVREC) {
                 unsigned char *buf;
                 std::size_t len, rlen;
                 buf = br_ssl_engine_recvrec_buf(eng, &len);
-                if (auto e = co_await raw.raw_read({(char *)buf, len});
+                if (auto e = co_await raw.raw_read(
+                        {reinterpret_cast<char *>(buf), len});
                     e && *e != 0) {
                     rlen = *e;
                 } else {
@@ -13449,12 +14883,12 @@ protected:
                             eng->err = BR_ERR_IO;
                         }
                         if (e.has_error()) {
-                            co_return e.error();
+                            co_return CO_ASYNC_ERROR_FORWARD(e);
                         } else {
                             co_return std::errc::broken_pipe;
                         }
                     } else if (e.has_error()) [[unlikely]] {
-                        co_return e.error();
+                        co_return CO_ASYNC_ERROR_FORWARD(e);
                     } else {
                         co_return {};
                     }
@@ -13543,7 +14977,7 @@ public:
                                        BR_KEYTYPE_EC, ec);
         } else [[unlikely]] {
             throw std::runtime_error(
-                "invalid private key type, must be RSA or EC");
+                "invalid private key type, must be either RSA or EC");
         }
         setEngine(&ctx->eng);
         if (cache) {
@@ -13614,10 +15048,10 @@ OwningStream ssl_accept(SocketHandle file, SSLServerCertificate const &cert,
 
 DefinePImpl(SSLServerPrivateKey);
 DefinePImpl(SSLClientTrustAnchor);
-Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add, (std::string_view content),
-                              content);
+Expected<> ForwardPImplMethod(SSLClientTrustAnchor, add,
+                              (std::string_view content), content);
 DefinePImpl(SSLServerCertificate);
-void ForwardPImplMethod(SSLServerCertificate, add, (std::string_view content),
+Expected<> ForwardPImplMethod(SSLServerCertificate, add, (std::string_view content),
                         content);
 DefinePImpl(SSLServerSessionCache);
 } // namespace co_async
@@ -13634,20 +15068,24 @@ namespace co_async {
 namespace {
 
 struct PipeStreamBuffer {
-    InfinityQueue<std::string> mChunks;
-    ConditionVariable mNonEmpty;
+    ConcurrentQueue<std::string> mChunks{64};
 };
 
 struct IPipeStream : Stream {
     Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
-        while (true) {
-            if (auto chunk = mPipe->mChunks.pop()) {
-                auto n = std::min(buffer.size(), chunk->size());
-                std::memcpy(buffer.data(), chunk->data(), n);
-                co_return n;
-            }
-            co_await co_await mPipe->mNonEmpty.wait();
+#if CO_ASYNC_DEBUG
+        auto e = co_await mPipe->mChunks.pop();
+        if (e.has_error()) {
+            std::cerr << "PipeStreamBuffer::pop(): " << e.error().message() << '\n';
+            co_return CO_ASYNC_ERROR_FORWARD(e);
         }
+        auto chunk = *e;
+#else
+        auto chunk = co_await co_await mPipe->mChunks.pop();
+#endif
+        auto n = std::min(buffer.size(), chunk.size());
+        std::memcpy(buffer.data(), chunk.data(), n);
+        co_return n;
     }
 
     Task<> raw_close() override {
@@ -13669,8 +15107,8 @@ struct OPipeStream : Stream {
             if (buffer.empty()) [[unlikely]] {
                 co_return std::size_t(0);
             }
-            p->mChunks.push(std::string(buffer.data(), buffer.size()));
-            p->mNonEmpty.notify_one();
+            co_await co_await p->mChunks.push(
+                std::string(buffer.data(), buffer.size()));
             co_return buffer.size();
         } else {
             co_return std::errc::broken_pipe;
@@ -13679,16 +15117,14 @@ struct OPipeStream : Stream {
 
     Task<> raw_close() override {
         if (auto p = mPipe.lock()) {
-            p->mChunks.push(std::string());
-            p->mNonEmpty.notify_one();
+            (void)co_await p->mChunks.push(std::string());
         }
         co_return;
     }
 
-    ~OPipeStream() override {
+    ~OPipeStream() {
         if (auto p = mPipe.lock()) {
-            p->mChunks.push(std::string());
-            p->mNonEmpty.notify_one();
+            p->mChunks.try_push(std::string());
         }
     }
 
@@ -13840,8 +15276,8 @@ int rawStdinFileHandleImpl() {
     if (isatty(STDIN_FILENO)) {
         struct termios tc;
         tcgetattr(STDIN_FILENO, &tc);
-        tc.c_lflag &= ~(tcflag_t)ICANON;
-        tc.c_lflag &= ~(tcflag_t)ECHO;
+        tc.c_lflag &= ~static_cast<tcflag_t>(ICANON);
+        tc.c_lflag &= ~static_cast<tcflag_t>(ECHO);
         tcsetattr(STDIN_FILENO, TCSANOW, &tc);
     }
     return STDIN_FILENO;
@@ -13877,7 +15313,7 @@ OwningStream &raw_stdio() {
 namespace co_async {
 namespace {
 struct DirectoryStream : Stream {
-    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) {
+    Task<Expected<std::size_t>> raw_read(std::span<char> buffer) override {
         co_return co_await fs_getdents(mFile, buffer);
     }
 
@@ -13909,7 +15345,8 @@ Task<Expected<String>> DirectoryWalker::DirectoryWalker::next() {
         unsigned char d_type;    /* File type */
     } dent;
 
-    co_await co_await mStream.getspan(std::span<char>((char *)&dent, 19));
+    co_await co_await mStream.getspan(
+        std::span<char>(reinterpret_cast<char *>(&dent), 19));
     String rest;
     rest.reserve(dent.d_reclen - 19);
     co_await co_await mStream.getn(rest, dent.d_reclen - 19);
@@ -13961,7 +15398,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
             std::cerr << "WARNING: inflate source read failed with error\n";
 # endif
             (void)inflateEnd(&strm);
-            co_return e.error();
+            co_return CO_ASYNC_ERROR_FORWARD(e);
         } else {
             strm.avail_in = *e;
         }
@@ -13992,7 +15429,7 @@ Task<Expected<>> zlib_inflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: inflate dest write failed with error\n";
 # endif
                 (void)inflateEnd(&strm);
-                co_return e.error();
+                co_return CO_ASYNC_ERROR_FORWARD(e);
             }
         } while (strm.avail_out == 0);
     } while (ret != Z_STREAM_END);
@@ -14033,7 +15470,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
             std::cerr << "WARNING: deflate source read failed with error\n";
 # endif
             (void)deflateEnd(&strm);
-            co_return e.error();
+            co_return CO_ASYNC_ERROR_FORWARD(e);
         } else {
             strm.avail_in = *e;
         }
@@ -14056,7 +15493,7 @@ Task<Expected<>> zlib_deflate(BorrowedStream &source, BorrowedStream &dest) {
                 std::cerr << "WARNING: deflate dest write failed with error\n";
 # endif
                 (void)deflateEnd(&strm);
-                co_return e.error();
+                co_return CO_ASYNC_ERROR_FORWARD(e);
             }
         } while (strm.avail_out == 0);
         assert(strm.avail_in == 0); /* all input will be used */
@@ -14083,9 +15520,9 @@ namespace co_async {
 namespace {
 std::uint8_t fromHex(char c) {
     if ('0' <= c && c <= '9') {
-        return (std::uint8_t)(c - '0');
+        return static_cast<std::uint8_t>(c - '0');
     } else if ('A' <= c && c <= 'F') {
-        return (std::uint8_t)(c - 'A' + 10);
+        return static_cast<std::uint8_t>(c - 'A' + 10);
     } else [[unlikely]] {
         return 0;
     }
@@ -14119,7 +15556,7 @@ void URI::url_decode(String &r, std::string_view s) {
         r.append(s.data() + b, s.data() + i);
         char c1 = s[i + 1];
         char c2 = s[i + 2];
-        r.push_back((char)((fromHex(c1) << 4) | fromHex(c2)));
+        r.push_back(static_cast<char>((fromHex(c1) << 4) | fromHex(c2)));
         b = i + 3;
     }
 }
@@ -14281,7 +15718,7 @@ HTTPProtocolVersion11::dumpHeaders(HTTPHeaders const &headers) {
         co_await co_await sock.puts(v);
         co_await co_await sock.puts("\r\n"sv);
     }
-    co_await co_await sock.puts("connection: keep-alive\r\n"sv);
+    // co_await co_await sock.puts("connection: keep-alive\r\n"sv);
     co_return {};
 }
 
@@ -14401,7 +15838,6 @@ Task<Expected<>> HTTPProtocolVersion11::readChunked(BorrowedStream &body) {
             }
             line.clear();
             co_await co_await sock.getn(line, n);
-            /* debug(), line; */
             co_await co_await body.puts(line);
             co_await co_await body.flush();
             co_await co_await sock.dropn(2);
@@ -14604,9 +16040,7 @@ Task<Expected<>> HTTPProtocolVersion11::readRequest(HTTPRequest &req) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
     String line;
-    if (!co_await sock.getline(line, "\r\n"sv)) {
-        co_return std::errc::broken_pipe;
-    }
+    co_await co_await sock.getline(line, "\r\n"sv);
     auto pos = line.find(' ');
     if (pos == line.npos || pos == line.size() - 1) [[unlikely]] {
         co_return std::errc::protocol_error;
@@ -14640,9 +16074,7 @@ Task<Expected<>> HTTPProtocolVersion11::readResponse(HTTPResponse &res) {
     checkPhase(0, -1);
     using namespace std::string_view_literals;
     String line;
-    if (!co_await sock.getline(line, "\r\n"sv)) [[unlikely]] {
-        co_return std::errc::broken_pipe;
-    }
+    co_await co_await sock.getline(line, "\r\n"sv);
     if (line.size() <= 9 || line.substr(0, 7) != "HTTP/1."sv || line[8] != ' ')
         [[unlikely]] {
         co_return std::errc::protocol_error;
@@ -14729,8 +16161,7 @@ HTTPServerUtils::make_response_from_directory(HTTPServer::IO &io,
 
 Task<Expected<>> HTTPServerUtils::make_error_response(HTTPServer::IO &io,
                                                       int status) {
-    auto error =
-        to_string(status) + ' ' + String(getHTTPStatusName(status));
+    auto error = to_string(status) + ' ' + String(getHTTPStatusName(status));
     HTTPResponse res{
         .status = status,
         .headers =
@@ -15055,6 +16486,7 @@ String capitalizeHTTPHeader(std::string_view key) {
 
 
 
+
 namespace co_async {
 struct HTTPServer::Impl {
     struct Route {
@@ -15127,7 +16559,7 @@ struct HTTPServer::Impl {
     HTTPHandler mDefaultRoute = [](IO &io) -> Task<Expected<>> {
         co_return co_await make_error_response(io, 404);
     };
-    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(10);
+    std::chrono::steady_clock::duration mTimeout = std::chrono::seconds(30);
 #if CO_ASYNC_DEBUG
     bool mLogRequests = false;
 #endif
@@ -15170,10 +16602,9 @@ struct HTTPServer::Impl {
     }
 };
 
-Task<Expected<>> HTTPServer::IO::readRequestHeader() {
+Task<Expected<bool>> HTTPServer::IO::readRequestHeader() {
     mHttp->initServerState();
-    co_await co_await mHttp->readRequest(request);
-    co_return {};
+    co_return co_await (co_await mHttp->readRequest(request)).transform([] { return true; }).or_else(eofError(), [] { return false; });
 }
 
 Task<Expected<String>> HTTPServer::IO::request_body() {
@@ -15298,14 +16729,25 @@ HTTPServer::prepareHTTP(SocketHandle handle) const {
 }
 
 Task<Expected<>> HTTPServer::handle_http(SocketHandle handle) const {
-// #if CO_ASYNC_ALLOC
-//     std::pmr::unsynchronized_pool_resource pool{currentAllocator};
-//     ReplaceAllocator _ = &pool;
-// #endif
+    // #if CO_ASYNC_ALLOC
+    //     std::pmr::unsynchronized_pool_resource pool{currentAllocator};
+    //     ReplaceAllocator _ = &pool;
+    // #endif
     /* int h = handle.fileNo(); */
+#if CO_ASYNC_DEBUG
+    auto err =
+        co_await doHandleConnection(co_await prepareHTTP(std::move(handle)));
+    if (err.has_error()) [[unlikely]] {
+        std::cerr << err.mErrorLocation.file_name() << ":"
+                  << err.mErrorLocation.line() << ": "
+                  << err.mErrorLocation.function_name() << ": "
+                  << err.error().message() << '\n';
+        co_return err;
+    }
+#else
     co_await co_await doHandleConnection(
         co_await prepareHTTP(std::move(handle)));
-    /* co_await UringOp().prep_shutdown(h, SHUT_RDWR); */
+#endif
     co_return {};
 }
 
@@ -15315,7 +16757,7 @@ HTTPServer::handle_http_redirect_to_https(SocketHandle handle) const {
     auto http = co_await prepareHTTP(std::move(handle));
     while (true) {
         IO io(http.get());
-        if (!co_await io.readRequestHeader()) {
+        if (!co_await co_await io.readRequestHeader()) {
             break;
         }
         if (auto host = io.request.headers.get("host")) {
@@ -15348,14 +16790,8 @@ Task<Expected<>> HTTPServer::handle_https(SocketHandle handle,
 Task<Expected<>>
 HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
     while (true) {
-// #if CO_ASYNC_ALLOC
-//         BytesBuffer buf(8192 * 4);
-//         std::pmr::monotonic_buffer_resource mono{buf.data(), buf.size(), currentAllocator};
-//         ReplaceAllocator _ = &mono;
-// #endif
-
         IO io(http.get());
-        if (!co_await io.readRequestHeader()) {
+        if (!co_await co_await io.readRequestHeader()) {
             break;
         }
 #if CO_ASYNC_DEBUG
@@ -15387,8 +16823,9 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
                                            .count()) +
                              "ms\n";
             for (auto [k, v]: io.mResponseSavedForDebug.headers) {
-                if (k == "cookie" || k == "set-cookie") {
-                    v = "***";
+                if (k == "cookie" || k == "set-cookie" ||
+                    k == "authorization") {
+                    v = "*****";
                 }
                 std::clog << "      " + capitalizeHTTPHeader(k) + ": " + v +
                                  '\n';
@@ -15400,8 +16837,7 @@ HTTPServer::doHandleConnection(std::unique_ptr<HTTPProtocol> http) const {
 }
 
 Task<Expected<>> HTTPServer::make_error_response(IO &io, int status) {
-    auto error =
-        to_string(status) + ' ' + String(getHTTPStatusName(status));
+    auto error = to_string(status) + ' ' + String(getHTTPStatusName(status));
     HTTPResponse res{
         .status = status,
         .headers =
@@ -15429,10 +16865,19 @@ Task<Expected<SocketHandle>>
 socket_proxy_connect(char const *host, int port, std::string_view proxy,
                      std::chrono::steady_clock::duration timeout) {
     using namespace std::string_view_literals;
-    if (proxy.starts_with("http://")) {
-        proxy.remove_prefix(7);
+    if (proxy.empty()) {
+        co_return co_await socket_connect(
+            co_await AddressResolver().host(host).port(port).resolve_one());
+    } else {
+#if CO_ASYNC_DEBUG
+        if (!proxy.starts_with("http://")) {
+            std::cerr << "WARNING: both http_proxy and https_proxy variable "
+                         "should starts with http://\n";
+        }
+#endif
         auto sock = co_await co_await socket_connect(
-            co_await SocketAddress::parse(proxy, 80), co_await co_cancel);
+            co_await AddressResolver().host(proxy).resolve_one(),
+            co_await co_cancel);
         String hostName(host);
         hostName += ':';
         hostName += to_string(port);
@@ -15478,14 +16923,6 @@ socket_proxy_connect(char const *host, int port, std::string_view proxy,
             co_return std::errc::connection_reset;
         }
         co_return sock;
-    } else {
-#if CO_ASYNC_DEBUG
-        if (!proxy.empty()) {
-            std::cerr << "WARNING: unsupported proxy scheme [" +
-                             std::string(proxy) + "]\n";
-        }
-#endif
-        co_return co_await socket_connect(co_await SocketAddress::parse(proxy));
     }
 }
 } // namespace co_async

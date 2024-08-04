@@ -70,6 +70,7 @@ inline Task<Expected<bool>> httpUpgradeToWebSocket(HTTPServer::IO &io) {
 
 struct WebSocketPacket {
     enum Opcode : uint8_t {
+        kOpcodeContinue = 0,
         kOpcodeText = 1,
         kOpcodeBinary = 2,
         kOpcodeClose = 8,
@@ -83,13 +84,17 @@ struct WebSocketPacket {
 
 inline Task<Expected<WebSocketPacket>> wsRecvPacket(BorrowedStream &ws) {
     WebSocketPacket packet;
-    auto head = co_await co_await ws.getn(2);
+    packet.opcode = WebSocketPacket::kOpcodeContinue;
     bool fin;
     do {
+        auto head = co_await co_await ws.getn(2);
         uint8_t head0 = static_cast<uint8_t>(head[0]);
         uint8_t head1 = static_cast<uint8_t>(head[1]);
         fin = (head0 & 0x80) != 0;
-        packet.opcode = static_cast<WebSocketPacket::Opcode>(head0 & 0x0F);
+        auto new_opcode = static_cast<WebSocketPacket::Opcode>(head0 & 0x0F);
+        if (new_opcode != WebSocketPacket::kOpcodeContinue) {
+            packet.opcode = new_opcode;
+        }
         bool masked = (head1 & 0x80) != 0;
         uint8_t payloadLen8 = head1 & 0x7F;
         size_t payloadLen;

@@ -138,6 +138,12 @@ T run_task(Loop &loop, Task<T, P> const &t) {
     a.await_suspend(std::noop_coroutine()).resume();
     loop.run();
     return a.await_resume();
-};
+}
+
+template <class T, class P>
+void spawn_task(Task<T, P> const &t) {
+    auto a = t.operator co_await();
+    a.await_suspend(std::noop_coroutine()).resume();
+}
 
 } // namespace co_async

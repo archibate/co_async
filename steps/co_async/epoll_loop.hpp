@@ -48,6 +48,7 @@ struct EpollLoop {
     int mEpoll = checkError(epoll_create1(0));
     std::size_t mCount = 0;
     struct epoll_event mEventBuf[64];
+    std::vector<std::coroutine_handle<>> mQueue;
 };
 
 struct EpollFileAwaiter {
@@ -100,6 +101,11 @@ void EpollLoop::removeListener(int fileNo) {
 
 bool EpollLoop::run(
     std::optional<std::chrono::system_clock::duration> timeout) {
+    while (!mQueue.empty()) {
+        auto task = mQueue.back();
+        mQueue.pop_back();
+        task.resume();
+    }
     if (mCount == 0) {
         return false;
     }

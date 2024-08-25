@@ -13,12 +13,13 @@ Task<> handle_connection(AsyncFile conn) {
     debug(), "发来的消息头如下：";
     FileStream s(loop, std::move(conn));
     while (true) {
-        auto l = co_await s.getline("\r\n");
+        auto l = co_await s.getchar();
         debug(), l;
-        if (l.empty()) {
+        if (l == '\n') {
             break;
         }
     }
+    debug(), "发来泥码被";
     co_await s.puts("HTTP/1.1 200 OK\r\n");
     co_await s.puts("Content-Type: text/plain\r\n");
     co_await s.puts("Content-Length: 12\r\n");
@@ -29,7 +30,9 @@ Task<> handle_connection(AsyncFile conn) {
 }
 
 Task<> amain() {
-    auto serv = co_await create_tcp_server(loop, socket_address(ip_address("127.0.0.1"), 8080));
+    debug(), "开始监听";
+    auto serv = co_await create_tcp_server(loop, socket_address(ip_address("127.0.0.1"), 8081));
+    socket_listen(serv);
 
     while (true) {
         auto [conn, addr] = co_await socket_accept<IpAddress>(loop, serv);

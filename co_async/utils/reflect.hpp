@@ -330,7 +330,7 @@ enum class JsonError : int {
 };
 
 inline std::error_category const &jsonCategory() {
-    static struct final : std::error_category {
+    static struct : std::error_category {
         char const *name() const noexcept override {
             return "json";
         }

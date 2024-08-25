@@ -11,6 +11,8 @@ EpollLoop loop;
 
 Task<> amain() {
     auto serv = co_await create_tcp_server(loop, socket_address(ip_address("127.0.0.1"), 8080));
+    socket_listen(serv);
+
     auto [conn, addr] = co_await socket_accept<IpAddress>(loop, serv);
 
     debug(), "收到了来自", addr, "的连接";

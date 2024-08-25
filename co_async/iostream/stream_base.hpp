@@ -9,7 +9,7 @@ namespace co_async {
 inline constexpr std::size_t kStreamBufferSize = 8192;
 
 inline std::error_code eofError() {
-    static struct final : public std::error_category {
+    static struct : public std::error_category {
         const char *name() const noexcept override {
             return "eof";
         }

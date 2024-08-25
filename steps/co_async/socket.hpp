@@ -25,6 +25,8 @@ struct IpAddress {
 
     IpAddress(in6_addr addr6) noexcept : mAddr(addr6) {}
 
+    IpAddress() = default;
+
     std::variant<in_addr, in6_addr> mAddr;
 };
 
@@ -167,11 +169,19 @@ inline void socket_shotdown(AsyncFile &sock, int flags = SHUT_RDWR) {
 template <class AddrType>
 inline Task<std::tuple<AsyncFile, AddrType>> socket_accept(EpollLoop &loop,
                                                            AsyncFile &sock) {
-    AddrType addr;
-    socklen_t addrLen = sizeof(addr.mSockAddr);
+    struct sockaddr_storage sockAddr;
+    socklen_t addrLen = sizeof(sockAddr);
     co_await wait_file_event(loop, sock, EPOLLIN);
-    int res = checkError(accept4(sock.fileNo(), (sockaddr *)&addr.mSockAddr,
+    int res = checkError(accept4(sock.fileNo(), (struct sockaddr *)&sockAddr,
                                  &addrLen, SOCK_NONBLOCK));
+    AddrType addr;
+    if (sockAddr.ss_family == AF_INET) {
+        addr = ((struct sockaddr_in *)&sockAddr)->sin_addr;
+    } else if (sockAddr.ss_family == AF_INET6) {
+        addr = ((struct sockaddr_in6 *)&sockAddr)->sin6_addr;
+    } else [[unlikely]] {
+        throw std::runtime_error("unknown address family");
+    }
     co_return {AsyncFile(res), addr};
 }
 

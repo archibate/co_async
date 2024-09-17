@@ -461,8 +461,8 @@ struct [[nodiscard("Expected<T> return values must be handled, use co_await to "
                    "propagate")]] Expected<void> : Expected<Void> {
     using Expected<Void>::Expected;
 
-    Expected<void>(Expected<Void> const &that) noexcept : Expected<Void>(that) {}
-    Expected<void>(Expected<Void> &&that) noexcept : Expected<Void>(std::move(that)) {}
+    Expected(Expected<Void> const &that) noexcept : Expected<Void>(that) {}
+    Expected(Expected<Void> &&that) noexcept : Expected<Void>(std::move(that)) {}
 };
 
 template <class T>

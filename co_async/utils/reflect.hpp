@@ -760,7 +760,7 @@ struct JsonTraitDictLike {
             } else {
                 encoder->put(',');
             }
-            encoder->putString(it->first);
+            encoder->putString(it->first.data(), it->first.size());
             encoder->put(':');
             JsonTrait<typename T::mapped_type>::putValue(encoder, it->second);
         }

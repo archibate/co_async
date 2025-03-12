@@ -155,7 +155,7 @@ int main() {
     auto t = async_main();
     t.mCoroutine.resume();
     while (!t.mCoroutine.done()) {
-        auto timeout = timerLoop.tryRun();
+        auto timeout = timerLoop.run();
         epollLoop.tryRun(timeout);
     }
 
